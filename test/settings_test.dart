@@ -23,6 +23,7 @@ void main() {
       previewVolume: .25,
       haptics: true,
       tutorialCompleted: true,
+      editorTipsCompleted: true,
     );
     await store.save(first);
     await store.save(first.copyWith(reduceMotion: true));
@@ -32,6 +33,7 @@ void main() {
     expect(loaded.preferences.haptics, isTrue);
     expect(loaded.preferences.reduceMotion, isTrue);
     expect(loaded.preferences.tutorialCompleted, isTrue);
+    expect(loaded.preferences.editorTipsCompleted, isTrue);
     await store.file.writeAsString('damaged');
     final recovered = await restarted.load();
     expect(recovered.recovered, isTrue);
