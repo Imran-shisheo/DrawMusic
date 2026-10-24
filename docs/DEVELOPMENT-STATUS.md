@@ -2,11 +2,10 @@
 
 Updated: 2026-10-24, Asia/Dubai.
 
-- Research and PRD: complete.
-- Cloud setup files and Android CI: prepared locally; remote execution not yet verified.
-- Target owner/repository: Imran-shisheo/DrawMusic, private; created and verified in the GitHub website. Repository-scoped GitHub App authorization is complete. A reduced cloud starter is being published with the full PRD and 16 representative screenshots.
-- Flutter application implementation: not started; will start in the cloud after environment verification.
-- Android APK: not yet built.
-- iOS: owner will build/test on local Mac; no Linux iOS validation claimed.
+- Reviewed bootstrap restored with verified bundle SHA-256 and source commit; normal setup committed and pushed to main as 3c83e1a. Development branch: codex/android-creation-loop.
+- M0 complete: root Flutter 3.47.2 app, Riverpod composition, go_router Home/Drafts/Settings/Editor routes, original warm light theme and empty/error states.
+- Product validation: scripts/check-android.sh passed dependency resolution, formatter (5 files), analyzer (no issues), navigation widget test (1), and debug APK compilation. apksigner verified the debug APK. These are product results, separate from environment smoke tests.
+- Environment: sourced /workspace/drawmusic-tools/env.sh and refreshed configure-runtime.sh. HOME unchanged; TLS verification enabled. Doctor warns about pinned detached channel, unrecognized license status, absent Chrome/devices and blocked optional maven.google.com/cocoapods probes. Android compilation succeeds using installed tools and accepted license.
+- No physical Android/iOS run. Audio, sharing, interruptions, background behavior and latency are not validated. iOS remains owner-local.
 
-Next: authorize the correct GitHub connection and upload the prepared files, prepare/publish the Codex Cloud environment and dispatch cloud/FIRST-TASK.md. The earlier connection loading errors recovered after authorization; the environment still needs publication and a running cloud task. Replace this status with actual results as each step completes.
+Next: M1 drawing/history, M2 deterministic score and actual audio adapter, followed by persistence and exports. No M1+ feature or P0 completion claimed at this checkpoint.
