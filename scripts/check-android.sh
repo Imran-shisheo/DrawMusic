@@ -15,4 +15,10 @@ flutter test
 flutter build apk --debug
 # Exercise native AudioTrack preparation contracts too; Flutter fakes cannot cover them.
 (cd android && ./gradlew :app:testDebugUnitTest --console=plain)
+# Linux cloud process-interruption proof uses only disposable owned children.
+if [[ "$(uname -s)" == Linux ]]; then
+  mkdir -p work/runtime-output
+  dart compile exe tool/crash_recovery_probe.dart -o work/crash-recovery-probe
+  work/crash-recovery-probe --report work/runtime-output/process-recovery.json
+fi
 printf 'Android test APK: %s/build/app/outputs/flutter-apk/app-debug.apk\n' "$repo_root"
