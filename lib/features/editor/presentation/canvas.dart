@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../creative_document/document.dart';
@@ -148,11 +149,18 @@ class DrawingCanvasState extends State<DrawingCanvas> {
   void didUpdateWidget(DrawingCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.document != widget.document) {
+      final geometryChanged = !listEquals(
+        _baseStrokes,
+        widget.document.strokes,
+      );
       _baseStrokes = widget.document.strokes;
       _basePointCount = widget.document.pointCount;
-      _active = [];
-      _erased = null;
-      _pointer = null;
+      if (geometryChanged) {
+        _active = [];
+        _erased = null;
+        _lastErase = null;
+        _pointer = null;
+      }
     }
   }
 
@@ -209,7 +217,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
         widget.onLimit();
         return;
       }
-      _active = [..._active, p];
+      _active.add(p);
     }
     _preview.value++;
   }
@@ -270,6 +278,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
                       painter: DrawingPainter(
                         widget.document,
                         active: _active,
+                        repaint: _preview,
                         instrument: widget.instrument,
                         previewStrokes: const [],
                       ),

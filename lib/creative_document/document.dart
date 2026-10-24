@@ -36,6 +36,21 @@ class Stroke {
   final Instrument instrument;
   final List<InkPoint> points;
   final double width;
+  // Geometry is immutable; cache bounds for conservative eraser rejection.
+  late final ({double minU, double maxU, double minV, double maxV}) bounds =
+      _bounds();
+  ({double minU, double maxU, double minV, double maxV}) _bounds() {
+    var minU = points.first.u, maxU = minU;
+    var minV = points.first.v, maxV = minV;
+    for (final point in points.skip(1)) {
+      minU = math.min(minU, point.u);
+      maxU = math.max(maxU, point.u);
+      minV = math.min(minV, point.v);
+      maxV = math.max(maxV, point.v);
+    }
+    return (minU: minU, maxU: maxU, minV: minV, maxV: maxV);
+  }
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'instrument': instrument.name,
@@ -80,7 +95,7 @@ class ProjectDocument {
   final int tempo, background, revision;
   final MusicalScale scale;
   final DateTime createdAt, updatedAt;
-  int get pointCount => strokes.fold(0, (n, s) => n + s.points.length);
+  late final int pointCount = strokes.fold(0, (n, s) => n + s.points.length);
   ProjectDocument copyWith({
     String? id,
     String? title,

@@ -8,8 +8,8 @@ class DocumentHistory {
   final List<ProjectDocument> _undo = [], _redo = [];
   bool get canUndo => _undo.isNotEmpty;
   bool get canRedo => _redo.isNotEmpty;
-  void commit(ProjectDocument next) {
-    if (next.encode() == document.encode()) return;
+  bool commit(ProjectDocument next) {
+    if (_sameContent(next, document)) return false;
     _undo.add(document);
     _redo.clear();
     document = next;
@@ -19,6 +19,7 @@ class DocumentHistory {
             _undo.fold<int>(0, (n, d) => n + d.pointCount) > 400000)) {
       _undo.removeAt(0);
     }
+    return true;
   }
 
   void undo() {
@@ -36,6 +37,37 @@ class DocumentHistory {
   }
 }
 
+// Revision and save timestamps are bookkeeping, not user edits. Shared immutable
+// geometry makes ordinary title/tempo commits cheap; decoded clones compare by
+// actual content without allocating two large JSON strings.
+bool _sameContent(ProjectDocument a, ProjectDocument b) {
+  if (identical(a, b)) return true;
+  if (a.id != b.id ||
+      a.title != b.title ||
+      a.tempo != b.tempo ||
+      a.scale != b.scale ||
+      a.background != b.background ||
+      a.createdAt != b.createdAt ||
+      a.strokes.length != b.strokes.length) {
+    return false;
+  }
+  for (var i = 0; i < a.strokes.length; i++) {
+    final x = a.strokes[i], y = b.strokes[i];
+    if (identical(x, y)) continue;
+    if (x.id != y.id ||
+        x.instrument != y.instrument ||
+        x.width != y.width ||
+        x.points.length != y.points.length) {
+      return false;
+    }
+    for (var j = 0; j < x.points.length; j++) {
+      final p = x.points[j], q = y.points[j];
+      if (p.u != q.u || p.v != q.v || p.ms != q.ms) return false;
+    }
+  }
+  return true;
+}
+
 // Clip segments against an eraser disk. Split intersections exactly so an erased
 // horizontal span becomes a real score gap, independent of sample density.
 List<Stroke> eraseAt(
@@ -47,6 +79,22 @@ List<Stroke> eraseAt(
   final result = <Stroke>[];
   var changed = false;
   for (final stroke in strokes) {
+    if (stroke.points.length > 1 && radius.isFinite && aspect.isFinite) {
+      final bounds = stroke.bounds;
+      final horizontal = aspect == 0
+          ? double.infinity
+          : radius.abs() / aspect.abs();
+      if (bounds.maxU < center.u - horizontal ||
+          bounds.minU > center.u + horizontal ||
+          bounds.maxV < center.v - radius.abs() ||
+          bounds.minV > center.v + radius.abs()) {
+        result.add(stroke);
+        continue;
+      }
+    }
+    // Track per-stroke changes: erasing an earlier stroke must not rewrite
+    // untouched later strokes (which also invalidates their cached geometry).
+    var strokeChanged = false;
     final fragments = <List<InkPoint>>[];
     var current = <InkPoint>[];
     double distance(InkPoint p) =>
@@ -90,13 +138,14 @@ List<Stroke> eraseAt(
           current.add(at(t1));
         } else {
           changed = true;
+          strokeChanged = true;
           if (current.isNotEmpty) fragments.add(current);
           current = [];
         }
       }
     }
     if (current.isNotEmpty) fragments.add(current);
-    if (fragments.length == 1 && !changed) {
+    if (!strokeChanged) {
       result.add(stroke);
     } else {
       for (var i = 0; i < fragments.length; i++) {

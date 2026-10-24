@@ -14,6 +14,45 @@ void main() {
   tearDown(() async {
     await root.delete(recursive: true);
   });
+  test(
+    '100k-point save, reopen and serialized rename retain all geometry',
+    () async {
+      final doc = ProjectDocument(
+        id: 'large',
+        tempo: 173,
+        scale: MusicalScale.minor,
+        strokes: List.generate(
+          100,
+          (s) => Stroke(
+            id: 'line_$s',
+            instrument: Instrument.values[s % 3],
+            width: .007,
+            points: List.generate(
+              1000,
+              (p) => InkPoint(p / 999, s / 100, p * 2),
+            ),
+          ),
+        ),
+      );
+      await repo.save(doc);
+      // Repeat an ordinal to exercise duplicate-save byte comparison too.
+      await repo.save(doc);
+      await Future.wait([
+        repo.rename(doc.id, 'First name'),
+        repo.rename(doc.id, 'Final name'),
+      ]);
+      final loaded = await FileProjectRepository(root).load(doc.id);
+      expect(loaded.pointCount, 100000);
+      expect(loaded.title, 'Final name');
+      expect(loaded.revision, 2);
+      expect(loaded.tempo, 173);
+      expect(loaded.scale, MusicalScale.minor);
+      expect(
+        loaded.strokes.map((s) => s.toJson()).toList(),
+        doc.strokes.map((s) => s.toJson()).toList(),
+      );
+    },
+  );
   test('save and reopen preserve complete editable music document', () async {
     final doc = ProjectDocument(
       id: 'original',
