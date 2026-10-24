@@ -47,12 +47,8 @@ class MainActivity : FlutterActivity() {
                             .setAudioFormat(AudioFormat.Builder().setSampleRate(44100)
                                 .setEncoding(AudioFormat.ENCODING_PCM_16BIT).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
                             .setTransferMode(AudioTrack.MODE_STATIC).setBufferSizeInBytes(pcm.size).build()
-                        try {
-                            check(next.state == AudioTrack.STATE_INITIALIZED) { "Audio output unavailable" }
-                            check(next.write(pcm, 0, pcm.size) == pcm.size) { "Audio preparation incomplete" }
-                            check(next.setLoopPoints(0, frames, -1) == AudioTrack.SUCCESS)
-                            track = next
-                        } catch (e: Exception) { next.release(); throw e }
+                        loadStaticPcm(AndroidStaticPcmBuffer(next), pcm)
+                        track = next
                         result.success(null)
                     }
                     "play" -> {

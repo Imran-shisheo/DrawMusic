@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/app/app.dart';
@@ -56,6 +57,17 @@ class TestAudio implements AudioEngine {
   Future<bool> isPlaying() async => playing;
   @override
   Future<void> setVolume(double value) async {}
+}
+
+class PreparationFailureAudio extends TestAudio {
+  @override
+  Future<void> prepare(Int16List pcm) async {
+    prepares++;
+    throw PlatformException(
+      code: 'audio_unavailable',
+      message: 'Audio output unavailable. Please retry.',
+    );
+  }
 }
 
 void main() {
@@ -214,4 +226,58 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
+  testWidgets(
+    'Native preparation failure leaves Play retryable and shows readable error',
+    (tester) async {
+      final audio = PreparationFailureAudio();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            repositoryProvider.overrideWith((ref) async => MemoryRepository()),
+            audioEngineProvider.overrideWithValue(audio),
+          ],
+          child: const ScribbleSongApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('New drawing'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('drawing-canvas')));
+      await tester.pumpAndSettle();
+      for (var attempt = 1; attempt <= 2; attempt++) {
+        await tester.tap(find.byTooltip('Play'));
+        for (var i = 0; i < 100 && audio.prepares < attempt; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump();
+        }
+        await tester.pump();
+        expect(audio.prepares, attempt);
+        expect(audio.playing, isFalse);
+        expect(
+          find.textContaining(
+            'Could not play. Audio output unavailable. Please retry.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.textContaining('PlatformException'), findsNothing);
+        expect(find.byTooltip('Pause'), findsNothing);
+        expect(
+          tester
+              .widget<IconButton>(
+                find
+                    .ancestor(
+                      of: find.byTooltip('Play'),
+                      matching: find.byType(IconButton),
+                    )
+                    .first,
+              )
+              .onPressed,
+          isNotNull,
+        );
+      }
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 }

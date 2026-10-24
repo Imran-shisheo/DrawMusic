@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -168,6 +169,11 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
           unawaited(_pause());
         }
       });
+    } on PlatformException catch (e) {
+      _prepared = false;
+      _message(
+        'Could not play. ${e.message ?? 'Audio output could not start. Please retry.'}',
+      );
     } catch (e) {
       _prepared = false;
       _message('Could not play. $e');

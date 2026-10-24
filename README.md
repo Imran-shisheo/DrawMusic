@@ -23,7 +23,7 @@ source cloud/env.sh
 bash scripts/check-android.sh
 ```
 
-The [verified checkpoint APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40096502571/artifacts/12561486508) is available until 2026-10-31; [draft PR #1](https://github.com/Imran-shisheo/DrawMusic/pull/1) tracks remaining work. CI produces a debug APK under the workflow run's Artifacts section after successful checks. Download/unzip it and install app-debug.apk on your test phone. It is a development build, not a signed Play Store release.
+The original checkpoint APK has a playback initialization bug. Use the **1.0.1+2 or newer** replacement linked in [draft PR #1](https://github.com/Imran-shisheo/DrawMusic/pull/1), which also tracks remaining work. CI produces a debug APK under the workflow run's Artifacts section after successful checks. Download/unzip it and install app-debug.apk on your test phone. It is a development build, not a signed Play Store release.
 
 ## iOS on your Mac
 
