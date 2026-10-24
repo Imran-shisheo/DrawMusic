@@ -101,4 +101,30 @@ class AndroidRuntimeTest {
         }
     }
 
+    @Test fun fadedPauseCanBeReversedWithoutAStalePauseOrClockReset() {
+        val attributes=AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
+        val session=StreamingAudioSession(loop(1,120),attributes)
+        try {
+            session.play();until {(session.status()["fraction"] as Double)>.01}
+            session.pause(smooth=true);SystemClock.sleep(4);session.play()
+            SystemClock.sleep(80)
+            assertEquals(true,session.status()["playing"])
+            repeat(5) {
+                session.pause(smooth=true);until {session.status()["playing"]==false}
+                assertEquals(false,session.status()["playing"])
+                val frozen=session.status()["fraction"] as Double
+                repeat(5) {
+                    SystemClock.sleep(10)
+                    assertEquals(frozen,session.status()["fraction"] as Double,1.0/44100)
+                }
+                session.setVolume(0f);session.play()
+                until {(session.status()["fraction"] as Double)!=frozen}
+            }
+            session.pause()
+            val immediate=session.status()["fraction"] as Double
+            SystemClock.sleep(50)
+            assertEquals(immediate,session.status()["fraction"] as Double,1.0/44100)
+        } finally {session.close();session.close()}
+    }
+
 }

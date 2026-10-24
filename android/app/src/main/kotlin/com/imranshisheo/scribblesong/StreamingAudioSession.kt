@@ -11,6 +11,11 @@ internal class StreamingAudioSession(initial: PcmLoop, attributes: AudioAttribut
     private val counter = PlaybackHeadCounter()
     private val monitor = Object()
     private val ioLock = Any()
+    private val envelope = AudioGainEnvelope()
+    private var userVolume = 1f
+    private var appliedVolume = Float.NaN
+    private var pauseWhenSilent = false
+    private var frozenPosition: LoopPosition? = timeline.position(0)
     @Volatile private var requestedPlaying = false
     @Volatile private var released = false
     @Volatile private var failure: String? = null
@@ -31,28 +36,63 @@ internal class StreamingAudioSession(initial: PcmLoop, attributes: AudioAttribut
         writer = Thread({ produce() }, "ScribbleSong-audio").also { it.isDaemon = true; it.start() }
     }
     fun queue(loop: PcmLoop, boundary: UpdateBoundary) { check(!released); timeline.queue(loop, boundary) }
+    private fun applyGain(now: Long):Float {
+        val gain=envelope.valueAt(now)
+        val volume=userVolume*gain
+        if(volume!=appliedVolume) {
+            check(track.setVolume(volume)==AudioTrack.SUCCESS) {"Audio gain unavailable"}
+            appliedVolume=volume
+        }
+        return gain
+    }
     fun play() {
-        check(failure == null) { failure ?: "Audio output stopped" }
-        synchronized(ioLock) { check(!released); track.play(); requestedPlaying = true }
-        synchronized(monitor) { monitor.notifyAll() }
+        synchronized(ioLock) {
+            check(!released && failure==null) {failure ?: "Audio output stopped"}
+            val now=System.nanoTime()
+            pauseWhenSilent=false
+            envelope.moveTo(1f,now)
+            applyGain(now)
+            track.play();requestedPlaying=true;frozenPosition=null
+        }
+        synchronized(monitor) {monitor.notifyAll()}
     }
-    fun pause() {
-        requestedPlaying = false
-        synchronized(ioLock) { if (!released) track.pause() }
+    fun pause(smooth:Boolean=false) {
+        synchronized(ioLock) {
+            if(released) return
+            if(smooth && requestedPlaying && track.playState==AudioTrack.PLAYSTATE_PLAYING) {
+                envelope.moveTo(0f,System.nanoTime());pauseWhenSilent=true
+            } else {
+                requestedPlaying=false;pauseWhenSilent=false
+                envelope.reset(0f);applyGain(System.nanoTime());pauseTrack()
+            }
+        }
+        synchronized(monitor) {monitor.notifyAll()}
     }
-    fun setVolume(volume: Float) = synchronized(ioLock) { if (!released) track.setVolume(volume.coerceIn(0f, 1f)) }
+    // Some outputs publish a final hardware quantum after pause() returns.
+    // Latch the cursor at the pause boundary; resume reads the hardware clock
+    // again. Do not poll a paused device and expose that settling as UI motion.
+    private fun pauseTrack() {
+        track.pause()
+        frozenPosition=timeline.position(counter.update(track.playbackHeadPosition))
+    }
+    fun setVolume(volume:Float)=synchronized(ioLock) {
+        require(volume.isFinite())
+        if(!released) {userVolume=volume.coerceIn(0f,1f);applyGain(System.nanoTime())}
+    }
     fun status(): Map<String, Any> = synchronized(ioLock) {
         check(failure == null) { failure ?: "Audio output stopped" }
-        val position = timeline.position(counter.update(if (released) 0 else track.playbackHeadPosition))
+        val position = frozenPosition ?: timeline.position(counter.update(track.playbackHeadPosition))
         mapOf("playing" to (!released && track.playState == AudioTrack.PLAYSTATE_PLAYING),
             "revision" to position.revision, "targetRevision" to position.targetRevision,
             "fraction" to position.fraction, "tempo" to position.tempo)
     }
     fun close() {
-        requestedPlaying = false
-        released = true
-        synchronized(monitor) { monitor.notifyAll() }
-        synchronized(ioLock) { track.pause(); track.flush(); track.release() }
+        synchronized(ioLock) {
+            if(released) return
+            requestedPlaying=false;pauseWhenSilent=false;released=true
+            pauseTrack();track.flush();track.release()
+        }
+        synchronized(monitor) {monitor.notifyAll()}
         writer.join(100)
     }
     private fun produce() {
@@ -67,9 +107,16 @@ internal class StreamingAudioSession(initial: PcmLoop, attributes: AudioAttribut
                 val next = chunk ?: timeline.nextChunk(512).also { chunk = it; sentBytes = 0; blended = transitionPcm(it) }
                 val count = synchronized(ioLock) {
                     if (released || !requestedPlaying) 0 else {
+                        val now=System.nanoTime()
+                        applyGain(now)
+                        if(pauseWhenSilent && envelope.finished(now)) {
+                            requestedPlaying=false;pauseWhenSilent=false;pauseTrack()
+                            0
+                        } else {
                         timeline.position(counter.update(track.playbackHeadPosition)) // prune consumed clock spans
                         track.write(blended ?: next.loop.pcm, (if (blended == null) next.offsetFrames * 2 else 0) + sentBytes,
                             next.frames * 2 - sentBytes, AudioTrack.WRITE_NON_BLOCKING)
+                        }
                     }
                 }
                 check(count >= 0 && count % 2 == 0) { "Audio write failed ($count). Please retry." }

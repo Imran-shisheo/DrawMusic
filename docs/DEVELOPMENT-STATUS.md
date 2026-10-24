@@ -131,3 +131,12 @@ Local full checks pass: formatter, analyzer, 41 Flutter tests, 14 JVM tests, deb
 ### Export-library channel wiring correction
 
 Actions 40123615425 passed all 41 Flutter tests, all four native tests (including byte-for-byte public Downloads copying) and independent MIDI/WAV/MP4 inspection. The full UI flow failed at public Save because the file-action MethodChannel had not been registered in MainActivity. The Activity now registers it during Flutter engine configuration. The integration test also stops immediately on a visible Save failure and prints visible text on other condition timeouts. Local formatter/analyzer, 41 Flutter tests, 14 JVM tests, APK build and v2 signature verification passed after the correction. Hosted UI acceptance is being rerun; PR #4 remains unmerged until it passes.
+
+
+## Transport polish — 1.5.0+8, local checkpoint
+
+Tempo controls now repeat on hold, stop at limits/release/cancel/background/modal/disposal, and retain accessible tap labels. Tooltip gesture handling was corrected after the new hold tests found that default tooltips intercepted the long press. Live update rendering is bounded to one task with latest-revision coalescing. A regression test demonstrated that editing during native preparation previously canceled Play; preparation now retries the latest document and plays it once, with stale session polls ignored.
+
+Native preview gain uses a 16 ms monotonic ramp for start/resume and explicit user Pause, driven from the existing native writer rather than Dart musical timers. Rapid resume reverses the current gain ramp; pause/focus/noisy-route/background interruptions can still mute immediately, and close is idempotent. Physical click/latency/route acceptance remains pending. Four new JVM envelope tests pass. The new native test exercises smooth pause reversal, clock preservation, muted playback and repeated close; it compiles but has not run yet.
+
+Local product checks passed formatter/analyzer, 45 Flutter tests, 18 JVM tests, debug APK build and APK v2 signature verification. The five-test instrumentation APK compiles. Hosted transport/replay execution is pending. PR #4's file-action channel registration correction is included in this source. Its hosted UI rerun is pending. PR #5 targets main to run CI for the combined runtime and will be merged only after #4 and its own relevant checks pass.

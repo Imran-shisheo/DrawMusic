@@ -62,7 +62,7 @@ class MainActivity : FlutterActivity() {
                         check(granted == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) { "Another app has audio focus" }
                         active.play(); result.success(null)
                     }
-                    "pause" -> { session?.pause(); abandonFocus(); result.success(null) }
+                    "pause" -> { session?.pause(smooth=true); abandonFocus(); result.success(null) }
                     "stop" -> { releaseTrack(); result.success(null) }
                     "volume" -> { session?.setVolume((call.arguments as Number).toFloat().coerceIn(0f, 1f)); result.success(null) }
                     "queue" -> {

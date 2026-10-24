@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -64,7 +65,7 @@ class MemoryRepository implements ProjectRepository {
 
 class TestAudio implements AudioEngine {
   double volume = 1;
-  int prepares = 0;
+  int prepares = 0, plays = 0;
   bool playing = false;
   int revision = 0, tempo = 120;
   final queued = <({int revision, int tempo, UpdateBoundary boundary})>[];
@@ -100,6 +101,7 @@ class TestAudio implements AudioEngine {
   );
   @override
   Future<void> play() async {
+    plays++;
     playing = true;
   }
 
@@ -120,6 +122,21 @@ class TestAudio implements AudioEngine {
   @override
   Future<void> setVolume(double value) async {
     volume = value;
+  }
+}
+
+class DelayedPreparationAudio extends TestAudio {
+  final firstPreparation = Completer<void>();
+  int starts = 0;
+  @override
+  Future<void> prepare(
+    Int16List pcm, {
+    int revision = 0,
+    int tempo = 120,
+  }) async {
+    starts++;
+    if (starts == 1) await firstPreparation.future;
+    await super.prepare(pcm, revision: revision, tempo: tempo);
   }
 }
 
@@ -526,4 +543,52 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     },
   );
+  testWidgets('edits during native preparation start only the latest score', (
+    tester,
+  ) async {
+    final audio = DelayedPreparationAudio();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          preferencesStoreProvider.overrideWith(
+            (ref) async => MemoryPreferencesStore(),
+          ),
+          repositoryProvider.overrideWith((ref) async => MemoryRepository()),
+          audioEngineProvider.overrideWithValue(audio),
+        ],
+        child: const ScribbleSongApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New drawing'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('drawing-canvas')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Play'));
+    for (var i = 0; i < 100 && audio.starts == 0; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+    expect(audio.starts, 1);
+    await tester.tap(find.byTooltip('Faster'));
+    await tester.pump();
+    audio.firstPreparation.complete();
+    for (var i = 0; i < 100 && !audio.playing; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    }
+    expect(audio.playing, isTrue);
+    expect(audio.starts, 2);
+    expect(audio.plays, 1);
+    final document = tester
+        .widget<DrawingCanvas>(find.byType(DrawingCanvas))
+        .document;
+    expect(audio.revision, document.revision);
+    expect(audio.tempo, 121);
+    await tester.pumpWidget(const SizedBox());
+  });
 }
