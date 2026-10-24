@@ -8,6 +8,7 @@ import pathlib
 import subprocess
 import sys
 import wave
+import numpy as np
 
 video=pathlib.Path(sys.argv[1])
 wav=pathlib.Path(sys.argv[2])
@@ -30,14 +31,17 @@ with wave.open(str(wav)) as w:
 assert expected_duration-.01<=ad<=expected_duration+.15,(ad,expected_duration)
 decoded=array.array('h',subprocess.check_output(['ffmpeg','-v','error','-i',str(video),'-map','0:a:0','-ac','1','-ar','44100','-f','s16le','pipe:1']))
 assert math.sqrt(sum(x*x for x in decoded)/len(decoded))>100
-# A bounded correlation search verifies the codec did not shift audio by a frame.
-ref=reference[::44];out=decoded[::44]
-best=(-2,None)
-for lag in range(-50,51):
-    pairs=[(ref[i],out[i+lag]) for i in range(max(0,-lag),min(len(ref),len(out)-lag))]
-    norm=math.sqrt(sum(x*x for x,y in pairs)*sum(y*y for x,y in pairs))
-    correlation=sum(x*y for x,y in pairs)/norm if norm else 0
-    if correlation>best[0]:best=(correlation,lag*44/44.1)
+# Sample-precision FFT correlation avoids pitch-period aliases and coarse
+# downsampling phase errors. Both signals include the full onset/release envelope.
+ref=np.asarray(reference,dtype=np.float64);out=np.asarray(decoded,dtype=np.float64)
+size=1 << (len(ref)+len(out)-2).bit_length()
+cross=np.fft.irfft(np.fft.rfft(out,size)*np.conj(np.fft.rfft(ref,size)),size)
+limit=round(.05*44100)
+lags=np.arange(-limit,limit+1)
+norm=np.sqrt(np.dot(ref,ref)*np.dot(out,out))
+correlations=cross[lags % size]/norm
+index=int(np.argmax(correlations))
+best=(float(correlations[index]),float(lags[index]*1000/44100))
 assert best[0]>.75,best
 assert abs(best[1])<=1000/30,best
 cursor_checks=[]
