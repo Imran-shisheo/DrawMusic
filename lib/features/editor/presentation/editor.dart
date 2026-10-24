@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/providers.dart';
 import '../../../creative_document/document.dart';
+import '../../../design_system/name_dialog.dart';
 import '../../composition/domain/score.dart';
 import '../../export/presentation/export_sheet.dart';
 import '../../transport/domain/audio_engine.dart';
@@ -47,14 +48,15 @@ class EditorPage extends ConsumerWidget {
           ),
         ),
         data: (doc) => ProviderScope(
-          overrides: [initialDocumentProvider.overrideWithValue(doc)],
-          child: const EditorWorkspace(),
+          overrides: [initialDocumentProvider.overrideWithValue(doc.document)],
+          child: EditorWorkspace(recovered: doc.recovered),
         ),
       );
 }
 
 class EditorWorkspace extends ConsumerStatefulWidget {
-  const EditorWorkspace({super.key});
+  const EditorWorkspace({super.key, this.recovered = false});
+  final bool recovered;
   @override
   ConsumerState<EditorWorkspace> createState() => _EditorWorkspaceState();
 }
@@ -71,7 +73,11 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
   final _cursor = ValueNotifier<double?>(null);
   final _canvas = GlobalKey<DrawingCanvasState>();
   Timer? _poll;
-  int _audioGeneration = 0;
+  int _audioGeneration = 0, _renderGeneration = 0;
+  int _wantedRevision = -1, _queuedRevision = -1, _heardRevision = -1;
+  UpdateBoundary? _pendingBoundary;
+  Timer? _updateDebounce;
+  bool _pollInFlight = false;
   late final AudioEngine _engine;
   @override
   void initState() {
@@ -85,6 +91,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     WidgetsBinding.instance.removeObserver(this);
     _poll?.cancel();
     _audioGeneration++;
+    _renderGeneration++;
+    _updateDebounce?.cancel();
     unawaited(_engine.stop());
     _cursor.dispose();
     super.dispose();
@@ -108,6 +116,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
 
   Future<void> _pause() async {
     _audioGeneration++;
+    _renderGeneration++;
+    _updateDebounce?.cancel();
     _poll?.cancel();
     try {
       await ref.read(audioEngineProvider).pause();
@@ -118,12 +128,84 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
   }
 
   void _edit(ProjectDocument next) {
-    // Interim policy: pause on committed edits so preview never plays stale notes.
-    _audioGeneration++;
-    unawaited(_pause());
-    _prepared = false;
-    _cursor.value = null;
+    final previous = ref.read(editorProvider).document;
+    if (next.revision <= previous.revision) {
+      next = next.copyWith(revision: previous.revision + 1);
+    }
     ref.read(editorProvider.notifier).commit(next);
+    _documentChanged(previous, next);
+  }
+
+  void _historyEdit({required bool redo}) {
+    final previous = ref.read(editorProvider).document;
+    final controller = ref.read(editorProvider.notifier);
+    if (redo) {
+      controller.redo();
+    } else {
+      controller.undo();
+    }
+    _documentChanged(previous, ref.read(editorProvider).document);
+  }
+
+  void _documentChanged(ProjectDocument previous, ProjectDocument next) {
+    final geometry =
+        !listEquals(previous.strokes, next.strokes) ||
+        previous.scale != next.scale;
+    final tempo = previous.tempo != next.tempo;
+    if (!geometry && !tempo) return;
+    _wantedRevision = next.revision;
+    _renderGeneration++;
+    if (!_prepared) {
+      _audioGeneration++;
+      _cursor.value = null;
+      return;
+    }
+    if (geometry || _pendingBoundary == UpdateBoundary.loop) {
+      _pendingBoundary = UpdateBoundary.loop;
+    } else {
+      _pendingBoundary = UpdateBoundary.beat;
+    }
+    _updateDebounce?.cancel();
+    _updateDebounce = Timer(
+      const Duration(milliseconds: 100),
+      () => unawaited(_renderAndQueue()),
+    );
+  }
+
+  Future<void> _renderAndQueue() async {
+    final generation = ++_renderGeneration;
+    final session = _audioGeneration;
+    final document = ref.read(editorProvider).document;
+    final boundary = _pendingBoundary ?? UpdateBoundary.loop;
+    final revision = _wantedRevision;
+    try {
+      final score = compileScore(document);
+      final pcm = await compute(
+        (ScoreSnapshot score) => renderPcm(score, loop: true),
+        score,
+      );
+      if (!mounted ||
+          generation != _renderGeneration ||
+          session != _audioGeneration ||
+          !_prepared) {
+        return;
+      }
+      await _engine.queue(
+        pcm,
+        revision: revision,
+        tempo: document.tempo,
+        boundary: boundary,
+      );
+      if (mounted && generation == _renderGeneration) {
+        _queuedRevision = revision;
+      }
+    } catch (error) {
+      if (mounted && generation == _renderGeneration) {
+        await _pause();
+        _prepared = false;
+        _message('Could not update playback. $error');
+      }
+    }
   }
 
   Future<void> _play({bool replay = false}) async {
@@ -141,13 +223,28 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       if (score.notes.isEmpty) return;
       final engine = ref.read(audioEngineProvider);
       if (!_prepared || replay) {
+        _renderGeneration++;
+        _updateDebounce?.cancel();
         final pcm = await compute(
           (ScoreSnapshot s) => renderPcm(s, loop: true),
           score,
         );
         if (!mounted || token != _audioGeneration) return;
-        await engine.prepare(pcm);
+        await engine.prepare(
+          pcm,
+          revision: document.revision,
+          tempo: document.tempo,
+        );
+        if (!mounted || token != _audioGeneration) {
+          await engine.stop();
+          _prepared = false;
+          return;
+        }
         _prepared = true;
+        _wantedRevision = _queuedRevision = _heardRevision = document.revision;
+        _pendingBoundary = null;
+      } else if (_queuedRevision != _wantedRevision) {
+        await _renderAndQueue();
       }
       if (!mounted || token != _audioGeneration) return;
       await engine.play();
@@ -158,15 +255,30 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       setState(() => _playing = true);
       _poll?.cancel();
       _poll = Timer.periodic(const Duration(milliseconds: 50), (_) async {
+        if (_pollInFlight) return;
+        _pollInFlight = true;
         try {
-          if (!await engine.isPlaying()) {
+          final status = await engine.status();
+          if (!mounted || !_playing) return;
+          if (!status.playing) {
             await _pause();
             return;
           }
-          final seconds = await engine.positionSeconds();
-          if (mounted && _playing) _cursor.value = seconds / score.loopSeconds;
-        } catch (_) {
-          unawaited(_pause());
+          _cursor.value = status.fraction;
+          if (_heardRevision != status.revision) {
+            setState(() {
+              _heardRevision = status.revision;
+              if (_heardRevision == _wantedRevision) _pendingBoundary = null;
+            });
+          }
+        } catch (error) {
+          if (mounted) {
+            await _pause();
+            _prepared = false;
+            _message('Playback stopped. Please retry.');
+          }
+        } finally {
+          _pollInFlight = false;
         }
       });
     } on PlatformException catch (e) {
@@ -207,35 +319,57 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     }
   }
 
-  Future<void> _rename() async {
-    final text = TextEditingController(
-      text: ref.read(editorProvider).document.title,
-    );
-    final value = await showDialog<String>(
+  void _changeTempo(int delta) {
+    final document = ref.read(editorProvider).document;
+    final tempo = (document.tempo + delta).clamp(60, 200);
+    if (tempo != document.tempo) _edit(document.copyWith(tempo: tempo));
+  }
+
+  Future<void> _tempoPanel() async {
+    var tempo = ref.read(editorProvider).document.tempo;
+    final chosen = await showDialog<int>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Name your drawing'),
-        content: TextField(
-          controller: text,
-          autofocus: true,
-          maxLength: 60,
-          decoration: const InputDecoration(labelText: 'Title'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialog) => AlertDialog(
+          title: const Text('Loop tempo'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('$tempo BPM'),
+              Slider(
+                min: 60,
+                max: 200,
+                divisions: 140,
+                value: tempo.toDouble(),
+                label: '$tempo BPM',
+                onChanged: (value) => setDialog(() => tempo = value.round()),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, tempo),
+              child: const Text('Apply'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, text.text.trim()),
-            child: const Text('Apply'),
-          ),
-        ],
       ),
     );
-    // The route transition may still refer to its controller until the next frame.
-    Future<void>.delayed(const Duration(milliseconds: 400), text.dispose);
-    if (value != null && value.isNotEmpty && mounted) {
+    if (chosen != null && mounted) {
+      _edit(ref.read(editorProvider).document.copyWith(tempo: chosen));
+    }
+  }
+
+  Future<void> _rename() async {
+    final value = await askDrawingName(
+      context,
+      ref.read(editorProvider).document.title,
+    );
+    if (value != null && mounted) {
       _edit(ref.read(editorProvider).document.copyWith(title: value));
     }
   }
@@ -396,6 +530,10 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: Column(
               children: [
+                if (widget.recovered)
+                  const Text(
+                    'Recovered the previous complete revision. The damaged file is preserved.',
+                  ),
                 if (repo.hasError)
                   const Text(
                     'Storage unavailable. Retry from Drafts before leaving.',
@@ -411,17 +549,16 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                   children: [
                     IconButton(
                       tooltip: 'Slower',
-                      onPressed: doc.tempo > 60
-                          ? () => _edit(doc.copyWith(tempo: doc.tempo - 1))
-                          : null,
+                      onPressed: doc.tempo > 60 ? () => _changeTempo(-1) : null,
                       icon: const Icon(Icons.remove),
                     ),
-                    Text('${doc.tempo} BPM'),
+                    TextButton(
+                      onPressed: _tempoPanel,
+                      child: Text('${doc.tempo} BPM'),
+                    ),
                     IconButton(
                       tooltip: 'Faster',
-                      onPressed: doc.tempo < 200
-                          ? () => _edit(doc.copyWith(tempo: doc.tempo + 1))
-                          : null,
+                      onPressed: doc.tempo < 200 ? () => _changeTempo(1) : null,
                       icon: const Icon(Icons.add),
                     ),
                     IconButton(
@@ -470,7 +607,14 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                           ),
                         ],
                         onChanged: (scale) {
-                          if (scale != null) _edit(doc.copyWith(scale: scale));
+                          if (scale != null) {
+                            _edit(
+                              ref
+                                  .read(editorProvider)
+                                  .document
+                                  .copyWith(scale: scale),
+                            );
+                          }
                         },
                       ),
                     ],
@@ -487,8 +631,12 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                         instrument: _instrument,
                         eraser: _eraser,
                         cursor: _cursor,
-                        onCommit: (strokes) =>
-                            _edit(doc.copyWith(strokes: strokes)),
+                        onCommit: (strokes) => _edit(
+                          ref
+                              .read(editorProvider)
+                              .document
+                              .copyWith(strokes: strokes),
+                        ),
                         onLimit: () => _message(
                           '100,000 point limit reached. Save this drawing and start a new one.',
                         ),
@@ -503,9 +651,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       tooltip: 'Undo',
                       onPressed: controller.canUndo
                           ? () {
-                              unawaited(_pause());
-                              _prepared = false;
-                              controller.undo();
+                              _historyEdit(redo: false);
                             }
                           : null,
                       icon: const Icon(Icons.undo),
@@ -514,16 +660,15 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       tooltip: 'Redo',
                       onPressed: controller.canRedo
                           ? () {
-                              unawaited(_pause());
-                              _prepared = false;
-                              controller.redo();
+                              _historyEdit(redo: true);
                             }
                           : null,
                       icon: const Icon(Icons.redo),
                     ),
                     IconButton.filled(
                       tooltip: _playing ? 'Pause' : 'Play',
-                      onPressed: doc.strokes.isEmpty || _preparing
+                      onPressed:
+                          (!_playing && doc.strokes.isEmpty) || _preparing
                           ? null
                           : () => _play(),
                       icon: _preparing
@@ -544,6 +689,13 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                     ),
                   ],
                 ),
+                if (_prepared && _wantedRevision != _heardRevision)
+                  Text(
+                    _pendingBoundary == UpdateBoundary.beat
+                        ? 'Updates next beat'
+                        : 'Updates next loop',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 Text(
                   doc.strokes.isEmpty
                       ? 'Draw something to hear it.'

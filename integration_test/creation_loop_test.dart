@@ -1,0 +1,122 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:scribblesong/main.dart' as app;
+import 'package:scribblesong/features/editor/presentation/canvas.dart';
+import 'package:scribblesong/features/transport/data/android_audio_engine.dart';
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  testWidgets(
+    'Android creation, boundary playback, save/reopen and real exports',
+    (tester) async {
+      Future<void> until(
+        Future<bool> Function() condition, {
+        int seconds = 120,
+      }) async {
+        final deadline = DateTime.now().add(Duration(seconds: seconds));
+        while (!await condition()) {
+          if (DateTime.now().isAfter(deadline)) {
+            fail('Timed out waiting for the Android creation/export flow');
+          }
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.pump();
+      }
+
+      app.main();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Paper hills'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('drawing-canvas')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Play'));
+      final audio = AndroidAudioEngine();
+      await until(
+        () async =>
+            (await audio.status()).playing &&
+            (await audio.status()).fraction > 0,
+      );
+      await tester.tap(find.byTooltip('Faster'));
+      await tester.pump();
+      final expected = tester
+          .widget<DrawingCanvas>(find.byType(DrawingCanvas))
+          .document;
+      expect(expected.tempo, 121);
+      await until(
+        () async => (await audio.status()).revision == expected.revision,
+      );
+      expect((await audio.status()).playing, isTrue);
+      expect((await audio.status()).tempo, 121);
+      await tester.tap(find.byTooltip('Pause'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Save drawing'));
+      await until(
+        () async => find.text('Saved on this device').evaluate().isNotEmpty,
+      );
+      final snapshot = tester
+          .widget<DrawingCanvas>(find.byType(DrawingCanvas))
+          .document;
+      expect(snapshot.strokes.length, 2);
+      final cache = await getTemporaryDirectory();
+      await File('${cache.path}/ui-project.json')
+          .writeAsString(snapshot.encode());
+      await tester.tap(find.byTooltip('Export loop'));
+      await tester.pumpAndSettle();
+      final resolution = find.byType(DropdownButton<int>);
+      await tester.ensureVisible(resolution);
+      await tester.tap(resolution);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Compact · 640 × 800 · 30 fps').last);
+      await tester.pumpAndSettle();
+      Future<File> export(String label, String extension) async {
+        await tester.ensureVisible(find.text(label));
+        await tester.tap(find.text(label));
+        await tester.pump();
+        await until(
+          () async =>
+              find.text('Export ready on this device.').evaluate().isNotEmpty,
+          seconds: 240,
+        );
+        final root = await getApplicationDocumentsDirectory();
+        final files = await Directory('${root.path}/exports')
+            .list()
+            .where((f) => f is File && f.path.endsWith(extension))
+            .cast<File>()
+            .toList();
+        expect(files.length, 1);
+        expect(await files.single.length(), greaterThan(0));
+        return files.single;
+      }
+
+      final video = await export('Export MP4', '.mp4');
+      await video.copy('${cache.path}/ui-export-video.mp4');
+      final wav = await export('Export WAV', '.wav');
+      await wav.copy('${cache.path}/ui-export-audio.wav');
+      final midi = await export('Export MIDI', '.mid');
+      await midi.copy('${cache.path}/ui-export-notes.mid');
+      await tester.ensureVisible(find.text('Close'));
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Back to gallery'));
+      // Real disk saves can finish after pumpAndSettle sees no scheduled frame.
+      await until(() async => find.text('Drafts').evaluate().isNotEmpty);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Drafts'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Paper hills'));
+      await until(() async => find.byType(DrawingCanvas).evaluate().isNotEmpty);
+      await tester.pumpAndSettle();
+      final reopened = tester
+          .widget<DrawingCanvas>(find.byType(DrawingCanvas))
+          .document;
+      expect(reopened.id, snapshot.id);
+      expect(reopened.tempo, 121);
+      expect(reopened.strokes.length, 2);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+}

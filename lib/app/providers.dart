@@ -24,10 +24,10 @@ final initialDocumentProvider = Provider<ProjectDocument>(
   dependencies: [],
 );
 final openedDocumentProvider = FutureProvider.autoDispose
-    .family<ProjectDocument, String>((ref, id) async {
-      if (id == 'new') return ProjectDocument(id: newId());
-      if (id.startsWith('template-')) return makeTemplate(id);
-      return (await ref.watch(repositoryProvider.future)).load(id);
+    .family<ProjectLoad, String>((ref, id) async {
+      if (id == 'new') return ProjectLoad(ProjectDocument(id: newId()));
+      if (id.startsWith('template-')) return ProjectLoad(makeTemplate(id));
+      return (await ref.watch(repositoryProvider.future)).open(id);
     });
 
 ProjectDocument makeTemplate(String id) {
