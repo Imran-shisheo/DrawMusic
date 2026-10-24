@@ -73,6 +73,20 @@ void main() {
       );
       expect((await audio.status()).playing, isTrue);
       expect((await audio.status()).tempo, 121);
+      await tester.tap(find.byTooltip('Replay'));
+      await tester.tap(find.byTooltip('Faster'));
+      await tester.pump();
+      final replayed = tester
+          .widget<DrawingCanvas>(find.byType(DrawingCanvas))
+          .document;
+      expect(replayed.tempo, 122);
+      await until(
+        () async =>
+            (await audio.status()).playing &&
+            (await audio.status()).revision == replayed.revision &&
+            (await audio.status()).tempo == 122,
+      );
+
       await tester.tap(find.byTooltip('Pause'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Save drawing'));
@@ -171,7 +185,7 @@ void main() {
           .widget<DrawingCanvas>(find.byType(DrawingCanvas))
           .document;
       expect(reopened.id, snapshot.id);
-      expect(reopened.tempo, 121);
+      expect(reopened.tempo, 122);
       expect(reopened.strokes.length, 2);
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();

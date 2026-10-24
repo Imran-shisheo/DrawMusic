@@ -10,6 +10,7 @@ import '../../../app/providers.dart';
 import '../../settings/application/settings_controller.dart';
 import '../../../creative_document/document.dart';
 import '../../../design_system/name_dialog.dart';
+import '../../../design_system/repeating_icon_button.dart';
 import '../../composition/domain/score.dart';
 import '../../export/presentation/export_sheet.dart';
 import '../../transport/domain/audio_engine.dart';
@@ -79,6 +80,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
   UpdateBoundary? _pendingBoundary;
   Timer? _updateDebounce;
   bool _pollInFlight = false;
+  Future<void>? _updateRenderTask;
+  bool _renderLatestAgain = false;
   late final AudioEngine _engine;
   @override
   void initState() {
@@ -156,15 +159,19 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     if (!geometry && !tempo) return;
     _wantedRevision = next.revision;
     _renderGeneration++;
-    if (!_prepared) {
-      _audioGeneration++;
-      _cursor.value = null;
-      return;
-    }
     if (geometry || _pendingBoundary == UpdateBoundary.loop) {
       _pendingBoundary = UpdateBoundary.loop;
     } else {
       _pendingBoundary = UpdateBoundary.beat;
+    }
+    if (_preparing) {
+      _updateDebounce?.cancel();
+      return;
+    }
+    if (!_prepared) {
+      _audioGeneration++;
+      _cursor.value = null;
+      return;
     }
     _updateDebounce?.cancel();
     _updateDebounce = Timer(
@@ -173,7 +180,32 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     );
   }
 
-  Future<void> _renderAndQueue() async {
+  Future<void> _renderAndQueue() {
+    if (!mounted || !_prepared || _queuedRevision == _wantedRevision) {
+      return Future.value();
+    }
+    final current = _updateRenderTask;
+    if (current != null) {
+      _renderLatestAgain = true;
+      return current;
+    }
+    final task = _renderQueuedSnapshot().whenComplete(() {
+      _updateRenderTask = null;
+      final again = _renderLatestAgain;
+      _renderLatestAgain = false;
+      if (again &&
+          mounted &&
+          !_preparing &&
+          _prepared &&
+          _queuedRevision != _wantedRevision) {
+        unawaited(_renderAndQueue());
+      }
+    });
+    _updateRenderTask = task;
+    return task;
+  }
+
+  Future<void> _renderQueuedSnapshot() async {
     final generation = ++_renderGeneration;
     final session = _audioGeneration;
     final document = ref.read(editorProvider).document;
@@ -217,37 +249,61 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       return;
     }
     final token = ++_audioGeneration;
-    setState(() => _preparing = true);
+    _renderGeneration++;
+    _renderLatestAgain = false;
+    _updateDebounce?.cancel();
+    _poll?.cancel();
+    setState(() {
+      _preparing = true;
+      _playing = false;
+    });
     try {
-      final document = ref.read(editorProvider).document;
-      final score = compileScore(document);
-      if (score.notes.isEmpty) return;
       final engine = ref.read(audioEngineProvider);
       if (!_prepared || replay) {
-        _renderGeneration++;
-        _updateDebounce?.cancel();
-        final pcm = await compute(
-          (ScoreSnapshot s) => renderPcm(s, loop: true),
-          score,
-        );
-        if (!mounted || token != _audioGeneration) return;
-        await engine.prepare(
-          pcm,
-          revision: document.revision,
-          tempo: document.tempo,
-        );
-        if (!mounted || token != _audioGeneration) {
-          await engine.stop();
-          _prepared = false;
-          return;
+        _prepared = false;
+        _cursor.value = null;
+        await engine.pause();
+        final update = _updateRenderTask;
+        if (update != null) await update;
+        while (mounted && token == _audioGeneration) {
+          final document = ref.read(editorProvider).document;
+          final score = compileScore(document);
+          if (score.notes.isEmpty) return;
+          final pcm = await compute(
+            (ScoreSnapshot s) => renderPcm(s, loop: true),
+            score,
+          );
+          if (!mounted || token != _audioGeneration) return;
+          if (document.revision != ref.read(editorProvider).document.revision) {
+            continue;
+          }
+          await engine.prepare(
+            pcm,
+            revision: document.revision,
+            tempo: document.tempo,
+          );
+          if (!mounted || token != _audioGeneration) {
+            await engine.stop();
+            _prepared = false;
+            return;
+          }
+          if (document.revision != ref.read(editorProvider).document.revision) {
+            continue;
+          }
+          _prepared = true;
+          _wantedRevision = _queuedRevision = _heardRevision =
+              document.revision;
+          _pendingBoundary = null;
+          break;
         }
-        _prepared = true;
-        _wantedRevision = _queuedRevision = _heardRevision = document.revision;
-        _pendingBoundary = null;
-      } else if (_queuedRevision != _wantedRevision) {
-        await _renderAndQueue();
+      } else {
+        while (mounted &&
+            token == _audioGeneration &&
+            _wantedRevision != _queuedRevision) {
+          await _renderAndQueue();
+        }
       }
-      if (!mounted || token != _audioGeneration) return;
+      if (!mounted || token != _audioGeneration || !_prepared) return;
       await engine.setVolume(
         ref.read(settingsProvider).preferences.previewVolume,
       );
@@ -257,13 +313,12 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         return;
       }
       setState(() => _playing = true);
-      _poll?.cancel();
       _poll = Timer.periodic(const Duration(milliseconds: 50), (_) async {
         if (_pollInFlight) return;
         _pollInFlight = true;
         try {
           final status = await engine.status();
-          if (!mounted || !_playing) return;
+          if (!mounted || token != _audioGeneration || !_playing) return;
           if (!status.playing) {
             await _pause();
             return;
@@ -276,7 +331,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
             });
           }
         } catch (error) {
-          if (mounted) {
+          if (mounted && token == _audioGeneration) {
             await _pause();
             _prepared = false;
             _message('Playback stopped. Please retry.');
@@ -294,7 +349,16 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       _prepared = false;
       _message('Could not play. $e');
     } finally {
-      if (mounted) setState(() => _preparing = false);
+      if (mounted) {
+        setState(() => _preparing = false);
+        if (_playing && _prepared && _wantedRevision != _queuedRevision) {
+          _updateDebounce?.cancel();
+          _updateDebounce = Timer(
+            const Duration(milliseconds: 100),
+            () => unawaited(_renderAndQueue()),
+          );
+        }
+      }
     }
   }
 
@@ -560,19 +624,19 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                 Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    IconButton(
+                    RepeatingIconButton(
                       tooltip: 'Slower',
-                      onPressed: doc.tempo > 60 ? () => _changeTempo(-1) : null,
-                      icon: const Icon(Icons.remove),
+                      onStep: doc.tempo > 60 ? () => _changeTempo(-1) : null,
+                      icon: Icons.remove,
                     ),
                     TextButton(
                       onPressed: _tempoPanel,
                       child: Text('${doc.tempo} BPM'),
                     ),
-                    IconButton(
+                    RepeatingIconButton(
                       tooltip: 'Faster',
-                      onPressed: doc.tempo < 200 ? () => _changeTempo(1) : null,
-                      icon: const Icon(Icons.add),
+                      onStep: doc.tempo < 200 ? () => _changeTempo(1) : null,
+                      icon: Icons.add,
                     ),
                     IconButton(
                       tooltip: 'Paper color',
