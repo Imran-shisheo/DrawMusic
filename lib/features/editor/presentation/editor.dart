@@ -644,7 +644,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     );
     final repo = ref.watch(repositoryProvider);
     repo.whenData((repository) {
-      if (!state.saving && state.savedRevision < 0) {
+      if (!state.saving && state.savedRevision < 0 && state.error == null) {
         Future.microtask(
           () => mounted ? controller.attachRepository(repository) : null,
         );
