@@ -13,6 +13,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var videoExports: VideoExportChannel? = null
     private var session: StreamingAudioSession? = null
     private var focusRequest: AudioFocusRequest? = null
     private val audioManager by lazy { getSystemService(Context.AUDIO_SERVICE) as AudioManager }
@@ -26,6 +27,7 @@ class MainActivity : FlutterActivity() {
     }
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        videoExports=VideoExportChannel(applicationContext,flutterEngine.dartExecutor.binaryMessenger)
         if (Build.VERSION.SDK_INT >= 33) {
             registerReceiver(noisyReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY), Context.RECEIVER_NOT_EXPORTED)
         } else {
@@ -83,5 +85,5 @@ class MainActivity : FlutterActivity() {
     }
     private fun releaseTrack() { session?.close(); session = null; abandonFocus() }
     override fun onPause() { session?.pause(); abandonFocus(); super.onPause() }
-    override fun onDestroy() { releaseTrack(); unregisterReceiver(noisyReceiver); super.onDestroy() }
+    override fun onDestroy() { videoExports?.close(); releaseTrack(); unregisterReceiver(noisyReceiver); super.onDestroy() }
 }

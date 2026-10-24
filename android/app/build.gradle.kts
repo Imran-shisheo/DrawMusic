@@ -17,6 +17,7 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.imranshisheo.scribblesong"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -28,6 +29,8 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
+
+    sourceSets.getByName("androidTest").assets.srcDir("../../work/runtime-fixtures")
 
     buildTypes {
         release {
@@ -49,5 +52,13 @@ flutter {
 }
 
 dependencies {
+    // Align Flutter integration_test's older dynamic AndroidX ranges with the
+    // native runner under AGP's consistent debug/test dependency resolution.
+    debugImplementation("androidx.test:runner:1.6.2")
+    debugImplementation("androidx.test:rules:1.6.1")
+    debugImplementation("androidx.test.ext:junit:1.2.1")
+    debugImplementation("androidx.test.espresso:espresso-core:3.6.1")
     testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
 }
