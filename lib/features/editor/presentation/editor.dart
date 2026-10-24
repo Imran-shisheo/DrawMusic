@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,6 +13,7 @@ import '../../settings/application/settings_controller.dart';
 import '../../../creative_document/document.dart';
 import '../../../design_system/name_dialog.dart';
 import '../../../design_system/paper_panel.dart';
+import '../../../design_system/style_panel.dart';
 import '../../../design_system/repeating_icon_button.dart';
 import '../../composition/domain/score.dart';
 import '../../export/presentation/export_sheet.dart';
@@ -518,6 +520,26 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     }
   }
 
+  Future<void> _drawingStyle() async {
+    _canvas.currentState?.finish();
+    final value = await showStylePanel(
+      context,
+      ref.read(editorProvider).document.style,
+    );
+    if (value != null && mounted) {
+      _edit(ref.read(editorProvider).document.copyWith(style: value));
+      if (mounted) {
+        await SemanticsService.sendAnnouncement(
+          View.of(context),
+          value == DrawingStyle.smooth
+              ? 'Smooth drawing style selected'
+              : 'Pixel drawing style selected',
+          Directionality.of(context),
+        );
+      }
+    }
+  }
+
   Future<void> _background() async {
     _canvas.currentState?.finish();
     final value = await showPaperPanel(
@@ -699,6 +721,15 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       tooltip: 'Faster',
                       onStep: doc.tempo < 200 ? () => _changeTempo(1) : null,
                       icon: Icons.add,
+                    ),
+                    IconButton(
+                      tooltip: 'Drawing style',
+                      onPressed: _drawingStyle,
+                      icon: Icon(
+                        doc.style == DrawingStyle.smooth
+                            ? Icons.gesture
+                            : Icons.grid_on,
+                      ),
                     ),
                     IconButton(
                       tooltip: 'Paper color',

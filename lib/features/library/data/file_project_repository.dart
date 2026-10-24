@@ -145,6 +145,7 @@ class FileProjectRepository implements ProjectRepository {
       tempo: document.tempo,
       scale: document.scale,
       background: document.background,
+      style: document.style,
     );
     await _save(copy);
     return copy;

@@ -34,9 +34,19 @@ class DrawingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.clipRect(Offset.zero & size);
     for (final stroke in previewStrokes ?? document.strokes) {
-      paintStroke(canvas, size, stroke.points, stroke.instrument, stroke.width);
+      paintStroke(
+        canvas,
+        size,
+        stroke.points,
+        stroke.instrument,
+        stroke.width,
+        style: document.style,
+        pixels: document.style == DrawingStyle.pixel
+            ? stroke.displayPixels
+            : null,
+      );
     }
-    paintStroke(canvas, size, active, instrument, .009);
+    paintStroke(canvas, size, active, instrument, .009, style: document.style);
   }
 
   static void paintStroke(
@@ -44,9 +54,29 @@ class DrawingPainter extends CustomPainter {
     Size size,
     List<InkPoint> points,
     Instrument instrument,
-    double width,
-  ) {
+    double width, {
+    DrawingStyle style = DrawingStyle.smooth,
+    Set<int>? pixels,
+  }) {
     if (points.isEmpty) return;
+    if (style == DrawingStyle.pixel) {
+      final paint = Paint()
+        ..color = instrumentColors[instrument.index]
+        ..isAntiAlias = false;
+      for (final cell in pixels ?? displayPixelCells(points)) {
+        final x = cell % 40, y = cell ~/ 40;
+        canvas.drawRect(
+          Rect.fromLTRB(
+            x * size.width / 40,
+            y * size.height / 50,
+            (x + 1) * size.width / 40,
+            (y + 1) * size.height / 50,
+          ),
+          paint,
+        );
+      }
+      return;
+    }
     final paint = Paint()
       ..color = instrumentColors[instrument.index]
       ..style = PaintingStyle.stroke
