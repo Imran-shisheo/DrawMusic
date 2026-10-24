@@ -12,7 +12,9 @@ An original Flutter drawing-to-music application. DrawMusic is the repository na
 
 ## Current state
 
-The Android development branch implements drawing, erasing, history, deterministic pentatonic scores, an actual Android audio adapter, local save/reopen and MIDI/WAV/MP4 exports with sharing. Live updates now queue on native beat/loop boundaries; Drafts supports rename, duplicate and delete with Undo. M0 product checks and APK compilation passed; see [current status](docs/DEVELOPMENT-STATUS.md) for later validation and gaps. P0 hardening is incomplete: large-scene profiling, transport polish, localization/accessibility hardening and physical device acceptance remain. Persisted preview settings and a replayable guide are implemented; version 1.4 adds a persistent export library and explicit Android public saving. The offline Android UI flow and independent MP4/MIDI/WAV checks pass; physical sharing and device acceptance remain pending.
+The latest merged Android checkpoint is **1.10.0+13**. It implements drawing/erasing/history, deterministic pentatonic music, native streaming playback and live edits, save/reopen/recovery, MIDI/WAV/MP4 export, public saving and export management. Settings, contextual tips, retained tabs/scroll, tempo hold, paper opacity and non-destructive Smooth/Pixel styles are merged after complete native/UI/export checks.
+
+This branch also includes English localization infrastructure and verified-backup retention, with 68 local Flutter tests, 20 JVM tests, analysis/formatting and debug APK/signature checks passing. Its Linux process-interruption gate recovered and retried all 12 disposable saves. See [current status](docs/DEVELOPMENT-STATUS.md) for exact hosted acceptance. P0 device acceptance remains open: physical audio/routes/latency/sharing, TalkBack/full RTL/layout, long-session FPS/memory, Android force-stop, low storage and power loss. Some operational error text still needs resource mappings before another language ships.
 
 ## Android verification after bootstrap
 
@@ -23,11 +25,13 @@ source cloud/env.sh
 bash scripts/check-android.sh
 ```
 
-The original checkpoint APK has a playback initialization bug. Use the **1.3.0+6** creation-loop/export build linked in [development PR](https://github.com/Imran-shisheo/DrawMusic/pull/2), which also tracks remaining work. The [verified APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40121830650/artifacts/12571965681) and [runtime exports/reports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40121830650/artifacts/12571773423) are retained until 2026-10-31. CI produces later debug APKs under each workflow run's Artifacts section after successful checks. Download/unzip it and install app-debug.apk on your test phone. It is a development build, not a signed Play Store release.
+Use the [verified 1.10.0+13 APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40131600104/artifacts/12575072785) and [runtime exports/reports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40131600104/artifacts/12575238474), retained until 2026-10-31. Later candidate APKs appear under each PR's Actions artifacts; a build artifact alone does not establish runtime acceptance. Download while signed into GitHub, unzip and install app-debug.apk. This is a development build, not a Play Store release.
+
+The product script also runs the [Linux process-recovery probe](docs/PROCESS-RECOVERY.md) and includes its report in CI runtime evidence. [Display-style policy](docs/DISPLAY-STYLES.md) and [English localization scope](docs/LOCALIZATION.md) document the current behavior.
 
 ## iOS on your Mac
 
-Pull the development branch, use Flutter 3.47.2, run `flutter create --platforms=ios --org com.imranshisheo .`, review generated files, then `flutter pub get`. Open the Xcode workspace and configure signing locally. Dart models, score, synthesis, storage and MIDI/WAV are portable; the current audio/video MethodChannels require iOS adapters before playback and MP4 export work. See [cloud setup](cloud/SETUP.md). No iOS validation is claimed.
+Pull the development branch, use Flutter 3.47.2, run `flutter create --platforms=ios --org com.imranshisheo .`, review generated files, then `flutter pub get`. Open the Xcode workspace and configure signing locally. Dart models, score, synthesis, storage and MIDI/WAV are portable; the current audio/video/file-action MethodChannels require iOS adapters before playback, MP4 export and native Open/Save work. See [cloud setup](cloud/SETUP.md). No iOS validation is claimed.
 
 ## Research and asset ownership
 
