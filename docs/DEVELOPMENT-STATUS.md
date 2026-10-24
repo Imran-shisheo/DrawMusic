@@ -128,6 +128,11 @@ Native Android Open uses a read-only FileProvider URI to a narrowly scoped cache
 
 Local full checks pass: formatter, analyzer, 41 Flutter tests, 14 JVM tests, debug APK build and APK v2 signature verification. The expanded instrumentation APK compiles. New real-file tests cover restart, rename byte preservation, legacy discovery, corruption preservation, missing files, durable Undo and isolated expired-file cleanup; the Library widget test exercises Open/Rename/Share/Save/Delete/Undo through ports. A new native test writes a public WAV, reads it back byte-for-byte and removes only the test copy. The hosted UI flow now verifies three catalog entries, saves through the actual Android action, reopens the drawing and rechecks the library after app recreation. Hosted execution is pending; the native public-copy test is compiled, not yet counted as executed. Legacy document-provider flows and actual receiving-app/device acceptance remain pending. Next feature: transport fades and tempo press-repeat.
 
+### Export-library channel wiring correction
+
+Actions 40123615425 passed all 41 Flutter tests, all four native tests (including byte-for-byte public Downloads copying) and independent MIDI/WAV/MP4 inspection. The full UI flow failed at public Save because the file-action MethodChannel had not been registered in MainActivity. The Activity now registers it during Flutter engine configuration. The integration test also stops immediately on a visible Save failure and prints visible text on other condition timeouts. Local formatter/analyzer, 41 Flutter tests, 14 JVM tests, APK build and v2 signature verification passed after the correction. Hosted UI acceptance is being rerun; PR #4 remains unmerged until it passes.
+
+
 ## Transport polish — 1.5.0+8, local checkpoint
 
 Tempo controls now repeat on hold, stop at limits/release/cancel/background/modal/disposal, and retain accessible tap labels. Tooltip gesture handling was corrected after the new hold tests found that default tooltips intercepted the long press. Live update rendering is bounded to one task with latest-revision coalescing. A regression test demonstrated that editing during native preparation previously canceled Play; preparation now retries the latest document and plays it once, with stale session polls ignored.

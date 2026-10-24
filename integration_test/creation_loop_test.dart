@@ -25,7 +25,9 @@ void main() {
         final deadline = DateTime.now().add(Duration(seconds: seconds));
         while (!await condition()) {
           if (DateTime.now().isAfter(deadline)) {
-            fail('Timed out waiting for the Android creation/export flow');
+            fail(
+              'Timed out waiting for the Android creation/export flow. Visible text: ${tester.widgetList<Text>(find.byType(Text)).map((text) => text.data ?? text.textSpan?.toPlainText() ?? '').join(' | ')}',
+            );
           }
           await tester.pump(const Duration(milliseconds: 100));
         }
@@ -153,11 +155,23 @@ void main() {
       await tester.tap(find.byTooltip('Actions for Paper hills.wav'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Save a copy'));
+      final savedCopy = find.text(
+        'Saved Paper hills.wav to Downloads/DrawMusic.',
+      );
       await until(
-        () async => find
-            .text('Saved Paper hills.wav to Downloads/DrawMusic.')
-            .evaluate()
-            .isNotEmpty,
+        () async =>
+            savedCopy.evaluate().isNotEmpty ||
+            find
+                .text(
+                  'Could not save a public copy. Check storage and retry. The library file is preserved.',
+                )
+                .evaluate()
+                .isNotEmpty,
+      );
+      expect(
+        savedCopy,
+        findsOneWidget,
+        reason: 'The public Save action must complete through the registered native channel.',
       );
       final catalogContainer = ProviderScope.containerOf(
         tester.element(find.byType(ExportsPage)),
