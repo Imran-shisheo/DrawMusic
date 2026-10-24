@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/providers.dart';
+import '../../settings/application/settings_controller.dart';
 import '../../../creative_document/document.dart';
 import '../../../design_system/name_dialog.dart';
 import '../../composition/domain/score.dart';
@@ -247,6 +248,9 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         await _renderAndQueue();
       }
       if (!mounted || token != _audioGeneration) return;
+      await engine.setVolume(
+        ref.read(settingsProvider).preferences.previewVolume,
+      );
       await engine.play();
       if (!mounted || token != _audioGeneration) {
         await engine.pause();
@@ -319,10 +323,19 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     }
   }
 
+  void _selectionFeedback() {
+    if (ref.read(settingsProvider).preferences.haptics) {
+      unawaited(HapticFeedback.selectionClick());
+    }
+  }
+
   void _changeTempo(int delta) {
     final document = ref.read(editorProvider).document;
     final tempo = (document.tempo + delta).clamp(60, 200);
-    if (tempo != document.tempo) _edit(document.copyWith(tempo: tempo));
+    if (tempo != document.tempo) {
+      _selectionFeedback();
+      _edit(document.copyWith(tempo: tempo));
+    }
   }
 
   Future<void> _tempoPanel() async {
@@ -721,10 +734,13 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                             ),
                             label: Text(instrumentNames[instrument.index]),
                             selected: _instrument == instrument,
-                            onSelected: (_) => setState(() {
-                              _instrument = instrument;
-                              _eraser = false;
-                            }),
+                            onSelected: (_) {
+                              _selectionFeedback();
+                              setState(() {
+                                _instrument = instrument;
+                                _eraser = false;
+                              });
+                            },
                           ),
                         ),
                     ],
