@@ -28,6 +28,7 @@ class MainActivity : FlutterActivity() {
     }
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        exportFiles=ExportFilesChannel(this,flutterEngine.dartExecutor.binaryMessenger)
         videoExports=VideoExportChannel(applicationContext,flutterEngine.dartExecutor.binaryMessenger)
         if (Build.VERSION.SDK_INT >= 33) {
             registerReceiver(noisyReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY), Context.RECEIVER_NOT_EXPORTED)
