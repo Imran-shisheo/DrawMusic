@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
-Future<String?> askDrawingName(BuildContext context, String title) =>
-    showDialog<String>(
-      context: context,
-      builder: (_) => _NameDialog(title: title),
-    );
+Future<String?> askDrawingName(
+  BuildContext context,
+  String title, {
+  String heading = 'Name your drawing',
+}) => showDialog<String>(
+  context: context,
+  builder: (_) => _NameDialog(title: title, heading: heading),
+);
 
 class _NameDialog extends StatefulWidget {
-  const _NameDialog({required this.title});
-  final String title;
+  const _NameDialog({required this.title, required this.heading});
+  final String title, heading;
   @override
   State<_NameDialog> createState() => _NameDialogState();
 }
@@ -26,7 +29,7 @@ class _NameDialogState extends State<_NameDialog> {
     final name = controller.text.trim();
     final valid = name.isNotEmpty && name.length <= 60;
     return AlertDialog(
-      title: const Text('Name your drawing'),
+      title: Text(widget.heading),
       content: TextField(
         controller: controller,
         autofocus: true,

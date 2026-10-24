@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/providers.dart';
+import 'library_tabs.dart';
 import '../../../creative_document/document.dart';
 import '../../editor/presentation/canvas.dart';
 import '../../export/presentation/export_sheet.dart';
@@ -41,6 +42,7 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
     await repository.softDelete(id);
     if (mounted) ref.invalidate(libraryProvider);
     if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Drawing deleted'),
@@ -103,6 +105,7 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('Your drawings'),
+      bottom: const LibraryTabs(exports: false),
       actions: [
         IconButton(
           tooltip: 'Refresh drafts',

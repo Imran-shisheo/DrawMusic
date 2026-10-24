@@ -95,7 +95,7 @@ class AndroidVideoExportAdapter implements VideoExportPort {
       return ExportArtifact(
         target.path,
         'video/mp4',
-        '$stem.mp4',
+        readableExportName(document.title, 'mp4'),
         document.id,
         document.revision,
         width: encodedWidth,

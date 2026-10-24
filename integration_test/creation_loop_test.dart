@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scribblesong/features/settings/application/settings_controller.dart';
 import 'package:scribblesong/features/settings/presentation/settings_page.dart';
+import 'package:scribblesong/features/export_library/data/export_actions.dart';
+import 'package:scribblesong/features/export_library/presentation/exports_page.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:scribblesong/main.dart' as app;
@@ -123,9 +125,44 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Back to gallery'));
       // Real disk saves can finish after pumpAndSettle sees no scheduled frame.
-      await until(() async => find.text('Drafts').evaluate().isNotEmpty);
+      await until(() async => find.text('Library').evaluate().isNotEmpty);
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Library'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Exports'));
+      await until(
+        () async => find.text('Paper hills.wav').evaluate().isNotEmpty,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Paper hills.mp4'), findsOneWidget);
+      expect(find.text('Paper hills.mid'), findsOneWidget);
+      await tester.tap(find.byTooltip('Actions for Paper hills.wav'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save a copy'));
+      await until(
+        () async => find
+            .text('Saved Paper hills.wav to Downloads/DrawMusic.')
+            .evaluate()
+            .isNotEmpty,
+      );
+      final catalogContainer = ProviderScope.containerOf(
+        tester.element(find.byType(ExportsPage)),
+      );
+      final catalog = await catalogContainer.read(exportListingProvider.future);
+      expect(catalog.entries.length, 3);
+      expect(
+        catalog.entries.every(
+          (entry) =>
+              entry.available &&
+              !entry.legacy &&
+              entry.artifact.projectId == snapshot.id,
+        ),
+        isTrue,
+      );
+      await File('${catalog.entries.first.artifact.path}.json')
+          .copy('${cache.path}/ui-export-metadata.json');
       await tester.tap(find.text('Drafts'));
+      await until(() async => find.text('Paper hills').evaluate().isNotEmpty);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Paper hills'));
       await until(() async => find.byType(DrawingCanvas).evaluate().isNotEmpty);
@@ -152,6 +189,14 @@ void main() {
         restarted.read(settingsProvider).preferences.tutorialCompleted,
         isTrue,
       );
+      await tester.tap(find.text('Library'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Exports'));
+      await until(
+        () async => find.text('Paper hills.mp4').evaluate().isNotEmpty,
+      );
+      expect(find.text('Paper hills.wav'), findsOneWidget);
+      expect(find.text('Paper hills.mid'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     },
   );

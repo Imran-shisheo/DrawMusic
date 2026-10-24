@@ -82,4 +82,23 @@ class AndroidRuntimeTest {
         assertFalse(output.exists())
         assertFalse(File(output.parentFile,".video-${output.name}").exists())
     }
+    @Test fun explicitDownloadsCopyContainsTheOriginalBytes() {
+        org.junit.Assume.assumeTrue(android.os.Build.VERSION.SDK_INT>=29)
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val bytes=InstrumentationRegistry.getInstrumentation().context.assets.open("original-loop.wav").use {it.readBytes()}
+        val source=File(context.cacheDir,"public-copy-source.wav")
+        source.writeBytes(bytes)
+        var uri:android.net.Uri?=null
+        try {
+            val result=PublicExportSaver.downloads(context,source,"DrawMusic-runtime-${System.nanoTime()}.wav","audio/wav")
+            uri=result.first
+            assertEquals(bytes.size.toLong(),result.second)
+            val actual=context.contentResolver.openInputStream(result.first)!!.use {it.readBytes()}
+            assertArrayEquals(bytes,actual)
+        } finally {
+            uri?.let {context.contentResolver.delete(it,null,null)}
+            source.delete()
+        }
+    }
+
 }

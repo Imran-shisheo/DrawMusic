@@ -46,7 +46,7 @@ class FileExportAdapter implements ExportPort {
       return ExportArtifact(
         target.path,
         format == ExportFormat.midi ? 'audio/midi' : 'audio/wav',
-        '$stem.$extension',
+        readableExportName(document.title, extension),
         document.id,
         document.revision,
       );

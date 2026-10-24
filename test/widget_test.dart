@@ -220,7 +220,7 @@ void main() {
     expect(find.text('Saved on this device'), findsOneWidget);
     await tester.tap(find.byTooltip('Back to gallery'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Drafts'));
+    await tester.tap(find.text('Library'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Untitled drawing'));
     await tester.pumpAndSettle();
@@ -495,7 +495,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Drafts'));
+      await tester.tap(find.text('Library'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Manage Original song'));
       await tester.pumpAndSettle();

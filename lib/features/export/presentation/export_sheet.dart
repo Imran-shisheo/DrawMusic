@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../export_library/data/export_actions.dart';
 
 import '../../../creative_document/document.dart';
 import '../data/file_export_adapter.dart';
@@ -17,17 +20,20 @@ Future<void> showExportSheet(BuildContext context, ProjectDocument snapshot) =>
       builder: (_) => ExportSheet(snapshot: snapshot),
     );
 
-class ExportSheet extends StatefulWidget {
+class ExportSheet extends ConsumerStatefulWidget {
   const ExportSheet({super.key, required this.snapshot});
   final ProjectDocument snapshot;
   @override
-  State<ExportSheet> createState() => _ExportSheetState();
+  ConsumerState<ExportSheet> createState() => _ExportSheetState();
 }
 
-class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
+class _ExportSheetState extends ConsumerState<ExportSheet>
+    with WidgetsBindingObserver {
   ExportCancellation? _cancellation;
   ExportArtifact? _artifact;
   bool _busy = false;
+  bool _finalizing = false;
+  bool _fileActionBusy = false;
   double? _progress;
   int _width = 1080;
   ExportFormat? _format;
@@ -41,6 +47,7 @@ class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed &&
         _busy &&
+        !_finalizing &&
         _format == ExportFormat.mp4) {
       _cancellation?.cancelled = true;
     }
@@ -50,11 +57,12 @@ class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _cancellation?.cancelled = true;
+    if (!_finalizing) _cancellation?.cancelled = true;
     super.dispose();
   }
 
   Future<void> _export(ExportFormat format) async {
+    if (_busy || _fileActionBusy) return;
     final cancellation = ExportCancellation();
     _cancellation = cancellation;
     setState(() {
@@ -80,10 +88,19 @@ class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
             )
           : await FileExportAdapter(directory)
                 .export(widget.snapshot, format, cancellation);
+      if (mounted) setState(() => _finalizing = true);
+      var detailsSaved = true;
+      try {
+        await (await ref.read(exportLibraryProvider.future))
+            .record(artifact, widget.snapshot);
+      } catch (_) {
+        detailsSaved = false;
+      }
+      if (mounted) ref.invalidate(exportListingProvider);
       if (mounted && !cancellation.cancelled) {
         setState(() {
           _artifact = artifact;
-          _message = 'Export ready on this device.';
+          _message = detailsSaved ? 'Export ready on this device.' : 'Export created. Library details could not be saved; the file is preserved under Library → Exports.';
         });
       }
     } on ExportCancelled {
@@ -99,27 +116,28 @@ class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
         );
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _finalizing = false;
+        });
+      }
     }
   }
 
   Future<void> _share() async {
     final artifact = _artifact;
-    if (artifact == null) return;
+    if (artifact == null || _fileActionBusy) return;
+    setState(() => _fileActionBusy = true);
     try {
       final box = context.findRenderObject() as RenderBox?;
-      final result = await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(artifact.path, mimeType: artifact.mime)],
-          fileNameOverrides: [artifact.name],
-          sharePositionOrigin: box == null
-              ? null
-              : box.localToGlobal(Offset.zero) & box.size,
-        ),
+      final result = await ref.read(shareExportProvider)(
+        artifact,
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size,
       );
       if (mounted) {
         setState(
-          () => _message = result.status == ShareResultStatus.dismissed
+          () => _message = result == ShareResultStatus.dismissed
               ? 'Share sheet dismissed. Export is still saved.'
               : 'Share sheet closed. Delivery is handled by the selected app.',
         );
@@ -131,6 +149,32 @@ class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
               'Sharing unavailable. The exported file is still saved.',
         );
       }
+    } finally {
+      if (mounted) setState(() => _fileActionBusy = false);
+    }
+  }
+
+  Future<void> _savePublic() async {
+    final artifact = _artifact;
+    if (artifact == null || _fileActionBusy) return;
+    setState(() => _fileActionBusy = true);
+    try {
+      final result = await ref.read(exportFileActionsProvider).save(artifact);
+      if (mounted) {
+        setState(
+          () => _message = result == null
+              ? 'Save canceled. Your export is still saved on this device.'
+              : 'Saved a copy to ${result.destination}.',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _message = 'Could not save a public copy. Check storage and retry. Your export is preserved.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _fileActionBusy = false);
     }
   }
 
@@ -163,14 +207,18 @@ class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 8),
             FilledButton.tonal(
-              onPressed: _busy ? null : () => _export(ExportFormat.midi),
+              onPressed: (_busy || _fileActionBusy)
+                  ? null
+                  : () => _export(ExportFormat.midi),
               child: const Text('Export MIDI'),
             ),
             Text(
               'WAV uses the original preview voices. One loop + 1.25 s tail, 44.1 kHz mono PCM16 (~${((duration + 1.25) * 88.2).round()} KB).',
             ),
             FilledButton.tonal(
-              onPressed: _busy ? null : () => _export(ExportFormat.wav),
+              onPressed: (_busy || _fileActionBusy)
+                  ? null
+                  : () => _export(ExportFormat.wav),
               child: const Text('Export WAV'),
             ),
             const SizedBox(height: 12),
@@ -190,7 +238,7 @@ class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
                   child: Text('Compact · 640 × 800 · 30 fps'),
                 ),
               ],
-              onChanged: _busy
+              onChanged: (_busy || _fileActionBusy)
                   ? null
                   : (width) {
                       if (width != null) {
@@ -199,16 +247,22 @@ class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
                     },
             ),
             FilledButton.tonal(
-              onPressed: _busy ? null : () => _export(ExportFormat.mp4),
+              onPressed: (_busy || _fileActionBusy)
+                  ? null
+                  : () => _export(ExportFormat.mp4),
               child: const Text('Export MP4'),
             ),
             if (_busy) ...[
               LinearProgressIndicator(value: _progress),
               TextButton(
-                onPressed: () {
-                  _cancellation?.cancelled = true;
-                },
-                child: const Text('Cancel export'),
+                onPressed: _finalizing
+                    ? null
+                    : () {
+                        if (!_finalizing) _cancellation?.cancelled = true;
+                      },
+                child: Text(
+                  _finalizing ? 'Finishing library entry…' : 'Cancel export',
+                ),
               ),
             ],
             if (_message != null)
@@ -219,9 +273,14 @@ class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
             if (_artifact != null) ...[
               Text(_artifact!.name),
               FilledButton.icon(
-                onPressed: _share,
+                onPressed: _fileActionBusy ? null : _share,
                 icon: const Icon(Icons.ios_share),
                 label: const Text('Share exported file'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: _fileActionBusy ? null : _savePublic,
+                icon: const Icon(Icons.save_alt),
+                label: const Text('Save a public copy'),
               ),
             ],
             TextButton(
