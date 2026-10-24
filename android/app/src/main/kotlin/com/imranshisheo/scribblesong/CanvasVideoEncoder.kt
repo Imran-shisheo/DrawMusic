@@ -37,6 +37,7 @@ internal class CanvasVideoEncoder {
         require(kotlin.math.abs(pcm.size / 2.0 / 44100 - (loopSeconds + 1.25)) < .001)
         val scratch = File(output.parentFile, ".video-${output.name}")
         check(scratch.mkdirs()) { "Could not allocate video workspace" }
+        val encodedAudio = File(scratch, "encoded-audio.m4a")
         val audio = File(scratch, "audio.m4a")
         val video = File(scratch, "video.mp4")
         var complete = false
@@ -48,16 +49,19 @@ internal class CanvasVideoEncoder {
                 setInteger(MediaFormat.KEY_BIT_RATE, 128000)
                 setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16384)
             }
-            val audioInputs = (audioFrames + 1023) / 1024
-            encodeTrack(audioFormat, audio, audioInputs, audioFrames * 1_000_000L / 44100, cancel,
+            // Flush codec priming and retain the complete release tail.
+            val paddedPcm = pcm.copyOf(pcm.size + 8192 * 2)
+            val audioInputs = (paddedPcm.size / 2 + 1023) / 1024
+            encodeTrack(audioFormat, encodedAudio, audioInputs, paddedPcm.size / 2 * 1_000_000L / 44100, cancel,
                 { progress(.2 * it) }) { codec, index, ordinal ->
                 val offset = ordinal * 2048
-                val count = minOf(2048, pcm.size - offset)
+                val count = minOf(2048, paddedPcm.size - offset)
                 val buffer = codec.getInputBuffer(index) ?: error("Audio encoder input unavailable")
                 buffer.clear(); check(buffer.remaining() >= count)
-                buffer.put(pcm, offset, count)
+                buffer.put(paddedPcm, offset, count)
                 codec.queueInputBuffer(index, 0, count, (offset / 2) * 1_000_000L / 44100, 0)
             }
+            val residualDelay = AacAlignment.align(encodedAudio, audio, pcm, cancel)
             // AAC can pad its final packet. Match video to the encoded track,
             // retaining the same PCM and a bounded release tail.
             val durationUs = trackDuration(audio).coerceAtLeast(audioFrames * 1_000_000L / 44100)
@@ -96,7 +100,7 @@ internal class CanvasVideoEncoder {
             checkCancelled(cancel)
             complete = true
             progress(1.0)
-            return mapOf("durationSeconds" to durationUs / 1_000_000.0, "width" to width, "height" to height)
+            return mapOf("durationSeconds" to durationUs / 1_000_000.0, "width" to width, "height" to height, "audioResidualDelayFrames" to residualDelay)
         } finally {
             scratch.deleteRecursively()
             if (!complete) output.delete()

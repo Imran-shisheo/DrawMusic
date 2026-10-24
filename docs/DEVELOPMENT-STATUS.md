@@ -78,3 +78,10 @@ Bounded run [40112791948](https://github.com/Imran-shisheo/DrawMusic/actions/run
 
 
 Downloaded run-13 evidence exposed a harness-only extraction failure: both Gradle connected tests and Flutter integration tests uninstall their app by default, so post-test run-as calls captured unknown-package messages instead of exports. Runtime checks now retain APKs until extraction on the disposable emulator (`android.injected.androidTest.leaveApksInstalledAfterRun` and Flutter `--no-uninstall`). The emulator is destroyed by the action afterward. The 55-byte error files are explicitly not encoded-video evidence.
+
+
+## AAC timing correction — version 1.2.1+5
+
+Run [40114311474](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40114311474) passed all three real native tests and the complete Flutter create/play/tempo/save/reopen/MIDI/WAV/MP4 flow on the offline API 35 emulator. The overall job failed because the runner lacked ffprobe; CI now explicitly installs FFmpeg. Downloaded runtime files were independently inspected in the selected cloud worker: MIDI parsed successfully (27 notes, 121 BPM, SMF0/480 PPQ, 3840 end tick), but MP4 audio correlation measured 46.44 ms of AAC priming delay, beyond the one-frame limit. The compact AAC tail was also 15.67 ms short. Version 1.2.0+4 therefore does not satisfy MP4 timing acceptance.
+
+Version 1.2.1+5 pads encoder input to flush the full release tail, decodes its encoded AAC, measures the device-specific delay against the original PCM, removes whole priming packets and retains enough packets for the complete source. Remaining delay must be below 1024 samples (23.22 ms); independent FFmpeg correlation must still pass within one 30 FPS frame. Alignment rejects unrelated/truncated audio, remains bounded and responds to cancellation. Four added JVM tests cover delays with a quiet lead-in and amplitude change, silence, invalid/truncated signals and cancellation. All 14 JVM tests and the instrumentation APK compilation passed locally; final product/re-encoder verification follows. Physical acceptance steps are in ANDROID-ACCEPTANCE.md.
