@@ -101,6 +101,16 @@ class AndroidRuntimeTest {
         }
     }
 
+    @Test fun pixelStyleUsesBlockCellsAndLegacyDocumentsKeepSmoothMarks() {
+        val source="""{"background":4294967295,"style":"pixel","strokes":[{"instrument":"keys","width":0.009,"points":[[0.5,0.5,0]]}]}"""
+        val document=org.json.JSONObject(source)
+        val pixel=DocumentFrames(document,400,500)
+        try {assertEquals(0xff7961c6.toInt(),pixel.render(.05)[255*400+205])} finally {pixel.close()}
+        document.remove("style")
+        val smooth=DocumentFrames(document,400,500)
+        try {assertEquals(0xffffffff.toInt(),smooth.render(.05)[255*400+205])} finally {smooth.close()}
+    }
+
     @Test fun translucentPaperRendersOverWhiteWithoutAccumulationOrFadedInk() {
         for (paper in listOf(0x00112233L,0x80112233L,0xff112233L)) {
             val document=org.json.JSONObject("""{"background":$paper,"strokes":[{"instrument":"keys","width":0.1,"points":[[0.2,0.5,0],[0.8,0.5,1]]}]}""")

@@ -1,3 +1,5 @@
+import 'package:scribblesong/creative_document/document.dart';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -107,6 +109,14 @@ void main() {
             .document
             .background,
         0x80f3eef9,
+      );
+      await tester.tap(find.byTooltip('Drawing style'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pixel'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<DrawingCanvas>(find.byType(DrawingCanvas)).document.style,
+        DrawingStyle.pixel,
       );
       await tester.tap(find.byTooltip('Save drawing'));
       await until(
@@ -218,6 +228,7 @@ void main() {
       expect(reopened.id, snapshot.id);
       expect(reopened.tempo, 122);
       expect(reopened.background, 0x80f3eef9);
+      expect(reopened.style, DrawingStyle.pixel);
       expect(reopened.strokes.length, 2);
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();

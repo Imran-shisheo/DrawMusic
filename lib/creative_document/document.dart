@@ -5,6 +5,8 @@ enum Instrument { keys, mallet, bell }
 
 enum MusicalScale { major, minor }
 
+enum DrawingStyle { smooth, pixel }
+
 class InkPoint {
   InkPoint(double u, double v, [this.ms = 0])
     : u = _coordinate(u),
@@ -36,6 +38,7 @@ class Stroke {
   final Instrument instrument;
   final List<InkPoint> points;
   final double width;
+  late final Set<int> displayPixels = displayPixelCells(points);
   // Geometry is immutable; cache bounds for conservative eraser rejection.
   late final ({double minU, double maxU, double minV, double maxV}) bounds =
       _bounds();
@@ -73,6 +76,7 @@ class ProjectDocument {
     this.tempo = 120,
     this.scale = MusicalScale.major,
     this.background = 0xfff7f5eb,
+    this.style = DrawingStyle.smooth,
     this.revision = 0,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -96,6 +100,7 @@ class ProjectDocument {
   final List<Stroke> strokes;
   final int tempo, background, revision;
   final MusicalScale scale;
+  final DrawingStyle style;
   final DateTime createdAt, updatedAt;
   late final int pointCount = strokes.fold(0, (n, s) => n + s.points.length);
   ProjectDocument copyWith({
@@ -105,6 +110,7 @@ class ProjectDocument {
     int? tempo,
     MusicalScale? scale,
     int? background,
+    DrawingStyle? style,
     int? revision,
   }) => ProjectDocument(
     id: id ?? this.id,
@@ -113,6 +119,7 @@ class ProjectDocument {
     tempo: tempo ?? this.tempo,
     scale: scale ?? this.scale,
     background: background ?? this.background,
+    style: style ?? this.style,
     revision: revision ?? this.revision + 1,
     createdAt: createdAt,
     updatedAt: DateTime.now().toUtc(),
@@ -126,6 +133,7 @@ class ProjectDocument {
     'tempo': tempo,
     'scale': scale.name,
     'background': background,
+    'style': style.name,
     'revision': revision,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
@@ -148,6 +156,7 @@ class ProjectDocument {
       tempo: j['tempo'] as int,
       scale: MusicalScale.values.byName(j['scale'] as String),
       background: j['background'] as int,
+      style: DrawingStyle.values.byName(j['style'] as String? ?? 'smooth'),
       revision: j['revision'] as int,
       createdAt: DateTime.parse(j['createdAt'] as String),
       updatedAt: DateTime.parse(j['updatedAt'] as String),
@@ -165,4 +174,28 @@ int opaquePaperColor(int argb) {
   int channel(int shift) =>
       ((((argb >>> shift) & 255) * alpha + 255 * (255 - alpha) + 127) ~/ 255);
   return 0xff000000 | channel(16) << 16 | channel(8) << 8 | channel(0);
+}
+
+// Original display policy: fixed 40 × 50 cells, independent of viewport size.
+// Integer interpolation is symmetric under reversal and bounds output to 2,000
+// cells. The score always uses the untouched normalized source points.
+Set<int> displayPixelCells(List<InkPoint> points) {
+  if (points.isEmpty) return const {};
+  final cells = <int>{};
+  int column(InkPoint p) => (p.u * 40).floor().clamp(0, 39);
+  int row(InkPoint p) => (p.v * 50).floor().clamp(0, 49);
+  var ax = column(points.first), ay = row(points.first);
+  cells.add(ay * 40 + ax);
+  for (final point in points.skip(1)) {
+    final bx = column(point), by = row(point);
+    final steps = math.max((bx - ax).abs(), (by - ay).abs());
+    for (var i = 1; i <= steps; i++) {
+      final x = ((ax * (steps - i) + bx * i) / steps).round();
+      final y = ((ay * (steps - i) + by * i) / steps).round();
+      cells.add(y * 40 + x);
+    }
+    ax = bx;
+    ay = by;
+  }
+  return Set.unmodifiable(cells);
 }

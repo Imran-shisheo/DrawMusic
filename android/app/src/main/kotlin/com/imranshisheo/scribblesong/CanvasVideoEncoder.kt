@@ -254,6 +254,9 @@ internal class DocumentFrames(document: JSONObject, private val width: Int, priv
     private val cursor = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xff007e73.toInt(); strokeWidth = 2f * width / 400 }
     private val marks: List<Mark>
     init {
+        val displayStyle=document.optString("style","smooth")
+        require(displayStyle=="smooth" || displayStyle=="pixel") {"Drawing style unavailable"}
+        val pixel=displayStyle=="pixel"
         var budget = 0
         val strokes = document.getJSONArray("strokes")
         require(strokes.length() <= 100000)
@@ -272,14 +275,28 @@ internal class DocumentFrames(document: JSONObject, private val width: Int, priv
             }
             var firstX = 0f; var firstY = 0f
             val path = Path()
+            val cells=mutableSetOf<Int>()
+            var previousX=0;var previousY=0
             for (p in 0 until points.length()) {
                 val point = points.getJSONArray(p)
                 val u = point.getDouble(0); val v = point.getDouble(1)
                 require(u.isFinite() && v.isFinite() && u in 0.0..1.0 && v in 0.0..1.0)
                 val x = (u*width).toFloat(); val y = (v*height).toFloat()
+                if (pixel) {
+                    val cx=(u*40).toInt().coerceIn(0,39);val cy=(v*50).toInt().coerceIn(0,49)
+                    if(p==0) cells.add(cy*40+cx) else addPixelSegment(cells,previousX,previousY,cx,cy)
+                    previousX=cx;previousY=cy
+                }
                 if (p == 0) { firstX=x; firstY=y; path.moveTo(x,y) } else path.lineTo(x,y)
             }
-            Mark(if (points.length() == 1) null else path, firstX, firstY, paint)
+            if(pixel) {
+                path.reset();paint.style=Paint.Style.FILL;paint.isAntiAlias=false
+                for(cell in cells) {
+                    val cx=cell%40;val cy=cell/40
+                    path.addRect(cx*width/40f,cy*height/50f,(cx+1)*width/40f,(cy+1)*height/50f,Path.Direction.CW)
+                }
+            }
+            Mark(if (points.length() == 1 && !pixel) null else path, firstX, firstY, paint)
         }
     }
     fun render(fraction: Double): IntArray {

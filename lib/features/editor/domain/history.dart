@@ -47,6 +47,7 @@ bool _sameContent(ProjectDocument a, ProjectDocument b) {
       a.tempo != b.tempo ||
       a.scale != b.scale ||
       a.background != b.background ||
+      a.style != b.style ||
       a.createdAt != b.createdAt ||
       a.strokes.length != b.strokes.length) {
     return false;

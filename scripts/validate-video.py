@@ -46,6 +46,7 @@ assert best[0]>.75,best
 assert abs(best[1])<=1000/30,best
 cursor_checks=[]
 paper_checks=[]
+style_checks=[]
 project_path=video.parent/'ui-project.json'
 project=json.loads(project_path.read_text()) if video.name=='ui-export-video.mp4' and project_path.exists() else None
 if project is not None:
@@ -60,6 +61,20 @@ for time in (loop_seconds*.25,loop_seconds*.75):
         observed=list(pixels[at:at+3])
         assert all(abs(a-b)<=4 for a,b in zip(observed,paper_rgb)),(observed,paper_rgb)
         paper_checks.append({'seconds':time,'observed_rgb':observed,'expected_rgb':paper_rgb})
+    if project is not None and project.get('style','smooth')=='pixel':
+        # The UI fixture includes an isolated tap. A filled cell must cover its
+        # interior; an unchanged smooth dot cannot pass this area check.
+        dot=next(s for s in reversed(project['strokes']) if len(s['points'])==1)
+        u,vv,_=dot['points'][0]
+        cx=min(39,int(u*40));cy=min(49,int(vv*50))
+        color={'keys':(121,97,198),'mallet':(164,107,22),'bell':(40,126,97)}[dot['instrument']]
+        matched=total=0
+        for yy in range(int(cy*height/50)+3,int((cy+1)*height/50)-3):
+            for xx in range(int(cx*width/40)+3,int((cx+1)*width/40)-3):
+                at=(yy*width+xx)*3;sample=pixels[at:at+3];total+=1
+                if all(abs(a-b)<=16 for a,b in zip(sample,color)):matched+=1
+        assert total>0 and matched/total>.8,(matched,total,color)
+        style_checks.append({'seconds':time,'style':'pixel','matched_interior_pixels':matched,'interior_pixels':total})
     candidates=[]
     for x in range(expected-12,expected+13):
         count=0
@@ -71,7 +86,7 @@ for time in (loop_seconds*.25,loop_seconds*.75):
     assert count>height*.7,(time,count,x)
     assert abs(x-expected)<=width/120,(time,x,expected)
     cursor_checks.append({'seconds':time,'x':x,'expected_x':expected,'matching_rows':count})
-report={'video':{'codec':v['codec_name'],'width':v['width'],'height':v['height'],'fps':v['avg_frame_rate'],'duration':vd},'audio':{'codec':a['codec_name'],'rate':a['sample_rate'],'channels':a['channels'],'duration':ad},'av_duration_difference_seconds':abs(vd-ad),'audio_correlation':best[0],'audio_offset_ms':best[1],'cursor':cursor_checks,'paper':paper_checks}
+report={'video':{'codec':v['codec_name'],'width':v['width'],'height':v['height'],'fps':v['avg_frame_rate'],'duration':vd},'audio':{'codec':a['codec_name'],'rate':a['sample_rate'],'channels':a['channels'],'duration':ad},'av_duration_difference_seconds':abs(vd-ad),'audio_correlation':best[0],'audio_offset_ms':best[1],'cursor':cursor_checks,'paper':paper_checks,'style':style_checks}
 report_path.parent.mkdir(parents=True,exist_ok=True)
 report_path.write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2))
