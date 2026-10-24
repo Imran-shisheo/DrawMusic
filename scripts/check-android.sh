@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Keep Dart tooling from writing analytics state outside the workspace.
+export DASH__SUPPRESS_ANALYTICS=true
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 if [[ ! -f pubspec.yaml ]]; then

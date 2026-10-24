@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../design_system/theme.dart';
 import '../features/editor/presentation/editor.dart';
+import '../features/library/presentation/drafts.dart';
+import '../features/home/presentation/templates.dart';
 
 GoRouter buildRouter() => GoRouter(
   initialLocation: '/home',
@@ -38,19 +40,7 @@ GoRouter buildRouter() => GoRouter(
       ),
       routes: [
         GoRoute(path: '/home', builder: (_, _) => const HomePage()),
-        GoRoute(
-          path: '/drafts',
-          builder: (_, _) => const Scaffold(
-            body: SafeArea(
-              child: Center(
-                child: Text(
-                  'Your drawings will live here.\nCreate a new drawing to begin.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
-        ),
+        GoRoute(path: '/drafts', builder: (_, _) => const DraftsPage()),
         GoRoute(
           path: '/settings',
           builder: (_, _) => Scaffold(
@@ -121,6 +111,8 @@ class HomePage extends StatelessWidget {
           'Turn your marks into a melody. Start with a blank page and see where it takes you.',
         ),
         const SizedBox(height: 32),
+        const TemplateGallery(),
+        const SizedBox(height: 24),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(24),
