@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Keep Dart tooling from writing analytics state outside the workspace.
+export DASH__SUPPRESS_ANALYTICS=true
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 if [[ ! -f pubspec.yaml ]]; then
@@ -11,4 +13,6 @@ dart format --output=none --set-exit-if-changed lib test
 flutter analyze --fatal-infos
 flutter test
 flutter build apk --debug
+# Exercise native AudioTrack preparation contracts too; Flutter fakes cannot cover them.
+(cd android && ./gradlew :app:testDebugUnitTest --console=plain)
 printf 'Android test APK: %s/build/app/outputs/flutter-apk/app-debug.apk\n' "$repo_root"

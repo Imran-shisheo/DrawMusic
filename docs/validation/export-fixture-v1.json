@@ -1,0 +1,31 @@
+{
+  "midi": {
+    "parser": "mido",
+    "format": 0,
+    "ppq": 480,
+    "duration_seconds": 4.0,
+    "end_tick": 3840,
+    "notes": [
+      [
+        0,
+        67,
+        360,
+        2320
+      ],
+      [
+        2,
+        76,
+        2680,
+        3480
+      ]
+    ]
+  },
+  "wav": {
+    "decoder": "Python wave",
+    "frames": 231525,
+    "sample_rate": 44100,
+    "duration_seconds": 5.25,
+    "rms": 813.2663875569306,
+    "peak": 4682
+  }
+}

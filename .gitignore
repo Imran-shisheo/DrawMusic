@@ -68,3 +68,7 @@ docs/setup-proof/
 !research/evidence/network-wifi-before.txt
 !research/evidence/network-data-before.txt
 !research/evidence/network-after-restoration.txt
+
+# Task scratch
+work/
+android/.kotlin/
