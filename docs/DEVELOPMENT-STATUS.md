@@ -1,13 +1,13 @@
 # Development status
 
-Updated: 2026-10-24, Asia/Dubai. Branch: `codex/live-loop-video` (continuation after the owner merged PR #1).
+Updated: 2026-10-24, UTC. Branch: `codex/live-loop-video` (continuation after the owner merged PR #1).
 
 | Gate | Current evidence |
 |---|---|
 | Setup restoration | Bundle hashes/size/source commit verified by restore_bootstrap.py; reviewed normal setup committed and pushed to main as 3c83e1a, without force. |
 | M0 | Complete: pinned Flutter 3.47.2 root Android app, Riverpod/go_router, Home/Drafts/Settings/Editor, original theme, empty/error states. Product navigation test, formatter, analyzer, APK compilation and APK v2 signature verification passed at 65cbc69. |
 | M1 | Core implemented: normalized one-pointer strokes/dots, three instrument-linked colors, swept eraser with segment splitting, undo/redo/confirmed clear, bounded history. Geometry/history and canvas interaction checks pass. Stress/smoothing tuning pending. |
-| M2 | Score compiler + original three-voice PCM renderer + native Android AudioTrack clock/transport/focus adapter implemented. Determinism, speed/direction invariance, vertical chords, budgets and non-silent PCM tests pass. Device audibility/latency is untested. Version 1.1.0+3 queues loop/beat-boundary changes; its new streaming output still needs device retesting. Not an accepted M2 exit. |
+| M2 | Score compiler + original three-voice PCM renderer + native Android AudioTrack clock/transport/focus adapter implemented. Determinism, speed/direction invariance, vertical chords, budgets and non-silent PCM tests pass. The owner confirmed audible playback of 1.0.1+2. The new streaming adapter passes API 35 native clock/boundary/pause tests; physical audibility/latency/interruption retesting remains. Not an accepted M2 exit. |
 | M3 | Core implemented: checksummed atomic local revisions, autosave/Save, guarded Back, thumbnails/drafts, reopen, corruption fallback/stale-save protection. Persistence tests and widget save–leave–reopen/failure recovery pass. Rename/duplicate/confirmed soft-delete/Undo and recovery notices are implemented. Process-death QA remains pending. |
 | M4 | Partial: frozen-snapshot MIDI/WAV files, cancellation/error states, explicit share_plus native share adapter. mido 1.3.3 parses fixture MIDI (SMF0, 480 PPQ, balanced events, 4.0 s); Python wave/ffprobe decode WAV (PCM16, mono, 44100 Hz, 231525 frames, 5.25 s, nonzero RMS). MP4 native adapter is implemented in version 1.2.0+4, with Android emulator/runtime verification pending; native sharing remains untested on a physical device. |
 | M5 | Pending: persisted settings/onboarding, full accessibility/localization, large scenes/soak, audio lifecycle and physical sharing checks. |
@@ -69,3 +69,9 @@ First continuation run 40109503631 passed product checks/build and uploaded the 
 
 
 The second emulator attempt remained active beyond 15 minutes without a final result. The follow-up bounds the emulator step to 20 minutes, caps Gradle at the same 3 GB heap already used successfully in the published cloud environment, releases its daemon before emulator boot, and builds runtime tests for emulator x86_64 only (the downloadable product APK still includes all Android ABIs). Superseded runtime results are not counted as passes; logs will be inspected before accepting the new adapter/MP4 output.
+
+
+Inspection of superseded run [40110558767](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40110558767) confirms all three Android instrumentation tests passed on API 35: the real streaming AudioTrack clock/boundary/pause test, H.264/AAC HD export, and cancellation cleanup. The subsequent Flutter integration APK build stalled with emulator CPU hang warnings before the runner shut down. This is native API execution evidence, but the independent encoded-file inspection and full UI/save/reopen flow did not finish; MP4 timing acceptance remains pending. Retry 40112791948 uses the bounded memory/runtime configuration.
+
+
+Bounded run [40112791948](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40112791948) passed the product checks/build and all three native runtime tests again. The actual Flutter UI completed playback, the audible tempo revision, saving and MP4/WAV/MIDI exports, but its navigation assertion ran before asynchronous Back/save completed (pumpAndSettle waits for scheduled frames, not filesystem completion). The integration check now waits for the gallery and reopened canvas conditions. The integration APK also compiled separately in this cloud worker in 29 seconds. Independent file validation will run even after a runtime-test failure, while preserving the failing job result. No full UI/timing pass is claimed yet.

@@ -102,10 +102,13 @@ void main() {
       await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Back to gallery'));
+      // Real disk saves can finish after pumpAndSettle sees no scheduled frame.
+      await until(() async => find.text('Drafts').evaluate().isNotEmpty);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Drafts'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Paper hills'));
+      await until(() async => find.byType(DrawingCanvas).evaluate().isNotEmpty);
       await tester.pumpAndSettle();
       final reopened = tester
           .widget<DrawingCanvas>(find.byType(DrawingCanvas))
