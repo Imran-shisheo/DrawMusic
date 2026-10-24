@@ -778,13 +778,19 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       ChoiceChip(
                         label: Text(context.strings.draw),
                         selected: !_eraser,
-                        onSelected: (_) => setState(() => _eraser = false),
+                        onSelected: (_) {
+                          _canvas.currentState?.finish();
+                          setState(() => _eraser = false);
+                        },
                       ),
                       const SizedBox(width: 8),
                       ChoiceChip(
                         label: Text(context.strings.erase),
                         selected: _eraser,
-                        onSelected: (_) => setState(() => _eraser = true),
+                        onSelected: (_) {
+                          _canvas.currentState?.finish();
+                          setState(() => _eraser = true);
+                        },
                       ),
                       const SizedBox(width: 12),
                       IconButton(
@@ -925,6 +931,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                             label: Text(instrumentName(context, instrument)),
                             selected: _instrument == instrument,
                             onSelected: (_) {
+                              _canvas.currentState?.finish();
                               _selectionFeedback();
                               setState(() {
                                 _instrument = instrument;

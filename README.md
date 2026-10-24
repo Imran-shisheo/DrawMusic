@@ -12,9 +12,9 @@ An original Flutter drawing-to-music application. DrawMusic is the repository na
 
 ## Current state
 
-The latest merged Android checkpoint is **1.11.1+15**. It implements drawing/erasing/history, deterministic pentatonic music, native streaming playback and live edits, save/reopen/recovery, MIDI/WAV/MP4 export, public saving and export management. Settings, contextual tips, retained tabs/scroll, tempo hold, paper opacity and non-destructive Smooth/Pixel styles are merged after complete native/UI/export checks.
+The latest merged Android checkpoint is **1.11.4+18**. It implements drawing/erasing/history, deterministic pentatonic music, native streaming playback and live edits, save/reopen/recovery, MIDI/WAV/MP4 export, public saving and export management. Settings, contextual tips, retained tabs/scroll, tempo hold, paper opacity and non-destructive Smooth/Pixel styles are merged after complete native/UI/export checks.
 
-English localization and verified-backup retention are merged. This branch also aligns tempo hold and shows the actual eraser hit area, and prevents failed-first-save retry loops, with 71 local Flutter tests, 20 JVM tests, analysis/formatting and debug APK/signature checks passing. Its Linux process-interruption gate recovered and retried all 12 disposable saves. See [current status](docs/DEVELOPMENT-STATUS.md) for exact hosted acceptance. P0 device acceptance remains open: physical audio/routes/latency/sharing, TalkBack/full RTL/layout, long-session FPS/memory, Android force-stop, low storage and power loss. Some operational error text still needs resource mappings before another language ships.
+English localization, verified-backup retention, calibrated eraser input, failed-first-save retry protection and active-ink tool switching are implemented. Actions 40136527371 passed formatter/analyzer, 72 Flutter tests, 20 JVM tests, seven real Android native tests, the complete offline creation/export flow and independent output inspection. All 12 Linux interrupted saves recovered and retried successfully; local debug APK v2 signature verification also passed. See [current status](docs/DEVELOPMENT-STATUS.md) for exact hosted acceptance. P0 device acceptance remains open: physical audio/routes/latency/sharing, TalkBack/full RTL/layout, long-session FPS/memory, Android force-stop, low storage and power loss. Some operational error text still needs resource mappings before another language ships.
 
 ## Android verification after bootstrap
 
@@ -25,7 +25,7 @@ source cloud/env.sh
 bash scripts/check-android.sh
 ```
 
-Use the [verified 1.11.1+15 APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40132937399/artifacts/12575629626) and [runtime exports/reports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40132937399/artifacts/12576950403), retained until 2026-10-31. Later candidate APKs appear under each PR's Actions artifacts; a build artifact alone does not establish runtime acceptance. Download while signed into GitHub, unzip and install app-debug.apk. This is a development build, not a Play Store release.
+Use the [verified 1.11.4+18 APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40136527371/artifacts/12577266354) and [runtime exports/reports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40136527371/artifacts/12577302067), retained until 2026-10-31. Later candidate APKs appear under each PR's Actions artifacts; a build artifact alone does not establish runtime acceptance. Download while signed into GitHub, unzip and install app-debug.apk. This is a development build, not a Play Store release.
 
 The product script also runs the [Linux process-recovery probe](docs/PROCESS-RECOVERY.md) and includes its report in CI runtime evidence. [Display-style policy](docs/DISPLAY-STYLES.md) and [English localization scope](docs/LOCALIZATION.md) document the current behavior.
 
