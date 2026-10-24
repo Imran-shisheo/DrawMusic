@@ -1167,6 +1167,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'How to create a loop'**
   String get howToCreateALoop;
+
+  /// No description provided for @pressAndHoldToRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Press and hold to repeat'**
+  String get pressAndHoldToRepeat;
 }
 
 class _AppLocalizationsDelegate

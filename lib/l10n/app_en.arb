@@ -320,5 +320,6 @@
   "welcome": "Welcome",
   "creationGuide": "Creation guide",
   "welcomeToScribbleSong": "Welcome to ScribbleSong",
-  "howToCreateALoop": "How to create a loop"
+  "howToCreateALoop": "How to create a loop",
+  "pressAndHoldToRepeat": "Press and hold to repeat"
 }

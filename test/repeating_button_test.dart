@@ -4,6 +4,42 @@ import 'package:scribblesong/design_system/repeating_icon_button.dart';
 
 void main() {
   testWidgets(
+    'hold starts at 400 ms, repeats at 100 ms and release adds no tap',
+    (tester) async {
+      var steps = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RepeatingIconButton(
+              tooltip: 'Faster',
+              icon: Icons.add,
+              onStep: () => steps++,
+            ),
+          ),
+        ),
+      );
+      final hold = await tester.startGesture(
+        tester.getCenter(find.byTooltip('Faster')),
+      );
+      await tester.pump(const Duration(milliseconds: 399));
+      expect(steps, 0);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(steps, 1);
+      await tester.pump(const Duration(milliseconds: 99));
+      expect(steps, 1);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(steps, 2);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(steps, 3);
+      await hold.up();
+      await tester.pump(const Duration(seconds: 1));
+      expect(steps, 3);
+      await tester.tap(find.byTooltip('Faster'));
+      await tester.pump();
+      expect(steps, 4);
+    },
+  );
+  testWidgets(
     'tempo hold repeats, release stops, and the limit disables repetition',
     (tester) async {
       var tempo = 198;
@@ -23,8 +59,10 @@ void main() {
       final hold = await tester.startGesture(
         tester.getCenter(find.byTooltip('Faster')),
       );
-      await tester.pump(const Duration(milliseconds: 700));
-      await tester.pump(const Duration(milliseconds: 500));
+      // Rebuild frames as the parent disables the control at its bound.
+      for (var frame = 0; frame < 12; frame++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       expect(tempo, 200);
       await hold.up();
       await tester.pump(const Duration(seconds: 2));
