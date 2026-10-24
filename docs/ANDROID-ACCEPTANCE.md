@@ -1,4 +1,4 @@
-# Android device acceptance — 1.2.1+5
+# Android device acceptance — current development checkpoints
 
 Record device/Android version, APK source head, output route (speaker/wired/Bluetooth), observed result and any logs. These checks are pending unless a result is recorded in DEVELOPMENT-STATUS.md. The owner's successful playback report applies to 1.0.1+2.
 
@@ -11,6 +11,7 @@ Record device/Android version, APK source head, output route (speaker/wired/Blue
 | QA09–QA11 | Export MIDI/WAV plus both MP4 resolutions. Play the files in actual recipient apps; inspect the MP4 on Android and later iOS. The canvas has no app chrome, cursor follows music, dimensions/FPS/codecs match the selected format, and alignment is within one frame. MIDI timbre may differ from preview; WAV/MP4 use original voices. |
 | QA12 | Cancel video halfway, then background during a separate video export. Retry successfully and reopen the drawing. Check low-storage and encoder-unavailable failure paths on a disposable test installation; editable drawings remain available and incomplete files are removed. |
 | QA13 | Explicitly share each completed file to a chosen receiving app. Cancel the share sheet and test an unavailable recipient. The UI must not claim delivery from a dismissed or merely closed sheet. |
+| QA14 | Scroll Home and Drafts; visit Settings and return. Switch Library to Exports, leave and return: the section and scroll should remain. Open an editor from each origin; modal Back closes only the modal and saved editor Back returns to that origin. |
 | QA15–QA16 | Test small screens, cutouts, gesture/three-button navigation, 200% text and TalkBack. Reach every editor/export action and distinguish instrument voices without relying only on color. |
 
-Settings/tutorial persistence, exported-library UI, tempo press-repeat, pause/focus fades and large-scene performance remain implementation work. This checklist does not mark them complete. Cloud tests must never operate the owner's personal phone. iOS adapters and local Mac validation remain outside the Linux build evidence.
+Settings and the first-use guide are merged with hosted acceptance. The exported library/public copies, tempo hold/user-pause ramps, large-document reliability and retained tab navigation have implementation checkpoints; see DEVELOPMENT-STATUS.md for the exact local/hosted evidence. Physical acceptance stays open. Focus/background/noisy-route interruptions intentionally mute immediately. Contextual spotlights and localization remain implementation work. Cloud tests must never operate the owner's personal phone. iOS adapters and local Mac validation remain outside the Linux build evidence.

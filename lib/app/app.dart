@@ -15,41 +15,27 @@ import '../features/home/presentation/templates.dart';
 GoRouter buildRouter() => GoRouter(
   initialLocation: '/home',
   routes: [
-    ShellRoute(
-      builder: (context, state, child) => Scaffold(
-        body: child,
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => context.push('/editor/new'),
-          icon: const Icon(Icons.add),
-          label: const Text('New drawing'),
+    StatefulShellRoute.indexedStack(
+      builder: (_, _, shell) => _RootTabs(shell: shell),
+      branches: [
+        StatefulShellBranch(
+          routes: [GoRoute(path: '/home', builder: (_, _) => const HomePage())],
         ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex:
-              (state.uri.path == '/drafts' || state.uri.path == '/exports')
-              ? 1
-              : state.uri.path == '/settings'
-              ? 2
-              : 0,
-          onDestinationSelected: (i) =>
-              context.go(['/home', '/drafts', '/settings'][i]),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.grid_view_rounded),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.folder_outlined),
-              label: 'Library',
-            ),
-            NavigationDestination(icon: Icon(Icons.tune), label: 'Settings'),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(path: '/drafts', builder: (_, _) => const DraftsPage()),
           ],
         ),
-      ),
-      routes: [
-        GoRoute(path: '/home', builder: (_, _) => const HomePage()),
-        GoRoute(path: '/drafts', builder: (_, _) => const DraftsPage()),
-        GoRoute(path: '/exports', builder: (_, _) => const ExportsPage()),
-        GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(path: '/exports', builder: (_, _) => const ExportsPage()),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
+          ],
+        ),
       ],
     ),
     GoRoute(path: '/help', builder: (_, _) => const TutorialPage()),
@@ -67,6 +53,56 @@ GoRouter buildRouter() => GoRouter(
     ),
   ),
 );
+
+// Each library section retains its own navigator and scroll state. The bottom
+// Library destination returns to the last section rather than always Drafts.
+class _RootTabs extends StatefulWidget {
+  const _RootTabs({required this.shell});
+  final StatefulNavigationShell shell;
+  @override
+  State<_RootTabs> createState() => _RootTabsState();
+}
+
+class _RootTabsState extends State<_RootTabs> {
+  int _libraryIndex = 1;
+  @override
+  Widget build(BuildContext context) {
+    final index = widget.shell.currentIndex;
+    if (index == 1 || index == 2) _libraryIndex = index;
+    return Scaffold(
+      body: widget.shell,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/editor/new'),
+        icon: const Icon(Icons.add),
+        label: const Text('New drawing'),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: index == 0
+            ? 0
+            : index == 3
+            ? 2
+            : 1,
+        onDestinationSelected: (destination) =>
+            widget.shell.goBranch(switch (destination) {
+              0 => 0,
+              1 => _libraryIndex,
+              _ => 3,
+            }),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.grid_view_rounded),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.folder_outlined),
+            label: 'Library',
+          ),
+          NavigationDestination(icon: Icon(Icons.tune), label: 'Settings'),
+        ],
+      ),
+    );
+  }
+}
 
 class ScribbleSongApp extends ConsumerStatefulWidget {
   const ScribbleSongApp({super.key, this.showWelcome = false});
