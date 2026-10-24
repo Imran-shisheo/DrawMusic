@@ -1,4 +1,4 @@
-# Android device acceptance — 1.2.0+4
+# Android device acceptance — 1.2.1+5
 
 Record device/Android version, APK source head, output route (speaker/wired/Bluetooth), observed result and any logs. These checks are pending unless a result is recorded in DEVELOPMENT-STATUS.md. The owner's successful playback report applies to 1.0.1+2.
 

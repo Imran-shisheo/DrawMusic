@@ -12,7 +12,7 @@ An original Flutter drawing-to-music application. DrawMusic is the repository na
 
 ## Current state
 
-The Android development branch implements drawing, erasing, history, deterministic pentatonic scores, an actual Android audio adapter, local save/reopen and MIDI/WAV/MP4 exports with sharing. Live updates now queue on native beat/loop boundaries; Drafts supports rename, duplicate and delete with Undo. M0 product checks and APK compilation passed; see [current status](docs/DEVELOPMENT-STATUS.md) for later validation and gaps. P0 hardening is incomplete: persisted settings/tutorials, exported-library management, large-scene profiling and physical device acceptance remain. MP4 runtime validation is tracked in the draft PR.
+The Android development branch implements drawing, erasing, history, deterministic pentatonic scores, an actual Android audio adapter, local save/reopen and MIDI/WAV/MP4 exports with sharing. Live updates now queue on native beat/loop boundaries; Drafts supports rename, duplicate and delete with Undo. M0 product checks and APK compilation passed; see [current status](docs/DEVELOPMENT-STATUS.md) for later validation and gaps. P0 hardening is incomplete: persisted settings/tutorials, exported-library management, large-scene profiling and physical device acceptance remain. The offline Android UI flow and independent MP4/MIDI/WAV checks pass; physical sharing and device acceptance remain pending.
 
 ## Android verification after bootstrap
 
@@ -23,7 +23,7 @@ source cloud/env.sh
 bash scripts/check-android.sh
 ```
 
-The original checkpoint APK has a playback initialization bug. Use the **1.2.1+5** creation-loop/export build linked in [development PR](https://github.com/Imran-shisheo/DrawMusic/pull/2), which also tracks remaining work. CI produces a debug APK under the workflow run's Artifacts section after successful checks. Download/unzip it and install app-debug.apk on your test phone. It is a development build, not a signed Play Store release.
+The original checkpoint APK has a playback initialization bug. Use the **1.2.1+5** creation-loop/export build linked in [development PR](https://github.com/Imran-shisheo/DrawMusic/pull/2), which also tracks remaining work. The [verified APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40116470068/artifacts/12569676209) and [runtime exports/reports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40116470068/artifacts/12570297188) are retained until 2026-10-31. CI produces later debug APKs under each workflow run's Artifacts section after successful checks. Download/unzip it and install app-debug.apk on your test phone. It is a development build, not a signed Play Store release.
 
 ## iOS on your Mac
 
