@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../creative_document/document.dart';
 import '../data/file_export_adapter.dart';
+import '../data/android_video_export_adapter.dart';
 import '../domain/export_port.dart';
 
 Future<void> showExportSheet(BuildContext context, ProjectDocument snapshot) =>
@@ -23,13 +24,32 @@ class ExportSheet extends StatefulWidget {
   State<ExportSheet> createState() => _ExportSheetState();
 }
 
-class _ExportSheetState extends State<ExportSheet> {
+class _ExportSheetState extends State<ExportSheet> with WidgetsBindingObserver {
   ExportCancellation? _cancellation;
   ExportArtifact? _artifact;
   bool _busy = false;
+  double? _progress;
+  int _width = 1080;
+  ExportFormat? _format;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed &&
+        _busy &&
+        _format == ExportFormat.mp4) {
+      _cancellation?.cancelled = true;
+    }
+  }
+
   String? _message;
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _cancellation?.cancelled = true;
     super.dispose();
   }
@@ -41,12 +61,25 @@ class _ExportSheetState extends State<ExportSheet> {
       _busy = true;
       _message = null;
       _artifact = null;
+      _progress = null;
+      _format = format;
     });
     try {
       final root = await getApplicationDocumentsDirectory();
-      final artifact = await FileExportAdapter(
-        Directory('${root.path}/exports'),
-      ).export(widget.snapshot, format, cancellation);
+      final directory = Directory('${root.path}/exports');
+      final artifact = format == ExportFormat.mp4
+          ? await AndroidVideoExportAdapter(directory).exportVideo(
+              widget.snapshot,
+              cancellation,
+              width: _width,
+              onProgress: (progress) {
+                if (mounted && !cancellation.cancelled) {
+                  setState(() => _progress = progress);
+                }
+              },
+            )
+          : await FileExportAdapter(directory)
+                .export(widget.snapshot, format, cancellation);
       if (mounted && !cancellation.cancelled) {
         setState(() {
           _artifact = artifact;
@@ -59,7 +92,11 @@ class _ExportSheetState extends State<ExportSheet> {
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _message = 'Export failed. Check storage and retry.');
+        setState(
+          () => _message = format == ExportFormat.mp4
+              ? 'Video export failed. Try compact resolution or check storage, then retry.'
+              : 'Export failed. Check storage and retry.',
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -118,7 +155,7 @@ class _ExportSheetState extends State<ExportSheet> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Frozen drawing revision ${widget.snapshot.revision} · ${duration.toStringAsFixed(2)} s loop',
+              'One loop · ${duration.toStringAsFixed(2)} seconds. Exports use the drawing and settings shown when this panel opened.',
             ),
             const SizedBox(height: 16),
             const Text(
@@ -138,10 +175,35 @@ class _ExportSheetState extends State<ExportSheet> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'MP4 video export is not available in this development checkpoint.',
+              'MP4 animates this drawing with its music. Video export cancels if you leave the app.',
+            ),
+            DropdownButton<int>(
+              value: _width,
+              isExpanded: true,
+              items: const [
+                DropdownMenuItem(
+                  value: 1080,
+                  child: Text('HD · 1080 × 1350 · 30 fps'),
+                ),
+                DropdownMenuItem(
+                  value: 640,
+                  child: Text('Compact · 640 × 800 · 30 fps'),
+                ),
+              ],
+              onChanged: _busy
+                  ? null
+                  : (width) {
+                      if (width != null) {
+                        setState(() => _width = width);
+                      }
+                    },
+            ),
+            FilledButton.tonal(
+              onPressed: _busy ? null : () => _export(ExportFormat.mp4),
+              child: const Text('Export MP4'),
             ),
             if (_busy) ...[
-              const LinearProgressIndicator(),
+              LinearProgressIndicator(value: _progress),
               TextButton(
                 onPressed: () {
                   _cancellation?.cancelled = true;

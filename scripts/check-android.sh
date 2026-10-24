@@ -9,7 +9,7 @@ if [[ ! -f pubspec.yaml ]]; then
   exit 2
 fi
 flutter pub get
-dart format --output=none --set-exit-if-changed lib test
+dart format --output=none --set-exit-if-changed lib test integration_test tool
 flutter analyze --fatal-infos
 flutter test
 flutter build apk --debug

@@ -118,4 +118,51 @@ void main() {
       }
     },
   );
+  test(
+    'cancellation notifies active native listeners once and cannot be reset',
+    () {
+      final cancellation = ExportCancellation();
+      var calls = 0;
+      var removedCalls = 0;
+      cancellation.onCancel(() => calls++);
+      final remove = cancellation.onCancel(() => removedCalls++);
+      remove();
+      cancellation.cancelled = true;
+      cancellation.cancelled = true;
+      cancellation.cancelled = false;
+      expect(calls, 1);
+      expect(removedCalls, 0);
+      expect(cancellation.cancelled, isTrue);
+      expect(cancellation.check, throwsA(isA<ExportCancelled>()));
+    },
+  );
+  test('MP4 cannot accidentally fall through to a WAV file', () async {
+    final root = await Directory.systemTemp.createTemp('video-port-test');
+    try {
+      await expectLater(
+        FileExportAdapter(root)
+            .export(sample(), ExportFormat.mp4, ExportCancellation()),
+        throwsUnsupportedError,
+      );
+      expect(await root.list().toList(), isEmpty);
+    } finally {
+      await root.delete(recursive: true);
+    }
+  });
+  test(
+    'canceling an in-flight PCM render never publishes a completed file',
+    () async {
+      final root = await Directory.systemTemp.createTemp('cancel-render-test');
+      try {
+        final cancellation = ExportCancellation();
+        final future = FileExportAdapter(root)
+            .export(sample(), ExportFormat.wav, cancellation);
+        cancellation.cancelled = true;
+        await expectLater(future, throwsA(isA<ExportCancelled>()));
+        expect(await root.list().toList(), isEmpty);
+      } finally {
+        await root.delete(recursive: true);
+      }
+    },
+  );
 }
