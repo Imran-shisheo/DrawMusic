@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:crypto/crypto.dart';
 
@@ -43,17 +44,17 @@ class FileProjectRepository implements ProjectRepository {
       final current = await load(document.id);
       if (current.revision > document.revision) return;
     }
-    final payload = document.encode();
-    final envelope = jsonEncode({
-      'sha256': sha256.convert(utf8.encode(payload)).toString(),
-      'document': payload,
-    });
+    final encoded = await Isolate.run(() => _encodeRevision(document));
+    final payload = encoded.payload, envelope = encoded.envelope;
     final target = File(
       '${dir.path}/r${document.revision.toString().padLeft(12, '0')}.json',
     );
     if (await target.exists()) {
       try {
-        if ((await _read(target)).encode() == payload) return;
+        final existingDocument = await _read(target);
+        if (await Isolate.run(() => existingDocument.encode() == payload)) {
+          return;
+        }
       } catch (_) {
         /* Preserve damaged or unsupported data before replacing its ordinal. */
       }
@@ -86,12 +87,8 @@ class FileProjectRepository implements ProjectRepository {
     if (await file.length() > 20000000) {
       throw const FormatException('Project exceeds storage limit');
     }
-    final j = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
-    final payload = j['document'] as String;
-    if (sha256.convert(utf8.encode(payload)).toString() != j['sha256']) {
-      throw const FormatException('Project checksum failed');
-    }
-    return ProjectDocument.decode(payload);
+    final text = await file.readAsString();
+    return Isolate.run(() => _decodeRevision(text));
   }
 
   @override
@@ -198,4 +195,26 @@ class FileProjectRepository implements ProjectRepository {
     projects.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return ProjectListing(projects, failures, recoveredIds: recoveredIds);
   }
+}
+
+// CPU-heavy JSON and checksum work operates on immutable data in a worker.
+// File publication/recovery stays in the repository's serialized I/O queue.
+({String payload, String envelope}) _encodeRevision(ProjectDocument document) {
+  final payload = document.encode();
+  return (
+    payload: payload,
+    envelope: jsonEncode({
+      'sha256': sha256.convert(utf8.encode(payload)).toString(),
+      'document': payload,
+    }),
+  );
+}
+
+ProjectDocument _decodeRevision(String text) {
+  final j = jsonDecode(text) as Map<String, dynamic>;
+  final payload = j['document'] as String;
+  if (sha256.convert(utf8.encode(payload)).toString() != j['sha256']) {
+    throw const FormatException('Project checksum failed');
+  }
+  return ProjectDocument.decode(payload);
 }

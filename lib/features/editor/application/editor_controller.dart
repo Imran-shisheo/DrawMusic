@@ -56,9 +56,10 @@ class EditorController extends Notifier<EditorState> {
     _debounce = Timer(const Duration(milliseconds: 500), () => save());
   }
 
-  void commit(ProjectDocument next) {
-    history.commit(next);
+  bool commit(ProjectDocument next) {
+    if (!history.commit(next)) return false;
     _publish();
+    return true;
   }
 
   void undo() {

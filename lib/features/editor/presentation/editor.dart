@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -136,8 +137,9 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     if (next.revision <= previous.revision) {
       next = next.copyWith(revision: previous.revision + 1);
     }
-    ref.read(editorProvider.notifier).commit(next);
-    _documentChanged(previous, next);
+    if (ref.read(editorProvider.notifier).commit(next)) {
+      _documentChanged(previous, next);
+    }
   }
 
   void _historyEdit({required bool redo}) {
@@ -212,11 +214,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     final boundary = _pendingBoundary ?? UpdateBoundary.loop;
     final revision = _wantedRevision;
     try {
-      final score = compileScore(document);
-      final pcm = await compute(
-        (ScoreSnapshot score) => renderPcm(score, loop: true),
-        score,
-      );
+      final pcm = await compute(_renderLoop, document);
       if (!mounted ||
           generation != _renderGeneration ||
           session != _audioGeneration ||
@@ -267,12 +265,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         if (update != null) await update;
         while (mounted && token == _audioGeneration) {
           final document = ref.read(editorProvider).document;
-          final score = compileScore(document);
-          if (score.notes.isEmpty) return;
-          final pcm = await compute(
-            (ScoreSnapshot s) => renderPcm(s, loop: true),
-            score,
-          );
+          final pcm = await compute(_renderNonemptyLoop, document);
+          if (pcm == null) return;
           if (!mounted || token != _audioGeneration) return;
           if (document.revision != ref.read(editorProvider).document.revision) {
             continue;
@@ -493,11 +487,15 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     }
   }
 
-  void _describe() {
+  bool _describing = false;
+  Future<void> _describe() async {
+    if (_describing) return;
+    setState(() => _describing = true);
     try {
       final doc = ref.read(editorProvider).document;
-      final score = compileScore(doc);
-      showDialog<void>(
+      final score = await compute(compileScore, doc);
+      if (!mounted) return;
+      await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Your loop in notes'),
@@ -515,7 +513,9 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         ),
       );
     } catch (e) {
-      _message(e.toString());
+      if (mounted) _message(e.toString());
+    } finally {
+      if (mounted) setState(() => _describing = false);
     }
   }
 
@@ -668,7 +668,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       const SizedBox(width: 12),
                       IconButton(
                         tooltip: 'Describe score',
-                        onPressed: _describe,
+                        onPressed: _describing ? null : _describe,
                         icon: const Icon(Icons.list_alt),
                       ),
                       DropdownButton<MusicalScale>(
@@ -817,4 +817,13 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       ),
     );
   }
+}
+
+// Compile geometry and synthesize away from the UI isolate, from one immutable
+// document. Top-level callbacks avoid capturing widget/native state.
+Int16List _renderLoop(ProjectDocument document) =>
+    renderPcm(compileScore(document), loop: true);
+Int16List? _renderNonemptyLoop(ProjectDocument document) {
+  final score = compileScore(document);
+  return score.notes.isEmpty ? null : renderPcm(score, loop: true);
 }
