@@ -245,12 +245,12 @@ internal class CanvasVideoEncoder {
     }
 }
 
-private class DocumentFrames(document: JSONObject, private val width: Int, private val height: Int) {
+internal class DocumentFrames(document: JSONObject, private val width: Int, private val height: Int) {
     private data class Mark(val path: Path?, val x: Float, val y: Float, val paint: Paint)
     private val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     private val canvas = Canvas(bitmap)
     private val pixels = IntArray(width * height)
-    private val background = document.getLong("background").toInt()
+    private val background = opaquePaperColor(document.getLong("background").toInt())
     private val cursor = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xff007e73.toInt(); strokeWidth = 2f * width / 400 }
     private val marks: List<Mark>
     init {

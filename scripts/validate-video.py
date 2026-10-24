@@ -45,9 +45,21 @@ best=(float(correlations[index]),float(lags[index]*1000/44100))
 assert best[0]>.75,best
 assert abs(best[1])<=1000/30,best
 cursor_checks=[]
+paper_checks=[]
+project_path=video.parent/'ui-project.json'
+project=json.loads(project_path.read_text()) if video.name=='ui-export-video.mp4' and project_path.exists() else None
+if project is not None:
+    argb=project['background'];alpha=(argb>>24)&255
+    paper_rgb=[(((argb>>shift)&255)*alpha+255*(255-alpha)+127)//255 for shift in (16,8,0)]
 for time in (loop_seconds*.25,loop_seconds*.75):
     pixels=subprocess.check_output(['ffmpeg','-v','error','-ss',str(time),'-i',str(video),'-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','pipe:1'])
     width,height=v['width'],v['height'];expected=round(time/loop_seconds*width)
+    if project is not None:
+        # The synthetic UI fixture has no marks in this bottom-right patch.
+        at=((height-6)*width+(width-6))*3
+        observed=list(pixels[at:at+3])
+        assert all(abs(a-b)<=4 for a,b in zip(observed,paper_rgb)),(observed,paper_rgb)
+        paper_checks.append({'seconds':time,'observed_rgb':observed,'expected_rgb':paper_rgb})
     candidates=[]
     for x in range(expected-12,expected+13):
         count=0
@@ -59,7 +71,7 @@ for time in (loop_seconds*.25,loop_seconds*.75):
     assert count>height*.7,(time,count,x)
     assert abs(x-expected)<=width/120,(time,x,expected)
     cursor_checks.append({'seconds':time,'x':x,'expected_x':expected,'matching_rows':count})
-report={'video':{'codec':v['codec_name'],'width':v['width'],'height':v['height'],'fps':v['avg_frame_rate'],'duration':vd},'audio':{'codec':a['codec_name'],'rate':a['sample_rate'],'channels':a['channels'],'duration':ad},'av_duration_difference_seconds':abs(vd-ad),'audio_correlation':best[0],'audio_offset_ms':best[1],'cursor':cursor_checks}
+report={'video':{'codec':v['codec_name'],'width':v['width'],'height':v['height'],'fps':v['avg_frame_rate'],'duration':vd},'audio':{'codec':a['codec_name'],'rate':a['sample_rate'],'channels':a['channels'],'duration':ad},'av_duration_difference_seconds':abs(vd-ad),'audio_correlation':best[0],'audio_offset_ms':best[1],'cursor':cursor_checks,'paper':paper_checks}
 report_path.parent.mkdir(parents=True,exist_ok=True)
 report_path.write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2))

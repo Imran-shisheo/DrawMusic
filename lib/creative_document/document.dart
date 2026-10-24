@@ -84,6 +84,8 @@ class ProjectDocument {
         title.length > 60 ||
         tempo < 60 ||
         tempo > 200 ||
+        background < 0 ||
+        background > 0xffffffff ||
         pointCount > 100000 ||
         revision < 0) {
       throw const FormatException('Invalid project');
@@ -155,3 +157,12 @@ class ProjectDocument {
 
 String newId() =>
     '${DateTime.now().microsecondsSinceEpoch}_${math.Random.secure().nextInt(1 << 32)}';
+
+// Android video has no alpha channel. Composite paper over white identically
+// in editor, thumbnails and native export, using integer rounding.
+int opaquePaperColor(int argb) {
+  final alpha = (argb >>> 24) & 255;
+  int channel(int shift) =>
+      ((((argb >>> shift) & 255) * alpha + 255 * (255 - alpha) + 127) ~/ 255);
+  return 0xff000000 | channel(16) << 16 | channel(8) << 8 | channel(0);
+}
