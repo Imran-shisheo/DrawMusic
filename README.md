@@ -23,7 +23,7 @@ source cloud/env.sh
 bash scripts/check-android.sh
 ```
 
-The original checkpoint APK has a playback initialization bug. Use the **1.2.0+4** creation-loop/export build linked in [draft PR #1](https://github.com/Imran-shisheo/DrawMusic/pull/1), which also tracks remaining work. CI produces a debug APK under the workflow run's Artifacts section after successful checks. Download/unzip it and install app-debug.apk on your test phone. It is a development build, not a signed Play Store release.
+The original checkpoint APK has a playback initialization bug. Use the **1.2.0+4** creation-loop/export build linked in [development PR](https://github.com/Imran-shisheo/DrawMusic/pulls), which also tracks remaining work. CI produces a debug APK under the workflow run's Artifacts section after successful checks. Download/unzip it and install app-debug.apk on your test phone. It is a development build, not a signed Play Store release.
 
 ## iOS on your Mac
 

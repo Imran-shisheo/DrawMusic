@@ -1,6 +1,6 @@
 # Development status
 
-Updated: 2026-10-24, Asia/Dubai. Branch: `codex/android-creation-loop`.
+Updated: 2026-10-24, Asia/Dubai. Branch: `codex/live-loop-video` (continuation after the owner merged PR #1).
 
 | Gate | Current evidence |
 |---|---|
@@ -60,3 +60,6 @@ No microphone, screen recording, research media, account or content upload is in
 
 
 Local validation for the MP4 slice passed: formatter for lib/test/integration_test/tool, analyzer with no issues, 29 Flutter tests, 10 JVM tests, normal debug APK compilation and signature verification, plus `assembleDebugAndroidTest`. AndroidX debug test dependencies are aligned with the pinned Flutter integration-test SDK. Three native runtime tests and the Android Flutter integration test are compiled but await the Actions emulator; no encoded-output/runtime pass is claimed at this point. Remaining P0 hardening includes persisted settings/tutorials, exported-library management, tempo press-repeat, pause/focus fades, large-scene simplification/performance and physical lifecycle/share checks.
+
+
+The owner merged the prior 1.0.1+2 checkpoint via PR #1 before this iteration. Current work is isolated on `codex/live-loop-video`, based on that merged main tree, and will use a new draft PR. Older PR #1/artifact references above describe historical checkpoints; current build evidence will be linked from the continuation PR. No new merge has been performed by the agent.
