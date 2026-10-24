@@ -7,7 +7,7 @@ runtime_result=0
 runtime_device=emulator-5554
 adb -s "$runtime_device" shell svc wifi disable
 adb -s "$runtime_device" shell svc data disable
-(cd android && ./gradlew :app:connectedDebugAndroidTest --console=plain) || runtime_result=$?
+(cd android && ./gradlew :app:connectedDebugAndroidTest -Ptarget-platform=android-x64 --console=plain) || runtime_result=$?
 adb -s "$runtime_device" exec-out run-as com.imranshisheo.scribblesong cat cache/fixture-video.mp4 > work/runtime-output/fixture-video.mp4 || true
 if [[ "$runtime_result" == 0 ]]; then
   flutter test integration_test/creation_loop_test.dart -d "$runtime_device" --timeout 10m || runtime_result=$?

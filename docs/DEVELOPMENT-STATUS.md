@@ -66,3 +66,6 @@ The owner merged the prior 1.0.1+2 checkpoint via PR #1 before this iteration. C
 
 
 First continuation run 40109503631 passed product checks/build and uploaded the APK, but the API 35 emulator image could not install because the hosted runner ran out of disk space. Runtime/MP4 checks therefore did not execute; they are not counted as passed. The follow-up removes unrelated preinstalled toolchains only on disposable GitHub-hosted VMs (preserving the pinned NDK, source and credentials). Independent audio-offset validation uses sample-precision FFT correlation rather than coarse downsampling. No larger/paid runner was enabled.
+
+
+The second emulator attempt remained active beyond 15 minutes without a final result. The follow-up bounds the emulator step to 20 minutes, caps Gradle at the same 3 GB heap already used successfully in the published cloud environment, releases its daemon before emulator boot, and builds runtime tests for emulator x86_64 only (the downloadable product APK still includes all Android ABIs). Superseded runtime results are not counted as passes; logs will be inspected before accepting the new adapter/MP4 output.

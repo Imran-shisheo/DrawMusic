@@ -66,12 +66,18 @@ jobs:
           source cloud/env.sh
           export DASH__SUPPRESS_ANALYTICS=true
           dart run tool/export_fixture.dart work/runtime-fixtures
+      - name: Release build memory before emulator startup
+        run: |
+          source cloud/env.sh
+          cd android
+          ./gradlew --stop
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Exercise real Android audio and video APIs
+        timeout-minutes: 20
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
