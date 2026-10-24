@@ -75,3 +75,6 @@ Inspection of superseded run [40110558767](https://github.com/Imran-shisheo/Draw
 
 
 Bounded run [40112791948](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40112791948) passed the product checks/build and all three native runtime tests again. The actual Flutter UI completed playback, the audible tempo revision, saving and MP4/WAV/MIDI exports, but its navigation assertion ran before asynchronous Back/save completed (pumpAndSettle waits for scheduled frames, not filesystem completion). The integration check now waits for the gallery and reopened canvas conditions. The integration APK also compiled separately in this cloud worker in 29 seconds. Independent file validation will run even after a runtime-test failure, while preserving the failing job result. No full UI/timing pass is claimed yet.
+
+
+Downloaded run-13 evidence exposed a harness-only extraction failure: both Gradle connected tests and Flutter integration tests uninstall their app by default, so post-test run-as calls captured unknown-package messages instead of exports. Runtime checks now retain APKs until extraction on the disposable emulator (`android.injected.androidTest.leaveApksInstalledAfterRun` and Flutter `--no-uninstall`). The emulator is destroyed by the action afterward. The 55-byte error files are explicitly not encoded-video evidence.
