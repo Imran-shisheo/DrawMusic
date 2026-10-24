@@ -13,6 +13,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var exportFiles: ExportFilesChannel? = null
     private var videoExports: VideoExportChannel? = null
     private var session: StreamingAudioSession? = null
     private var focusRequest: AudioFocusRequest? = null
@@ -27,6 +28,7 @@ class MainActivity : FlutterActivity() {
     }
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        exportFiles=ExportFilesChannel(this,flutterEngine.dartExecutor.binaryMessenger)
         videoExports=VideoExportChannel(applicationContext,flutterEngine.dartExecutor.binaryMessenger)
         if (Build.VERSION.SDK_INT >= 33) {
             registerReceiver(noisyReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY), Context.RECEIVER_NOT_EXPORTED)
@@ -85,5 +87,10 @@ class MainActivity : FlutterActivity() {
     }
     private fun releaseTrack() { session?.close(); session = null; abandonFocus() }
     override fun onPause() { session?.pause(); abandonFocus(); super.onPause() }
-    override fun onDestroy() { videoExports?.close(); releaseTrack(); unregisterReceiver(noisyReceiver); super.onDestroy() }
+    @Deprecated("Required for Android 24–28 document picker compatibility")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if(exportFiles?.activityResult(requestCode,resultCode,data)==true) return
+        super.onActivityResult(requestCode,resultCode,data)
+    }
+    override fun onDestroy() { exportFiles?.close(); videoExports?.close(); releaseTrack(); unregisterReceiver(noisyReceiver); super.onDestroy() }
 }

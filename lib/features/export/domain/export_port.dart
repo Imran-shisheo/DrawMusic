@@ -66,3 +66,8 @@ abstract interface class VideoExportPort {
     void Function(double)? onProgress,
   });
 }
+
+String readableExportName(String title, String extension) {
+  final name = title.replaceAll(RegExp(r'[/\\\x00-\x1f\x7f]'), '_').trim();
+  return '${name.isEmpty ? 'Drawing' : name}.$extension';
+}

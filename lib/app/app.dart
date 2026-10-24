@@ -9,6 +9,7 @@ import '../features/onboarding/presentation/tutorial.dart';
 import '../design_system/theme.dart';
 import '../features/editor/presentation/editor.dart';
 import '../features/library/presentation/drafts.dart';
+import '../features/export_library/presentation/exports_page.dart';
 import '../features/home/presentation/templates.dart';
 
 GoRouter buildRouter() => GoRouter(
@@ -23,7 +24,8 @@ GoRouter buildRouter() => GoRouter(
           label: const Text('New drawing'),
         ),
         bottomNavigationBar: NavigationBar(
-          selectedIndex: state.uri.path == '/drafts'
+          selectedIndex:
+              (state.uri.path == '/drafts' || state.uri.path == '/exports')
               ? 1
               : state.uri.path == '/settings'
               ? 2
@@ -37,7 +39,7 @@ GoRouter buildRouter() => GoRouter(
             ),
             NavigationDestination(
               icon: Icon(Icons.folder_outlined),
-              label: 'Drafts',
+              label: 'Library',
             ),
             NavigationDestination(icon: Icon(Icons.tune), label: 'Settings'),
           ],
@@ -46,6 +48,7 @@ GoRouter buildRouter() => GoRouter(
       routes: [
         GoRoute(path: '/home', builder: (_, _) => const HomePage()),
         GoRoute(path: '/drafts', builder: (_, _) => const DraftsPage()),
+        GoRoute(path: '/exports', builder: (_, _) => const ExportsPage()),
         GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
       ],
     ),

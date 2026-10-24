@@ -12,7 +12,7 @@ adb -s "$runtime_device" exec-out run-as com.imranshisheo.scribblesong cat cache
 if [[ "$runtime_result" == 0 ]]; then
   flutter test integration_test/creation_loop_test.dart --no-uninstall -d "$runtime_device" --timeout 10m || runtime_result=$?
 fi
-for runtime_file in ui-export-video.mp4 ui-export-audio.wav ui-export-notes.mid ui-project.json; do
+for runtime_file in ui-export-video.mp4 ui-export-audio.wav ui-export-notes.mid ui-project.json ui-export-metadata.json; do
   adb -s "$runtime_device" exec-out run-as com.imranshisheo.scribblesong cat "cache/$runtime_file" > "work/runtime-output/$runtime_file" || true
 done
 adb -s "$runtime_device" logcat -d -s TestRunner AndroidRuntime MediaCodec CCodec ACodec > work/runtime-output/android.log || true

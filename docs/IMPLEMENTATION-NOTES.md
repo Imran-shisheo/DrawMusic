@@ -25,3 +25,10 @@ Physical acceptance steps are tracked in [ANDROID-ACCEPTANCE.md](ANDROID-ACCEPTA
 ## Preferences and guide
 
 Version 1.3.0+6 adds a local checksummed preference repository for preview volume, optional haptics, reduced motion and tutorial completion. Writes retain a valid backup and preserve damaged primary bytes before repair. The controller publishes saved values only after persistence succeeds and exposes errors/retry. Preview volume uses AudioTrack output gain only; offline export rendering retains its original level. The welcome guide is skippable and replayable, with safe-area actions independent of content scrolling. Reduced page transitions follow the app or system preference; essential timing cues remain. Actual version information comes from package_info_plus. Physical feedback/lifecycle acceptance, contextual tool tips and localization remain pending.
+
+
+## Export catalog and public copies
+
+Version 1.4.0+7 scans completed app-private MIDI/WAV/MP4 files and writes bounded checksummed sidecars after successful publication. Thumbnail-only simplification never changes the editable drawing or score. Missing/damaged details preserve files and allow legacy discovery. Names are display metadata; renaming leaves encoded bytes intact. Deletion retains a seven-second tombstone for six-second UI Undo, then purges on listing; public/shared copies are outside this lifecycle. Older status snackbars are cleared before Undo.
+
+Android file actions validate canonical export-root paths, MIME and safe display names. Open copies only the chosen export into a dedicated cache directory exposed through a read-only URI. API 29+ public saving uses MediaStore IS_PENDING and verifies copied byte counts/file size before publication. API 24–28 uses ACTION_CREATE_DOCUMENT; cancellation is explicit and partial-destination cleanup is best effort where document providers permit deletion. A successful chooser launch is not a delivery/playback claim. Receiving-app behavior and legacy provider paths still require device QA. iOS native file actions remain pending alongside audio/video adapters.
