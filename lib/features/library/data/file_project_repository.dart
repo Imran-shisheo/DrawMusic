@@ -65,10 +65,27 @@ class FileProjectRepository implements ProjectRepository {
     final temporary = File('${target.path}.tmp');
     await temporary.writeAsString(envelope, flush: true);
     await temporary.rename(target.path);
-    // Keep the last 3 complete revisions. Orphan .tmp files never load.
+    // Keep three VERIFIED complete revisions, not merely three filenames.
+    // Damaged/future-version/foreign-identity files must neither consume the
+    // recovery budget nor be removed by housekeeping.
     final revisions = await _revisions(dir);
-    for (final file in revisions.skip(3)) {
-      await file.delete();
+    if (revisions.length <= 3) return;
+    var verified = 0;
+    for (final file in revisions) {
+      try {
+        final stored = await _read(file);
+        if (stored.id != document.id) continue;
+        verified++;
+      } catch (_) {
+        continue;
+      }
+      if (verified > 3) {
+        try {
+          await file.delete();
+        } on FileSystemException {
+          // Publication succeeded; a retention failure is safe to retry later.
+        }
+      }
     }
   }
 
