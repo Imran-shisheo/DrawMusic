@@ -1,0 +1,266 @@
+{
+  "011-home": [
+    {
+      "hex": "#FBFAF0",
+      "pixels": 1211512
+    },
+    {
+      "hex": "#FFFEF8",
+      "pixels": 564324
+    },
+    {
+      "hex": "#FFFFFF",
+      "pixels": 431235
+    },
+    {
+      "hex": "#F0F0F0",
+      "pixels": 57056
+    },
+    {
+      "hex": "#D05928",
+      "pixels": 37787
+    },
+    {
+      "hex": "#00C8B3",
+      "pixels": 30672
+    },
+    {
+      "hex": "#33312B",
+      "pixels": 13694
+    },
+    {
+      "hex": "#FEFDF7",
+      "pixels": 12874
+    },
+    {
+      "hex": "#000000",
+      "pixels": 11145
+    },
+    {
+      "hex": "#8277DB",
+      "pixels": 10849
+    },
+    {
+      "hex": "#E89E09",
+      "pixels": 10692
+    },
+    {
+      "hex": "#3A9E74",
+      "pixels": 9534
+    },
+    {
+      "hex": "#FCFBF5",
+      "pixels": 8973
+    },
+    {
+      "hex": "#263A35",
+      "pixels": 8243
+    },
+    {
+      "hex": "#F5F4EE",
+      "pixels": 8165
+    },
+    {
+      "hex": "#E4E3DE",
+      "pixels": 6432
+    }
+  ],
+  "014-canvas-empty": [
+    {
+      "hex": "#F7F6EE",
+      "pixels": 1296288
+    },
+    {
+      "hex": "#FFFEF8",
+      "pixels": 805243
+    },
+    {
+      "hex": "#FFFFFF",
+      "pixels": 182277
+    },
+    {
+      "hex": "#EEEEEE",
+      "pixels": 97404
+    },
+    {
+      "hex": "#263A35",
+      "pixels": 40800
+    },
+    {
+      "hex": "#00C8B3",
+      "pixels": 15362
+    },
+    {
+      "hex": "#DFA38B",
+      "pixels": 12849
+    },
+    {
+      "hex": "#96A6DA",
+      "pixels": 12785
+    },
+    {
+      "hex": "#BCD89C",
+      "pixels": 12730
+    },
+    {
+      "hex": "#94C6B1",
+      "pixels": 11979
+    },
+    {
+      "hex": "#EAC67B",
+      "pixels": 11622
+    },
+    {
+      "hex": "#8277DB",
+      "pixels": 10985
+    },
+    {
+      "hex": "#FEFDF7",
+      "pixels": 5762
+    },
+    {
+      "hex": "#F6F6F6",
+      "pixels": 4364
+    },
+    {
+      "hex": "#FDFCF6",
+      "pixels": 4003
+    },
+    {
+      "hex": "#000000",
+      "pixels": 3094
+    }
+  ],
+  "010-premium-monthly": [
+    {
+      "hex": "#FFFEF8",
+      "pixels": 1233026
+    },
+    {
+      "hex": "#BFFBEB",
+      "pixels": 311571
+    },
+    {
+      "hex": "#96F2DA",
+      "pixels": 180038
+    },
+    {
+      "hex": "#F2F2F2",
+      "pixels": 164005
+    },
+    {
+      "hex": "#EFFAF3",
+      "pixels": 131885
+    },
+    {
+      "hex": "#263A35",
+      "pixels": 54408
+    },
+    {
+      "hex": "#777777",
+      "pixels": 33753
+    },
+    {
+      "hex": "#2A2A2A",
+      "pixels": 32523
+    },
+    {
+      "hex": "#FDCC21",
+      "pixels": 20470
+    },
+    {
+      "hex": "#58D4BD",
+      "pixels": 19710
+    },
+    {
+      "hex": "#FFFEFB",
+      "pixels": 12560
+    },
+    {
+      "hex": "#FD7A4C",
+      "pixels": 11161
+    },
+    {
+      "hex": "#FFFFFD",
+      "pixels": 8024
+    },
+    {
+      "hex": "#EDE7DC",
+      "pixels": 7776
+    },
+    {
+      "hex": "#FED74E",
+      "pixels": 6415
+    },
+    {
+      "hex": "#74E394",
+      "pixels": 5239
+    }
+  ],
+  "035-canvas-backgrounds": [
+    {
+      "hex": "#D2D1CB",
+      "pixels": 963146
+    },
+    {
+      "hex": "#F4F4F4",
+      "pixels": 559759
+    },
+    {
+      "hex": "#D9D8D3",
+      "pixels": 329811
+    },
+    {
+      "hex": "#00C8B3",
+      "pixels": 192243
+    },
+    {
+      "hex": "#D9D9D9",
+      "pixels": 140867
+    },
+    {
+      "hex": "#FFFFFF",
+      "pixels": 104618
+    },
+    {
+      "hex": "#263A35",
+      "pixels": 54584
+    },
+    {
+      "hex": "#20312D",
+      "pixels": 38638
+    },
+    {
+      "hex": "#19FADE",
+      "pixels": 14505
+    },
+    {
+      "hex": "#DCAC8E",
+      "pixels": 14505
+    },
+    {
+      "hex": "#17A1CA",
+      "pixels": 14505
+    },
+    {
+      "hex": "#AF4D6D",
+      "pixels": 14505
+    },
+    {
+      "hex": "#AB58C5",
+      "pixels": 14505
+    },
+    {
+      "hex": "#D8D8D8",
+      "pixels": 14304
+    },
+    {
+      "hex": "#CBCBCB",
+      "pixels": 13750
+    },
+    {
+      "hex": "#D8D7D2",
+      "pixels": 5332
+    }
+  ]
+}

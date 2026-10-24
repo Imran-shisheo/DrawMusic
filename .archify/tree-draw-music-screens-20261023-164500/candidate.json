@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "diagram_type": "tree",
+  "meta": {
+    "title": "Draw Music \u00b7 screen inventory",
+    "subtitle": "Expand each group to inspect all 26 screen families. Links express grouping; the complete navigation flow is in PRD section 4.2.",
+    "locale": "en",
+    "quality_profile": "showcase",
+    "output": ".archify/tree-draw-music-screens-20261023-164500/screen-inventory.html"
+  },
+  "layout": {
+    "direction": "right",
+    "gapX": 60,
+    "gapY": 28,
+    "nodeW": 240,
+    "nodeMaxW": 330
+  },
+  "nodes": [
+    {
+      "id": "app",
+      "label": "Draw Music research",
+      "sublabel": "Observed screen inventory"
+    },
+    {
+      "id": "entry",
+      "label": "Entry and discovery",
+      "parent": "app",
+      "sublabel": "4 screen families",
+      "collapsed": true
+    },
+    {
+      "id": "S01",
+      "label": "S01 \u00b7 Loading / launch",
+      "parent": "entry"
+    },
+    {
+      "id": "S02",
+      "label": "S02 \u00b7 Welcome",
+      "parent": "entry"
+    },
+    {
+      "id": "S03",
+      "label": "S03 \u00b7 Premium plans",
+      "parent": "entry"
+    },
+    {
+      "id": "S04",
+      "label": "S04 \u00b7 Home gallery",
+      "parent": "entry"
+    },
+    {
+      "id": "editor",
+      "label": "Drawing and music",
+      "parent": "app",
+      "sublabel": "7 screen families",
+      "collapsed": true
+    },
+    {
+      "id": "S05",
+      "label": "S05 \u00b7 Editor and transport",
+      "parent": "editor"
+    },
+    {
+      "id": "S06",
+      "label": "S06 \u00b7 Contextual tips",
+      "parent": "editor"
+    },
+    {
+      "id": "S07",
+      "label": "S07 \u00b7 Smooth / Pixel",
+      "parent": "editor"
+    },
+    {
+      "id": "S08",
+      "label": "S08 \u00b7 Accompaniment",
+      "parent": "editor"
+    },
+    {
+      "id": "S09",
+      "label": "S09 \u00b7 Key selector",
+      "parent": "editor"
+    },
+    {
+      "id": "S10",
+      "label": "S10 \u00b7 Scale selector",
+      "parent": "editor"
+    },
+    {
+      "id": "S23",
+      "label": "S23 \u00b7 Tempo panel",
+      "parent": "editor"
+    },
+    {
+      "id": "background",
+      "label": "Canvas backgrounds",
+      "parent": "app",
+      "sublabel": "5 screen families",
+      "collapsed": true
+    },
+    {
+      "id": "S11",
+      "label": "S11 \u00b7 Background sheet",
+      "parent": "background"
+    },
+    {
+      "id": "S12",
+      "label": "S12 \u00b7 Color / gradient",
+      "parent": "background"
+    },
+    {
+      "id": "S13",
+      "label": "S13 \u00b7 Photo selection",
+      "parent": "background"
+    },
+    {
+      "id": "S14",
+      "label": "S14 \u00b7 Camera permission",
+      "parent": "background"
+    },
+    {
+      "id": "S15",
+      "label": "S15 \u00b7 Image cropper",
+      "parent": "background"
+    },
+    {
+      "id": "library",
+      "label": "Save and export",
+      "parent": "app",
+      "sublabel": "6 screen families",
+      "collapsed": true
+    },
+    {
+      "id": "S16",
+      "label": "S16 \u00b7 Exit / save dialog",
+      "parent": "library"
+    },
+    {
+      "id": "S18",
+      "label": "S18 \u00b7 Drafts",
+      "parent": "library"
+    },
+    {
+      "id": "S19",
+      "label": "S19 \u00b7 Exported Library",
+      "parent": "library"
+    },
+    {
+      "id": "S22",
+      "label": "S22 \u00b7 Native sharing / opening",
+      "parent": "library"
+    },
+    {
+      "id": "S24",
+      "label": "S24 \u00b7 Export formats",
+      "parent": "library"
+    },
+    {
+      "id": "S25",
+      "label": "S25 \u00b7 Export processing",
+      "parent": "library"
+    },
+    {
+      "id": "settings",
+      "label": "Settings and overlays",
+      "parent": "app",
+      "sublabel": "4 screen families",
+      "collapsed": true
+    },
+    {
+      "id": "S20",
+      "label": "S20 \u00b7 Settings",
+      "parent": "settings"
+    },
+    {
+      "id": "S21",
+      "label": "S21 \u00b7 Language selection",
+      "parent": "settings"
+    },
+    {
+      "id": "S17",
+      "label": "S17 \u00b7 Rating prompt",
+      "parent": "settings"
+    },
+    {
+      "id": "S26",
+      "label": "S26 \u00b7 Ads / access errors",
+      "parent": "settings"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Evidence and scope",
+      "items": [
+        "Android portrait on Nothing A059P, Android 16.",
+        "Observed, estimated, proposed and unknown behavior are distinguished in PRD.md.",
+        "Screenshots and exact reference filenames are in research/SCREEN-CATALOG.md."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Research limitations",
+      "items": [
+        "Paid transactions and rewarded unlocks were not completed.",
+        "Camera capture was assisted by the human user.",
+        "This inventory groups screens; it does not represent route transitions."
+      ]
+    }
+  ]
+}

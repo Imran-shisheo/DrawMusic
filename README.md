@@ -1,13 +1,30 @@
-# DrawMusic — Android cloud development
+# DrawMusic / ScribbleSong
 
-Private repository for an original Flutter drawing-to-music app. Android development runs in Codex Cloud; iOS builds/testing will be done on the owner's local Mac.
+An original Flutter drawing-to-music application. DrawMusic is the repository name; ScribbleSong is the PRD's provisional original brand. Android development runs in Codex Cloud. The owner will build and test iOS on a local Mac.
 
-The completed PRD is in PRD.md. The reviewed project setup and representative research files are in one checksum-verified Git bundle part. Restore the normal repository layout before starting development:
+## Start here
+
+- [Product requirements](PRD.md)
+- [Research gallery](research/index.html) and [evidence guide](research/README.md)
+- [Development roadmap](docs/ROADMAP.md) and [current status](docs/DEVELOPMENT-STATUS.md)
+- [Android cloud setup](cloud/SETUP.md) and [first cloud task](cloud/FIRST-TASK.md)
+- [Agent instructions](AGENTS.md)
+
+## Current state
+
+Research is complete. Cloud setup scripts and Android CI are prepared. Flutter implementation and remote build validation have not yet started; see current status for the latest verified milestone. No APK is available until cloud bootstrap and its build succeed.
+
+## Android verification after bootstrap
 
 ```bash
-python3 restore_bootstrap.py
+source cloud/env.sh
+bash scripts/check-android.sh
 ```
 
-See BOOTSTRAP.md. This transport step avoids broad GitHub CLI OAuth permissions; the GitHub App is authorized only for Imran-shisheo/DrawMusic. The original complete README, AGENTS.md, cloud setup scripts, Android CI, roadmap, PRD and safe research gallery are restored together. Camera photographs/recipient suggestions/raw device dumps and invalid runs are excluded from the source bundle.
+CI produces a debug APK under the workflow run's Artifacts section after successful checks. Download/unzip it and install app-debug.apk on your test phone. It is a development build, not a signed Play Store release.
 
-No Flutter implementation, APK or successful remote build is claimed by this seed commit. Cloud setup must restore and validate the project, then start the Android development task.
+## Research and asset ownership
+
+Reference images and audio document source-app behavior. They must never be bundled in the product. This cloud starter includes 16 representative screenshots and source exports; the complete research remains in the original Mac checkout. See [cloud reference scope](docs/CLOUD-REFERENCE-SCOPE.md). The full local research includes private device captures; Git intentionally excludes camera-photo/cropper images, recipient suggestions, raw device dumps and invalid runs. Some provenance references are therefore local-only; see [publication scope](docs/RESEARCH-PUBLICATION.md). Use original or explicitly licensed shipping artwork, icons, templates and sounds with a provenance manifest.
+
+No backend or account is required for the P0 creative workflow. Ads and purchases are deferred until core reliability. App code stays portable for later iOS testing; physical audio latency and platform integration need real-device validation.

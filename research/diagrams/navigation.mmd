@@ -1,0 +1,74 @@
+flowchart TD
+  Launch[Launch / Loading] --> Ad[Launch ad / Continue]
+  Ad --> Welcome[Welcome / Start]
+  Welcome --> Premium[Premium offer]
+  Premium -->|Close| Home[Home gallery]
+  Welcome -->|Observed offline session| Home
+  Home -->|Free template or New| Editor[Canvas editor]
+  Home -->|Library tab| Drafts[Drafts]
+  Drafts -->|Library subtab| Media[Exported Library]
+  Media -->|Draft subtab| Drafts
+  Drafts -->|Project card| Editor
+  Home -->|Settings tab| Settings[Settings]
+  Drafts -->|Settings tab| Settings
+  Media -->|Settings tab| Settings
+  Settings -->|Home tab| Home
+  Settings -->|Library tab| Drafts
+  Settings -->|New| Editor
+  Home -->|Crown / gem| Premium
+  Settings -->|Crown / banner| Premium
+  Editor -->|Draw / erase / undo / redo / clear| Editor
+  Editor -->|Play / Pause| Playback[Loop scan + audio]
+  Playback -->|Pause| Editor
+  Editor --> Tempo[Tempo panel]
+  Editor --> Styles[Smooth / Pixel menu]
+  Editor --> Instruments[Instrument strip]
+  Editor --> Layers[Accompaniment menu]
+  Editor --> Key[Key menu]
+  Editor --> Scale[Scale menu]
+  Tempo -->|Back / change| Editor
+  Styles -->|Select / dismiss| Editor
+  Instruments -->|Available selection| Editor
+  Key -->|Available selection| Editor
+  Scale -->|Available selection| Editor
+  Key -->|Locked offline| Access[Connection message; selection retained]
+  Instruments -.->|Crown-marked content| Gated[Restricted access; completion unverified]
+  Layers -.-> Gated
+  Scale -.-> Gated
+  Access --> Editor
+  Editor --> Background[Background sheet]
+  Background --> Colors[Color swatches]
+  Colors --> Custom[Solid / Linear / Radial picker]
+  Custom --> Background
+  Background --> Photos[Photo tab / presets / import]
+  Background --> Camera[Camera tab]
+  Camera --> Permission[Android camera permission]
+  Permission -->|Human-assisted grant and capture| Crop[Image cropper]
+  Photos -.->|Import path not completed| Crop
+  Crop -->|Toolbar Back| Background
+  Background -->|Apply / dismiss| Editor
+  Editor --> Export[Export chooser]
+  Export -->|MIDI / WAV| Processing[Local export processing]
+  Export -->|MP4| Processing
+  Processing -->|Success| Media
+  Media --> Overflow[Save / Share menu]
+  Overflow -->|Save verified| Downloads[Public Downloads / DrawMusic]
+  Overflow -.->|Share| Share[Native share sheet]
+  Media -->|Tap WAV| OpenWith[Native Open with]
+  OpenWith -->|Cancel| Media
+  Editor -->|Back| Exit[Exit project / Stay]
+  Exit -->|Stay| Editor
+  Exit -->|Exit saves; origin Home| Home
+  Exit -->|Exit saves; origin Drafts| Drafts
+  Editor --> Rating[Rating prompt]
+  Rating -->|Back; no rating submitted| Editor
+  Settings --> Language[Language list]
+  Language -->|Back without change| Settings
+  Settings -->|Share app| Share
+  Share -->|Cancel| Settings
+  Settings -.->|Privacy Policy| Browser[External browser / offline error]
+  Browser -->|Back| Settings
+  Settings -.->|More app; destination not completed| Store[External store]
+  Editor -.-> Ads[Full-screen / expandable ads]
+  Ads -->|Dismiss; may reveal other overlay| Editor
+  Premium -.->|Purchase intentionally not initiated| Billing[Platform billing]

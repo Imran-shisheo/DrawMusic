@@ -1,0 +1,73 @@
+{
+  "format": 0,
+  "tracks": 1,
+  "ppq": 480,
+  "tempo_microseconds_per_quarter": 500000,
+  "bpm": 120.0,
+  "end_tick": 3840,
+  "beats": 8.0,
+  "duration_seconds": 4.0,
+  "events": [
+    {
+      "tick": 0,
+      "meta_type": 81,
+      "data_hex": "07a120"
+    },
+    {
+      "tick": 0,
+      "program": 4,
+      "channel": 0
+    },
+    {
+      "tick": 640,
+      "note": 72,
+      "velocity": 100,
+      "on": true,
+      "channel": 0
+    },
+    {
+      "tick": 640,
+      "note": 60,
+      "velocity": 100,
+      "on": true,
+      "channel": 0
+    },
+    {
+      "tick": 3200,
+      "note": 72,
+      "velocity": 0,
+      "on": false,
+      "channel": 0
+    },
+    {
+      "tick": 3200,
+      "note": 60,
+      "velocity": 0,
+      "on": false,
+      "channel": 0
+    },
+    {
+      "tick": 3840,
+      "meta_type": 47,
+      "data_hex": ""
+    }
+  ],
+  "notes": [
+    {
+      "note": 72,
+      "velocity": 100,
+      "start_tick": 640,
+      "end_tick": 3200,
+      "start_seconds": 0.6666666666666666,
+      "duration_seconds": 2.6666666666666665
+    },
+    {
+      "note": 60,
+      "velocity": 100,
+      "start_tick": 640,
+      "end_tick": 3200,
+      "start_seconds": 0.6666666666666666,
+      "duration_seconds": 2.6666666666666665
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+name: Android checks and test APK
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  setup-files:
+    name: Validate setup and detect Flutter project
+    runs-on: ubuntu-24.04
+    outputs:
+      app_exists: ${{ steps.detect.outputs.app_exists }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Check setup syntax
+        run: |
+          bash -n cloud/env.sh scripts/setup-cloud-android.sh scripts/check-android.sh
+          python3 -m json.tool .fvmrc > /dev/null
+      - id: detect
+        shell: bash
+        run: |
+          if [[ -f pubspec.yaml ]]; then
+            echo 'app_exists=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'app_exists=false' >> "$GITHUB_OUTPUT"
+            echo 'Setup-only repository. Flutter checks and APK build are skipped until cloud bootstrap.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+  android:
+    name: Analyze, test and build Android
+    needs: setup-files
+    if: needs.setup-files.outputs.app_exists == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare pinned Flutter and Android SDK
+        run: bash scripts/setup-cloud-android.sh
+      - name: Format, analyze, test and build
+        run: bash scripts/check-android.sh
+      - name: Upload installable test APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: drawmusic-android-debug-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7

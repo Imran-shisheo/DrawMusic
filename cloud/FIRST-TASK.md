@@ -1,0 +1,11 @@
+# First Android cloud development task
+
+Develop the original Flutter drawing-to-music application described in PRD.md. The owner has authorized Android development in Codex Cloud. Read AGENTS.md and docs/ROADMAP.md first. The research-only phase is finished. iOS builds will be tested by the owner on a local Mac.
+
+1. Inspect the repository and prepared environment. Run the pinned setup script if needed; source cloud/env.sh. Resolve toolchain/network problems. Ask the owner if Android SDK terms need explicit acceptance. Do not treat a setup-only CI pass as an app build.
+2. Create a development branch and bootstrap the Flutter app at the repository root with Android support and development identifier com.imranshisheo.scribblesong. Preserve the research and setup files. Use the pinned SDK and commit pubspec.lock. Add iOS scaffolding only if useful for portable code; iOS signing/build validation is outside this cloud task.
+3. Implement the roadmap in order, first delivering M0 and a real Android debug APK, then continuing toward the P0 creation loop as task limits allow. Favor complete vertical slices. Include genuine sound, save/reopen and exports as their respective gates are reached. Use original assets and track their provenance. Never ship source reference images, audio, brand art or UI screenshots.
+4. Run formatter, analyzer, tests and Android build for implemented scope. Fix failures. Update docs/DEVELOPMENT-STATUS.md with completed features, exact validation, untested physical-device behavior and next steps.
+5. Commit a usable checkpoint and open a draft PR when reviewable. Supply the PR link and test APK/Actions artifact location. Keep source code and instructions sufficient for the owner to build iOS on the Mac later. Do not auto-merge, publish to stores, incur paid infrastructure costs or claim completion of P0 features that are still stubbed.
+
+Work independently on routine reversible choices. Stop only for a concrete missing credential/approval, nonrecoverable environment problem or a product choice that materially changes the PRD. This task runs in the selected cloud environment and must not depend on the owner's Mac, local browser session or connected Android phone.
