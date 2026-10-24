@@ -190,18 +190,21 @@ internal class CanvasVideoEncoder {
             muxer.start(); started = true
             val buffer = ByteBuffer.allocateDirect(4 * 1024 * 1024)
             val info = MediaCodec.BufferInfo()
-            sources.forEachIndexed { index, extractor ->
-                while (true) {
-                    checkCancelled(cancel)
-                    buffer.clear()
-                    val count = extractor.readSampleData(buffer, 0)
-                    if (count < 0) break
-                    info.set(0, count, extractor.sampleTime,
-                        if (extractor.sampleFlags and MediaExtractor.SAMPLE_FLAG_SYNC != 0) MediaCodec.BUFFER_FLAG_KEY_FRAME else 0)
-                    buffer.position(0); buffer.limit(count)
-                    muxer.writeSampleData(tracks[index], buffer, info)
-                    extractor.advance()
-                }
+            while (true) {
+                checkCancelled(cancel)
+                // Interleave globally by timestamp, keeping muxer input bounded
+                // rather than feeding the entire video ahead of the audio.
+                val index = sources.indices.filter { sources[it].sampleTime >= 0 }
+                    .minByOrNull { sources[it].sampleTime } ?: break
+                val extractor = sources[index]
+                buffer.clear()
+                val count = extractor.readSampleData(buffer, 0)
+                check(count >= 0) { "Encoded track ended unexpectedly" }
+                info.set(0, count, extractor.sampleTime,
+                    if (extractor.sampleFlags and MediaExtractor.SAMPLE_FLAG_SYNC != 0) MediaCodec.BUFFER_FLAG_KEY_FRAME else 0)
+                buffer.position(0); buffer.limit(count)
+                muxer.writeSampleData(tracks[index], buffer, info)
+                extractor.advance()
             }
             muxer.stop(); started = false
         } finally {
