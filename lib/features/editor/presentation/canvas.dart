@@ -1,3 +1,5 @@
+import 'package:scribblesong/l10n/strings.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -11,7 +13,12 @@ const instrumentColors = [
   Color(0xffa46b16),
   Color(0xff287e61),
 ];
-const instrumentNames = ['Cloud keys', 'Wood drops', 'Glass stars'];
+String instrumentName(BuildContext context, Instrument instrument) =>
+    switch (instrument) {
+      Instrument.keys => context.strings.cloudKeys,
+      Instrument.mallet => context.strings.woodDrops,
+      Instrument.bell => context.strings.glassStars,
+    };
 const instrumentIcons = [
   Icons.piano,
   Icons.water_drop_outlined,
@@ -258,7 +265,9 @@ class DrawingCanvasState extends State<DrawingCanvas> {
       final size = Size(constraints.maxWidth, constraints.maxHeight);
       _height = size.height;
       return Semantics(
-        label: 'Drawing canvas. Horizontal position controls time; height controls pitch.',
+        label: context
+            .strings
+            .drawingCanvasHorizontalPositionControlsTimeHeightControlsP,
         child: Listener(
           key: const ValueKey('drawing-canvas'),
           behavior: HitTestBehavior.opaque,
@@ -312,16 +321,16 @@ class DrawingCanvasState extends State<DrawingCanvas> {
                         active: _active,
                         repaint: _preview,
                         instrument: widget.instrument,
-                        previewStrokes: const [],
+                        previewStrokes: [],
                       ),
                     ),
                   ),
                 ),
                 if (widget.document.strokes.isEmpty)
-                  const IgnorePointer(
+                  IgnorePointer(
                     child: Center(
                       child: Text(
-                        'Leave a little melody here.',
+                        context.strings.leaveALittleMelodyHere,
                         style: TextStyle(color: Color(0xff64746e)),
                       ),
                     ),

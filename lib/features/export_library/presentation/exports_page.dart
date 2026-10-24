@@ -1,3 +1,5 @@
+import 'package:scribblesong/l10n/strings.dart';
+
 import '../../../creative_document/document.dart';
 
 import 'dart:async';
@@ -82,17 +84,19 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
             context: context,
             builder: (context) => AlertDialog(
               title: Text('Delete ${entry.artifact.name}?'),
-              content: const Text(
-                'This removes the app-private export after the Undo window. Copies saved or shared elsewhere stay. Your editable drawing is preserved.',
+              content: Text(
+                context
+                    .strings
+                    .thisRemovesTheAppPrivateExportAfterTheUndoWindowCopiesSave,
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Keep export'),
+                  child: Text(context.strings.keepExport),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Delete'),
+                  child: Text(context.strings.delete),
                 ),
               ],
             ),
@@ -103,10 +107,10 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Export removed from the library'),
+              content: Text(context.strings.exportRemovedFromTheLibrary),
               duration: const Duration(seconds: 6),
               action: SnackBarAction(
-                label: 'Undo',
+                label: context.strings.undo,
                 onPressed: () async {
                   try {
                     await repository.restore(entry.id);
@@ -144,11 +148,11 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Your exports'),
+      title: Text(context.strings.yourExports),
       bottom: const LibraryTabs(exports: true),
       actions: [
         IconButton(
-          tooltip: 'Refresh exports',
+          tooltip: context.strings.refreshExports,
           onPressed: () => ref.invalidate(exportListingProvider),
           icon: const Icon(Icons.refresh),
         ),
@@ -157,15 +161,15 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
     body: ref
         .watch(exportListingProvider)
         .when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => Center(child: CircularProgressIndicator()),
           error: (_, _) => Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Could not load your exports.'),
+                Text(context.strings.couldNotLoadYourExports),
                 TextButton(
                   onPressed: () => ref.invalidate(exportListingProvider),
-                  child: const Text('Retry'),
+                  child: Text(context.strings.retry),
                 ),
               ],
             ),
@@ -186,8 +190,10 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
                   children: [
                     if (listing.detailFailures > 0)
-                      const Text(
-                        'Some export details could not be read. The original files are preserved.',
+                      Text(
+                        context
+                            .strings
+                            .someExportDetailsCouldNotBeReadTheOriginalFilesArePreserve,
                       ),
                     for (final entry in listing.entries) _card(context, entry),
                   ],
@@ -196,8 +202,7 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
   );
   Widget _card(BuildContext context, LibraryExport entry) {
     final format = entry.id.split('.').last.toUpperCase();
-    final date = MaterialLocalizations.of(context)
-        .formatShortDate(entry.createdAt.toLocal());
+    final date = context.formatLocalDate(entry.createdAt);
     return Card(
       child: ListTile(
         isThreeLine: true,
@@ -221,42 +226,48 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          '$format · $date · ${(entry.bytes / 1024).ceil()} KB\n${!entry.available
-              ? 'File unavailable — export again from the drawing'
+          '${context.strings.exportDetails(format, date, context.formatNumber((entry.bytes / 1024).ceil()))}\n${!entry.available
+              ? context.strings.fileUnavailableExportAgain
               : entry.legacy
-              ? 'Older export — source details unavailable'
-              : 'Drawing may have changed since this export'}',
+              ? context.strings.olderExportSourceDetailsUnavailable
+              : context.strings.drawingMayHaveChangedSinceExport}',
         ),
         onTap: _busy || !entry.available
             ? null
             : () => _act(entry, _Action.open),
         trailing: PopupMenuButton<_Action>(
-          tooltip: 'Actions for ${entry.artifact.name}',
+          tooltip: context.strings.exportActions(entry.artifact.name),
           enabled: !_busy,
           onSelected: (action) => _act(entry, action),
           itemBuilder: (_) => [
             PopupMenuItem(
               value: _Action.open,
               enabled: entry.available,
-              child: const Text('Open with another app'),
+              child: Text(context.strings.openWithAnotherApp),
             ),
             PopupMenuItem(
               value: _Action.save,
               enabled: entry.available,
-              child: const Text('Save a copy'),
+              child: Text(context.strings.saveACopy),
             ),
             PopupMenuItem(
               value: _Action.share,
               enabled: entry.available,
-              child: const Text('Share'),
+              child: Text(context.strings.share),
             ),
-            const PopupMenuItem(value: _Action.rename, child: Text('Rename')),
+            PopupMenuItem(
+              value: _Action.rename,
+              child: Text(context.strings.rename),
+            ),
             PopupMenuItem(
               value: _Action.source,
               enabled: entry.artifact.projectId.isNotEmpty,
-              child: const Text('Open source drawing'),
+              child: Text(context.strings.openSourceDrawing),
             ),
-            const PopupMenuItem(value: _Action.delete, child: Text('Delete')),
+            PopupMenuItem(
+              value: _Action.delete,
+              child: Text(context.strings.delete),
+            ),
           ],
         ),
       ),

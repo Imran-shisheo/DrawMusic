@@ -1,3 +1,4 @@
+import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 
 import '../creative_document/document.dart';
@@ -16,7 +17,7 @@ Future<DrawingStyle?> showStylePanel(
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              'Drawing style',
+              context.strings.drawingStyle,
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
@@ -26,19 +27,25 @@ Future<DrawingStyle?> showStylePanel(
               leading: Icon(
                 style == DrawingStyle.smooth ? Icons.gesture : Icons.grid_on,
               ),
-              title: Text(style == DrawingStyle.smooth ? 'Smooth' : 'Pixel'),
+              title: Text(
+                style == DrawingStyle.smooth
+                    ? context.strings.smooth
+                    : context.strings.pixel,
+              ),
               subtitle: Text(
                 style == DrawingStyle.smooth
-                    ? 'Original freehand lines'
-                    : 'Block shapes on a 40 × 50 grid',
+                    ? context.strings.originalFreehandLines
+                    : context.strings.blockShapesOnGrid,
               ),
               trailing: style == current ? const Icon(Icons.check) : null,
               onTap: () => Navigator.pop(context, style),
             ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(16),
             child: Text(
-              'Styles change how your marks look. Original points and music are preserved.',
+              context
+                  .strings
+                  .stylesChangeHowYourMarksLookOriginalPointsAndMusicArePrese,
             ),
           ),
         ],

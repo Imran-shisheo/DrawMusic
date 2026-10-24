@@ -1,3 +1,4 @@
+import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 
 class EditorTip {
@@ -91,7 +92,12 @@ class _TipOverlayState extends State<_TipOverlay> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Tip ${_index + 1} of ${widget.tips.length}',
+                                      context.strings.tipCounter(
+                                        context.formatNumber(_index + 1),
+                                        context.formatNumber(
+                                          widget.tips.length,
+                                        ),
+                                      ),
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelLarge,
@@ -120,7 +126,7 @@ class _TipOverlayState extends State<_TipOverlay> {
                             children: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Skip tips'),
+                                child: Text(context.strings.skipTips),
                               ),
                               FilledButton(
                                 onPressed: _moving ? null : _next,
