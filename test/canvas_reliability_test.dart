@@ -5,6 +5,64 @@ import 'package:scribblesong/features/editor/presentation/canvas.dart';
 
 void main() {
   testWidgets(
+    'eraser shows its actual hit area and cancellation commits the gap once',
+    (tester) async {
+      final cursor = ValueNotifier<double?>(null);
+      addTearDown(cursor.dispose);
+      final commits = <List<Stroke>>[];
+      final doc = ProjectDocument(
+        id: 'erase-cursor',
+        strokes: [
+          Stroke(
+            id: 'line',
+            instrument: Instrument.keys,
+            points: [InkPoint(.1, .5), InkPoint(.9, .5)],
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Center(
+            child: SizedBox(
+              width: 200,
+              height: 400,
+              child: DrawingCanvas(
+                document: doc,
+                instrument: Instrument.keys,
+                eraser: true,
+                cursor: cursor,
+                onCommit: commits.add,
+                onLimit: () => fail('unexpected limit'),
+              ),
+            ),
+          ),
+        ),
+      );
+      EraserCursorPainter painter() => tester
+          .widgetList<CustomPaint>(find.byType(CustomPaint))
+          .map((w) => w.painter)
+          .whereType<EraserCursorPainter>()
+          .single;
+      final top = tester.getTopLeft(
+        find.byKey(const ValueKey('drawing-canvas')),
+      );
+      final gesture = await tester.startGesture(top + const Offset(100, 200));
+      await tester.pump();
+      expect(painter().point!.u, .5);
+      expect(painter().point!.v, .5);
+      await gesture.moveTo(top + const Offset(110, 200));
+      await tester.pump();
+      expect(painter().point!.u, .55);
+      await gesture.cancel();
+      await tester.pump();
+      expect(painter().point, isNull);
+      expect(commits.length, 1);
+      expect(commits.single.length, 2);
+      expect(commits.single.first.points.last.u, closeTo(.44, 1e-8));
+      expect(commits.single.last.points.first.u, closeTo(.61, 1e-8));
+    },
+  );
+  testWidgets(
     'live ink survives metadata refresh and a preceding commit refresh',
     (tester) async {
       var doc = ProjectDocument(id: 'gesture');

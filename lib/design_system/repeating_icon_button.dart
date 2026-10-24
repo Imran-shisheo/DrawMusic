@@ -1,6 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+
+import '../l10n/strings.dart';
 
 class RepeatingIconButton extends StatefulWidget {
   const RepeatingIconButton({
@@ -45,7 +48,7 @@ class _RepeatingIconButtonState extends State<RepeatingIconButton>
     _stop();
     if (_step()) {
       _repeat = Timer.periodic(
-        const Duration(milliseconds: 120),
+        const Duration(milliseconds: 100),
         (_) => _step(),
       );
     }
@@ -71,14 +74,26 @@ class _RepeatingIconButtonState extends State<RepeatingIconButton>
 
   @override
   Widget build(BuildContext context) => Semantics(
-    hint: widget.onStep == null ? null : 'Press and hold to repeat',
+    hint: widget.onStep == null ? null : context.strings.pressAndHoldToRepeat,
     child: Tooltip(
       message: widget.tooltip,
       triggerMode: TooltipTriggerMode.manual,
-      child: GestureDetector(
-        onLongPressStart: widget.onStep == null ? null : _start,
-        onLongPressEnd: (_) => _stop(),
-        onLongPressCancel: _stop,
+      child: RawGestureDetector(
+        gestures: <Type, GestureRecognizerFactory>{
+          LongPressGestureRecognizer:
+              GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+                () => LongPressGestureRecognizer(
+                  duration: const Duration(milliseconds: 400),
+                ),
+                (recognizer) {
+                  recognizer.onLongPressStart = widget.onStep == null
+                      ? null
+                      : _start;
+                  recognizer.onLongPressEnd = (_) => _stop();
+                  recognizer.onLongPressCancel = _stop;
+                },
+              ),
+        },
         child: Listener(
           onPointerCancel: (_) => _stop(),
           child: IconButton(icon: Icon(widget.icon), onPressed: widget.onStep),

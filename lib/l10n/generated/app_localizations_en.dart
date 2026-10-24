@@ -614,4 +614,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get howToCreateALoop => 'How to create a loop';
+
+  @override
+  String get pressAndHoldToRepeat => 'Press and hold to repeat';
 }

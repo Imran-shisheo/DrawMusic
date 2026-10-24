@@ -139,6 +139,27 @@ class CursorPainter extends CustomPainter {
   bool shouldRepaint(CursorPainter old) => old.cursor != cursor;
 }
 
+class EraserCursorPainter extends CustomPainter {
+  EraserCursorPainter(this.point);
+  final InkPoint? point;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final position = point;
+    if (position == null) return;
+    canvas.drawCircle(
+      Offset(position.u * size.width, position.v * size.height),
+      12,
+      Paint()
+        ..color = const Color(0xff007e73)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+  }
+
+  @override
+  bool shouldRepaint(EraserCursorPainter old) => old.point != point;
+}
+
 class DrawingCanvas extends StatefulWidget {
   const DrawingCanvas({
     super.key,
@@ -232,8 +253,9 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     );
     if (widget.eraser) {
       final last = _lastErase ?? p;
+      final aspect = size.width / size.height;
       final distance = math.sqrt(
-        math.pow((p.u - last.u) * .8, 2) + math.pow(p.v - last.v, 2),
+        math.pow((p.u - last.u) * aspect, 2) + math.pow(p.v - last.v, 2),
       );
       final radius = 12 / _height;
       final steps = math.max(1, (distance / (radius * .5)).ceil());
@@ -245,6 +267,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
             last.v + (p.v - last.v) * s / steps,
           ),
           radius,
+          aspect: aspect,
         );
       }
       _lastErase = p;
@@ -340,6 +363,17 @@ class DrawingCanvasState extends State<DrawingCanvas> {
                     child: CustomPaint(painter: CursorPainter(widget.cursor)),
                   ),
                 ),
+                if (widget.eraser)
+                  IgnorePointer(
+                    child: RepaintBoundary(
+                      child: ListenableBuilder(
+                        listenable: _preview,
+                        builder: (_, _) => CustomPaint(
+                          painter: EraserCursorPainter(_lastErase),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
