@@ -1,3 +1,5 @@
+import 'package:scribblesong/l10n/strings.dart';
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -37,24 +39,26 @@ class EditorPage extends ConsumerWidget {
       .watch(openedDocumentProvider(projectId))
       .when(
         loading: () =>
-            const Scaffold(body: Center(child: CircularProgressIndicator())),
+            Scaffold(body: Center(child: CircularProgressIndicator())),
         error: (e, _) => Scaffold(
-          appBar: AppBar(title: const Text('Drawing unavailable')),
+          appBar: AppBar(title: Text(context.strings.drawingUnavailable)),
           body: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Could not open this drawing. The original file is preserved.',
+                Text(
+                  context
+                      .strings
+                      .couldNotOpenThisDrawingTheOriginalFileIsPreserved,
                 ),
                 TextButton(
                   onPressed: () =>
                       ref.invalidate(openedDocumentProvider(projectId)),
-                  child: const Text('Retry'),
+                  child: Text(context.strings.retry),
                 ),
                 TextButton(
                   onPressed: () => context.go('/drafts'),
-                  child: const Text('Back to drafts'),
+                  child: Text(context.strings.backToDrafts),
                 ),
               ],
             ),
@@ -99,28 +103,38 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     if (!mounted) return;
     final completed = await showEditorTips(context, [
       EditorTip(
-        'Draw a melody',
-        'Left to right follows eight beats. Higher marks make higher notes; vertical marks can form chords. Erase and Undo let you explore safely.',
+        context.strings.drawAMelody,
+        context
+            .strings
+            .leftToRightFollowsEightBeatsHigherMarksMakeHigherNotesVert,
         _canvas,
       ),
       EditorTip(
-        'Listen and pause',
-        'Play repeats your drawing. Tap Pause to keep your place, or Replay to start over. Music pauses when you leave the app.',
+        context.strings.listenAndPause,
+        context
+            .strings
+            .playRepeatsYourDrawingTapPauseToKeepYourPlaceOrReplayToSta,
         _playTarget,
       ),
       EditorTip(
-        'Choose a voice',
-        'Cloud keys, Wood drops and Glass stars are named original instruments. Each new stroke uses the selected voice; existing strokes keep theirs.',
+        context.strings.chooseAVoice,
+        context
+            .strings
+            .cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments,
         _voiceTarget,
       ),
       EditorTip(
-        'Set the pace',
-        'Tap the BPM number for the tempo slider. Hold minus or plus to repeat, from 60 to 200 BPM. Tempo updates arrive on a beat; drawing updates arrive on a loop.',
+        context.strings.setThePace,
+        context
+            .strings
+            .tapTheBpmNumberForTheTempoSliderHoldMinusOrPlusToRepeatFro,
         _tempoTarget,
       ),
       EditorTip(
-        'Key and scale',
-        'This version uses the key of C. Choose major or minor pentatonic here to change the mood. The same score drives preview and exports.',
+        context.strings.keyAndScale,
+        context
+            .strings
+            .thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo,
         _scaleTarget,
       ),
     ]);
@@ -477,17 +491,17 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialog) => AlertDialog(
-          title: const Text('Loop tempo'),
+          title: Text(context.strings.loopTempo),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('$tempo BPM'),
+              Text(context.strings.tempoValue(context.formatNumber(tempo))),
               Slider(
                 min: 60,
                 max: 200,
                 divisions: 140,
                 value: tempo.toDouble(),
-                label: '$tempo BPM',
+                label: context.strings.tempoValue(context.formatNumber(tempo)),
                 onChanged: (value) => setDialog(() => tempo = value.round()),
               ),
             ],
@@ -495,11 +509,11 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(context.strings.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, tempo),
-              child: const Text('Apply'),
+              child: Text(context.strings.apply),
             ),
           ],
         ),
@@ -532,8 +546,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         await SemanticsService.sendAnnouncement(
           View.of(context),
           value == DrawingStyle.smooth
-              ? 'Smooth drawing style selected'
-              : 'Pixel drawing style selected',
+              ? context.strings.smoothStyleSelected
+              : context.strings.pixelStyleSelected,
           Directionality.of(context),
         );
       }
@@ -562,16 +576,16 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Your loop in notes'),
+          title: Text(context.strings.yourLoopInNotes),
           content: SingleChildScrollView(
             child: Text(
-              '${score.notes.length} note events · ${doc.tempo} BPM · C ${doc.scale.name} pentatonic.\n\n${score.notes.take(80).map((n) => '${instrumentNames[n.instrument.index]}: MIDI pitch ${n.pitch}, beat ${(n.startBeat + 1).toStringAsFixed(2)}, lasts ${n.durationBeat.toStringAsFixed(2)} beats.').join('\n')}${score.notes.length > 80 ? '\nShowing the first 80 events.' : ''}',
+              '${context.strings.scoreSummary(context.formatNumber(score.notes.length), context.formatNumber(doc.tempo), doc.scale == MusicalScale.major ? context.strings.major : context.strings.minor)}\n\n${score.notes.take(80).map((n) => context.strings.scoreEvent(instrumentName(context, n.instrument), context.formatNumber(n.pitch), context.formatDecimal(n.startBeat + 1), context.formatDecimal(n.durationBeat))).join('\n')}${score.notes.length > 80 ? '\n${context.strings.showingFirst80Events}' : ''}',
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(context.strings.close),
             ),
           ],
         ),
@@ -587,16 +601,16 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear this drawing?'),
-        content: const Text('You can restore it with Undo.'),
+        title: Text(context.strings.clearThisDrawing),
+        content: Text(context.strings.youCanRestoreItWithUndo),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep drawing'),
+            child: Text(context.strings.keepDrawing),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Clear'),
+            child: Text(context.strings.clear),
           ),
         ],
       ),
@@ -644,26 +658,32 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(
-            tooltip: 'Back to gallery',
+            tooltip: context.strings.backToGallery,
             onPressed: _leaving ? null : _leave,
             icon: const Icon(Icons.arrow_back),
           ),
-          title: InkWell(
-            onTap: _rename,
-            child: Text(
-              doc.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          title: Semantics(
+            button: true,
+            label: context.strings.renameDrawingLabel(doc.title),
+            child: ExcludeSemantics(
+              child: InkWell(
+                onTap: _rename,
+                child: Text(
+                  doc.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ),
           ),
           actions: [
             IconButton(
-              tooltip: 'Editor tips',
+              tooltip: context.strings.editorTips,
               onPressed: _showTips,
               icon: const Icon(Icons.help_outline),
             ),
             IconButton(
-              tooltip: 'Export loop',
+              tooltip: context.strings.exportLoop,
               onPressed: doc.strokes.isEmpty
                   ? null
                   : () async {
@@ -679,7 +699,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
               icon: const Icon(Icons.ios_share),
             ),
             IconButton(
-              tooltip: 'Save drawing',
+              tooltip: context.strings.saveDrawing,
               onPressed: state.saving ? null : () => controller.save(),
               icon: const Icon(Icons.save_outlined),
             ),
@@ -691,12 +711,16 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
             child: Column(
               children: [
                 if (widget.recovered)
-                  const Text(
-                    'Recovered the previous complete revision. The damaged file is preserved.',
+                  Text(
+                    context
+                        .strings
+                        .recoveredThePreviousCompleteRevisionTheDamagedFileIsPreser,
                   ),
                 if (repo.hasError)
-                  const Text(
-                    'Storage unavailable. Retry from Drafts before leaving.',
+                  Text(
+                    context
+                        .strings
+                        .storageUnavailableRetryFromDraftsBeforeLeaving,
                     style: TextStyle(color: Colors.red),
                   ),
                 if (state.error != null)
@@ -708,22 +732,26 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     RepeatingIconButton(
-                      tooltip: 'Slower',
+                      tooltip: context.strings.slower,
                       onStep: doc.tempo > 60 ? () => _changeTempo(-1) : null,
                       icon: Icons.remove,
                     ),
                     TextButton(
                       key: _tempoTarget,
                       onPressed: _tempoPanel,
-                      child: Text('${doc.tempo} BPM'),
+                      child: Text(
+                        context.strings.tempoValue(
+                          context.formatNumber(doc.tempo),
+                        ),
+                      ),
                     ),
                     RepeatingIconButton(
-                      tooltip: 'Faster',
+                      tooltip: context.strings.faster,
                       onStep: doc.tempo < 200 ? () => _changeTempo(1) : null,
                       icon: Icons.add,
                     ),
                     IconButton(
-                      tooltip: 'Drawing style',
+                      tooltip: context.strings.drawingStyle,
                       onPressed: _drawingStyle,
                       icon: Icon(
                         doc.style == DrawingStyle.smooth
@@ -732,12 +760,12 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Paper color',
+                      tooltip: context.strings.paperColor,
                       onPressed: _background,
                       icon: const Icon(Icons.palette_outlined),
                     ),
                     IconButton(
-                      tooltip: 'Clear drawing',
+                      tooltip: context.strings.clearDrawing,
                       onPressed: doc.strokes.isEmpty ? null : _clear,
                       icon: const Icon(Icons.delete_sweep_outlined),
                     ),
@@ -748,33 +776,33 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                   child: Row(
                     children: [
                       ChoiceChip(
-                        label: const Text('Draw'),
+                        label: Text(context.strings.draw),
                         selected: !_eraser,
                         onSelected: (_) => setState(() => _eraser = false),
                       ),
                       const SizedBox(width: 8),
                       ChoiceChip(
-                        label: const Text('Erase'),
+                        label: Text(context.strings.erase),
                         selected: _eraser,
                         onSelected: (_) => setState(() => _eraser = true),
                       ),
                       const SizedBox(width: 12),
                       IconButton(
-                        tooltip: 'Describe score',
+                        tooltip: context.strings.describeScore,
                         onPressed: _describing ? null : _describe,
                         icon: const Icon(Icons.list_alt),
                       ),
                       DropdownButton<MusicalScale>(
                         key: _scaleTarget,
                         value: doc.scale,
-                        items: const [
+                        items: [
                           DropdownMenuItem(
                             value: MusicalScale.major,
-                            child: Text('C major pentatonic'),
+                            child: Text(context.strings.cMajorPentatonic),
                           ),
                           DropdownMenuItem(
                             value: MusicalScale.minor,
-                            child: Text('C minor pentatonic'),
+                            child: Text(context.strings.cMinorPentatonic),
                           ),
                         ],
                         onChanged: (scale) {
@@ -819,7 +847,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     IconButton(
-                      tooltip: 'Undo',
+                      tooltip: context.strings.undo,
                       onPressed: controller.canUndo
                           ? () {
                               _historyEdit(redo: false);
@@ -828,7 +856,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       icon: const Icon(Icons.undo),
                     ),
                     IconButton(
-                      tooltip: 'Redo',
+                      tooltip: context.strings.redo,
                       onPressed: controller.canRedo
                           ? () {
                               _historyEdit(redo: true);
@@ -853,7 +881,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       iconSize: 36,
                     ),
                     IconButton(
-                      tooltip: 'Replay',
+                      tooltip: context.strings.replay,
                       onPressed: doc.strokes.isEmpty
                           ? null
                           : () => _play(replay: true),
@@ -864,18 +892,18 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                 if (_prepared && _wantedRevision != _heardRevision)
                   Text(
                     _pendingBoundary == UpdateBoundary.beat
-                        ? 'Updates next beat'
-                        : 'Updates next loop',
+                        ? context.strings.updatesNextBeat
+                        : context.strings.updatesNextLoop,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 Text(
                   doc.strokes.isEmpty
-                      ? 'Draw something to hear it.'
+                      ? context.strings.drawSomethingToHearIt
                       : state.saving
-                      ? 'Saving…'
+                      ? context.strings.saving
                       : state.dirty
-                      ? 'Changes pending'
-                      : 'Saved on this device',
+                      ? context.strings.changesPending
+                      : context.strings.savedOnThisDevice,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 4),
@@ -894,7 +922,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                               instrumentIcons[instrument.index],
                               color: instrumentColors[instrument.index],
                             ),
-                            label: Text(instrumentNames[instrument.index]),
+                            label: Text(instrumentName(context, instrument)),
                             selected: _instrument == instrument,
                             onSelected: (_) {
                               _selectionFeedback();

@@ -1,9 +1,11 @@
+import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/settings/application/settings_controller.dart';
 import '../features/settings/presentation/settings_page.dart';
+import '../features/settings/presentation/language_page.dart';
 import '../features/onboarding/presentation/tutorial.dart';
 
 import '../design_system/theme.dart';
@@ -38,6 +40,7 @@ GoRouter buildRouter({bool offerEditorTips = false}) => GoRouter(
         ),
       ],
     ),
+    GoRoute(path: '/language', builder: (_, _) => const LanguagePage()),
     GoRoute(path: '/help', builder: (_, _) => const TutorialPage()),
     GoRoute(
       path: '/editor/:id',
@@ -52,7 +55,7 @@ GoRouter buildRouter({bool offerEditorTips = false}) => GoRouter(
     body: Center(
       child: TextButton(
         onPressed: () => context.go('/home'),
-        child: const Text('Page unavailable. Return home'),
+        child: Text(context.strings.pageUnavailableReturnHome),
       ),
     ),
   ),
@@ -78,7 +81,7 @@ class _RootTabsState extends State<_RootTabs> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/editor/new'),
         icon: const Icon(Icons.add),
-        label: const Text('New drawing'),
+        label: Text(context.strings.newDrawing),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index == 0
@@ -92,16 +95,19 @@ class _RootTabsState extends State<_RootTabs> {
               1 => _libraryIndex,
               _ => 3,
             }),
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.grid_view_rounded),
-            label: 'Home',
+            label: context.strings.home,
           ),
           NavigationDestination(
             icon: Icon(Icons.folder_outlined),
-            label: 'Library',
+            label: context.strings.library,
           ),
-          NavigationDestination(icon: Icon(Icons.tune), label: 'Settings'),
+          NavigationDestination(
+            icon: Icon(Icons.tune),
+            label: context.strings.settings,
+          ),
         ],
       ),
     );
@@ -126,6 +132,13 @@ class _ScribbleSongAppState extends ConsumerState<ScribbleSongApp> {
   @override
   Widget build(BuildContext context) => MaterialApp.router(
     title: 'ScribbleSong',
+    locale: Locale(
+      ref.watch(
+        settingsProvider.select((state) => state.preferences.languageCode),
+      ),
+    ),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
     theme: buildTheme(),
     routerConfig: router,
     builder: (context, child) {
@@ -149,18 +162,20 @@ class HomePage extends StatelessWidget {
   const HomePage({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('ScribbleSong')),
+    appBar: AppBar(title: Text(context.strings.scribblesong)),
     body: ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 100),
       children: [
         Text(
-          'A little line.\nA little music.',
+          context.strings.aLittleLineALittleMusic,
           style: Theme.of(context).textTheme.headlineLarge
               ?.copyWith(fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Turn your marks into a melody. Start with a blank page and see where it takes you.',
+        Text(
+          context
+              .strings
+              .turnYourMarksIntoAMelodyStartWithABlankPageAndSeeWhereItTa,
         ),
         const SizedBox(height: 32),
         const TemplateGallery(),
@@ -173,11 +188,11 @@ class HomePage extends StatelessWidget {
               children: [
                 const Icon(Icons.gesture, size: 64, color: accent),
                 const SizedBox(height: 20),
-                const Text('Make your first loop'),
+                Text(context.strings.makeYourFirstLoop),
                 const SizedBox(height: 12),
                 FilledButton(
                   onPressed: () => context.push('/editor/new'),
-                  child: const Text('Start drawing'),
+                  child: Text(context.strings.startDrawing),
                 ),
               ],
             ),

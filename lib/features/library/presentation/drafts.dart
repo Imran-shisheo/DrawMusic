@@ -1,3 +1,4 @@
+import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,15 +25,15 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Delete $title?'),
-        content: const Text('You can undo this from the confirmation message.'),
+        content: Text(context.strings.youCanUndoThisFromTheConfirmationMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep drawing'),
+            child: Text(context.strings.keepDrawing),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(context.strings.delete),
           ),
         ],
       ),
@@ -45,10 +46,10 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Drawing deleted'),
+        content: Text(context.strings.drawingDeleted),
         duration: const Duration(seconds: 6),
         action: SnackBarAction(
-          label: 'Undo',
+          label: context.strings.undo,
           onPressed: () async {
             try {
               await repository.restore(id);
@@ -56,9 +57,11 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
             } catch (_) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Text(
-                      'Could not restore the drawing. Its files are preserved.',
+                      context
+                          .strings
+                          .couldNotRestoreTheDrawingItsFilesArePreserved,
                     ),
                   ),
                 );
@@ -91,8 +94,8 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not change this drawing. Please retry.'),
+          SnackBar(
+            content: Text(context.strings.couldNotChangeThisDrawingPleaseRetry),
           ),
         );
       }
@@ -104,11 +107,11 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Your drawings'),
+      title: Text(context.strings.yourDrawings),
       bottom: const LibraryTabs(exports: false),
       actions: [
         IconButton(
-          tooltip: 'Refresh drafts',
+          tooltip: context.strings.refreshDrafts,
           onPressed: () => ref.invalidate(libraryProvider),
           icon: const Icon(Icons.refresh),
         ),
@@ -117,24 +120,26 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
     body: ref
         .watch(libraryProvider)
         .when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => Center(child: CircularProgressIndicator()),
           error: (_, _) => Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Could not load your drawings.'),
+                Text(context.strings.couldNotLoadYourDrawings),
                 TextButton(
                   onPressed: () => ref.invalidate(libraryProvider),
-                  child: const Text('Retry'),
+                  child: Text(context.strings.retry),
                 ),
               ],
             ),
           ),
           data: (listing) =>
               listing.projects.isEmpty && listing.failures.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
-                    'Your drawings will live here.\nCreate a new drawing to begin.',
+                    context
+                        .strings
+                        .yourDrawingsWillLiveHereCreateANewDrawingToBegin,
                     textAlign: TextAlign.center,
                   ),
                 )
@@ -144,12 +149,14 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                     for (final id in listing.failures)
                       ListTile(
                         leading: const Icon(Icons.warning_amber),
-                        title: const Text('A drawing could not be recovered'),
-                        subtitle: const Text(
-                          'The original files are preserved.',
+                        title: Text(
+                          context.strings.aDrawingCouldNotBeRecovered,
+                        ),
+                        subtitle: Text(
+                          context.strings.theOriginalFilesArePreserved,
                         ),
                         trailing: IconButton(
-                          tooltip: 'Delete damaged drawing',
+                          tooltip: context.strings.deleteDamagedDrawing,
                           onPressed: _busy
                               ? null
                               : () => _delete(id, 'damaged drawing'),
@@ -170,29 +177,38 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                           ),
                           title: Text(doc.title),
                           subtitle: Text(
-                            '${doc.strokes.length} marks · ${doc.tempo} BPM · C ${doc.scale.name}${listing.recoveredIds.contains(doc.id) ? '\nRecovered previous revision' : ''}',
+                            context.strings.drawingDetails(
+                                  context.formatNumber(doc.strokes.length),
+                                  context.formatNumber(doc.tempo),
+                                  doc.scale == MusicalScale.major
+                                      ? context.strings.major
+                                      : context.strings.minor,
+                                ) +
+                                (listing.recoveredIds.contains(doc.id)
+                                    ? '\n${context.strings.recoveredPreviousRevision}'
+                                    : ''),
                           ),
                           onTap: () => context.push('/editor/${doc.id}'),
                           trailing: PopupMenuButton<_Action>(
-                            tooltip: 'Manage ${doc.title}',
+                            tooltip: context.strings.manageDrawing(doc.title),
                             enabled: !_busy,
                             onSelected: (action) => _act(doc, action),
-                            itemBuilder: (_) => const [
+                            itemBuilder: (_) => [
                               PopupMenuItem(
                                 value: _Action.rename,
-                                child: Text('Rename'),
+                                child: Text(context.strings.rename),
                               ),
                               PopupMenuItem(
                                 value: _Action.duplicate,
-                                child: Text('Duplicate'),
+                                child: Text(context.strings.duplicate),
                               ),
                               PopupMenuItem(
                                 value: _Action.export,
-                                child: Text('Export / share'),
+                                child: Text(context.strings.exportShare),
                               ),
                               PopupMenuItem(
                                 value: _Action.delete,
-                                child: Text('Delete'),
+                                child: Text(context.strings.delete),
                               ),
                             ],
                           ),

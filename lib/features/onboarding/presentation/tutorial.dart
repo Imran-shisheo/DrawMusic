@@ -1,3 +1,4 @@
+import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,7 +23,7 @@ class _TutorialGateState extends ConsumerState<TutorialGate> {
       return widget.child;
     }
     if (state.loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return TutorialPage(
       firstUse: true,
@@ -47,47 +48,63 @@ class TutorialPage extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(firstUse ? 'Welcome' : 'Creation guide')),
+      appBar: AppBar(
+        title: Text(
+          firstUse ? context.strings.welcome : context.strings.creationGuide,
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           const Icon(Icons.gesture, size: 72),
           const SizedBox(height: 24),
           Text(
-            firstUse ? 'Welcome to ScribbleSong' : 'How to create a loop',
+            firstUse
+                ? context.strings.welcomeToScribbleSong
+                : context.strings.howToCreateALoop,
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 16),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.draw),
-            title: Text('Draw your melody'),
+            title: Text(context.strings.drawYourMelody),
             subtitle: Text(
-              'Left to right follows time. Higher marks make higher notes. Vertical marks can form chords.',
+              context
+                  .strings
+                  .leftToRightFollowsTimeHigherMarksMakeHigherNotesVerticalMa,
             ),
           ),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.palette_outlined),
-            title: Text('Choose a voice'),
+            title: Text(context.strings.chooseAVoice),
             subtitle: Text(
-              'Each named color plays its own original instrument. Erase, Undo and Redo to explore.',
+              context
+                  .strings
+                  .eachNamedColorPlaysItsOwnOriginalInstrumentEraseUndoAndRed,
             ),
           ),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.play_arrow),
-            title: Text('Play and change it'),
+            title: Text(context.strings.playAndChangeIt),
             subtitle: Text(
-              'Tap Play to hear the loop. Tempo changes arrive on a beat; drawing changes arrive on a loop. Pause and Replay keep you in control.',
+              context
+                  .strings
+                  .tapPlayToHearTheLoopTempoChangesArriveOnABeatDrawingChange,
             ),
           ),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.save_outlined),
-            title: Text('Keep and share your work'),
+            title: Text(context.strings.keepAndShareYourWork),
             subtitle: Text(
-              'Drawings save on this device. Reopen them from Drafts, or export MIDI, WAV and MP4. Sharing starts only when you choose it.',
+              context
+                  .strings
+                  .drawingsSaveOnThisDeviceReopenThemFromDraftsOrExportMidiWa,
             ),
           ),
-          const Text(
-            'No account is needed. You can replay this guide from Settings & help.',
+          Text(
+            context
+                .strings
+                .noAccountIsNeededYouCanReplayThisGuideFromSettingsHelp,
           ),
         ],
       ),
@@ -107,17 +124,17 @@ class TutorialPage extends ConsumerWidget {
                 ),
                 TextButton(
                   onPressed: state.saving ? null : complete,
-                  child: const Text('Skip guide'),
+                  child: Text(context.strings.skipGuide),
                 ),
                 if (onContinueForNow != null)
                   TextButton(
                     onPressed: onContinueForNow,
-                    child: const Text('Continue for now'),
+                    child: Text(context.strings.continueForNow),
                   ),
               ] else
                 FilledButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Back to settings'),
+                  child: Text(context.strings.backToSettings),
                 ),
             ],
           ),

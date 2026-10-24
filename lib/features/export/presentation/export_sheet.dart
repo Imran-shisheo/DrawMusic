@@ -1,3 +1,5 @@
+import 'package:scribblesong/l10n/strings.dart';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -194,48 +196,56 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Export this loop',
+              context.strings.exportThisLoop,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'One loop · ${duration.toStringAsFixed(2)} seconds. Exports use the drawing and settings shown when this panel opened.',
+              context.strings.oneLoopExportSummary(
+                context.formatDecimal(duration),
+              ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'MIDI contains notes and instrument instructions. It may sound different in another player.',
+            Text(
+              context
+                  .strings
+                  .midiContainsNotesAndInstrumentInstructionsItMaySoundDiffer,
             ),
             const SizedBox(height: 8),
             FilledButton.tonal(
               onPressed: (_busy || _fileActionBusy)
                   ? null
                   : () => _export(ExportFormat.midi),
-              child: const Text('Export MIDI'),
+              child: Text(context.strings.exportMidi),
             ),
             Text(
-              'WAV uses the original preview voices. One loop + 1.25 s tail, 44.1 kHz mono PCM16 (~${((duration + 1.25) * 88.2).round()} KB).',
+              context.strings.wavExportSummary(
+                context.formatNumber(((duration + 1.25) * 88.2).round()),
+              ),
             ),
             FilledButton.tonal(
               onPressed: (_busy || _fileActionBusy)
                   ? null
                   : () => _export(ExportFormat.wav),
-              child: const Text('Export WAV'),
+              child: Text(context.strings.exportWav),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'MP4 animates this drawing with its music. Video export cancels if you leave the app.',
+            Text(
+              context
+                  .strings
+                  .mp4AnimatesThisDrawingWithItsMusicVideoExportCancelsIfYouL,
             ),
             DropdownButton<int>(
               value: _width,
               isExpanded: true,
-              items: const [
+              items: [
                 DropdownMenuItem(
                   value: 1080,
-                  child: Text('HD · 1080 × 1350 · 30 fps'),
+                  child: Text(context.strings.hd1080135030Fps),
                 ),
                 DropdownMenuItem(
                   value: 640,
-                  child: Text('Compact · 640 × 800 · 30 fps'),
+                  child: Text(context.strings.compact64080030Fps),
                 ),
               ],
               onChanged: (_busy || _fileActionBusy)
@@ -250,7 +260,7 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
               onPressed: (_busy || _fileActionBusy)
                   ? null
                   : () => _export(ExportFormat.mp4),
-              child: const Text('Export MP4'),
+              child: Text(context.strings.exportMp4),
             ),
             if (_busy) ...[
               LinearProgressIndicator(value: _progress),
@@ -261,7 +271,9 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
                         if (!_finalizing) _cancellation?.cancelled = true;
                       },
                 child: Text(
-                  _finalizing ? 'Finishing library entry…' : 'Cancel export',
+                  _finalizing
+                      ? context.strings.finishingLibraryEntry
+                      : context.strings.cancelExport,
                 ),
               ),
             ],
@@ -275,17 +287,17 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
               FilledButton.icon(
                 onPressed: _fileActionBusy ? null : _share,
                 icon: const Icon(Icons.ios_share),
-                label: const Text('Share exported file'),
+                label: Text(context.strings.shareExportedFile),
               ),
               FilledButton.tonalIcon(
                 onPressed: _fileActionBusy ? null : _savePublic,
                 icon: const Icon(Icons.save_alt),
-                label: const Text('Save a public copy'),
+                label: Text(context.strings.saveAPublicCopy),
               ),
             ],
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(context.strings.close),
             ),
           ],
         ),

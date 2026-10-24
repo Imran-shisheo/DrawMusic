@@ -1,0 +1,324 @@
+{
+  "@@locale": "en",
+  "pageUnavailableReturnHome": "Page unavailable. Return home",
+  "newDrawing": "New drawing",
+  "home": "Home",
+  "library": "Library",
+  "settings": "Settings",
+  "scribblesong": "ScribbleSong",
+  "aLittleLineALittleMusic": "A little line.\nA little music.",
+  "turnYourMarksIntoAMelodyStartWithABlankPageAndSeeWhereItTa": "Turn your marks into a melody. Start with a blank page and see where it takes you.",
+  "makeYourFirstLoop": "Make your first loop",
+  "startDrawing": "Start drawing",
+  "youCanUndoThisFromTheConfirmationMessage": "You can undo this from the confirmation message.",
+  "keepDrawing": "Keep drawing",
+  "delete": "Delete",
+  "drawingDeleted": "Drawing deleted",
+  "undo": "Undo",
+  "couldNotRestoreTheDrawingItsFilesArePreserved": "Could not restore the drawing. Its files are preserved.",
+  "couldNotChangeThisDrawingPleaseRetry": "Could not change this drawing. Please retry.",
+  "yourDrawings": "Your drawings",
+  "refreshDrafts": "Refresh drafts",
+  "couldNotLoadYourDrawings": "Could not load your drawings.",
+  "retry": "Retry",
+  "yourDrawingsWillLiveHereCreateANewDrawingToBegin": "Your drawings will live here.\nCreate a new drawing to begin.",
+  "aDrawingCouldNotBeRecovered": "A drawing could not be recovered",
+  "theOriginalFilesArePreserved": "The original files are preserved.",
+  "deleteDamagedDrawing": "Delete damaged drawing",
+  "rename": "Rename",
+  "duplicate": "Duplicate",
+  "exportShare": "Export / share",
+  "drafts": "Drafts",
+  "exports": "Exports",
+  "drawYourMelody": "Draw your melody",
+  "leftToRightFollowsTimeHigherMarksMakeHigherNotesVerticalMa": "Left to right follows time. Higher marks make higher notes. Vertical marks can form chords.",
+  "chooseAVoice": "Choose a voice",
+  "eachNamedColorPlaysItsOwnOriginalInstrumentEraseUndoAndRed": "Each named color plays its own original instrument. Erase, Undo and Redo to explore.",
+  "playAndChangeIt": "Play and change it",
+  "tapPlayToHearTheLoopTempoChangesArriveOnABeatDrawingChange": "Tap Play to hear the loop. Tempo changes arrive on a beat; drawing changes arrive on a loop. Pause and Replay keep you in control.",
+  "keepAndShareYourWork": "Keep and share your work",
+  "drawingsSaveOnThisDeviceReopenThemFromDraftsOrExportMidiWa": "Drawings save on this device. Reopen them from Drafts, or export MIDI, WAV and MP4. Sharing starts only when you choose it.",
+  "noAccountIsNeededYouCanReplayThisGuideFromSettingsHelp": "No account is needed. You can replay this guide from Settings & help.",
+  "skipGuide": "Skip guide",
+  "continueForNow": "Continue for now",
+  "backToSettings": "Back to settings",
+  "skipTips": "Skip tips",
+  "exportThisLoop": "Export this loop",
+  "midiContainsNotesAndInstrumentInstructionsItMaySoundDiffer": "MIDI contains notes and instrument instructions. It may sound different in another player.",
+  "exportMidi": "Export MIDI",
+  "exportWav": "Export WAV",
+  "mp4AnimatesThisDrawingWithItsMusicVideoExportCancelsIfYouL": "MP4 animates this drawing with its music. Video export cancels if you leave the app.",
+  "hd1080135030Fps": "HD · 1080 × 1350 · 30 fps",
+  "compact64080030Fps": "Compact · 640 × 800 · 30 fps",
+  "exportMp4": "Export MP4",
+  "shareExportedFile": "Share exported file",
+  "saveAPublicCopy": "Save a public copy",
+  "close": "Close",
+  "drawingCanvasHorizontalPositionControlsTimeHeightControlsP": "Drawing canvas. Horizontal position controls time; height controls pitch.",
+  "leaveALittleMelodyHere": "Leave a little melody here.",
+  "drawingUnavailable": "Drawing unavailable",
+  "couldNotOpenThisDrawingTheOriginalFileIsPreserved": "Could not open this drawing. The original file is preserved.",
+  "backToDrafts": "Back to drafts",
+  "loopTempo": "Loop tempo",
+  "cancel": "Cancel",
+  "apply": "Apply",
+  "yourLoopInNotes": "Your loop in notes",
+  "clearThisDrawing": "Clear this drawing?",
+  "youCanRestoreItWithUndo": "You can restore it with Undo.",
+  "clear": "Clear",
+  "backToGallery": "Back to gallery",
+  "editorTips": "Editor tips",
+  "exportLoop": "Export loop",
+  "saveDrawing": "Save drawing",
+  "recoveredThePreviousCompleteRevisionTheDamagedFileIsPreser": "Recovered the previous complete revision. The damaged file is preserved.",
+  "storageUnavailableRetryFromDraftsBeforeLeaving": "Storage unavailable. Retry from Drafts before leaving.",
+  "slower": "Slower",
+  "faster": "Faster",
+  "drawingStyle": "Drawing style",
+  "paperColor": "Paper color",
+  "clearDrawing": "Clear drawing",
+  "draw": "Draw",
+  "erase": "Erase",
+  "describeScore": "Describe score",
+  "cMajorPentatonic": "C major pentatonic",
+  "cMinorPentatonic": "C minor pentatonic",
+  "redo": "Redo",
+  "replay": "Replay",
+  "settingsHelp": "Settings & help",
+  "retryPreferences": "Retry preferences",
+  "recoveredYourPreviousPreferencesYourDrawingsAreUnchanged": "Recovered your previous preferences. Your drawings are unchanged.",
+  "previewVolume": "Preview volume",
+  "onlyChangesPlaybackInTheAppExportedMusicKeepsItsOriginalLe": "Only changes playback in the app. Exported music keeps its original level.",
+  "previewIsMutedExportsStillContainMusicAlsoCheckYourDeviceM": "Preview is muted. Exports still contain music. Also check your device media volume if playback is quiet.",
+  "hapticFeedback": "Haptic feedback",
+  "optionalFeedbackWhenChoosingAVoiceOrChangingTempoAvailabil": "Optional feedback when choosing a voice or changing tempo. Availability depends on your device.",
+  "reduceNonessentialMotion": "Reduce nonessential motion",
+  "turnOnToReducePageTransitionsWhenOffFollowsYourDevicePrefe": "Turn on to reduce page transitions. When off, follows your device preference. The music cursor remains available.",
+  "replayCreationGuide": "Replay creation guide",
+  "replayEditorTips": "Replay editor tips",
+  "opensANewBlankDrawingWithGuidedControls": "Opens a new blank drawing with guided controls.",
+  "privacy": "Privacy",
+  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Drawings, preferences and exports stay on this device. Creation works offline without an account. Files leave the app only when you explicitly share them. Uninstalling removes app-private data.",
+  "readingBuildInformation": "Reading build information…",
+  "buildInformationUnavailable": "Build information unavailable",
+  "tryAStartingPoint": "Try a starting point",
+  "thisRemovesTheAppPrivateExportAfterTheUndoWindowCopiesSave": "This removes the app-private export after the Undo window. Copies saved or shared elsewhere stay. Your editable drawing is preserved.",
+  "keepExport": "Keep export",
+  "exportRemovedFromTheLibrary": "Export removed from the library",
+  "yourExports": "Your exports",
+  "refreshExports": "Refresh exports",
+  "couldNotLoadYourExports": "Could not load your exports.",
+  "someExportDetailsCouldNotBeReadTheOriginalFilesArePreserve": "Some export details could not be read. The original files are preserved.",
+  "openWithAnotherApp": "Open with another app",
+  "saveACopy": "Save a copy",
+  "share": "Share",
+  "openSourceDrawing": "Open source drawing",
+  "paperPreview": "Paper preview",
+  "opacityFadesThePaperColorTowardWhiteYourMarksAndMusicStayT": "Opacity fades the paper color toward white. Your marks and music stay the same.",
+  "stylesChangeHowYourMarksLookOriginalPointsAndMusicArePrese": "Styles change how your marks look. Original points and music are preserved.",
+  "language": "Language",
+  "english": "English",
+  "languageSelectorTitle": "Choose language",
+  "languageSaved": "Language saved",
+  "languageSaveFailed": "Could not save language. Retry from Settings.",
+  "languageExplanation": "English is currently available.",
+  "updatedOn": "Updated {date}",
+  "tempoValue": "{tempo} BPM",
+  "sizeKilobytes": "{size} KB",
+  "@updatedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@tempoValue": {
+    "placeholders": {
+      "tempo": {
+        "type": "String"
+      }
+    }
+  },
+  "@sizeKilobytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "drawAMelody": "Draw a melody",
+  "leftToRightFollowsEightBeatsHigherMarksMakeHigherNotesVert": "Left to right follows eight beats. Higher marks make higher notes; vertical marks can form chords. Erase and Undo let you explore safely.",
+  "listenAndPause": "Listen and pause",
+  "playRepeatsYourDrawingTapPauseToKeepYourPlaceOrReplayToSta": "Play repeats your drawing. Tap Pause to keep your place, or Replay to start over. Music pauses when you leave the app.",
+  "cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments": "Cloud keys, Wood drops and Glass stars are named original instruments. Each new stroke uses the selected voice; existing strokes keep theirs.",
+  "setThePace": "Set the pace",
+  "tapTheBpmNumberForTheTempoSliderHoldMinusOrPlusToRepeatFro": "Tap the BPM number for the tempo slider. Hold minus or plus to repeat, from 60 to 200 BPM. Tempo updates arrive on a beat; drawing updates arrive on a loop.",
+  "keyAndScale": "Key and scale",
+  "thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo": "This version uses the key of C. Choose major or minor pentatonic here to change the mood. The same score drives preview and exports.",
+  "warmPaper": "Warm paper",
+  "mintPaper": "Mint paper",
+  "lilacPaper": "Lilac paper",
+  "rosePaper": "Rose paper",
+  "drawingDetails": "{marks} marks · {tempo} BPM · C {scale}",
+  "@drawingDetails": {
+    "placeholders": {
+      "marks": {
+        "type": "String"
+      },
+      "tempo": {
+        "type": "String"
+      },
+      "scale": {
+        "type": "String"
+      }
+    }
+  },
+  "exportDetails": "{format} · {date} · {size} KB",
+  "@exportDetails": {
+    "placeholders": {
+      "format": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "manageDrawing": "Manage {title}",
+  "@manageDrawing": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "renameDrawingLabel": "Rename drawing, {title}",
+  "@renameDrawingLabel": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "exportActions": "Actions for {name}",
+  "@exportActions": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "paperOpacity": "Opacity {value}%",
+  "@paperOpacity": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "paperOpacitySemantics": "Paper opacity {value} percent",
+  "@paperOpacitySemantics": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "percentValue": "{value}%",
+  "@percentValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "major": "major",
+  "minor": "minor",
+  "recoveredPreviousRevision": "Recovered previous revision",
+  "fileUnavailableExportAgain": "File unavailable — export again from the drawing",
+  "olderExportSourceDetailsUnavailable": "Older export — source details unavailable",
+  "drawingMayHaveChangedSinceExport": "Drawing may have changed since this export",
+  "smoothStyleSelected": "Smooth drawing style selected",
+  "pixelStyleSelected": "Pixel drawing style selected",
+  "updatesNextBeat": "Updates next beat",
+  "updatesNextLoop": "Updates next loop",
+  "drawSomethingToHearIt": "Draw something to hear it.",
+  "saving": "Saving…",
+  "changesPending": "Changes pending",
+  "savedOnThisDevice": "Saved on this device",
+  "oneLoopExportSummary": "One loop · {seconds} seconds. Exports use the drawing and settings shown when this panel opened.",
+  "@oneLoopExportSummary": {
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "wavExportSummary": "WAV uses the original preview voices. One loop + 1.25 s tail, 44.1 kHz mono PCM16 (~{kilobytes} KB).",
+  "@wavExportSummary": {
+    "placeholders": {
+      "kilobytes": {
+        "type": "String"
+      }
+    }
+  },
+  "scoreSummary": "{count} note events · {tempo} BPM · C {scale} pentatonic.",
+  "@scoreSummary": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      },
+      "tempo": {
+        "type": "String"
+      },
+      "scale": {
+        "type": "String"
+      }
+    }
+  },
+  "scoreEvent": "{voice}: MIDI pitch {pitch}, beat {beat}, lasts {duration} beats.",
+  "@scoreEvent": {
+    "placeholders": {
+      "voice": {
+        "type": "String"
+      },
+      "pitch": {
+        "type": "String"
+      },
+      "beat": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "tipCounter": "Tip {current} of {total}",
+  "@tipCounter": {
+    "placeholders": {
+      "current": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "cloudKeys": "Cloud keys",
+  "woodDrops": "Wood drops",
+  "glassStars": "Glass stars",
+  "smooth": "Smooth",
+  "pixel": "Pixel",
+  "originalFreehandLines": "Original freehand lines",
+  "blockShapesOnGrid": "Block shapes on a 40 × 50 grid",
+  "finishingLibraryEntry": "Finishing library entry…",
+  "cancelExport": "Cancel export",
+  "showingFirst80Events": "Showing the first 80 events.",
+  "welcome": "Welcome",
+  "creationGuide": "Creation guide",
+  "welcomeToScribbleSong": "Welcome to ScribbleSong",
+  "howToCreateALoop": "How to create a loop"
+}

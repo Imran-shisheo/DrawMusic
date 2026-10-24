@@ -1,3 +1,4 @@
+import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,7 +12,7 @@ class TemplateGallery extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        'Try a starting point',
+        context.strings.tryAStartingPoint,
         style: Theme.of(context).textTheme.titleLarge,
       ),
       const SizedBox(height: 12),

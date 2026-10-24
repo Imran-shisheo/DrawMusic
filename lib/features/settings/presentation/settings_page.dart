@@ -1,3 +1,4 @@
+import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,10 +24,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final preferences = state.preferences;
     final busy = state.loading || state.saving;
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings & help')),
+      appBar: AppBar(title: Text(context.strings.settingsHelp)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
         children: [
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(context.strings.language),
+            subtitle: Text(context.strings.english),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/language'),
+          ),
           if (state.loading || state.saving) const LinearProgressIndicator(),
           if (state.error != null) ...[
             Text(state.error!, semanticsLabel: state.error),
@@ -34,18 +42,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               onPressed: busy
                   ? null
                   : () => ref.read(settingsProvider.notifier).retry(),
-              child: const Text('Retry preferences'),
+              child: Text(context.strings.retryPreferences),
             ),
           ],
           if (state.recovered)
-            const Text(
-              'Recovered your previous preferences. Your drawings are unchanged.',
+            Text(
+              context
+                  .strings
+                  .recoveredYourPreviousPreferencesYourDrawingsAreUnchanged,
             ),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.volume_up_outlined),
-            title: Text('Preview volume'),
+            title: Text(context.strings.previewVolume),
             subtitle: Text(
-              'Only changes playback in the app. Exported music keeps its original level.',
+              context
+                  .strings
+                  .onlyChangesPlaybackInTheAppExportedMusicKeepsItsOriginalLe,
             ),
           ),
           Slider(
@@ -68,13 +80,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   },
           ),
           if (preferences.previewVolume == 0)
-            const Text(
-              'Preview is muted. Exports still contain music. Also check your device media volume if playback is quiet.',
+            Text(
+              context
+                  .strings
+                  .previewIsMutedExportsStillContainMusicAlsoCheckYourDeviceM,
             ),
           SwitchListTile(
-            title: const Text('Haptic feedback'),
-            subtitle: const Text(
-              'Optional feedback when choosing a voice or changing tempo. Availability depends on your device.',
+            title: Text(context.strings.hapticFeedback),
+            subtitle: Text(
+              context
+                  .strings
+                  .optionalFeedbackWhenChoosingAVoiceOrChangingTempoAvailabil,
             ),
             value: preferences.haptics,
             onChanged: busy
@@ -84,9 +100,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       .save(preferences.copyWith(haptics: value)),
           ),
           SwitchListTile(
-            title: const Text('Reduce nonessential motion'),
-            subtitle: const Text(
-              'Turn on to reduce page transitions. When off, follows your device preference. The music cursor remains available.',
+            title: Text(context.strings.reduceNonessentialMotion),
+            subtitle: Text(
+              context
+                  .strings
+                  .turnOnToReducePageTransitionsWhenOffFollowsYourDevicePrefe,
             ),
             value: preferences.reduceMotion,
             onChanged: busy
@@ -97,23 +115,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           ListTile(
             leading: const Icon(Icons.help_outline),
-            title: const Text('Replay creation guide'),
+            title: Text(context.strings.replayCreationGuide),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/help'),
           ),
           ListTile(
             leading: const Icon(Icons.touch_app_outlined),
-            title: const Text('Replay editor tips'),
-            subtitle: const Text(
-              'Opens a new blank drawing with guided controls.',
+            title: Text(context.strings.replayEditorTips),
+            subtitle: Text(
+              context.strings.opensANewBlankDrawingWithGuidedControls,
             ),
             onTap: () => context.push('/editor/new?tips=1'),
           ),
-          const ListTile(
+          ListTile(
             leading: Icon(Icons.privacy_tip_outlined),
-            title: Text('Privacy'),
+            title: Text(context.strings.privacy),
             subtitle: Text(
-              'Drawings, preferences and exports stay on this device. Creation works offline without an account. Files leave the app only when you explicitly share them. Uninstalling removes app-private data.',
+              context
+                  .strings
+                  .drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks,
             ),
           ),
           ref
@@ -121,18 +141,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               .when(
                 data: (info) => ListTile(
                   leading: const Icon(Icons.info_outline),
-                  title: const Text('ScribbleSong'),
+                  title: Text(context.strings.scribblesong),
                   subtitle: Text(
                     'Version ${info.version} (${info.buildNumber})',
                   ),
                 ),
-                loading: () => const ListTile(
-                  title: Text('ScribbleSong'),
-                  subtitle: Text('Reading build information…'),
+                loading: () => ListTile(
+                  title: Text(context.strings.scribblesong),
+                  subtitle: Text(context.strings.readingBuildInformation),
                 ),
-                error: (_, _) => const ListTile(
-                  title: Text('ScribbleSong'),
-                  subtitle: Text('Build information unavailable'),
+                error: (_, _) => ListTile(
+                  title: Text(context.strings.scribblesong),
+                  subtitle: Text(context.strings.buildInformationUnavailable),
                 ),
               ),
         ],

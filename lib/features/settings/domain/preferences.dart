@@ -5,8 +5,10 @@ class UserPreferences {
     this.reduceMotion = false,
     this.tutorialCompleted = false,
     this.editorTipsCompleted = false,
+    this.languageCode = 'en',
   });
   final double previewVolume;
+  final String languageCode;
   final bool haptics, reduceMotion, tutorialCompleted, editorTipsCompleted;
   UserPreferences copyWith({
     double? previewVolume,
@@ -14,12 +16,14 @@ class UserPreferences {
     bool? reduceMotion,
     bool? tutorialCompleted,
     bool? editorTipsCompleted,
+    String? languageCode,
   }) => UserPreferences(
     previewVolume: previewVolume ?? this.previewVolume,
     haptics: haptics ?? this.haptics,
     reduceMotion: reduceMotion ?? this.reduceMotion,
     tutorialCompleted: tutorialCompleted ?? this.tutorialCompleted,
     editorTipsCompleted: editorTipsCompleted ?? this.editorTipsCompleted,
+    languageCode: languageCode ?? this.languageCode,
   );
   Map<String, dynamic> toJson() => {
     'schema': 1,
@@ -28,6 +32,7 @@ class UserPreferences {
     'reduceMotion': reduceMotion,
     'tutorialCompleted': tutorialCompleted,
     'editorTipsCompleted': editorTipsCompleted,
+    'languageCode': languageCode,
   };
   factory UserPreferences.fromJson(Map<String, dynamic> json) {
     if (json['schema'] != 1) {
@@ -43,6 +48,9 @@ class UserPreferences {
       reduceMotion: json['reduceMotion'] as bool,
       tutorialCompleted: json['tutorialCompleted'] as bool,
       editorTipsCompleted: json['editorTipsCompleted'] as bool? ?? false,
+      // Only shipped translations are selectable; future/unsupported values
+      // fall back without discarding unrelated settings.
+      languageCode: 'en',
     );
   }
 }

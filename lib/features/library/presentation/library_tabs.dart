@@ -1,3 +1,4 @@
+import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,16 +11,16 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: SegmentedButton<bool>(
-      segments: const [
+      segments: [
         ButtonSegment(
           value: false,
           icon: Icon(Icons.draw_outlined),
-          label: Text('Drafts'),
+          label: Text(context.strings.drafts),
         ),
         ButtonSegment(
           value: true,
           icon: Icon(Icons.file_copy_outlined),
-          label: Text('Exports'),
+          label: Text(context.strings.exports),
         ),
       ],
       selected: {exports},
