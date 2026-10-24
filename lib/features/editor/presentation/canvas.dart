@@ -259,7 +259,9 @@ class DrawingCanvasState extends State<DrawingCanvas> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                ColoredBox(color: Color(widget.document.background)),
+                ColoredBox(
+                  color: Color(opaquePaperColor(widget.document.background)),
+                ),
                 RepaintBoundary(
                   child: ListenableBuilder(
                     listenable: _preview,

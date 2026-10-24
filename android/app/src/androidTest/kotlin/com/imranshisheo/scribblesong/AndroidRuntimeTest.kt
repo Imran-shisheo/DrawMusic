@@ -101,6 +101,20 @@ class AndroidRuntimeTest {
         }
     }
 
+    @Test fun translucentPaperRendersOverWhiteWithoutAccumulationOrFadedInk() {
+        for (paper in listOf(0x00112233L,0x80112233L,0xff112233L)) {
+            val document=org.json.JSONObject("""{"background":$paper,"strokes":[{"instrument":"keys","width":0.1,"points":[[0.2,0.5,0],[0.8,0.5,1]]}]}""")
+            val frames=DocumentFrames(document,64,80)
+            try {
+                repeat(2) {
+                    val pixels=frames.render(.05)
+                    assertEquals(opaquePaperColor(paper.toInt()),pixels[79*64+63])
+                    assertEquals(0xff7961c6.toInt(),pixels[40*64+32])
+                }
+            } finally {frames.close()}
+        }
+    }
+
     @Test fun fadedPauseCanBeReversedWithoutAStalePauseOrClockReset() {
         val attributes=AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
         val session=StreamingAudioSession(loop(1,120),attributes)

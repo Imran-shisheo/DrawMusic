@@ -95,6 +95,19 @@ void main() {
 
       await tester.tap(find.byTooltip('Pause'));
       await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Paper color'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Lilac paper'));
+      await tester.tapAt(tester.getCenter(find.byType(Slider)));
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<DrawingCanvas>(find.byType(DrawingCanvas))
+            .document
+            .background,
+        0x80f3eef9,
+      );
       await tester.tap(find.byTooltip('Save drawing'));
       await until(
         () async => find.text('Saved on this device').evaluate().isNotEmpty,
@@ -204,6 +217,7 @@ void main() {
           .document;
       expect(reopened.id, snapshot.id);
       expect(reopened.tempo, 122);
+      expect(reopened.background, 0x80f3eef9);
       expect(reopened.strokes.length, 2);
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();

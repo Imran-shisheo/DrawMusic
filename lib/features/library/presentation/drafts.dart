@@ -164,7 +164,7 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                             width: 56,
                             height: 70,
                             child: ColoredBox(
-                              color: Color(doc.background),
+                              color: Color(opaquePaperColor(doc.background)),
                               child: CustomPaint(painter: DrawingPainter(doc)),
                             ),
                           ),

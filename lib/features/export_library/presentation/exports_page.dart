@@ -1,3 +1,5 @@
+import '../../../creative_document/document.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -209,7 +211,7 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
                 width: 56,
                 height: 70,
                 child: ColoredBox(
-                  color: Color(entry.preview!.background),
+                  color: Color(opaquePaperColor(entry.preview!.background)),
                   child: CustomPaint(painter: DrawingPainter(entry.preview!)),
                 ),
               ),

@@ -11,6 +11,7 @@ import '../../../app/providers.dart';
 import '../../settings/application/settings_controller.dart';
 import '../../../creative_document/document.dart';
 import '../../../design_system/name_dialog.dart';
+import '../../../design_system/paper_panel.dart';
 import '../../../design_system/repeating_icon_button.dart';
 import '../../composition/domain/score.dart';
 import '../../export/presentation/export_sheet.dart';
@@ -518,41 +519,10 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
   }
 
   Future<void> _background() async {
-    var selected = ref.read(editorProvider).document.background;
-    final value = await showDialog<int>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialog) => AlertDialog(
-          title: const Text('Paper color'),
-          content: Wrap(
-            spacing: 8,
-            children: [0xfff7f5eb, 0xffeef5f1, 0xfff3eef9, 0xffffeeee]
-                .map(
-                  (color) => IconButton(
-                    tooltip: color == selected
-                        ? 'Selected paper'
-                        : 'Choose paper',
-                    onPressed: () => setDialog(() => selected = color),
-                    style: IconButton.styleFrom(backgroundColor: Color(color)),
-                    icon: Icon(
-                      color == selected ? Icons.check : Icons.circle_outlined,
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, selected),
-              child: const Text('Apply'),
-            ),
-          ],
-        ),
-      ),
+    _canvas.currentState?.finish();
+    final value = await showPaperPanel(
+      context,
+      ref.read(editorProvider).document.background,
     );
     if (value != null && mounted) {
       _edit(ref.read(editorProvider).document.copyWith(background: value));
