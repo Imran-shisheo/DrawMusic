@@ -55,6 +55,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Paper hills'));
       await tester.pumpAndSettle();
+      if (find.text('Skip tips').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Skip tips'));
+        await tester.pumpAndSettle();
+      }
       await tester.tap(find.byKey(const ValueKey('drawing-canvas')));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Play'));
@@ -213,6 +217,10 @@ void main() {
       );
       await until(() async => !restarted.read(settingsProvider).loading);
       expect(restarted.read(settingsProvider).preferences.previewVolume, 0);
+      expect(
+        restarted.read(settingsProvider).preferences.editorTipsCompleted,
+        isTrue,
+      );
       expect(
         restarted.read(settingsProvider).preferences.tutorialCompleted,
         isTrue,

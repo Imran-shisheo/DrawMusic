@@ -4,19 +4,22 @@ class UserPreferences {
     this.haptics = false,
     this.reduceMotion = false,
     this.tutorialCompleted = false,
+    this.editorTipsCompleted = false,
   });
   final double previewVolume;
-  final bool haptics, reduceMotion, tutorialCompleted;
+  final bool haptics, reduceMotion, tutorialCompleted, editorTipsCompleted;
   UserPreferences copyWith({
     double? previewVolume,
     bool? haptics,
     bool? reduceMotion,
     bool? tutorialCompleted,
+    bool? editorTipsCompleted,
   }) => UserPreferences(
     previewVolume: previewVolume ?? this.previewVolume,
     haptics: haptics ?? this.haptics,
     reduceMotion: reduceMotion ?? this.reduceMotion,
     tutorialCompleted: tutorialCompleted ?? this.tutorialCompleted,
+    editorTipsCompleted: editorTipsCompleted ?? this.editorTipsCompleted,
   );
   Map<String, dynamic> toJson() => {
     'schema': 1,
@@ -24,6 +27,7 @@ class UserPreferences {
     'haptics': haptics,
     'reduceMotion': reduceMotion,
     'tutorialCompleted': tutorialCompleted,
+    'editorTipsCompleted': editorTipsCompleted,
   };
   factory UserPreferences.fromJson(Map<String, dynamic> json) {
     if (json['schema'] != 1) {
@@ -38,6 +42,7 @@ class UserPreferences {
       haptics: json['haptics'] as bool,
       reduceMotion: json['reduceMotion'] as bool,
       tutorialCompleted: json['tutorialCompleted'] as bool,
+      editorTipsCompleted: json['editorTipsCompleted'] as bool? ?? false,
     );
   }
 }

@@ -18,9 +18,16 @@ import '../../transport/domain/audio_engine.dart';
 import '../../composition/domain/audio_renderer.dart';
 import '../application/editor_controller.dart';
 import 'canvas.dart';
+import '../../onboarding/presentation/editor_tips.dart';
 
 class EditorPage extends ConsumerWidget {
-  const EditorPage({super.key, required this.projectId});
+  const EditorPage({
+    super.key,
+    required this.projectId,
+    this.offerTips = false,
+    this.replayTips = false,
+  });
+  final bool offerTips, replayTips;
   final String projectId;
   @override
   Widget build(BuildContext context, WidgetRef ref) => ref
@@ -52,13 +59,23 @@ class EditorPage extends ConsumerWidget {
         ),
         data: (doc) => ProviderScope(
           overrides: [initialDocumentProvider.overrideWithValue(doc.document)],
-          child: EditorWorkspace(recovered: doc.recovered),
+          child: EditorWorkspace(
+            recovered: doc.recovered,
+            offerTips: offerTips,
+            replayTips: replayTips,
+          ),
         ),
       );
 }
 
 class EditorWorkspace extends ConsumerStatefulWidget {
-  const EditorWorkspace({super.key, this.recovered = false});
+  const EditorWorkspace({
+    super.key,
+    this.recovered = false,
+    this.offerTips = false,
+    this.replayTips = false,
+  });
+  final bool offerTips, replayTips;
   final bool recovered;
   @override
   ConsumerState<EditorWorkspace> createState() => _EditorWorkspaceState();
@@ -66,6 +83,61 @@ class EditorWorkspace extends ConsumerStatefulWidget {
 
 class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     with WidgetsBindingObserver {
+  final _playTarget = GlobalKey(),
+      _voiceTarget = GlobalKey(),
+      _tempoTarget = GlobalKey(),
+      _scaleTarget = GlobalKey();
+  bool _tipsOffered = false, _tipsShowing = false;
+  Future<void> _showTips() async {
+    if (_tipsShowing) return;
+    _tipsShowing = true;
+    _canvas.currentState?.finish();
+    await _pause();
+    if (!mounted) return;
+    final completed = await showEditorTips(context, [
+      EditorTip(
+        'Draw a melody',
+        'Left to right follows eight beats. Higher marks make higher notes; vertical marks can form chords. Erase and Undo let you explore safely.',
+        _canvas,
+      ),
+      EditorTip(
+        'Listen and pause',
+        'Play repeats your drawing. Tap Pause to keep your place, or Replay to start over. Music pauses when you leave the app.',
+        _playTarget,
+      ),
+      EditorTip(
+        'Choose a voice',
+        'Cloud keys, Wood drops and Glass stars are named original instruments. Each new stroke uses the selected voice; existing strokes keep theirs.',
+        _voiceTarget,
+      ),
+      EditorTip(
+        'Set the pace',
+        'Tap the BPM number for the tempo slider. Hold minus or plus to repeat, from 60 to 200 BPM. Tempo updates arrive on a beat; drawing updates arrive on a loop.',
+        _tempoTarget,
+      ),
+      EditorTip(
+        'Key and scale',
+        'This version uses the key of C. Choose major or minor pentatonic here to change the mood. The same score drives preview and exports.',
+        _scaleTarget,
+      ),
+    ]);
+    _tipsShowing = false;
+    if (completed == true && mounted) {
+      final controller = ref.read(settingsProvider.notifier);
+      final saved = await controller.save(
+        ref
+            .read(settingsProvider)
+            .preferences
+            .copyWith(editorTipsCompleted: true),
+      );
+      if (!saved && mounted) {
+        _message(
+          'Tips closed for now. Completion could not be saved; retry from Settings or replay Editor tips.',
+        );
+      }
+    }
+  }
+
   Instrument _instrument = Instrument.keys;
   bool _eraser = false,
       _playing = false,
@@ -546,6 +618,20 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
   Widget build(BuildContext context) {
     final state = ref.watch(editorProvider), doc = state.document;
     final controller = ref.read(editorProvider.notifier);
+    final preferences = ref.watch(settingsProvider);
+    if (!_tipsOffered &&
+        !preferences.loading &&
+        !preferences.saving &&
+        (widget.replayTips ||
+            (widget.offerTips &&
+                !preferences.preferences.editorTipsCompleted))) {
+      _tipsOffered = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+          unawaited(_showTips());
+        }
+      });
+    }
     ref.listen(
       repositoryProvider,
       (_, next) => next.whenData(controller.attachRepository),
@@ -579,6 +665,11 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
             ),
           ),
           actions: [
+            IconButton(
+              tooltip: 'Editor tips',
+              onPressed: _showTips,
+              icon: const Icon(Icons.help_outline),
+            ),
             IconButton(
               tooltip: 'Export loop',
               onPressed: doc.strokes.isEmpty
@@ -630,6 +721,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       icon: Icons.remove,
                     ),
                     TextButton(
+                      key: _tempoTarget,
                       onPressed: _tempoPanel,
                       child: Text('${doc.tempo} BPM'),
                     ),
@@ -672,6 +764,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                         icon: const Icon(Icons.list_alt),
                       ),
                       DropdownButton<MusicalScale>(
+                        key: _scaleTarget,
                         value: doc.scale,
                         items: const [
                           DropdownMenuItem(
@@ -743,6 +836,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       icon: const Icon(Icons.redo),
                     ),
                     IconButton.filled(
+                      key: _playTarget,
                       tooltip: _playing ? 'Pause' : 'Play',
                       onPressed:
                           (!_playing && doc.strokes.isEmpty) || _preparing
@@ -792,6 +886,9 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: ChoiceChip(
+                            key: instrument == Instrument.keys
+                                ? _voiceTarget
+                                : null,
                             avatar: Icon(
                               instrumentIcons[instrument.index],
                               color: instrumentColors[instrument.index],

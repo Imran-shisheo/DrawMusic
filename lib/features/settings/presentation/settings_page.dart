@@ -101,6 +101,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/help'),
           ),
+          ListTile(
+            leading: const Icon(Icons.touch_app_outlined),
+            title: const Text('Replay editor tips'),
+            subtitle: const Text(
+              'Opens a new blank drawing with guided controls.',
+            ),
+            onTap: () => context.push('/editor/new?tips=1'),
+          ),
           const ListTile(
             leading: Icon(Icons.privacy_tip_outlined),
             title: Text('Privacy'),

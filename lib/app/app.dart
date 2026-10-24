@@ -12,7 +12,7 @@ import '../features/library/presentation/drafts.dart';
 import '../features/export_library/presentation/exports_page.dart';
 import '../features/home/presentation/templates.dart';
 
-GoRouter buildRouter() => GoRouter(
+GoRouter buildRouter({bool offerEditorTips = false}) => GoRouter(
   initialLocation: '/home',
   routes: [
     StatefulShellRoute.indexedStack(
@@ -41,7 +41,11 @@ GoRouter buildRouter() => GoRouter(
     GoRoute(path: '/help', builder: (_, _) => const TutorialPage()),
     GoRoute(
       path: '/editor/:id',
-      builder: (_, state) => EditorPage(projectId: state.pathParameters['id']!),
+      builder: (_, state) => EditorPage(
+        projectId: state.pathParameters['id']!,
+        offerTips: offerEditorTips,
+        replayTips: state.uri.queryParameters['tips'] == '1',
+      ),
     ),
   ],
   errorBuilder: (context, _) => Scaffold(
@@ -112,7 +116,7 @@ class ScribbleSongApp extends ConsumerStatefulWidget {
 }
 
 class _ScribbleSongAppState extends ConsumerState<ScribbleSongApp> {
-  late final router = buildRouter();
+  late final router = buildRouter(offerEditorTips: widget.showWelcome);
   @override
   void dispose() {
     router.dispose();
