@@ -65,4 +65,72 @@ void main() {
         .replaceFirst('"schemaVersion":1', '"schemaVersion":99');
     expect(() => ProjectDocument.decode(payload), throwsFormatException);
   });
+  test(
+    'serialized renames preserve latest document and reject invalid titles',
+    () async {
+      final document = ProjectDocument(id: 'rename');
+      await repo.save(document);
+      await Future.wait([
+        repo.rename(document.id, ' First '),
+        repo.rename(document.id, 'Second'),
+      ]);
+      final renamed = await repo.load(document.id);
+      expect(renamed.title, 'Second');
+      expect(renamed.revision, 2);
+      await expectLater(repo.rename(document.id, '   '), throwsFormatException);
+      expect((await repo.load(document.id)).title, 'Second');
+    },
+  );
+  test('duplicate is independent; soft delete survives restart and undo restores exactly', () async {
+    final document = ProjectDocument(
+      id: 'original',
+      title: 'Song',
+      strokes: [
+        Stroke(
+          id: 'line',
+          instrument: Instrument.bell,
+          points: [InkPoint(.2, .4), InkPoint(.8, .4)],
+        ),
+      ],
+    );
+    await repo.save(document);
+    final copy = await repo.duplicate(document.id);
+    expect(copy.id, isNot(document.id));
+    expect(copy.title, 'Song copy');
+    await repo.save(copy.copyWith(strokes: []));
+    expect((await repo.load(document.id)).strokes.length, 1);
+    await repo.softDelete(document.id);
+    final restarted = FileProjectRepository(root);
+    expect((await restarted.list()).projects.map((p) => p.id), [copy.id]);
+    await expectLater(
+      restarted.load(document.id),
+      throwsA(isA<FileSystemException>()),
+    );
+    await expectLater(
+      restarted.save(document),
+      throwsA(isA<FileSystemException>()),
+    );
+    await restarted.restore(document.id);
+    expect((await restarted.load(document.id)).encode(), document.encode());
+  });
+  test(
+    'recovery is visible and damaged bytes survive repair of their revision',
+    () async {
+      final doc = ProjectDocument(id: 'recovery-banner');
+      await repo.save(doc);
+      final damaged = File('${root.path}/${doc.id}/r000000000001.json');
+      await damaged.writeAsString('broken revision');
+      expect((await repo.open(doc.id)).recovered, isTrue);
+      expect((await repo.list()).recoveredIds, [doc.id]);
+      await repo.save(doc.copyWith(tempo: 130));
+      expect((await repo.open(doc.id)).recovered, isFalse);
+      final preserved = await Directory('${root.path}/${doc.id}')
+          .list()
+          .where((f) => f.path.contains('.preserved-'))
+          .cast<File>()
+          .toList();
+      expect(preserved.length, 1);
+      expect(await preserved.single.readAsString(), 'broken revision');
+    },
+  );
 }

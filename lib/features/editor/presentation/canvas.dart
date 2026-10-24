@@ -126,6 +126,15 @@ class DrawingCanvasState extends State<DrawingCanvas> {
   final _clock = Stopwatch();
   final _preview = ValueNotifier(0);
   List<InkPoint> _active = [];
+  late List<Stroke> _baseStrokes;
+  int _basePointCount = 0;
+  @override
+  void initState() {
+    super.initState();
+    _baseStrokes = widget.document.strokes;
+    _basePointCount = widget.document.pointCount;
+  }
+
   List<Stroke>? _erased;
   InkPoint? _lastErase;
   double _height = 1;
@@ -139,6 +148,8 @@ class DrawingCanvasState extends State<DrawingCanvas> {
   void didUpdateWidget(DrawingCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.document != widget.document) {
+      _baseStrokes = widget.document.strokes;
+      _basePointCount = widget.document.pointCount;
       _active = [];
       _erased = null;
       _pointer = null;
@@ -149,14 +160,18 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     if (_pointer == null) return;
     _pointer = null;
     if (widget.eraser) {
-      if (_erased != null && !identical(_erased, widget.document.strokes)) {
-        widget.onCommit(_erased!);
+      if (_erased != null && !identical(_erased, _baseStrokes)) {
+        _baseStrokes = _erased!;
+        _basePointCount = _baseStrokes.fold(0, (n, s) => n + s.points.length);
+        widget.onCommit(_baseStrokes);
       }
     } else if (_active.isNotEmpty) {
-      widget.onCommit([
-        ...widget.document.strokes,
+      _basePointCount += _active.length;
+      _baseStrokes = [
+        ..._baseStrokes,
         Stroke(id: newId(), instrument: widget.instrument, points: _active),
-      ]);
+      ];
+      widget.onCommit(_baseStrokes);
     }
     _active = [];
     _erased = null;
@@ -179,7 +194,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
       final steps = math.max(1, (distance / (radius * .5)).ceil());
       for (var s = 1; s <= steps; s++) {
         _erased = eraseAt(
-          _erased ?? widget.document.strokes,
+          _erased ?? _baseStrokes,
           InkPoint(
             last.u + (p.u - last.u) * s / steps,
             last.v + (p.v - last.v) * s / steps,
@@ -189,7 +204,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
       }
       _lastErase = p;
     } else {
-      if (widget.document.pointCount + _active.length >= 100000) {
+      if (_basePointCount + _active.length >= 100000) {
         finish();
         widget.onLimit();
         return;

@@ -14,6 +14,33 @@ import 'package:scribblesong/features/transport/domain/audio_engine.dart';
 class MemoryRepository implements ProjectRepository {
   final documents = <String, ProjectDocument>{};
   bool fail = false;
+  final deleted = <String>{};
+  @override
+  Future<ProjectLoad> open(String id) async => ProjectLoad(await load(id));
+  @override
+  Future<void> rename(String id, String title) async =>
+      save((await load(id)).copyWith(title: title));
+  @override
+  Future<ProjectDocument> duplicate(String id) async {
+    final doc = (await load(id)).copyWith(
+      id: newId(),
+      title: '${(await load(id)).title} copy',
+      revision: 0,
+    );
+    await save(doc);
+    return doc;
+  }
+
+  @override
+  Future<void> softDelete(String id) async {
+    deleted.add(id);
+  }
+
+  @override
+  Future<void> restore(String id) async {
+    deleted.remove(id);
+  }
+
   @override
   Future<void> save(ProjectDocument doc) async {
     if (fail) throw StateError('Disk full');
@@ -23,19 +50,47 @@ class MemoryRepository implements ProjectRepository {
   @override
   Future<ProjectDocument> load(String id) async => documents[id]!;
   @override
-  Future<ProjectListing> list() async =>
-      ProjectListing(documents.values.toList(), []);
+  Future<ProjectListing> list() async => ProjectListing(
+    documents.values.where((d) => !deleted.contains(d.id)).toList(),
+    [],
+  );
 }
 
 class TestAudio implements AudioEngine {
   int prepares = 0;
   bool playing = false;
+  int revision = 0, tempo = 120;
+  final queued = <({int revision, int tempo, UpdateBoundary boundary})>[];
   @override
-  Future<void> prepare(Int16List pcm) async {
+  Future<void> prepare(
+    Int16List pcm, {
+    int revision = 0,
+    int tempo = 120,
+  }) async {
     prepares++;
+    this.revision = revision;
+    this.tempo = tempo;
     expect(pcm.any((n) => n != 0), isTrue);
   }
 
+  @override
+  Future<void> queue(
+    Int16List pcm, {
+    required int revision,
+    required int tempo,
+    required UpdateBoundary boundary,
+  }) async {
+    queued.add((revision: revision, tempo: tempo, boundary: boundary));
+  }
+
+  @override
+  Future<TransportStatus> status() async => TransportStatus(
+    playing: playing,
+    revision: revision,
+    targetRevision: queued.isEmpty ? revision : queued.last.revision,
+    fraction: .125,
+    tempo: tempo,
+  );
   @override
   Future<void> play() async {
     playing = true;
@@ -61,7 +116,11 @@ class TestAudio implements AudioEngine {
 
 class PreparationFailureAudio extends TestAudio {
   @override
-  Future<void> prepare(Int16List pcm) async {
+  Future<void> prepare(
+    Int16List pcm, {
+    int revision = 0,
+    int tempo = 120,
+  }) async {
     prepares++;
     throw PlatformException(
       code: 'audio_unavailable',
@@ -277,6 +336,160 @@ void main() {
           isNotNull,
         );
       }
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets(
+    'Drawing and tempo updates keep transport playing until native boundary acknowledgement',
+    (tester) async {
+      final audio = TestAudio();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            repositoryProvider.overrideWith((ref) async => MemoryRepository()),
+            audioEngineProvider.overrideWithValue(audio),
+          ],
+          child: const ScribbleSongApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('New drawing'));
+      await tester.pumpAndSettle();
+      final canvas = find.byKey(const ValueKey('drawing-canvas'));
+      await tester.tap(canvas);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Play'));
+      for (var i = 0; i < 100 && !audio.playing; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+      }
+      expect(audio.playing, isTrue);
+      await tester.tapAt(tester.getTopLeft(canvas) + const Offset(10, 10));
+      await tester.pump(const Duration(milliseconds: 150));
+      for (var i = 0; i < 100 && audio.queued.isEmpty; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+      }
+      expect(audio.queued.last.boundary, UpdateBoundary.loop);
+      expect(audio.playing, isTrue);
+      expect(audio.prepares, 1);
+      expect(find.text('Updates next loop'), findsOneWidget);
+      audio.revision = audio.queued.last.revision;
+      await tester.pump(const Duration(milliseconds: 60));
+      await tester.pump();
+      expect(find.text('Updates next loop'), findsNothing);
+      await tester.tap(find.byTooltip('Faster'));
+      await tester.pump(const Duration(milliseconds: 150));
+      for (var i = 0; i < 100 && audio.queued.length < 2; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+      }
+      expect(audio.queued.last.boundary, UpdateBoundary.beat);
+      expect(audio.queued.last.tempo, 121);
+      expect(audio.playing, isTrue);
+      expect(audio.prepares, 1);
+      expect(find.text('Updates next beat'), findsOneWidget);
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byTooltip('Faster'));
+      }
+      await tester.pump(const Duration(milliseconds: 150));
+      for (var i = 0; i < 100 && audio.queued.length < 3; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+      }
+      expect(audio.queued.length, 3);
+      expect(audio.queued.last.tempo, 124);
+      await tester.tap(find.byTooltip('Pause'));
+      await tester.pump();
+      expect(audio.playing, isFalse);
+      await tester.tap(find.byTooltip('Play'));
+      await tester.pump();
+      expect(audio.playing, isTrue);
+      expect(audio.prepares, 1);
+      await tester.tap(find.byTooltip('Pause'));
+      await tester.pump();
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets('Multiple strokes within one frame are retained', (tester) async {
+    final repository = MemoryRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          repositoryProvider.overrideWith((ref) async => repository),
+          audioEngineProvider.overrideWithValue(TestAudio()),
+        ],
+        child: const ScribbleSongApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New drawing'));
+    await tester.pumpAndSettle();
+    final origin = tester.getTopLeft(
+      find.byKey(const ValueKey('drawing-canvas')),
+    );
+    for (var i = 0; i < 3; i++) {
+      await tester.tapAt(origin + Offset(10 + i * 10, 10));
+    }
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Save drawing'));
+    await tester.pumpAndSettle();
+    expect(repository.documents.values.single.strokes.length, 3);
+    await tester.pumpWidget(const SizedBox());
+  });
+  testWidgets(
+    'Draft rename, duplicate, delete and Undo preserve original identity',
+    (tester) async {
+      final repository = MemoryRepository();
+      await repository.save(
+        ProjectDocument(id: 'library-test', title: 'Original song'),
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            repositoryProvider.overrideWith((ref) async => repository),
+            audioEngineProvider.overrideWithValue(TestAudio()),
+          ],
+          child: const ScribbleSongApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Drafts'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Manage Original song'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Rename'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Renamed song');
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(repository.documents['library-test']!.title, 'Renamed song');
+      await tester.tap(find.byTooltip('Manage Renamed song'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Duplicate'));
+      await tester.pumpAndSettle();
+      expect(repository.documents.length, 2);
+      expect(find.text('Renamed song copy'), findsOneWidget);
+      await tester.tap(find.byTooltip('Manage Renamed song'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+      expect(repository.deleted, contains('library-test'));
+      expect(find.text('Renamed song'), findsNothing);
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+      expect(repository.deleted, isEmpty);
+      expect(find.text('Renamed song'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     },
   );

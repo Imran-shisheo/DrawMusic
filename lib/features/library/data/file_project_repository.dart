@@ -18,15 +18,24 @@ class FileProjectRepository implements ProjectRepository {
     }
   }
 
-  @override
-  Future<void> save(ProjectDocument document) {
-    final operation = _queue.then((_) => _save(document));
-    _queue = operation.catchError((Object _) {});
-    return operation;
+  Future<T> _serialize<T>(Future<T> Function() operation) {
+    final pending = _queue.then((_) => operation());
+    _queue = pending.then<void>(
+      (_) {},
+      onError: (Object error, StackTrace stack) {},
+    );
+    return pending;
   }
+
+  @override
+  Future<void> save(ProjectDocument document) =>
+      _serialize(() => _save(document));
 
   Future<void> _save(ProjectDocument document) async {
     _validate(document.id);
+    if (await File('${root.path}/${document.id}/deleted.json').exists()) {
+      throw const FileSystemException('Drawing is deleted');
+    }
     final dir = Directory('${root.path}/${document.id}');
     await dir.create(recursive: true);
     final existing = await _revisions(dir);
@@ -42,6 +51,16 @@ class FileProjectRepository implements ProjectRepository {
     final target = File(
       '${dir.path}/r${document.revision.toString().padLeft(12, '0')}.json',
     );
+    if (await target.exists()) {
+      try {
+        if ((await _read(target)).encode() == payload) return;
+      } catch (_) {
+        /* Preserve damaged or unsupported data before replacing its ordinal. */
+      }
+      await target.copy(
+        '${target.path}.preserved-${DateTime.now().microsecondsSinceEpoch}',
+      );
+    }
     final temporary = File('${target.path}.tmp');
     await temporary.writeAsString(envelope, flush: true);
     await temporary.rename(target.path);
@@ -76,8 +95,11 @@ class FileProjectRepository implements ProjectRepository {
   }
 
   @override
-  Future<ProjectDocument> load(String id) async {
+  Future<ProjectLoad> open(String id) async {
     _validate(id);
+    if (await File('${root.path}/$id/deleted.json').exists()) {
+      throw const FileSystemException('Drawing is deleted');
+    }
     final revisions = await _revisions(Directory('${root.path}/$id'));
     if (revisions.isEmpty) throw const FileSystemException('Drawing not found');
     Object? error;
@@ -87,7 +109,7 @@ class FileProjectRepository implements ProjectRepository {
         if (doc.id != id) {
           throw const FormatException('Project identity mismatch');
         }
-        return doc;
+        return ProjectLoad(doc, recovered: error != null);
       } catch (e) {
         error = e;
       }
@@ -96,19 +118,84 @@ class FileProjectRepository implements ProjectRepository {
   }
 
   @override
+  Future<ProjectDocument> load(String id) async => (await open(id)).document;
+
+  @override
+  Future<void> rename(String id, String title) => _serialize(() async {
+    final name = title.trim();
+    if (name.isEmpty || name.length > 60) {
+      throw const FormatException('Use a name of 1–60 characters');
+    }
+    final document = await load(id);
+    await _save(document.copyWith(title: name));
+  });
+
+  @override
+  Future<ProjectDocument> duplicate(String id) => _serialize(() async {
+    final document = await load(id);
+    var name = document.title;
+    if (name.length > 55) {
+      name = name.substring(0, 55);
+      if (name.codeUnitAt(name.length - 1) >= 0xd800 &&
+          name.codeUnitAt(name.length - 1) <= 0xdbff) {
+        name = name.substring(0, name.length - 1);
+      }
+    }
+    final copy = ProjectDocument(
+      id: newId(),
+      title: '$name copy',
+      strokes: document.strokes,
+      tempo: document.tempo,
+      scale: document.scale,
+      background: document.background,
+    );
+    await _save(copy);
+    return copy;
+  });
+
+  @override
+  Future<void> softDelete(String id) => _serialize(() async {
+    _validate(id);
+    final directory = Directory('${root.path}/$id');
+    if (!await directory.exists()) {
+      throw const FileSystemException('Drawing not found');
+    }
+    final temporary = File('${directory.path}/deleted.json.tmp');
+    await temporary.writeAsString(
+      jsonEncode({'deletedAt': DateTime.now().toUtc().toIso8601String()}),
+      flush: true,
+    );
+    await temporary.rename('${directory.path}/deleted.json');
+  });
+  @override
+  Future<void> restore(String id) => _serialize(() async {
+    _validate(id);
+    if (!await Directory('${root.path}/$id').exists()) {
+      throw const FileSystemException('Drawing not found');
+    }
+    final marker = File('${root.path}/$id/deleted.json');
+    if (await marker.exists()) await marker.delete();
+  });
+
+  @override
   Future<ProjectListing> list() async {
     await root.create(recursive: true);
-    final projects = <ProjectDocument>[], failures = <String>[];
+    final projects = <ProjectDocument>[],
+        failures = <String>[],
+        recoveredIds = <String>[];
     await for (final entry in root.list()) {
       if (entry is! Directory) continue;
       final id = entry.uri.pathSegments.where((s) => s.isNotEmpty).last;
+      if (await File('${entry.path}/deleted.json').exists()) continue;
       try {
-        projects.add(await load(id));
+        final result = await open(id);
+        projects.add(result.document);
+        if (result.recovered) recoveredIds.add(id);
       } catch (_) {
         failures.add(id);
       }
     }
     projects.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-    return ProjectListing(projects, failures);
+    return ProjectListing(projects, failures, recoveredIds: recoveredIds);
   }
 }
