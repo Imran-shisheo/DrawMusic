@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:scribblesong/features/settings/application/settings_controller.dart';
+import 'package:scribblesong/features/settings/presentation/settings_page.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:scribblesong/main.dart' as app;
@@ -28,6 +31,23 @@ void main() {
       }
 
       app.main();
+      await tester.pumpAndSettle();
+      if (find.text('Start creating').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Start creating'));
+        await until(() async => find.text('Paper hills').evaluate().isNotEmpty);
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text('Settings'));
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(Slider), const Offset(-600, 0));
+      final preferences = ProviderScope.containerOf(
+        tester.element(find.byType(SettingsPage)),
+      );
+      await until(
+        () async =>
+            preferences.read(settingsProvider).preferences.previewVolume == 0,
+      );
+      await tester.tap(find.text('Home'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Paper hills'));
       await tester.pumpAndSettle();
@@ -116,6 +136,22 @@ void main() {
       expect(reopened.id, snapshot.id);
       expect(reopened.tempo, 121);
       expect(reopened.strokes.length, 2);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      app.main();
+      await until(() async => find.text('Home').evaluate().isNotEmpty);
+      expect(find.text('Start creating'), findsNothing);
+      await tester.tap(find.text('Settings'));
+      await tester.pumpAndSettle();
+      final restarted = ProviderScope.containerOf(
+        tester.element(find.byType(SettingsPage)),
+      );
+      await until(() async => !restarted.read(settingsProvider).loading);
+      expect(restarted.read(settingsProvider).preferences.previewVolume, 0);
+      expect(
+        restarted.read(settingsProvider).preferences.tutorialCompleted,
+        isTrue,
+      );
       await tester.pumpWidget(const SizedBox());
     },
   );

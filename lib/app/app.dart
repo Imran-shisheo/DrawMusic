@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../features/settings/application/settings_controller.dart';
+import '../features/settings/presentation/settings_page.dart';
+import '../features/onboarding/presentation/tutorial.dart';
 
 import '../design_system/theme.dart';
 import '../features/editor/presentation/editor.dart';
@@ -41,21 +46,10 @@ GoRouter buildRouter() => GoRouter(
       routes: [
         GoRoute(path: '/home', builder: (_, _) => const HomePage()),
         GoRoute(path: '/drafts', builder: (_, _) => const DraftsPage()),
-        GoRoute(
-          path: '/settings',
-          builder: (_, _) => Scaffold(
-            appBar: AppBar(title: const Text('Settings & help')),
-            body: const ListTile(
-              leading: Icon(Icons.music_note),
-              title: Text('ScribbleSong'),
-              subtitle: Text(
-                'Draw left to right for time. Draw higher for higher notes.\nYour creations stay on this device.',
-              ),
-            ),
-          ),
-        ),
+        GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
       ],
     ),
+    GoRoute(path: '/help', builder: (_, _) => const TutorialPage()),
     GoRoute(
       path: '/editor/:id',
       builder: (_, state) => EditorPage(projectId: state.pathParameters['id']!),
@@ -71,13 +65,14 @@ GoRouter buildRouter() => GoRouter(
   ),
 );
 
-class ScribbleSongApp extends StatefulWidget {
-  const ScribbleSongApp({super.key});
+class ScribbleSongApp extends ConsumerStatefulWidget {
+  const ScribbleSongApp({super.key, this.showWelcome = false});
+  final bool showWelcome;
   @override
-  State<ScribbleSongApp> createState() => _ScribbleSongAppState();
+  ConsumerState<ScribbleSongApp> createState() => _ScribbleSongAppState();
 }
 
-class _ScribbleSongAppState extends State<ScribbleSongApp> {
+class _ScribbleSongAppState extends ConsumerState<ScribbleSongApp> {
   late final router = buildRouter();
   @override
   void dispose() {
@@ -90,6 +85,20 @@ class _ScribbleSongAppState extends State<ScribbleSongApp> {
     title: 'ScribbleSong',
     theme: buildTheme(),
     routerConfig: router,
+    builder: (context, child) {
+      final reduce =
+          ref.watch(
+            settingsProvider.select((state) => state.preferences.reduceMotion),
+          ) ||
+          MediaQuery.disableAnimationsOf(context);
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(disableAnimations: reduce),
+        child: TutorialGate(
+          enabled: widget.showWelcome,
+          child: child ?? const SizedBox(),
+        ),
+      );
+    },
   );
 }
 

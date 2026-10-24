@@ -6,6 +6,12 @@ const accent = Color(0xff007e73);
 
 ThemeData buildTheme() => ThemeData(
   useMaterial3: true,
+  pageTransitionsTheme: const PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: AccessiblePageTransitions(),
+      TargetPlatform.iOS: AccessiblePageTransitions(),
+    },
+  ),
   scaffoldBackgroundColor: const Color(0xfffffdf5),
   colorScheme: ColorScheme.fromSeed(
     seedColor: accent,
@@ -25,3 +31,24 @@ ThemeData buildTheme() => ThemeData(
     ),
   ),
 );
+
+class AccessiblePageTransitions extends PageTransitionsBuilder {
+  const AccessiblePageTransitions();
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    return const FadeUpwardsPageTransitionsBuilder().buildTransitions(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
+    );
+  }
+}

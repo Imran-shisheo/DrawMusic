@@ -20,7 +20,7 @@ Bootstrap the Flutter app at repository root without overwriting PRD.md, researc
 
 Run `bash scripts/setup-cloud-android.sh` in Linux x86_64, then source `cloud/env.sh` before later commands. If SDK license acceptance is required, ask the owner to approve the specific terms before setting DRAWMUSIC_ACCEPT_ANDROID_LICENSES=1. Never paste credentials into source, logs, issues or prompts. Use environment configuration for services, if ever needed. No paid infrastructure is required for this local-first MVP.
 
-Make progress through the roadmap in order while within the active task. Preserve a short status record in docs/DEVELOPMENT-STATUS.md with completed work, exact checks, known failures and the next step. A task completion does not schedule the next task automatically. Commit usable checkpoints to a development branch and open a draft PR when the milestone is reviewable. Do not merge, publish to an app store, or start paid services.
+Make progress through the roadmap in order while within the active task. Preserve a short status record in docs/DEVELOPMENT-STATUS.md with completed work, exact checks, known failures and the next step. A task completion does not schedule the next task automatically. Commit usable checkpoints to a development branch and open a draft PR when the milestone is reviewable. The owner authorized continued feature development and merging repository PRs on 2026-10-24. Open a PR per usable feature checkpoint, continue the next feature without waiting for a reply, and merge only after relevant checks pass. Do not publish to an app store or start paid services.
 
 ## Checks and handoff
 

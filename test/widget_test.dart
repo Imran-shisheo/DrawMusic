@@ -5,6 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/app/app.dart';
+import 'package:scribblesong/features/settings/application/settings_controller.dart';
+
+import 'support/memory_preferences.dart';
+
+import 'package:scribblesong/features/settings/domain/preferences.dart';
+
 import 'package:scribblesong/app/providers.dart';
 import 'package:scribblesong/creative_document/document.dart';
 import 'package:scribblesong/features/editor/presentation/canvas.dart';
@@ -57,6 +63,7 @@ class MemoryRepository implements ProjectRepository {
 }
 
 class TestAudio implements AudioEngine {
+  double volume = 1;
   int prepares = 0;
   bool playing = false;
   int revision = 0, tempo = 120;
@@ -111,7 +118,9 @@ class TestAudio implements AudioEngine {
   @override
   Future<bool> isPlaying() async => playing;
   @override
-  Future<void> setVolume(double value) async {}
+  Future<void> setVolume(double value) async {
+    volume = value;
+  }
 }
 
 class PreparationFailureAudio extends TestAudio {
@@ -136,6 +145,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          preferencesStoreProvider.overrideWith(
+            (ref) async => MemoryPreferencesStore(
+              const UserPreferences(previewVolume: .25),
+            ),
+          ),
           repositoryProvider.overrideWith((ref) async => repo),
           audioEngineProvider.overrideWithValue(audio),
         ],
@@ -196,6 +210,7 @@ void main() {
     }
     expect(audio.prepares, 1);
     expect(audio.playing, isTrue);
+    expect(audio.volume, .25);
     await tester.tap(find.byTooltip('Pause'));
     await tester.pump();
     expect(audio.playing, isFalse);
@@ -232,6 +247,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          preferencesStoreProvider.overrideWith(
+            (ref) async => MemoryPreferencesStore(),
+          ),
           repositoryProvider.overrideWith((ref) async => repo),
           audioEngineProvider.overrideWithValue(TestAudio()),
         ],
@@ -268,6 +286,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          preferencesStoreProvider.overrideWith(
+            (ref) async => MemoryPreferencesStore(),
+          ),
           repositoryProvider.overrideWith((ref) async => MemoryRepository()),
           audioEngineProvider.overrideWithValue(TestAudio()),
         ],
@@ -292,6 +313,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            preferencesStoreProvider.overrideWith(
+              (ref) async => MemoryPreferencesStore(),
+            ),
             repositoryProvider.overrideWith((ref) async => MemoryRepository()),
             audioEngineProvider.overrideWithValue(audio),
           ],
@@ -346,6 +370,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            preferencesStoreProvider.overrideWith(
+              (ref) async => MemoryPreferencesStore(),
+            ),
             repositoryProvider.overrideWith((ref) async => MemoryRepository()),
             audioEngineProvider.overrideWithValue(audio),
           ],
@@ -424,6 +451,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          preferencesStoreProvider.overrideWith(
+            (ref) async => MemoryPreferencesStore(),
+          ),
           repositoryProvider.overrideWith((ref) async => repository),
           audioEngineProvider.overrideWithValue(TestAudio()),
         ],
@@ -455,6 +485,9 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            preferencesStoreProvider.overrideWith(
+              (ref) async => MemoryPreferencesStore(),
+            ),
             repositoryProvider.overrideWith((ref) async => repository),
             audioEngineProvider.overrideWithValue(TestAudio()),
           ],

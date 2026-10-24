@@ -3,4 +3,5 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/app.dart';
 
-void main() => runApp(const ProviderScope(child: ScribbleSongApp()));
+void main() =>
+    runApp(const ProviderScope(child: ScribbleSongApp(showWelcome: true)));
