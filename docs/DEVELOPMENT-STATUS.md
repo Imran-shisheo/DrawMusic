@@ -1,6 +1,8 @@
 # Development status
 
-Updated: 2026-10-24, UTC. Branch: `codex/live-loop-video` (continuation after the owner merged PR #1).
+Updated: 25 October 2026. Latest accepted application: **1.11.4+18**, source `36c27b1a2184e24300494a1927bcd49c0b64a877`, Actions [40136527371](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40136527371). PRs #5–#15 are merged; #16 is ready for merge. Later sections record checkpoint history; their earlier pending statements are superseded by the acceptance records below.
+
+Current gate: formatter/analyzer, **72 Flutter / 20 JVM / seven Android native tests**, full offline creation/save/reopen/export integration, independent MIDI/MP4 inspection and **12 Linux interruption/recovery/retry attempts** pass. A real debug APK was built and its v2 signature verified locally. Physical Android audio/sharing/storage/accessibility/soak and iOS audio/video/file adapters plus Mac/device validation remain open; P0 completion is not claimed.
 
 | Gate | Current evidence |
 |---|---|
@@ -236,3 +238,13 @@ Multi-touch review found that selecting another voice with the drawing pointer s
 The multi-pointer regression fails before the fix (the first keys stroke becomes mallet), then passes for voice switching, Draw→Erase, Erase→Draw and undo restoring the original geometry. Existing editor tests pass. Full local formatter/analyzer, 72 Flutter tests, 20 JVM tests, Android debug build/v2 signature and all 12 interruption/recovery/retry attempts pass; hosted acceptance is pending. No native audio/export code changed.
 
 PR #13 merged as cd8d98e after Actions 40134114890 passed the full gate, including 12 real Linux interruptions/recoveries/retries and all seven native tests. PR #14 merged as 3b24dcc after Actions 40134685286 passed 70 Flutter / 20 JVM / seven native tests, all 12 process attempts and complete offline UI/export inspection. Their main synchronizations had identical complete trees to the tested sources. [Verified 1.11.2+16 APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40134685286/artifacts/12576288479) · [runtime exports/reports/process proof](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40134685286/artifacts/12576479200). The failed-first-save guard (#15) and active-tool fix await their hosted gates. Physical Android/storage/soak and iOS acceptance remain open.
+
+## Failed-save guard accepted
+
+PR #15 merged as 3ef31f3 after Actions 40135442527 passed 71 Flutter / 20 JVM / seven native tests, all 12 Linux process recovery/retry attempts and the complete offline UI/export inspection. Synchronization 8c06fd1 had an identical complete tree to tested b3042f5. Physical Android storage failure remains untested.
+
+## Active-tool checkpoint accepted — 1.11.4+18
+
+Actions 40136527371 passed the complete product/native/UI/export gate at source 36c27b1: 72 Flutter / 20 JVM / seven native tests and all 12 Linux interruptions/recoveries/retries. Both encoded MP4 fixtures measured 0 ms audio offset; paper and Pixel output matched, and actual UI MIDI passed independent structure/timing inspection. [Installable debug APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40136527371/artifacts/12577266354) · [Runtime exports, logs, reports and process proof](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40136527371/artifacts/12577302067), retained until 31 October 2026. Download signed into GitHub, unzip and install app-debug.apk.
+
+This final documentation packet updates the physical acceptance checklist, P0 coverage and delivery links. Application, tests, toolchain and check-script contents remain identical to the accepted source; normal main synchronization must preserve that tree. No force push, store publication or paid infrastructure is used. Next acceptance work is the physical checklist and Android storage/soak coverage; iOS native adapters and Mac/device validation remain separate.
