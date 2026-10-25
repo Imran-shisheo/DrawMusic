@@ -135,7 +135,7 @@ jobs:
           import zipfile
           with zipfile.ZipFile('recovery-evidence.zip') as z:
               for name in z.namelist():
-                  if name.endswith(('force-stop-prepare.log', 'audio-soak.json')):
+                  if name.endswith(('.log', 'audio-soak.json')):
                       print('Diagnostic file:', name)
                       print('\n'.join(z.read(name).decode('utf-8', errors='replace').splitlines()[-200:]))
           PYLOG
