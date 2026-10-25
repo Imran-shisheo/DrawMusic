@@ -150,7 +150,7 @@ class PreparationFailureAudio extends TestAudio {
     prepares++;
     throw PlatformException(
       code: 'audio_unavailable',
-      message: 'Audio output unavailable. Please retry.',
+      message: 'Native codec failed at /data/user/private/audio.tmp',
     );
   }
 }
@@ -357,11 +357,12 @@ void main() {
         expect(audio.playing, isFalse);
         expect(
           find.textContaining(
-            'Could not play. Audio output unavailable. Please retry.',
+            'Could not play. Check your audio output and try again.',
           ),
           findsOneWidget,
         );
         expect(find.textContaining('PlatformException'), findsNothing);
+        expect(find.textContaining('/data/user/private'), findsNothing);
         expect(find.byTooltip('Pause'), findsNothing);
         expect(
           tester

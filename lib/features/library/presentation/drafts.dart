@@ -24,7 +24,7 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete $title?'),
+        title: Text(context.strings.deleteNamedItem(title)),
         content: Text(context.strings.youCanUndoThisFromTheConfirmationMessage),
         actions: [
           TextButton(
@@ -159,7 +159,8 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                           tooltip: context.strings.deleteDamagedDrawing,
                           onPressed: _busy
                               ? null
-                              : () => _delete(id, 'damaged drawing'),
+                              : () =>
+                                    _delete(id, context.strings.damagedDrawing),
                           icon: const Icon(Icons.delete_outline),
                         ),
                       ),

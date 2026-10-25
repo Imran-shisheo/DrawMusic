@@ -1,3 +1,5 @@
+import '../../../l10n/operation_messages.dart';
+
 import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,7 +39,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           if (state.loading || state.saving) const LinearProgressIndicator(),
           if (state.error != null) ...[
-            Text(state.error!, semanticsLabel: state.error),
+            Text(settingsFailureMessage(context.strings, state.error!)),
             TextButton(
               onPressed: busy
                   ? null
@@ -65,10 +67,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             min: 0,
             max: 1,
             divisions: 20,
-            label:
-                '${(((_volume ?? preferences.previewVolume)) * 100).round()}%',
+            label: context.strings.percentValue(
+              context.formatNumber(
+                ((_volume ?? preferences.previewVolume) * 100).round(),
+              ),
+            ),
             semanticFormatterCallback: (value) =>
-                '${(value * 100).round()} percent preview volume',
+                context.strings.previewVolumePercent(
+                  context.formatNumber((value * 100).round()),
+                ),
             onChanged: busy ? null : (value) => setState(() => _volume = value),
             onChangeEnd: busy
                 ? null
@@ -143,7 +150,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   leading: const Icon(Icons.info_outline),
                   title: Text(context.strings.scribblesong),
                   subtitle: Text(
-                    'Version ${info.version} (${info.buildNumber})',
+                    context.strings.appVersion(info.version, info.buildNumber),
                   ),
                 ),
                 loading: () => ListTile(

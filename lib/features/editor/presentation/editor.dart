@@ -6,6 +6,9 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../../../l10n/operation_messages.dart';
+
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -148,9 +151,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
             .copyWith(editorTipsCompleted: true),
       );
       if (!saved && mounted) {
-        _message(
-          'Tips closed for now. Completion could not be saved; retry from Settings or replay Editor tips.',
-        );
+        _message(context.strings.tipsSaveFailed);
       }
     }
   }
@@ -297,6 +298,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
   }
 
   Future<void> _renderQueuedSnapshot() async {
+    final strings = context.strings;
     final generation = ++_renderGeneration;
     final session = _audioGeneration;
     final document = ref.read(editorProvider).document;
@@ -323,12 +325,13 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       if (mounted && generation == _renderGeneration) {
         await _pause();
         _prepared = false;
-        _message('Could not update playback. $error');
+        _message(playbackFailureMessage(strings, error, updating: true));
       }
     }
   }
 
   Future<void> _play({bool replay = false}) async {
+    final strings = context.strings;
     if (_preparing) return;
     _canvas.currentState?.finish();
     if (_playing && !replay) {
@@ -417,20 +420,15 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
           if (mounted && token == _audioGeneration) {
             await _pause();
             _prepared = false;
-            _message('Playback stopped. Please retry.');
+            _message(strings.playbackStopped);
           }
         } finally {
           _pollInFlight = false;
         }
       });
-    } on PlatformException catch (e) {
+    } catch (error) {
       _prepared = false;
-      _message(
-        'Could not play. ${e.message ?? 'Audio output could not start. Please retry.'}',
-      );
-    } catch (e) {
-      _prepared = false;
-      _message('Could not play. $e');
+      _message(playbackFailureMessage(strings, error));
     } finally {
       if (mounted) {
         setState(() => _preparing = false);
@@ -464,9 +462,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         context.go('/drafts');
       }
     } else {
-      _message(
-        'Save did not complete. Stay here and retry Save before leaving.',
-      );
+      _message(context.strings.leaveSaveFailed);
     }
   }
 
@@ -591,7 +587,13 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         ),
       );
     } catch (e) {
-      if (mounted) _message(e.toString());
+      if (mounted) {
+        _message(
+          e is ScoreComplexityException
+              ? context.strings.scoreTooComplex
+              : context.strings.scoreDescriptionFailed,
+        );
+      }
     } finally {
       if (mounted) setState(() => _describing = false);
     }
@@ -726,7 +728,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                 if (state.error != null)
                   TextButton(
                     onPressed: () => controller.save(),
-                    child: Text('${state.error} Retry'),
+                    child: Text(context.strings.drawingSaveRetry),
                   ),
                 Wrap(
                   crossAxisAlignment: WrapCrossAlignment.center,
@@ -842,9 +844,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                               .document
                               .copyWith(strokes: strokes),
                         ),
-                        onLimit: () => _message(
-                          '100,000 point limit reached. Save this drawing and start a new one.',
-                        ),
+                        onLimit: () =>
+                            _message(context.strings.drawingPointLimit),
                       ),
                     ),
                   ),

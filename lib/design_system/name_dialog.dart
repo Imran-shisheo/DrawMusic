@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/strings.dart';
+
 Future<String?> askDrawingName(
   BuildContext context,
   String title, {
-  String heading = 'Name your drawing',
+  String? heading,
 }) => showDialog<String>(
   context: context,
-  builder: (_) => _NameDialog(title: title, heading: heading),
+  builder: (_) => _NameDialog(
+    title: title,
+    heading: heading ?? context.strings.nameYourDrawing,
+  ),
 );
 
 class _NameDialog extends StatefulWidget {
@@ -35,15 +40,15 @@ class _NameDialogState extends State<_NameDialog> {
         autofocus: true,
         maxLength: 60,
         decoration: InputDecoration(
-          labelText: 'Title',
-          errorText: valid ? null : 'Use a name of 1–60 characters',
+          labelText: context.strings.title,
+          errorText: valid ? null : context.strings.nameLengthError,
         ),
         onChanged: (_) => setState(() {}),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.strings.cancel),
         ),
         FilledButton(
           onPressed: valid
@@ -54,7 +59,7 @@ class _NameDialogState extends State<_NameDialog> {
                   }
                 }
               : null,
-          child: const Text('Apply'),
+          child: Text(context.strings.apply),
         ),
       ],
     );

@@ -1,3 +1,5 @@
+import '../../../l10n/operation_messages.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,7 +26,12 @@ class LanguagePage extends ConsumerWidget {
           ),
           Text(context.strings.languageExplanation),
           if (state.error != null)
-            Semantics(liveRegion: true, child: Text(state.error!)),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                settingsFailureMessage(context.strings, state.error!),
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: SafeArea(

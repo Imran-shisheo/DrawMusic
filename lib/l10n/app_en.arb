@@ -321,5 +321,89 @@
   "creationGuide": "Creation guide",
   "welcomeToScribbleSong": "Welcome to ScribbleSong",
   "howToCreateALoop": "How to create a loop",
-  "pressAndHoldToRepeat": "Press and hold to repeat"
+  "pressAndHoldToRepeat": "Press and hold to repeat",
+  "preferencesLoadFailed": "Could not load preferences. Your drawings are safe. Retry or continue for now.",
+  "preferencesSaveFailed": "Could not save preferences. Check storage, then retry.",
+  "drawingSaveFailed": "Could not save this drawing. Check device storage, then retry.",
+  "drawingSaveRetry": "Could not save this drawing. Check device storage, then retry Save.",
+  "playbackUnavailable": "Could not play. Check your audio output and try again.",
+  "playbackUpdateFailed": "Could not update playback. Your drawing is safe. Try Play again.",
+  "playbackStopped": "Playback stopped. Please retry.",
+  "scoreTooComplex": "This drawing has too many overlapping notes. Erase a few marks and try again (32 voices / 4096 notes).",
+  "tipsSaveFailed": "Tips closed for now. Completion could not be saved; retry from Settings or replay Editor tips.",
+  "leaveSaveFailed": "Save did not complete. Stay here and retry Save before leaving.",
+  "exportReady": "Export ready on this device.",
+  "exportDetailsSaveFailed": "Export created. Library details could not be saved; the file is preserved under Library → Exports.",
+  "exportCancelled": "Export canceled. Your drawing is safe.",
+  "videoExportFailed": "Video export failed. Try compact resolution or check storage, then retry.",
+  "exportFailed": "Export failed. Check storage and retry.",
+  "shareDismissed": "Share sheet dismissed. Export is still saved.",
+  "shareClosed": "Share sheet closed. Delivery is handled by the selected app.",
+  "shareUnavailable": "Sharing unavailable. The exported file is still saved.",
+  "publicSaveCancelled": "Save canceled. Your export is still saved on this device.",
+  "publicSaveFailed": "Could not save a public copy. Check storage and retry. Your export is preserved.",
+  "librarySaveCancelled": "Save canceled. Your export is still in the library.",
+  "libraryPublicSaveFailed": "Could not save a public copy. Check storage and retry. The library file is preserved.",
+  "libraryShareUnavailable": "Sharing unavailable. The library file is preserved.",
+  "exportRestoreFailed": "Could not restore this export. Open the drawing to export again.",
+  "exportOpenFailed": "Could not open this export. A compatible app may be unavailable. Try sharing it.",
+  "exportChangeFailed": "Could not change this export. Please retry.",
+  "exportsUnreadable": "Some exports could not be read. Their files are preserved. Try Refresh exports.",
+  "exportsEmpty": "Completed exports will appear here.\nOpen a drawing and choose Export to create MIDI, WAV or MP4.",
+  "nameYourExport": "Name your export",
+  "nameYourDrawing": "Name your drawing",
+  "nameLengthError": "Use a name of 1–60 characters",
+  "title": "Title",
+  "startCreating": "Start creating",
+  "done": "Done",
+  "nextTip": "Next tip",
+  "damagedDrawing": "damaged drawing",
+  "savedPublicCopy": "Saved a copy to {destination}.",
+  "@savedPublicCopy": {
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      }
+    }
+  },
+  "savedNamedPublicCopy": "Saved {name} to {destination}.",
+  "@savedNamedPublicCopy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "destination": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteNamedItem": "Delete {name}?",
+  "@deleteNamedItem": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appVersion": "Version {version} ({build})",
+  "@appVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "build": {
+        "type": "String"
+      }
+    }
+  },
+  "previewVolumePercent": "{value} percent preview volume",
+  "@previewVolumePercent": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "drawingPointLimit": "100,000 point limit reached. Save this drawing and start a new one.",
+  "scoreDescriptionFailed": "Could not describe this loop. Your drawing is safe. Please retry."
 }

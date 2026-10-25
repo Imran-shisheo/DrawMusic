@@ -7,6 +7,8 @@ import '../../../creative_document/document.dart';
 import '../../library/domain/project_repository.dart';
 import '../domain/history.dart';
 
+enum EditorFailure { save }
+
 class EditorState {
   const EditorState(
     this.document, {
@@ -17,7 +19,7 @@ class EditorState {
   final ProjectDocument document;
   final bool saving;
   final int savedRevision;
-  final String? error;
+  final EditorFailure? error;
   bool get dirty => savedRevision != document.revision;
 }
 
@@ -101,7 +103,7 @@ class EditorController extends Notifier<EditorState> {
           state = EditorState(
             state.document,
             savedRevision: state.savedRevision,
-            error: 'Could not save this drawing. Check device storage, then retry.',
+            error: EditorFailure.save,
           );
         }
       }
