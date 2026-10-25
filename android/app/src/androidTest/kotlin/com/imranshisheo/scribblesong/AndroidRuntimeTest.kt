@@ -5,6 +5,7 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Test
@@ -82,6 +83,7 @@ class AndroidRuntimeTest {
         assertFalse(output.exists())
         assertFalse(File(output.parentFile,".video-${output.name}").exists())
     }
+    @SdkSuppress(minSdkVersion=29)
     @Test fun explicitDownloadsCopyContainsTheOriginalBytes() {
         org.junit.Assume.assumeTrue(android.os.Build.VERSION.SDK_INT>=29)
         val context=InstrumentationRegistry.getInstrumentation().targetContext
