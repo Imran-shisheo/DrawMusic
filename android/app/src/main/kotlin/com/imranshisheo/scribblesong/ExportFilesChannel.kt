@@ -92,7 +92,7 @@ internal class ExportFilesChannel(private val activity: Activity, messenger: Bin
                                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         clipData=ClipData.newRawUri(name,uri)
                                     }
-                                    activity.startActivity(Intent.createChooser(intent,"Open exported file"))
+                                    activity.startActivity(Intent.createChooser(intent,activity.getString(R.string.export_open_chooser_title)))
                                     result.success(null)
                                 } catch(e:Exception) {copy.delete();result.error("open_unavailable",e.message,null)}
                                 finally {busy=false}

@@ -278,3 +278,11 @@ PR #17 merged as dec0d1c after Actions 40168284365 accepted source 0befcf8: 74 F
 ### Android API contract and lint gate
 
 The final minimum-SDK review ran Android lint and found that PublicExportSaver.downloads did not declare its API 29 contract, despite its runtime check and guarded caller. Added RequiresApi(Q), retained the runtime guard and marked the API 29 MediaStore instrumentation case with SdkSuppress(minSdkVersion=29); it still runs on the API 35 gate. Android lint now passes with zero errors. Its two nonblocking suggestions concern the generated drawable-v21 resource qualifier and an optional KTX bitmap factory. The product check now enforces lint alongside the 20 JVM tests. The updated full local gate passes formatter/analyzer, 82 Flutter tests, 20 JVM tests, Android lint, product APK/v2 signature, eight-test instrumentation compilation and all 12 Linux recovery/retry attempts. Hosted acceptance is pending; legacy document-provider physical acceptance remains separate.
+
+The export chooser's app-provided title now uses an Android string resource as well. It retains the English title and system chooser behavior; native diagnostic messages remain internal. The full product/lint/native compilation checks are rerun for this final source.
+
+### Recovery harness startup correction
+
+Run 40169151007 passed 82 Flutter / 20 JVM / eight native tests and the full offline UI/export flow, but its second Flutter-test attachment never published the force-stop ready marker. The artifact log stopped after APK build/install. Its soak report recorded 600,144 ms, 2,397 samples, 150 loops and no sampled clock stall. A temporary read-only inspection job retrieved the evidence; standard CI gates stayed enabled.
+
+The recovery check now launches a diagnostic-only APK directly through Android, separating build/install from a 90-second app-readiness deadline. Real baseline/complete-document/native-clock/no-auto-resume/retry assertions remain mandatory, with explicit failure reports and full startup logs. It does not depend on a debugger/test-driver reconnect between phases. Product lib/main.dart and its normal APK target remain unchanged by this harness correction. Local analysis and the new diagnostic APK compilation are checked; full hosted validation remains pending.
