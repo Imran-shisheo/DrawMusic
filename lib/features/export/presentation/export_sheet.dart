@@ -144,9 +144,11 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
       );
       if (mounted) {
         setState(
-          () => _message = result == ShareResultStatus.dismissed
-              ? context.strings.shareDismissed
-              : context.strings.shareClosed,
+          () => _message = switch (result) {
+            ShareResultStatus.dismissed => context.strings.shareDismissed,
+            ShareResultStatus.unavailable => context.strings.shareUnavailable,
+            ShareResultStatus.success => context.strings.shareClosed,
+          },
         );
       }
     } catch (_) {

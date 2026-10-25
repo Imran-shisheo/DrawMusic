@@ -69,11 +69,11 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
             entry.artifact,
             box == null ? null : box.localToGlobal(Offset.zero) & box.size,
           );
-          _message(
-            result == ShareResultStatus.dismissed
-                ? strings.shareDismissed
-                : strings.shareClosed,
-          );
+          _message(switch (result) {
+            ShareResultStatus.dismissed => strings.shareDismissed,
+            ShareResultStatus.unavailable => strings.libraryShareUnavailable,
+            ShareResultStatus.success => strings.shareClosed,
+          });
         case _Action.rename:
           final name = await askDrawingName(
             context,
