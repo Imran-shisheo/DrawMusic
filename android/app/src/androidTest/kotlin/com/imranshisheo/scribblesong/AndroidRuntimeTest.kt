@@ -151,4 +151,55 @@ class AndroidRuntimeTest {
         } finally {session.close();session.close()}
     }
 
+    @Test(timeout=660000) fun tenMinuteStreamingSoakKeepsClockMovingAndReportsMemory() {
+        val attributes=AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build()
+        val session=StreamingAudioSession(loop(901,120),attributes)
+        val output=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"audio-soak.json")
+        val started=SystemClock.elapsedRealtime()
+        var sampledAt=started
+        var progressedAt=started
+        var maxStallMs=0L
+        var maxGapMs=0L
+        var maxPssKb=0L
+        val initialPssKb=android.os.Debug.getPss()
+        var previous=0.0
+        var cycles=0
+        var samples=0
+        var passed=false
+        try {
+            session.play()
+            while(SystemClock.elapsedRealtime()-started<600000) {
+                SystemClock.sleep(250)
+                val now=SystemClock.elapsedRealtime()
+                val status=session.status()
+                assertEquals(true,status["playing"])
+                assertEquals(901L,status["revision"])
+                assertEquals(120,status["tempo"])
+                val fraction=status["fraction"] as Double
+                assertTrue(fraction>=0.0 && fraction<1.0)
+                maxGapMs=maxOf(maxGapMs,now-sampledAt)
+                if(fraction<previous-.5) cycles++
+                if(kotlin.math.abs(fraction-previous)>1.0/44100) progressedAt=now
+                maxStallMs=maxOf(maxStallMs,now-progressedAt)
+                assertTrue("Hardware clock stopped progressing for ten seconds",now-progressedAt<10000)
+                previous=fraction;sampledAt=now;samples++
+                if(samples%20==0) maxPssKb=maxOf(maxPssKb,android.os.Debug.getPss())
+            }
+            assertTrue("Ten-minute test did not observe enough clock samples",samples>=1000)
+            assertTrue("Ten-minute output did not complete 120 four-second loops",cycles>=120)
+            passed=true
+        } finally {
+            session.close()
+            val elapsed=SystemClock.elapsedRealtime()-started
+            output.writeText(org.json.JSONObject().put("passed",passed)
+                .put("durationMs",elapsed).put("samples",samples).put("observedLoops",cycles)
+                .put("maxSampleGapMs",maxGapMs).put("maxObservedNoProgressMs",maxStallMs)
+                .put("initialPssKb",initialPssKb).put("peakSampledPssKb",maxPssKb)
+                .put("finalPssKb",android.os.Debug.getPss())
+                .put("scope","Ten-minute API 35 emulator native AudioTrack clock/output soak. PSS is sampled whole-process memory; not physical audibility, latency, drawing FPS or a history RSS budget guarantee.")
+                .toString(2))
+        }
+    }
+
 }
