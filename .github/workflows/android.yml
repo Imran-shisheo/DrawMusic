@@ -112,30 +112,3 @@ jobs:
             build/app/outputs/androidTest-results/
           if-no-files-found: warn
           retention-days: 7
-
-  inspect-recovery-evidence:
-    name: Inspect failed force-stop preparation log
-    runs-on: ubuntu-24.04
-    permissions:
-      actions: read
-      contents: read
-    steps:
-      - uses: actions/github-script@v8
-        with:
-          script: |
-            const response = await github.rest.actions.downloadArtifact({
-              owner: context.repo.owner, repo: context.repo.repo,
-              artifact_id: 12590955848, archive_format: 'zip'
-            });
-            require('fs').writeFileSync('recovery-evidence.zip', Buffer.from(response.data));
-      - name: Read the diagnostic logs without executing their contents
-        shell: bash
-        run: |
-          python3 - <<'PYLOG'
-          import zipfile
-          with zipfile.ZipFile('recovery-evidence.zip') as z:
-              for name in z.namelist():
-                  if name.endswith(('.log', 'audio-soak.json')):
-                      print('Diagnostic file:', name)
-                      print('\n'.join(z.read(name).decode('utf-8', errors='replace').splitlines()[-200:]))
-          PYLOG
