@@ -155,6 +155,7 @@ Future<void> probe() async {
         reopened.document.encode() == retry.encode(),
         'Retry did not reopen exactly',
       );
+      await root.delete(recursive: true);
       await report.writeAsString(
         jsonEncode({
           ...before,
@@ -172,7 +173,6 @@ Future<void> probe() async {
         }),
         flush: true,
       );
-      await root.delete(recursive: true);
     }
   } catch (error, stack) {
     if (report != null) {
