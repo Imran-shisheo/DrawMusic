@@ -43,11 +43,6 @@ def launch(token, phase):
                                 timeout=300, check=False)
     if result.returncode:
         raise RuntimeError(f'{phase} diagnostic APK build failed; see {log_path.name}.')
-    with log_path.open('a') as log:
-        stopped = subprocess.run(['./gradlew', '--stop', '--console=plain'], cwd='android',
-                                 stdout=log, stderr=subprocess.STDOUT, timeout=60, check=False)
-    if stopped.returncode:
-        raise RuntimeError('Could not release build memory before Android diagnostic launch.')
     adb('shell', 'am', 'force-stop', PACKAGE)
     installed = adb('install', '-r', '-t', 'build/app/outputs/flutter-apk/app-debug.apk', timeout=90)
     if 'Success' not in installed.stdout:
