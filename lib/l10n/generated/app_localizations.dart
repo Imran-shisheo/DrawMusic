@@ -1431,6 +1431,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not describe this loop. Your drawing is safe. Please retry.'**
   String get scoreDescriptionFailed;
+
+  /// No description provided for @play.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get play;
+
+  /// No description provided for @pause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get pause;
 }
 
 class _AppLocalizationsDelegate

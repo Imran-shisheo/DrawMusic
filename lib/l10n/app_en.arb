@@ -405,5 +405,7 @@
     }
   },
   "drawingPointLimit": "100,000 point limit reached. Save this drawing and start a new one.",
-  "scoreDescriptionFailed": "Could not describe this loop. Your drawing is safe. Please retry."
+  "scoreDescriptionFailed": "Could not describe this loop. Your drawing is safe. Please retry.",
+  "play": "Play",
+  "pause": "Pause"
 }

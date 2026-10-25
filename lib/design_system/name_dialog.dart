@@ -34,6 +34,7 @@ class _NameDialogState extends State<_NameDialog> {
     final name = controller.text.trim();
     final valid = name.isNotEmpty && name.length <= 60;
     return AlertDialog(
+      scrollable: true,
       title: Text(widget.heading),
       content: TextField(
         controller: controller,

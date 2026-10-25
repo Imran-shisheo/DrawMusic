@@ -781,4 +781,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get scoreDescriptionFailed =>
       'Could not describe this loop. Your drawing is safe. Please retry.';
+
+  @override
+  String get play => 'Play';
+
+  @override
+  String get pause => 'Pause';
 }
