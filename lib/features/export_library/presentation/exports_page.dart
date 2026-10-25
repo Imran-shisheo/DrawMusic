@@ -44,6 +44,7 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
   Future<void> _act(LibraryExport entry, _Action action) async {
     if (_busy) return;
     setState(() => _busy = true);
+    final strings = context.strings;
     try {
       final repository = await ref.read(exportLibraryProvider.future);
       if (!mounted) return;
@@ -56,8 +57,11 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
               .save(entry.artifact);
           _message(
             result == null
-                ? 'Save canceled. Your export is still in the library.'
-                : 'Saved ${entry.artifact.name} to ${result.destination}.',
+                ? strings.librarySaveCancelled
+                : strings.savedNamedPublicCopy(
+                    entry.artifact.name,
+                    result.destination,
+                  ),
           );
         case _Action.share:
           final box = context.findRenderObject() as RenderBox?;
@@ -67,14 +71,14 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           );
           _message(
             result == ShareResultStatus.dismissed
-                ? 'Share sheet dismissed. Export is still saved.'
-                : 'Share sheet closed. Delivery is handled by the selected app.',
+                ? strings.shareDismissed
+                : strings.shareClosed,
           );
         case _Action.rename:
           final name = await askDrawingName(
             context,
             entry.artifact.name.replaceFirst(RegExp(r'\.(mid|wav|mp4)$'), ''),
-            heading: 'Name your export',
+            heading: strings.nameYourExport,
           );
           if (name != null) await repository.rename(entry.id, name);
         case _Action.source:
@@ -83,7 +87,7 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           final confirmed = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: Text('Delete ${entry.artifact.name}?'),
+              title: Text(strings.deleteNamedItem(entry.artifact.name)),
               content: Text(
                 context
                     .strings
@@ -92,11 +96,11 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: Text(context.strings.keepExport),
+                  child: Text(strings.keepExport),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: Text(context.strings.delete),
+                  child: Text(strings.delete),
                 ),
               ],
             ),
@@ -107,18 +111,16 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(context.strings.exportRemovedFromTheLibrary),
+              content: Text(strings.exportRemovedFromTheLibrary),
               duration: const Duration(seconds: 6),
               action: SnackBarAction(
-                label: context.strings.undo,
+                label: strings.undo,
                 onPressed: () async {
                   try {
                     await repository.restore(entry.id);
                     if (mounted) ref.invalidate(exportListingProvider);
                   } catch (_) {
-                    _message(
-                      'Could not restore this export. Open the drawing to export again.',
-                    );
+                    _message(strings.exportRestoreFailed);
                   }
                 },
               ),
@@ -135,10 +137,10 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
       }
     } catch (_) {
       _message(switch (action) {
-        _Action.open => 'Could not open this export. A compatible app may be unavailable. Try sharing it.',
-        _Action.save => 'Could not save a public copy. Check storage and retry. The library file is preserved.',
-        _Action.share => 'Sharing unavailable. The library file is preserved.',
-        _ => 'Could not change this export. Please retry.',
+        _Action.open => strings.exportOpenFailed,
+        _Action.save => strings.libraryPublicSaveFailed,
+        _Action.share => strings.libraryShareUnavailable,
+        _ => strings.exportChangeFailed,
       });
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -180,8 +182,8 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
                     padding: const EdgeInsets.all(24),
                     child: Text(
                       listing.detailFailures > 0
-                          ? 'Some exports could not be read. Their files are preserved. Try Refresh exports.'
-                          : 'Completed exports will appear here.\nOpen a drawing and choose Export to create MIDI, WAV or MP4.',
+                          ? context.strings.exportsUnreadable
+                          : context.strings.exportsEmpty,
                       textAlign: TextAlign.center,
                     ),
                   ),

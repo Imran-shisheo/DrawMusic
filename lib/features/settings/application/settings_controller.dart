@@ -12,6 +12,8 @@ final preferencesStoreProvider = FutureProvider<PreferencesStore>((ref) async {
   return FilePreferencesStore(Directory('${root.path}/settings'));
 });
 
+enum SettingsFailure { load, save }
+
 class SettingsState {
   const SettingsState({
     this.preferences = const UserPreferences(),
@@ -22,7 +24,7 @@ class SettingsState {
   });
   final UserPreferences preferences;
   final bool loading, saving, recovered;
-  final String? error;
+  final SettingsFailure? error;
 }
 
 final settingsProvider = NotifierProvider<SettingsController, SettingsState>(
@@ -55,7 +57,7 @@ class SettingsController extends Notifier<SettingsState> {
       if (_alive) {
         state = SettingsState(
           preferences: state.preferences,
-          error: 'Could not load preferences. Your drawings are safe. Retry or continue for now.',
+          error: SettingsFailure.load,
         );
       }
     }
@@ -75,7 +77,7 @@ class SettingsController extends Notifier<SettingsState> {
       if (_alive) {
         state = SettingsState(
           preferences: previous,
-          error: 'Could not save preferences. Check storage, then retry.',
+          error: SettingsFailure.save,
         );
       }
       return false;

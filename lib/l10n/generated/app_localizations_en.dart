@@ -617,4 +617,168 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pressAndHoldToRepeat => 'Press and hold to repeat';
+
+  @override
+  String get preferencesLoadFailed =>
+      'Could not load preferences. Your drawings are safe. Retry or continue for now.';
+
+  @override
+  String get preferencesSaveFailed =>
+      'Could not save preferences. Check storage, then retry.';
+
+  @override
+  String get drawingSaveFailed =>
+      'Could not save this drawing. Check device storage, then retry.';
+
+  @override
+  String get drawingSaveRetry =>
+      'Could not save this drawing. Check device storage, then retry Save.';
+
+  @override
+  String get playbackUnavailable =>
+      'Could not play. Check your audio output and try again.';
+
+  @override
+  String get playbackUpdateFailed =>
+      'Could not update playback. Your drawing is safe. Try Play again.';
+
+  @override
+  String get playbackStopped => 'Playback stopped. Please retry.';
+
+  @override
+  String get scoreTooComplex =>
+      'This drawing has too many overlapping notes. Erase a few marks and try again (32 voices / 4096 notes).';
+
+  @override
+  String get tipsSaveFailed =>
+      'Tips closed for now. Completion could not be saved; retry from Settings or replay Editor tips.';
+
+  @override
+  String get leaveSaveFailed =>
+      'Save did not complete. Stay here and retry Save before leaving.';
+
+  @override
+  String get exportReady => 'Export ready on this device.';
+
+  @override
+  String get exportDetailsSaveFailed =>
+      'Export created. Library details could not be saved; the file is preserved under Library → Exports.';
+
+  @override
+  String get exportCancelled => 'Export canceled. Your drawing is safe.';
+
+  @override
+  String get videoExportFailed =>
+      'Video export failed. Try compact resolution or check storage, then retry.';
+
+  @override
+  String get exportFailed => 'Export failed. Check storage and retry.';
+
+  @override
+  String get shareDismissed => 'Share sheet dismissed. Export is still saved.';
+
+  @override
+  String get shareClosed =>
+      'Share sheet closed. Delivery is handled by the selected app.';
+
+  @override
+  String get shareUnavailable =>
+      'Sharing unavailable. The exported file is still saved.';
+
+  @override
+  String get publicSaveCancelled =>
+      'Save canceled. Your export is still saved on this device.';
+
+  @override
+  String get publicSaveFailed =>
+      'Could not save a public copy. Check storage and retry. Your export is preserved.';
+
+  @override
+  String get librarySaveCancelled =>
+      'Save canceled. Your export is still in the library.';
+
+  @override
+  String get libraryPublicSaveFailed =>
+      'Could not save a public copy. Check storage and retry. The library file is preserved.';
+
+  @override
+  String get libraryShareUnavailable =>
+      'Sharing unavailable. The library file is preserved.';
+
+  @override
+  String get exportRestoreFailed =>
+      'Could not restore this export. Open the drawing to export again.';
+
+  @override
+  String get exportOpenFailed =>
+      'Could not open this export. A compatible app may be unavailable. Try sharing it.';
+
+  @override
+  String get exportChangeFailed =>
+      'Could not change this export. Please retry.';
+
+  @override
+  String get exportsUnreadable =>
+      'Some exports could not be read. Their files are preserved. Try Refresh exports.';
+
+  @override
+  String get exportsEmpty =>
+      'Completed exports will appear here.\nOpen a drawing and choose Export to create MIDI, WAV or MP4.';
+
+  @override
+  String get nameYourExport => 'Name your export';
+
+  @override
+  String get nameYourDrawing => 'Name your drawing';
+
+  @override
+  String get nameLengthError => 'Use a name of 1–60 characters';
+
+  @override
+  String get title => 'Title';
+
+  @override
+  String get startCreating => 'Start creating';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get nextTip => 'Next tip';
+
+  @override
+  String get damagedDrawing => 'damaged drawing';
+
+  @override
+  String savedPublicCopy(String destination) {
+    return 'Saved a copy to $destination.';
+  }
+
+  @override
+  String savedNamedPublicCopy(String name, String destination) {
+    return 'Saved $name to $destination.';
+  }
+
+  @override
+  String deleteNamedItem(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String appVersion(String version, String build) {
+    return 'Version $version ($build)';
+  }
+
+  @override
+  String previewVolumePercent(String value) {
+    return '$value percent preview volume';
+  }
+
+  @override
+  String get drawingPointLimit =>
+      '100,000 point limit reached. Save this drawing and start a new one.';
+
+  @override
+  String get scoreDescriptionFailed =>
+      'Could not describe this loop. Your drawing is safe. Please retry.';
 }

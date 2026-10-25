@@ -1173,6 +1173,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Press and hold to repeat'**
   String get pressAndHoldToRepeat;
+
+  /// No description provided for @preferencesLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load preferences. Your drawings are safe. Retry or continue for now.'**
+  String get preferencesLoadFailed;
+
+  /// No description provided for @preferencesSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save preferences. Check storage, then retry.'**
+  String get preferencesSaveFailed;
+
+  /// No description provided for @drawingSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save this drawing. Check device storage, then retry.'**
+  String get drawingSaveFailed;
+
+  /// No description provided for @drawingSaveRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save this drawing. Check device storage, then retry Save.'**
+  String get drawingSaveRetry;
+
+  /// No description provided for @playbackUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not play. Check your audio output and try again.'**
+  String get playbackUnavailable;
+
+  /// No description provided for @playbackUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update playback. Your drawing is safe. Try Play again.'**
+  String get playbackUpdateFailed;
+
+  /// No description provided for @playbackStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback stopped. Please retry.'**
+  String get playbackStopped;
+
+  /// No description provided for @scoreTooComplex.
+  ///
+  /// In en, this message translates to:
+  /// **'This drawing has too many overlapping notes. Erase a few marks and try again (32 voices / 4096 notes).'**
+  String get scoreTooComplex;
+
+  /// No description provided for @tipsSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Tips closed for now. Completion could not be saved; retry from Settings or replay Editor tips.'**
+  String get tipsSaveFailed;
+
+  /// No description provided for @leaveSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Save did not complete. Stay here and retry Save before leaving.'**
+  String get leaveSaveFailed;
+
+  /// No description provided for @exportReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Export ready on this device.'**
+  String get exportReady;
+
+  /// No description provided for @exportDetailsSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export created. Library details could not be saved; the file is preserved under Library → Exports.'**
+  String get exportDetailsSaveFailed;
+
+  /// No description provided for @exportCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Export canceled. Your drawing is safe.'**
+  String get exportCancelled;
+
+  /// No description provided for @videoExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Video export failed. Try compact resolution or check storage, then retry.'**
+  String get videoExportFailed;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Export failed. Check storage and retry.'**
+  String get exportFailed;
+
+  /// No description provided for @shareDismissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Share sheet dismissed. Export is still saved.'**
+  String get shareDismissed;
+
+  /// No description provided for @shareClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Share sheet closed. Delivery is handled by the selected app.'**
+  String get shareClosed;
+
+  /// No description provided for @shareUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing unavailable. The exported file is still saved.'**
+  String get shareUnavailable;
+
+  /// No description provided for @publicSaveCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Save canceled. Your export is still saved on this device.'**
+  String get publicSaveCancelled;
+
+  /// No description provided for @publicSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save a public copy. Check storage and retry. Your export is preserved.'**
+  String get publicSaveFailed;
+
+  /// No description provided for @librarySaveCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Save canceled. Your export is still in the library.'**
+  String get librarySaveCancelled;
+
+  /// No description provided for @libraryPublicSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save a public copy. Check storage and retry. The library file is preserved.'**
+  String get libraryPublicSaveFailed;
+
+  /// No description provided for @libraryShareUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing unavailable. The library file is preserved.'**
+  String get libraryShareUnavailable;
+
+  /// No description provided for @exportRestoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not restore this export. Open the drawing to export again.'**
+  String get exportRestoreFailed;
+
+  /// No description provided for @exportOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open this export. A compatible app may be unavailable. Try sharing it.'**
+  String get exportOpenFailed;
+
+  /// No description provided for @exportChangeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not change this export. Please retry.'**
+  String get exportChangeFailed;
+
+  /// No description provided for @exportsUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Some exports could not be read. Their files are preserved. Try Refresh exports.'**
+  String get exportsUnreadable;
+
+  /// No description provided for @exportsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed exports will appear here.\nOpen a drawing and choose Export to create MIDI, WAV or MP4.'**
+  String get exportsEmpty;
+
+  /// No description provided for @nameYourExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Name your export'**
+  String get nameYourExport;
+
+  /// No description provided for @nameYourDrawing.
+  ///
+  /// In en, this message translates to:
+  /// **'Name your drawing'**
+  String get nameYourDrawing;
+
+  /// No description provided for @nameLengthError.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a name of 1–60 characters'**
+  String get nameLengthError;
+
+  /// No description provided for @title.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get title;
+
+  /// No description provided for @startCreating.
+  ///
+  /// In en, this message translates to:
+  /// **'Start creating'**
+  String get startCreating;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @nextTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Next tip'**
+  String get nextTip;
+
+  /// No description provided for @damagedDrawing.
+  ///
+  /// In en, this message translates to:
+  /// **'damaged drawing'**
+  String get damagedDrawing;
+
+  /// No description provided for @savedPublicCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved a copy to {destination}.'**
+  String savedPublicCopy(String destination);
+
+  /// No description provided for @savedNamedPublicCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved {name} to {destination}.'**
+  String savedNamedPublicCopy(String name, String destination);
+
+  /// No description provided for @deleteNamedItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String deleteNamedItem(String name);
+
+  /// No description provided for @appVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version} ({build})'**
+  String appVersion(String version, String build);
+
+  /// No description provided for @previewVolumePercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} percent preview volume'**
+  String previewVolumePercent(String value);
+
+  /// No description provided for @drawingPointLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'100,000 point limit reached. Save this drawing and start a new one.'**
+  String get drawingPointLimit;
+
+  /// No description provided for @scoreDescriptionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not describe this loop. Your drawing is safe. Please retry.'**
+  String get scoreDescriptionFailed;
 }
 
 class _AppLocalizationsDelegate

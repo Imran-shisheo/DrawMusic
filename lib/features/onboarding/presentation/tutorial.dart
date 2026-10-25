@@ -1,3 +1,5 @@
+import '../../../l10n/operation_messages.dart';
+
 import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -116,11 +118,20 @@ class TutorialPage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (firstUse && state.error != null)
-                Semantics(liveRegion: true, child: Text(state.error!)),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    settingsFailureMessage(context.strings, state.error!),
+                  ),
+                ),
               if (firstUse) ...[
                 FilledButton(
                   onPressed: state.saving ? null : complete,
-                  child: Text(state.saving ? 'Saving…' : 'Start creating'),
+                  child: Text(
+                    state.saving
+                        ? context.strings.saving
+                        : context.strings.startCreating,
+                  ),
                 ),
                 TextButton(
                   onPressed: state.saving ? null : complete,

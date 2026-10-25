@@ -13,7 +13,7 @@ Future<bool?> showEditorTips(BuildContext context, List<EditorTip> tips) =>
     showGeneralDialog<bool>(
       context: context,
       barrierDismissible: false,
-      barrierLabel: 'Editor tips',
+      barrierLabel: context.strings.editorTips,
       barrierColor: Colors.transparent,
       transitionDuration: MediaQuery.disableAnimationsOf(context)
           ? Duration.zero
@@ -132,8 +132,8 @@ class _TipOverlayState extends State<_TipOverlay> {
                                 onPressed: _moving ? null : _next,
                                 child: Text(
                                   _index == widget.tips.length - 1
-                                      ? 'Done'
-                                      : 'Next tip',
+                                      ? context.strings.done
+                                      : context.strings.nextTip,
                                 ),
                               ),
                             ],

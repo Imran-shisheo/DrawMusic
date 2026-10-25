@@ -13,6 +13,7 @@ import '../../../creative_document/document.dart';
 import '../data/file_export_adapter.dart';
 import '../data/android_video_export_adapter.dart';
 import '../domain/export_port.dart';
+import '../../composition/domain/score.dart';
 
 Future<void> showExportSheet(BuildContext context, ProjectDocument snapshot) =>
     showModalBottomSheet<void>(
@@ -102,19 +103,23 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
       if (mounted && !cancellation.cancelled) {
         setState(() {
           _artifact = artifact;
-          _message = detailsSaved ? 'Export ready on this device.' : 'Export created. Library details could not be saved; the file is preserved under Library → Exports.';
+          _message = detailsSaved
+              ? context.strings.exportReady
+              : context.strings.exportDetailsSaveFailed;
         });
       }
     } on ExportCancelled {
       if (mounted) {
-        setState(() => _message = 'Export canceled. Your drawing is safe.');
+        setState(() => _message = context.strings.exportCancelled);
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         setState(
-          () => _message = format == ExportFormat.mp4
-              ? 'Video export failed. Try compact resolution or check storage, then retry.'
-              : 'Export failed. Check storage and retry.',
+          () => _message = error is ScoreComplexityException
+              ? context.strings.scoreTooComplex
+              : format == ExportFormat.mp4
+              ? context.strings.videoExportFailed
+              : context.strings.exportFailed,
         );
       }
     } finally {
@@ -140,16 +145,13 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
       if (mounted) {
         setState(
           () => _message = result == ShareResultStatus.dismissed
-              ? 'Share sheet dismissed. Export is still saved.'
-              : 'Share sheet closed. Delivery is handled by the selected app.',
+              ? context.strings.shareDismissed
+              : context.strings.shareClosed,
         );
       }
     } catch (_) {
       if (mounted) {
-        setState(
-          () => _message =
-              'Sharing unavailable. The exported file is still saved.',
-        );
+        setState(() => _message = context.strings.shareUnavailable);
       }
     } finally {
       if (mounted) setState(() => _fileActionBusy = false);
@@ -165,15 +167,13 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
       if (mounted) {
         setState(
           () => _message = result == null
-              ? 'Save canceled. Your export is still saved on this device.'
-              : 'Saved a copy to ${result.destination}.',
+              ? context.strings.publicSaveCancelled
+              : context.strings.savedPublicCopy(result.destination),
         );
       }
     } catch (_) {
       if (mounted) {
-        setState(
-          () => _message = 'Could not save a public copy. Check storage and retry. Your export is preserved.',
-        );
+        setState(() => _message = context.strings.publicSaveFailed);
       }
     } finally {
       if (mounted) setState(() => _fileActionBusy = false);
