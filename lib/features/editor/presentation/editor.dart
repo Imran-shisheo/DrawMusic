@@ -710,241 +710,289 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: Column(
-              children: [
-                if (widget.recovered)
-                  Text(
-                    context
-                        .strings
-                        .recoveredThePreviousCompleteRevisionTheDamagedFileIsPreser,
-                  ),
-                if (repo.hasError)
-                  Text(
-                    context
-                        .strings
-                        .storageUnavailableRetryFromDraftsBeforeLeaving,
-                    style: TextStyle(color: Colors.red),
-                  ),
-                if (state.error != null)
-                  TextButton(
-                    onPressed: () => controller.save(),
-                    child: Text(context.strings.drawingSaveRetry),
-                  ),
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    RepeatingIconButton(
-                      tooltip: context.strings.slower,
-                      onStep: doc.tempo > 60 ? () => _changeTempo(-1) : null,
-                      icon: Icons.remove,
+            child: LayoutBuilder(
+              builder: (context, constraints) => Column(
+                children: [
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: constraints.maxHeight * .32,
                     ),
-                    TextButton(
-                      key: _tempoTarget,
-                      onPressed: _tempoPanel,
-                      child: Text(
-                        context.strings.tempoValue(
-                          context.formatNumber(doc.tempo),
-                        ),
-                      ),
-                    ),
-                    RepeatingIconButton(
-                      tooltip: context.strings.faster,
-                      onStep: doc.tempo < 200 ? () => _changeTempo(1) : null,
-                      icon: Icons.add,
-                    ),
-                    IconButton(
-                      tooltip: context.strings.drawingStyle,
-                      onPressed: _drawingStyle,
-                      icon: Icon(
-                        doc.style == DrawingStyle.smooth
-                            ? Icons.gesture
-                            : Icons.grid_on,
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: context.strings.paperColor,
-                      onPressed: _background,
-                      icon: const Icon(Icons.palette_outlined),
-                    ),
-                    IconButton(
-                      tooltip: context.strings.clearDrawing,
-                      onPressed: doc.strokes.isEmpty ? null : _clear,
-                      icon: const Icon(Icons.delete_sweep_outlined),
-                    ),
-                  ],
-                ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      ChoiceChip(
-                        label: Text(context.strings.draw),
-                        selected: !_eraser,
-                        onSelected: (_) {
-                          _canvas.currentState?.finish();
-                          setState(() => _eraser = false);
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      ChoiceChip(
-                        label: Text(context.strings.erase),
-                        selected: _eraser,
-                        onSelected: (_) {
-                          _canvas.currentState?.finish();
-                          setState(() => _eraser = true);
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      IconButton(
-                        tooltip: context.strings.describeScore,
-                        onPressed: _describing ? null : _describe,
-                        icon: const Icon(Icons.list_alt),
-                      ),
-                      DropdownButton<MusicalScale>(
-                        key: _scaleTarget,
-                        value: doc.scale,
-                        items: [
-                          DropdownMenuItem(
-                            value: MusicalScale.major,
-                            child: Text(context.strings.cMajorPentatonic),
+                    child: SingleChildScrollView(
+                      key: const ValueKey('editor-tools-scroll'),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.recovered)
+                            Text(
+                              context
+                                  .strings
+                                  .recoveredThePreviousCompleteRevisionTheDamagedFileIsPreser,
+                            ),
+                          if (repo.hasError)
+                            Text(
+                              context
+                                  .strings
+                                  .storageUnavailableRetryFromDraftsBeforeLeaving,
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          if (state.error != null)
+                            TextButton(
+                              onPressed: () => controller.save(),
+                              child: Text(context.strings.drawingSaveRetry),
+                            ),
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              RepeatingIconButton(
+                                tooltip: context.strings.slower,
+                                onStep: doc.tempo > 60
+                                    ? () => _changeTempo(-1)
+                                    : null,
+                                icon: Icons.remove,
+                              ),
+                              TextButton(
+                                key: _tempoTarget,
+                                onPressed: _tempoPanel,
+                                child: Text(
+                                  context.strings.tempoValue(
+                                    context.formatNumber(doc.tempo),
+                                  ),
+                                ),
+                              ),
+                              RepeatingIconButton(
+                                tooltip: context.strings.faster,
+                                onStep: doc.tempo < 200
+                                    ? () => _changeTempo(1)
+                                    : null,
+                                icon: Icons.add,
+                              ),
+                              IconButton(
+                                tooltip: context.strings.drawingStyle,
+                                onPressed: _drawingStyle,
+                                icon: Icon(
+                                  doc.style == DrawingStyle.smooth
+                                      ? Icons.gesture
+                                      : Icons.grid_on,
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: context.strings.paperColor,
+                                onPressed: _background,
+                                icon: const Icon(Icons.palette_outlined),
+                              ),
+                              IconButton(
+                                tooltip: context.strings.clearDrawing,
+                                onPressed: doc.strokes.isEmpty ? null : _clear,
+                                icon: const Icon(Icons.delete_sweep_outlined),
+                              ),
+                            ],
                           ),
-                          DropdownMenuItem(
-                            value: MusicalScale.minor,
-                            child: Text(context.strings.cMinorPentatonic),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                ChoiceChip(
+                                  label: Text(context.strings.draw),
+                                  selected: !_eraser,
+                                  onSelected: (_) {
+                                    _canvas.currentState?.finish();
+                                    setState(() => _eraser = false);
+                                  },
+                                ),
+                                const SizedBox(width: 8),
+                                ChoiceChip(
+                                  label: Text(context.strings.erase),
+                                  selected: _eraser,
+                                  onSelected: (_) {
+                                    _canvas.currentState?.finish();
+                                    setState(() => _eraser = true);
+                                  },
+                                ),
+                                const SizedBox(width: 12),
+                                IconButton(
+                                  tooltip: context.strings.describeScore,
+                                  onPressed: _describing ? null : _describe,
+                                  icon: const Icon(Icons.list_alt),
+                                ),
+                                DropdownButton<MusicalScale>(
+                                  key: _scaleTarget,
+                                  value: doc.scale,
+                                  items: [
+                                    DropdownMenuItem(
+                                      value: MusicalScale.major,
+                                      child: Text(
+                                        context.strings.cMajorPentatonic,
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: MusicalScale.minor,
+                                      child: Text(
+                                        context.strings.cMinorPentatonic,
+                                      ),
+                                    ),
+                                  ],
+                                  onChanged: (scale) {
+                                    if (scale != null) {
+                                      _edit(
+                                        ref
+                                            .read(editorProvider)
+                                            .document
+                                            .copyWith(scale: scale),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         ],
-                        onChanged: (scale) {
-                          if (scale != null) {
-                            _edit(
-                              ref
-                                  .read(editorProvider)
-                                  .document
-                                  .copyWith(scale: scale),
-                            );
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: .8,
-                      child: DrawingCanvas(
-                        key: _canvas,
-                        document: doc,
-                        instrument: _instrument,
-                        eraser: _eraser,
-                        cursor: _cursor,
-                        onCommit: (strokes) => _edit(
-                          ref
-                              .read(editorProvider)
-                              .document
-                              .copyWith(strokes: strokes),
-                        ),
-                        onLimit: () =>
-                            _message(context.strings.drawingPointLimit),
                       ),
                     ),
                   ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    IconButton(
-                      tooltip: context.strings.undo,
-                      onPressed: controller.canUndo
-                          ? () {
-                              _historyEdit(redo: false);
-                            }
-                          : null,
-                      icon: const Icon(Icons.undo),
-                    ),
-                    IconButton(
-                      tooltip: context.strings.redo,
-                      onPressed: controller.canRedo
-                          ? () {
-                              _historyEdit(redo: true);
-                            }
-                          : null,
-                      icon: const Icon(Icons.redo),
-                    ),
-                    IconButton.filled(
-                      key: _playTarget,
-                      tooltip: _playing ? 'Pause' : 'Play',
-                      onPressed:
-                          (!_playing && doc.strokes.isEmpty) || _preparing
-                          ? null
-                          : () => _play(),
-                      icon: _preparing
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(),
-                            )
-                          : Icon(_playing ? Icons.pause : Icons.play_arrow),
-                      iconSize: 36,
-                    ),
-                    IconButton(
-                      tooltip: context.strings.replay,
-                      onPressed: doc.strokes.isEmpty
-                          ? null
-                          : () => _play(replay: true),
-                      icon: const Icon(Icons.replay),
-                    ),
-                  ],
-                ),
-                if (_prepared && _wantedRevision != _heardRevision)
-                  Text(
-                    _pendingBoundary == UpdateBoundary.beat
-                        ? context.strings.updatesNextBeat
-                        : context.strings.updatesNextLoop,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                Text(
-                  doc.strokes.isEmpty
-                      ? context.strings.drawSomethingToHearIt
-                      : state.saving
-                      ? context.strings.saving
-                      : state.dirty
-                      ? context.strings.changesPending
-                      : context.strings.savedOnThisDevice,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 4),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final instrument in Instrument.values)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: ChoiceChip(
-                            key: instrument == Instrument.keys
-                                ? _voiceTarget
-                                : null,
-                            avatar: Icon(
-                              instrumentIcons[instrument.index],
-                              color: instrumentColors[instrument.index],
-                            ),
-                            label: Text(instrumentName(context, instrument)),
-                            selected: _instrument == instrument,
-                            onSelected: (_) {
-                              _canvas.currentState?.finish();
-                              _selectionFeedback();
-                              setState(() {
-                                _instrument = instrument;
-                                _eraser = false;
-                              });
-                            },
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: Center(
+                      child: AspectRatio(
+                        aspectRatio: .8,
+                        child: DrawingCanvas(
+                          key: _canvas,
+                          document: doc,
+                          instrument: _instrument,
+                          eraser: _eraser,
+                          cursor: _cursor,
+                          onCommit: (strokes) => _edit(
+                            ref
+                                .read(editorProvider)
+                                .document
+                                .copyWith(strokes: strokes),
                           ),
+                          onLimit: () =>
+                              _message(context.strings.drawingPointLimit),
                         ),
-                    ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: constraints.maxHeight * .32,
+                    ),
+                    child: SingleChildScrollView(
+                      key: const ValueKey('editor-transport-scroll'),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              IconButton(
+                                tooltip: context.strings.undo,
+                                onPressed: controller.canUndo
+                                    ? () {
+                                        _historyEdit(redo: false);
+                                      }
+                                    : null,
+                                icon: const Icon(Icons.undo),
+                              ),
+                              IconButton(
+                                tooltip: context.strings.redo,
+                                onPressed: controller.canRedo
+                                    ? () {
+                                        _historyEdit(redo: true);
+                                      }
+                                    : null,
+                                icon: const Icon(Icons.redo),
+                              ),
+                              IconButton.filled(
+                                key: _playTarget,
+                                tooltip: _playing
+                                    ? context.strings.pause
+                                    : context.strings.play,
+                                onPressed:
+                                    (!_playing && doc.strokes.isEmpty) ||
+                                        _preparing
+                                    ? null
+                                    : () => _play(),
+                                icon: _preparing
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(),
+                                      )
+                                    : Icon(
+                                        _playing
+                                            ? Icons.pause
+                                            : Icons.play_arrow,
+                                      ),
+                                iconSize: 36,
+                              ),
+                              IconButton(
+                                tooltip: context.strings.replay,
+                                onPressed: doc.strokes.isEmpty
+                                    ? null
+                                    : () => _play(replay: true),
+                                icon: const Icon(Icons.replay),
+                              ),
+                            ],
+                          ),
+                          if (_prepared && _wantedRevision != _heardRevision)
+                            Text(
+                              _pendingBoundary == UpdateBoundary.beat
+                                  ? context.strings.updatesNextBeat
+                                  : context.strings.updatesNextLoop,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          Text(
+                            doc.strokes.isEmpty
+                                ? context.strings.drawSomethingToHearIt
+                                : state.saving
+                                ? context.strings.saving
+                                : state.dirty
+                                ? context.strings.changesPending
+                                : context.strings.savedOnThisDevice,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 4),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                for (final instrument in Instrument.values)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    child: ChoiceChip(
+                                      key: instrument == Instrument.keys
+                                          ? _voiceTarget
+                                          : null,
+                                      avatar: Icon(
+                                        instrumentIcons[instrument.index],
+                                        color:
+                                            instrumentColors[instrument.index],
+                                      ),
+                                      label: Text(
+                                        instrumentName(context, instrument),
+                                      ),
+                                      selected: _instrument == instrument,
+                                      onSelected: (_) {
+                                        _canvas.currentState?.finish();
+                                        _selectionFeedback();
+                                        setState(() {
+                                          _instrument = instrument;
+                                          _eraser = false;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

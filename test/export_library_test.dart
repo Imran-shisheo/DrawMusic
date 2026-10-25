@@ -177,6 +177,7 @@ void main() {
       );
       final actions = RecordingFileActions();
       final shared = <ExportArtifact>[];
+      var shareStatus = ShareResultStatus.dismissed;
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -188,7 +189,7 @@ void main() {
             exportFileActionsProvider.overrideWithValue(actions),
             shareExportProvider.overrideWithValue((artifact, origin) async {
               shared.add(artifact);
-              return ShareResultStatus.dismissed;
+              return shareStatus;
             }),
           ],
           child: const ScribbleSongApp(),
@@ -231,6 +232,27 @@ void main() {
         find.text('Share sheet dismissed. Export is still saved.'),
         findsOneWidget,
       );
+      for (final (status, message) in [
+        (
+          ShareResultStatus.unavailable,
+          'Sharing unavailable. The library file is preserved.',
+        ),
+        (
+          ShareResultStatus.success,
+          'Share sheet closed. Delivery is handled by the selected app.',
+        ),
+      ]) {
+        await tester.pump(const Duration(seconds: 5));
+        await tester.pumpAndSettle();
+        shareStatus = status;
+        await menu('Renamed loop.mid', 'Share');
+        expect(find.text(message), findsOneWidget);
+        expect(shared.last.name, 'Renamed loop.mid');
+        expect(
+          await tester.runAsync(() => File(artifact.path).exists()),
+          isTrue,
+        );
+      }
       await menu('Renamed loop.mid', 'Save a copy');
       for (var i = 0; i < 10; i++) {
         await tester.runAsync(

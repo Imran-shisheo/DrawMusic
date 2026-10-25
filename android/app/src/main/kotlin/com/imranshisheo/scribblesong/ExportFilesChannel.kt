@@ -11,6 +11,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
@@ -29,6 +30,7 @@ internal object PublicExportSaver {
         } ?: error("Could not verify public copy")
         return count
     }
+    @RequiresApi(Build.VERSION_CODES.Q)
     fun downloads(context: Context, source: File, name: String, mime: String): Pair<Uri,Long> {
         check(Build.VERSION.SDK_INT>=29)
         val resolver=context.contentResolver
@@ -90,7 +92,7 @@ internal class ExportFilesChannel(private val activity: Activity, messenger: Bin
                                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         clipData=ClipData.newRawUri(name,uri)
                                     }
-                                    activity.startActivity(Intent.createChooser(intent,"Open exported file"))
+                                    activity.startActivity(Intent.createChooser(intent,activity.getString(R.string.export_open_chooser_title)))
                                     result.success(null)
                                 } catch(e:Exception) {copy.delete();result.error("open_unavailable",e.message,null)}
                                 finally {busy=false}

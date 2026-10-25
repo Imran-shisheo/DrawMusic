@@ -13,8 +13,8 @@ dart format --output=none --set-exit-if-changed lib test integration_test tool
 flutter analyze --fatal-infos
 flutter test
 flutter build apk --debug
-# Exercise native AudioTrack preparation contracts too; Flutter fakes cannot cover them.
-(cd android && ./gradlew :app:testDebugUnitTest --console=plain)
+# Exercise native contracts and enforce Android minimum-SDK API compatibility.
+(cd android && ./gradlew :app:testDebugUnitTest :app:lintDebug --console=plain)
 # Linux cloud process-interruption proof uses only disposable owned children.
 if [[ "$(uname -s)" == Linux ]]; then
   mkdir -p work/runtime-output

@@ -1,0 +1,9 @@
+# Compact creation layouts and automated accessibility
+
+The editor's tools and transport/voice areas each have an independent vertical scroll viewport capped at 32% of available body height. The drawing surface expands into the remaining space; ordinary layouts retain their natural control sizes. Canvas drags never scroll the surrounding page. Short screens, 200% text or a save/recovery message can scroll tools without covering the canvas or making the transport unreachable. Instrument choices retain their horizontal scrolling. Existing spotlight guidance scrolls its target into view when advancing.
+
+The shared rename dialog scrolls its title/input/validation content above the keyboard while keeping Apply/Cancel in the action area. Cancel preserves the original title. This applies to draft and export naming.
+
+Eight automated scenarios cover 320×640 portrait and 640×320 landscape, LTR and forced RTL direction, 200% text and 24 dp top/bottom safe areas. Editor cases include failed first save and explicit retry, at least 48 dp visible canvas height, tempo modal cancellation, reachable export format/close actions, labeled tap targets, Android tap-target sizes and text contrast. Route cases exercise the actual retained Home/Library/Exports/Settings router, long non-Latin titles, keyboard-visible name validation/cancellation, exports, help and language navigation. Scrollable lazy content is brought into view before interaction; no missed tap is suppressed.
+
+Before the layout fix all four editor cases reported RenderFlex overflow (124 dp in the narrow portrait case). The keyboard-visible rename dialog also overflowed and hid Apply before its scrolling correction. These are widget/layout/semantics checks; they do not claim physical TalkBack traversal, stylus feel, complete screen-reader testing or a shipped RTL translation. English is the only shipped locale. See the device acceptance checklist for the remaining physical cases.
