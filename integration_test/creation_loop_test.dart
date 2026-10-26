@@ -38,6 +38,12 @@ void main() {
         await tester.pump();
       }
 
+      Future<void> reveal(Finder target) async {
+        await Scrollable.ensureVisible(tester.element(target), alignment: .2);
+        await tester.pumpAndSettle();
+        expect(target.hitTestable(), findsOneWidget);
+      }
+
       app.main();
       await tester.pumpAndSettle();
       if (find.text('Start creating').evaluate().isNotEmpty) {
@@ -101,9 +107,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Paper color'));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byTooltip('Lilac paper'));
+      await reveal(find.byTooltip('Lilac paper'));
       await tester.tap(find.byTooltip('Lilac paper'));
-      await tester.ensureVisible(find.byType(Slider));
+      await reveal(find.byType(Slider));
       await tester.tapAt(tester.getCenter(find.byType(Slider)));
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
@@ -138,7 +144,7 @@ void main() {
       await tester.tap(find.byTooltip('Export loop'));
       await tester.pumpAndSettle();
       final resolution = find.byKey(const ValueKey('video-output-width'));
-      await tester.ensureVisible(resolution);
+      await reveal(resolution);
       await tester.tap(resolution);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Compact · 640 × 800').last);
@@ -149,7 +155,7 @@ void main() {
         final before = await exportDirectory.exists()
             ? await exportDirectory.list().map((f) => f.path).toSet()
             : <String>{};
-        await tester.ensureVisible(find.text(label));
+        await reveal(find.text(label));
         await tester.tap(find.text(label));
         await tester.pump();
         await until(
@@ -180,7 +186,7 @@ void main() {
       await png.copy('${cache.path}/ui-export-image.png');
       final midi = await export('Export MIDI', '.mid');
       await midi.copy('${cache.path}/ui-export-notes.mid');
-      await tester.ensureVisible(find.text('Close'));
+      await reveal(find.text('Close'));
       await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Back to gallery'));
@@ -288,30 +294,38 @@ void main() {
             )
             .first,
       );
-      await tester.tap(find.text('Three streams'));
+      await Scrollable.ensureVisible(
+        tester.element(find.text('Three streams')),
+        alignment: .2,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Three streams').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('Three streams').hitTestable());
       await until(() async => find.byType(DrawingCanvas).evaluate().isNotEmpty);
       await tester.pumpAndSettle();
       ProjectDocument expandedDoc() =>
           tester.widget<DrawingCanvas>(find.byType(DrawingCanvas)).document;
       expect(expandedDoc().mix.isActive, isTrue);
-      await tester.ensureVisible(find.byType(DropdownButton<RootKey>));
+      await reveal(find.byType(DropdownButton<RootKey>));
       await tester.tap(find.byType(DropdownButton<RootKey>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('F♯').last);
       await tester.pumpAndSettle();
+      await reveal(find.byType(DropdownButton<MusicalScale>));
       await tester.tap(find.byType(DropdownButton<MusicalScale>));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('F♯ Lydian').last);
+      await reveal(find.text('F♯ Lydian').last);
       await tester.tap(find.text('F♯ Lydian').last);
       await tester.pumpAndSettle();
+      await reveal(find.byTooltip('Accompaniment'));
       await tester.tap(find.byTooltip('Accompaniment'));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Arpeggio'));
+      await reveal(find.text('Arpeggio'));
       await tester.tap(find.text('Arpeggio'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.byTooltip('Paper color'));
+      await reveal(find.byTooltip('Paper color'));
       await tester.tap(find.byTooltip('Paper color'));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(DropdownButtonFormField<BackgroundKind>));
@@ -323,7 +337,7 @@ void main() {
       expect(expandedDoc().root, RootKey.fSharp);
       expect(expandedDoc().scale, MusicalScale.lydian);
       expect(expandedDoc().effectiveBackground.kind, BackgroundKind.linear);
-      await tester.ensureVisible(find.byTooltip('Play'));
+      await reveal(find.byTooltip('Play'));
       await tester.tap(find.byTooltip('Play'));
       await until(
         () async =>
@@ -342,7 +356,7 @@ void main() {
       await tester.tap(find.byTooltip('Export loop'));
       await tester.pumpAndSettle();
       final expandedWidth = find.byKey(const ValueKey('video-output-width'));
-      await tester.ensureVisible(expandedWidth);
+      await reveal(expandedWidth);
       await tester.tap(expandedWidth);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Compact · 640 × 800').last);
@@ -356,7 +370,7 @@ void main() {
         final file = await export(item.$1, item.$2);
         await file.copy('${cache.path}/expanded-${item.$3}');
       }
-      await tester.ensureVisible(find.text('Close'));
+      await reveal(find.text('Close'));
       await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Back to gallery'));

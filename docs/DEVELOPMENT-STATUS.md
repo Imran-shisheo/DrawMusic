@@ -344,3 +344,14 @@ The expanded native UI harness snapshots existing artifacts before each export. 
 ### First expanded hosted runtime failure — diagnosis pending
 
 Actions 40316035590 at source 2cca4dafb8e5023684e8b40ccdab8abb037336b0 passed the product gate and uploaded APK artifact12647950832. The real Android runtime step failed at12:10:44UTC on26October; subsequent encoded-file inspection remained active, and GitHub returned BlobNotFound for the unfinished job log. This is not a native17-test acceptance or a successful full gate. Exact cause awaits the completed log. This status-only checkpoint preserves all test/lint/runtime assertions and uses the normal workflow concurrency setting; new-source checks remain mandatory. No physical or iOS result is inferred.
+
+
+### Expanded runtime diagnosis and gallery regression
+
+Run40316035590 actually passed all17native cases, with no skips/failures. The600second soak recorded600162ms and2396samples. The640×800/60FPS codec profile passed with317real encoded samples,16666–16667µs steps,19.272s elapsed and65292KiB peak-sampled whole-process PSS. These are emulator observations, not physical performance. The original offline creation/save/reopen/four-format export flow also completed before the expanded gallery step.
+
+The overall UI test then failed at creation_loop_test.dart292: its Three streams tap was still at y2002 in a731dp viewport because the scroll's layout had not been pumped. The harness now explicitly aligns/reveals controls, waits for layout and asserts hit-testability; a new real411×731 gallery-navigation regression passes. No warning or assertion is suppressed. Shipping app code is unchanged. The full local suite is rerun with170tests and the new hosted source must finish the entire expanded UI/inspection/recovery gate before acceptance.
+
+The post-failure inspector stage stalled fetching FFmpeg packages from Ubuntu's Azure mirror. Inspector preparation now runs before emulator startup, uses Ubuntu's official HTTPS archive with existing signature/keyring validation, bounds package operations and keeps all file-validation commands. No lint/native/output gate is disabled. The previous failed run was superseded through the standard concurrency setting to retrieve its log; it is not reported as a successful full gate.
+
+The corrected gallery harness and new phone-navigation regression now pass the full170-test Flutter suite; formatter/analyzer are clean. Preparation installs Python3.12 before pinned NumPy/Mido so inspector wheels and interpreter agree. The new inspector script's shell syntax and workflow YAML parse pass. All17 native tests/60FPS/soak passed on the preceding shipping-code-equivalent source, but the entire expanded UI/independent-inspection/recovery run still must complete on the corrected harness before full cloud acceptance.
