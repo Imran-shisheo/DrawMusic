@@ -145,10 +145,10 @@ void main() {
       await tester.pumpAndSettle();
       Future<File> export(String label, String extension) async {
         final root = await getApplicationDocumentsDirectory();
-        final before = await Directory('${root.path}/exports')
-            .list()
-            .map((f) => f.path)
-            .toSet();
+        final exportDirectory = Directory('${root.path}/exports');
+        final before = await exportDirectory.exists()
+            ? await exportDirectory.list().map((f) => f.path).toSet()
+            : <String>{};
         await tester.ensureVisible(find.text(label));
         await tester.tap(find.text(label));
         await tester.pump();
