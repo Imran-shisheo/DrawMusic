@@ -33,7 +33,7 @@ GitHub Actions build/storage quotas are separate from the ChatGPT subscription. 
 
 ## iOS on the owner's Mac
 
-After the cloud work is committed, pull the branch locally, use Flutter 3.47.2 (FVM optional), run flutter pub get, configure Xcode and create iOS scaffolding if absent with `flutter create --platforms=ios --org com.imranshisheo .`. Review generated files before committing. Test on a simulator/device. Apple signing and store accounts are handled locally when needed; do not upload signing keys into this repository.
+Pull `codex/creative-expansion` locally and use Flutter 3.47.2. The reviewed iOS scaffold and native audio/video/file/photo ports are included; do not regenerate or overwrite them. Run `flutter pub get`, `flutter analyze`, `flutter test` and `flutter build ios --simulator --debug`, then follow [IOS-IMPLEMENTATION.md](../docs/IOS-IMPLEMENTATION.md) for exact Xcode, development signing, XCTest, real native-port integration and independent FFprobe/FFmpeg checks. Apple signing stays on the owner’s Mac; never upload keys or profiles to this repository. Linux/Android results do not validate Swift compilation or iOS behavior.
 
 ## Sources checked 2026-10-24
 
