@@ -90,6 +90,7 @@ void main() {
     expect(find.text('Cancel').hitTestable(), findsOneWidget);
     expect(find.text('Apply').hitTestable(), findsOneWidget);
     await tester.ensureVisible(find.byType(Slider));
+    await tester.ensureVisible(find.byType(Slider));
     await tester.drag(find.byType(Slider), const Offset(-600, 0));
     await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
@@ -135,32 +136,50 @@ void main() {
       final queues = audio.queued.length, prepares = audio.prepares;
       await tester.tap(find.byTooltip('Paper color'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byType(Slider));
       await tester.drag(find.byType(Slider), const Offset(-600, 0));
       await tester.pumpAndSettle();
       expect(find.text('Opacity 0%'), findsOneWidget);
-      expect(doc().background, original.background);
+      expect(
+        doc().effectiveBackground.toJson(),
+        original.effectiveBackground.toJson(),
+      );
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
-      expect(doc().background, original.background);
+      expect(
+        doc().effectiveBackground.toJson(),
+        original.effectiveBackground.toJson(),
+      );
       await tester.tap(find.byTooltip('Paper color'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byTooltip('Lilac paper'));
       await tester.tap(find.byTooltip('Lilac paper'));
+      await tester.ensureVisible(find.byType(Slider));
       await tester.drag(find.byType(Slider), const Offset(-600, 0));
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
-      expect(doc().background, 0x00f3eef9);
+      expect(doc().effectiveBackground.colors.first, 0xfff3eef9);
+      expect(doc().effectiveBackground.opacity, 0);
       expect(audio.playing, isTrue);
       expect(audio.prepares, prepares);
       expect(audio.queued.length, queues);
       await tester.tap(find.byTooltip('Undo'));
       await tester.pumpAndSettle();
-      expect(doc().background, original.background);
+      expect(
+        doc().effectiveBackground.toJson(),
+        original.effectiveBackground.toJson(),
+      );
       await tester.tap(find.byTooltip('Redo'));
       await tester.pumpAndSettle();
-      expect(doc().background, 0x00f3eef9);
+      expect(doc().effectiveBackground.colors.first, 0xfff3eef9);
+      expect(doc().effectiveBackground.opacity, 0);
       await tester.tap(find.byTooltip('Save drawing'));
       await tester.pumpAndSettle();
-      expect(repo.documents[original.id]!.background, 0x00f3eef9);
+      expect(
+        repo.documents[original.id]!.effectiveBackground.colors.first,
+        0xfff3eef9,
+      );
+      expect(repo.documents[original.id]!.effectiveBackground.opacity, 0);
       expect(tester.takeException(), isNull);
     },
   );

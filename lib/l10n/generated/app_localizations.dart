@@ -6,6 +6,17 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
+import 'app_localizations_fil.dart';
+import 'app_localizations_fr.dart';
+import 'app_localizations_hi.dart';
+import 'app_localizations_id.dart';
+import 'app_localizations_it.dart';
+import 'app_localizations_ja.dart';
+import 'app_localizations_ko.dart';
+import 'app_localizations_pt.dart';
+import 'app_localizations_th.dart';
+import 'app_localizations_vi.dart';
 
 // ignore_for_file: type=lint
 
@@ -92,7 +103,20 @@ abstract class AppLocalizations {
       ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('en')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('es'),
+    Locale('fil'),
+    Locale('fr'),
+    Locale('hi'),
+    Locale('id'),
+    Locale('it'),
+    Locale('ja'),
+    Locale('ko'),
+    Locale('pt'),
+    Locale('th'),
+    Locale('vi'),
+  ];
 
   /// No description provided for @pageUnavailableReturnHome.
   ///
@@ -385,13 +409,13 @@ abstract class AppLocalizations {
   /// No description provided for @hd1080135030Fps.
   ///
   /// In en, this message translates to:
-  /// **'HD · 1080 × 1350 · 30 fps'**
+  /// **'HD · 1080 × 1350'**
   String get hd1080135030Fps;
 
   /// No description provided for @compact64080030Fps.
   ///
   /// In en, this message translates to:
-  /// **'Compact · 640 × 800 · 30 fps'**
+  /// **'Compact · 640 × 800'**
   String get compact64080030Fps;
 
   /// No description provided for @exportMp4.
@@ -823,7 +847,7 @@ abstract class AppLocalizations {
   /// No description provided for @languageExplanation.
   ///
   /// In en, this message translates to:
-  /// **'English is currently available.'**
+  /// **'Choose a language, then Apply. Your drawing titles stay unchanged.'**
   String get languageExplanation;
 
   /// No description provided for @updatedOn.
@@ -895,7 +919,7 @@ abstract class AppLocalizations {
   /// No description provided for @thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo.
   ///
   /// In en, this message translates to:
-  /// **'This version uses the key of C. Choose major or minor pentatonic here to change the mood. The same score drives preview and exports.'**
+  /// **'Choose any root key and scale to change the mood. The same score drives preview and exports.'**
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo;
 
   /// No description provided for @warmPaper.
@@ -925,8 +949,8 @@ abstract class AppLocalizations {
   /// No description provided for @drawingDetails.
   ///
   /// In en, this message translates to:
-  /// **'{marks} marks · {tempo} BPM · C {scale}'**
-  String drawingDetails(String marks, String tempo, String scale);
+  /// **'{marks} marks · {tempo} BPM · {root} {scale}'**
+  String drawingDetails(String root, String marks, String tempo, String scale);
 
   /// No description provided for @exportDetails.
   ///
@@ -1069,8 +1093,8 @@ abstract class AppLocalizations {
   /// No description provided for @scoreSummary.
   ///
   /// In en, this message translates to:
-  /// **'{count} note events · {tempo} BPM · C {scale} pentatonic.'**
-  String scoreSummary(String count, String tempo, String scale);
+  /// **'{count} note events · {tempo} BPM · {root} {scale}'**
+  String scoreSummary(String root, String count, String tempo, String scale);
 
   /// No description provided for @scoreEvent.
   ///
@@ -1339,7 +1363,7 @@ abstract class AppLocalizations {
   /// No description provided for @exportsEmpty.
   ///
   /// In en, this message translates to:
-  /// **'Completed exports will appear here.\nOpen a drawing and choose Export to create MIDI, WAV or MP4.'**
+  /// **'Completed exports will appear here.\nOpen a drawing and choose Export to create MIDI, WAV, MP4 or PNG.'**
   String get exportsEmpty;
 
   /// No description provided for @nameYourExport.
@@ -1443,6 +1467,636 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pause'**
   String get pause;
+
+  /// No description provided for @exportPng.
+  ///
+  /// In en, this message translates to:
+  /// **'Export PNG'**
+  String get exportPng;
+
+  /// No description provided for @pngExportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Save the drawing as an image without controls or playback cursor.'**
+  String get pngExportDescription;
+
+  /// No description provided for @transparentBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Transparent background'**
+  String get transparentBackground;
+
+  /// No description provided for @pngOutputSize.
+  ///
+  /// In en, this message translates to:
+  /// **'PNG image size'**
+  String get pngOutputSize;
+
+  /// No description provided for @pngHd.
+  ///
+  /// In en, this message translates to:
+  /// **'HD · 1080 × 1350'**
+  String get pngHd;
+
+  /// No description provided for @pngCompact.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact · 640 × 800'**
+  String get pngCompact;
+
+  /// No description provided for @rootKey.
+  ///
+  /// In en, this message translates to:
+  /// **'Root key'**
+  String get rootKey;
+
+  /// No description provided for @scaleFamily.
+  ///
+  /// In en, this message translates to:
+  /// **'Scale'**
+  String get scaleFamily;
+
+  /// No description provided for @majorPentatonic.
+  ///
+  /// In en, this message translates to:
+  /// **'Major pentatonic'**
+  String get majorPentatonic;
+
+  /// No description provided for @minorPentatonic.
+  ///
+  /// In en, this message translates to:
+  /// **'Minor pentatonic'**
+  String get minorPentatonic;
+
+  /// No description provided for @diatonicMajor.
+  ///
+  /// In en, this message translates to:
+  /// **'Major'**
+  String get diatonicMajor;
+
+  /// No description provided for @diatonicMinor.
+  ///
+  /// In en, this message translates to:
+  /// **'Minor'**
+  String get diatonicMinor;
+
+  /// No description provided for @harmonicMinor.
+  ///
+  /// In en, this message translates to:
+  /// **'Harmonic minor'**
+  String get harmonicMinor;
+
+  /// No description provided for @dorian.
+  ///
+  /// In en, this message translates to:
+  /// **'Dorian'**
+  String get dorian;
+
+  /// No description provided for @phrygian.
+  ///
+  /// In en, this message translates to:
+  /// **'Phrygian'**
+  String get phrygian;
+
+  /// No description provided for @lydian.
+  ///
+  /// In en, this message translates to:
+  /// **'Lydian'**
+  String get lydian;
+
+  /// No description provided for @mixolydian.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixolydian'**
+  String get mixolydian;
+
+  /// No description provided for @blues.
+  ///
+  /// In en, this message translates to:
+  /// **'Blues'**
+  String get blues;
+
+  /// No description provided for @chromatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Chromatic'**
+  String get chromatic;
+
+  /// No description provided for @warmSynth.
+  ///
+  /// In en, this message translates to:
+  /// **'Amber pad'**
+  String get warmSynth;
+
+  /// No description provided for @pluck.
+  ///
+  /// In en, this message translates to:
+  /// **'Dew pluck'**
+  String get pluck;
+
+  /// No description provided for @flute.
+  ///
+  /// In en, this message translates to:
+  /// **'Reed breeze'**
+  String get flute;
+
+  /// No description provided for @strings.
+  ///
+  /// In en, this message translates to:
+  /// **'Velvet strings'**
+  String get strings;
+
+  /// No description provided for @chime.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver chime'**
+  String get chime;
+
+  /// No description provided for @bass.
+  ///
+  /// In en, this message translates to:
+  /// **'Earth bass'**
+  String get bass;
+
+  /// No description provided for @chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Pocket chip'**
+  String get chip;
+
+  /// No description provided for @electronicBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Neon bass'**
+  String get electronicBass;
+
+  /// No description provided for @guitar.
+  ///
+  /// In en, this message translates to:
+  /// **'Cedar guitar'**
+  String get guitar;
+
+  /// No description provided for @saxophone.
+  ///
+  /// In en, this message translates to:
+  /// **'Copper reed'**
+  String get saxophone;
+
+  /// No description provided for @geometrySimplified.
+  ///
+  /// In en, this message translates to:
+  /// **'Dense points were simplified within the documented tolerance. Undo restores the original drawing.'**
+  String get geometrySimplified;
+
+  /// No description provided for @compatibilityFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Some saved sounds or scales are unavailable. A safe substitute is used; original identifiers are preserved.'**
+  String get compatibilityFallback;
+
+  /// No description provided for @backgroundType.
+  ///
+  /// In en, this message translates to:
+  /// **'Background type'**
+  String get backgroundType;
+
+  /// No description provided for @solidBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Solid color'**
+  String get solidBackground;
+
+  /// No description provided for @linearBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Linear gradient'**
+  String get linearBackground;
+
+  /// No description provided for @radialBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Radial gradient'**
+  String get radialBackground;
+
+  /// No description provided for @photoBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get photoBackground;
+
+  /// No description provided for @customColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom color (RRGGBB)'**
+  String get customColor;
+
+  /// No description provided for @secondColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Second color (RRGGBB)'**
+  String get secondColor;
+
+  /// No description provided for @choosePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose photo'**
+  String get choosePhoto;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get takePhoto;
+
+  /// No description provided for @replacePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace photo'**
+  String get replacePhoto;
+
+  /// No description provided for @removePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get removePhoto;
+
+  /// No description provided for @rotatePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate photo'**
+  String get rotatePhoto;
+
+  /// No description provided for @mirrorPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Mirror photo'**
+  String get mirrorPhoto;
+
+  /// No description provided for @cropLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop left'**
+  String get cropLeft;
+
+  /// No description provided for @cropTop.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop top'**
+  String get cropTop;
+
+  /// No description provided for @cropWidth.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop width'**
+  String get cropWidth;
+
+  /// No description provided for @cropHeight.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop height'**
+  String get cropHeight;
+
+  /// No description provided for @imageUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This photo is unavailable. Replace or remove it.'**
+  String get imageUnavailable;
+
+  /// No description provided for @imageImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not import this image. Choose a valid JPEG, PNG or supported HEIC image under 32 MB.'**
+  String get imageImportFailed;
+
+  /// No description provided for @cameraUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No camera app is available. You can choose a photo instead.'**
+  String get cameraUnavailable;
+
+  /// No description provided for @photoPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo access was denied. Choose another image or check system permissions.'**
+  String get photoPermissionDenied;
+
+  /// No description provided for @backgroundImportBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Importing image…'**
+  String get backgroundImportBusy;
+
+  /// No description provided for @backgroundRecovered.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovered your interrupted photo selection.'**
+  String get backgroundRecovered;
+
+  /// No description provided for @resetCrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset crop'**
+  String get resetCrop;
+
+  /// No description provided for @backgroundGradientTip.
+  ///
+  /// In en, this message translates to:
+  /// **'Backgrounds change the picture only; your notes stay the same.'**
+  String get backgroundGradientTip;
+
+  /// No description provided for @gradientDawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Dawn gradient'**
+  String get gradientDawn;
+
+  /// No description provided for @gradientOrchard.
+  ///
+  /// In en, this message translates to:
+  /// **'Orchard gradient'**
+  String get gradientOrchard;
+
+  /// No description provided for @gradientTwilight.
+  ///
+  /// In en, this message translates to:
+  /// **'Twilight gradient'**
+  String get gradientTwilight;
+
+  /// No description provided for @accompaniment.
+  ///
+  /// In en, this message translates to:
+  /// **'Accompaniment'**
+  String get accompaniment;
+
+  /// No description provided for @drumKit.
+  ///
+  /// In en, this message translates to:
+  /// **'Drum kit'**
+  String get drumKit;
+
+  /// No description provided for @arpeggio.
+  ///
+  /// In en, this message translates to:
+  /// **'Arpeggio'**
+  String get arpeggio;
+
+  /// No description provided for @kick.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick'**
+  String get kick;
+
+  /// No description provided for @snare.
+  ///
+  /// In en, this message translates to:
+  /// **'Snare'**
+  String get snare;
+
+  /// No description provided for @clap.
+  ///
+  /// In en, this message translates to:
+  /// **'Clap'**
+  String get clap;
+
+  /// No description provided for @hiHat.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi-hat'**
+  String get hiHat;
+
+  /// No description provided for @muted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get muted;
+
+  /// No description provided for @layerLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Layer level'**
+  String get layerLevel;
+
+  /// No description provided for @expressiveMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Expressive dynamics'**
+  String get expressiveMode;
+
+  /// No description provided for @expressiveModeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Use recorded gesture speed for note dynamics. Geometry mode stays independent of drawing speed.'**
+  String get expressiveModeHelp;
+
+  /// No description provided for @darkTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark theme'**
+  String get darkTheme;
+
+  /// No description provided for @useSystemTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Use system theme'**
+  String get useSystemTheme;
+
+  /// No description provided for @pngEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Export an empty drawing?'**
+  String get pngEmptyTitle;
+
+  /// No description provided for @pngEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This image will contain only the background, or be transparent when that option is selected.'**
+  String get pngEmptyDescription;
+
+  /// No description provided for @videoFrameRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Video frame rate'**
+  String get videoFrameRate;
+
+  /// No description provided for @videoFps30.
+  ///
+  /// In en, this message translates to:
+  /// **'30 FPS — standard'**
+  String get videoFps30;
+
+  /// No description provided for @videoFps60.
+  ///
+  /// In en, this message translates to:
+  /// **'60 FPS — smoother, slower export'**
+  String get videoFps60;
+
+  /// No description provided for @reviewOptionalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional app review'**
+  String get reviewOptionalTitle;
+
+  /// No description provided for @reviewOptionalBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your work is saved. Your device may show a review sheet, which you can close without submitting a review.'**
+  String get reviewOptionalBody;
+
+  /// No description provided for @reviewNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get reviewNotNow;
+
+  /// No description provided for @reviewContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get reviewContinue;
+
+  /// No description provided for @muteLayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute layer'**
+  String get muteLayer;
+
+  /// No description provided for @unmuteLayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute layer'**
+  String get unmuteLayer;
+
+  /// No description provided for @templateDescription0.
+  ///
+  /// In en, this message translates to:
+  /// **'Two rising peaks on a mallet voice.'**
+  String get templateDescription0;
+
+  /// No description provided for @templateDescription1.
+  ///
+  /// In en, this message translates to:
+  /// **'Falling bell lines form vertical chords.'**
+  String get templateDescription1;
+
+  /// No description provided for @templateDescription2.
+  ///
+  /// In en, this message translates to:
+  /// **'A smooth keyboard wave explores pitch.'**
+  String get templateDescription2;
+
+  /// No description provided for @templateDescription3.
+  ///
+  /// In en, this message translates to:
+  /// **'Eight isolated mallet dots make a rhythm.'**
+  String get templateDescription3;
+
+  /// No description provided for @templateDescription4.
+  ///
+  /// In en, this message translates to:
+  /// **'A bell ellipse meets the scan twice.'**
+  String get templateDescription4;
+
+  /// No description provided for @templateDescription5.
+  ///
+  /// In en, this message translates to:
+  /// **'Three original voices travel side by side.'**
+  String get templateDescription5;
+
+  /// No description provided for @templateDescription6.
+  ///
+  /// In en, this message translates to:
+  /// **'Ascending plucked steps leave breathing gaps.'**
+  String get templateDescription6;
+
+  /// No description provided for @templateDescription7.
+  ///
+  /// In en, this message translates to:
+  /// **'Four flute chords at spaced times.'**
+  String get templateDescription7;
+
+  /// No description provided for @templateDescription8.
+  ///
+  /// In en, this message translates to:
+  /// **'A broad string wave changes direction.'**
+  String get templateDescription8;
+
+  /// No description provided for @templateDescription9.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate chime dots make a short pattern.'**
+  String get templateDescription9;
+
+  /// No description provided for @templateDescription10.
+  ///
+  /// In en, this message translates to:
+  /// **'A low-voice ellipse is a beginner loop.'**
+  String get templateDescription10;
+
+  /// No description provided for @templateDescription11.
+  ///
+  /// In en, this message translates to:
+  /// **'Guitar, reed and keyboard ribbons interweave.'**
+  String get templateDescription11;
+
+  /// No description provided for @templateDescription12.
+  ///
+  /// In en, this message translates to:
+  /// **'Electronic bass steps climb through the scale.'**
+  String get templateDescription12;
+
+  /// No description provided for @templateDescription13.
+  ///
+  /// In en, this message translates to:
+  /// **'Guitar chords make four vertical windows.'**
+  String get templateDescription13;
+
+  /// No description provided for @templateDescription14.
+  ///
+  /// In en, this message translates to:
+  /// **'A reed wave meanders across the page.'**
+  String get templateDescription14;
+
+  /// No description provided for @templateDescription15.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard dots leave generous silence.'**
+  String get templateDescription15;
+
+  /// No description provided for @templateDescription16.
+  ///
+  /// In en, this message translates to:
+  /// **'A mallet ring demonstrates two pitch paths.'**
+  String get templateDescription16;
+
+  /// No description provided for @templateDescription17.
+  ///
+  /// In en, this message translates to:
+  /// **'Three voices with original bass and drum accompaniment.'**
+  String get templateDescription17;
+
+  /// No description provided for @templateDescription18.
+  ///
+  /// In en, this message translates to:
+  /// **'Bell steps rise through the scale.'**
+  String get templateDescription18;
+
+  /// No description provided for @templateDescription19.
+  ///
+  /// In en, this message translates to:
+  /// **'Four warm synthesizer chords with bass and drum accompaniment.'**
+  String get templateDescription19;
+
+  /// No description provided for @recoveryExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export recovery data'**
+  String get recoveryExport;
+
+  /// No description provided for @recoveryExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not export recovery data. The original files are preserved.'**
+  String get recoveryExportFailed;
 }
 
 class _AppLocalizationsDelegate
@@ -1455,8 +2109,20 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>[
+    'en',
+    'es',
+    'fil',
+    'fr',
+    'hi',
+    'id',
+    'it',
+    'ja',
+    'ko',
+    'pt',
+    'th',
+    'vi',
+  ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1467,6 +2133,28 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
+    case 'fil':
+      return AppLocalizationsFil();
+    case 'fr':
+      return AppLocalizationsFr();
+    case 'hi':
+      return AppLocalizationsHi();
+    case 'id':
+      return AppLocalizationsId();
+    case 'it':
+      return AppLocalizationsIt();
+    case 'ja':
+      return AppLocalizationsJa();
+    case 'ko':
+      return AppLocalizationsKo();
+    case 'pt':
+      return AppLocalizationsPt();
+    case 'th':
+      return AppLocalizationsTh();
+    case 'vi':
+      return AppLocalizationsVi();
   }
 
   throw FlutterError(

@@ -69,7 +69,7 @@ internal class ExportFilesChannel(private val activity: Activity, messenger: Bin
                 val source=File(path).canonicalFile
                 require(source.path.startsWith(root.path+File.separator) && source.isFile && source.length()>0) {"Export unavailable"}
                 val extension=source.extension.lowercase()
-                val mime=when(extension) {"mid" -> "audio/midi";"wav" -> "audio/wav";"mp4" -> "video/mp4";else -> error("Unsupported export")}
+                val mime=when(extension) {"mid" -> "audio/midi";"wav" -> "audio/wav";"mp4" -> "video/mp4";"png" -> "image/png";else -> error("Unsupported export")}
                 require(call.argument<String>("mime")==mime)
                 val name=call.argument<String>("name") ?: error("Missing file name")
                 require(name.length in 1..180 && !name.contains('/') && !name.contains('\\') && name.none {it<' ' || it=='\u007f'} && name.endsWith(".$extension")) {"Invalid file name"}
@@ -92,7 +92,8 @@ internal class ExportFilesChannel(private val activity: Activity, messenger: Bin
                                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                         clipData=ClipData.newRawUri(name,uri)
                                     }
-                                    activity.startActivity(Intent.createChooser(intent,activity.getString(R.string.export_open_chooser_title)))
+                                    val chooserTitle=call.argument<String>("chooserTitle")?.takeIf {it.length in 1..160 && it.none {c->c<' ' || c=='\u007f'}} ?: activity.getString(R.string.export_open_chooser_title)
+                                    activity.startActivity(Intent.createChooser(intent,chooserTitle))
                                     result.success(null)
                                 } catch(e:Exception) {copy.delete();result.error("open_unavailable",e.message,null)}
                                 finally {busy=false}

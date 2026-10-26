@@ -3,6 +3,7 @@ import 'package:scribblesong/l10n/strings.dart';
 import '../../../creative_document/document.dart';
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -77,7 +78,10 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
         case _Action.rename:
           final name = await askDrawingName(
             context,
-            entry.artifact.name.replaceFirst(RegExp(r'\.(mid|wav|mp4)$'), ''),
+            entry.artifact.name.replaceFirst(
+              RegExp(r'\.(mid|wav|mp4|png)$'),
+              '',
+            ),
             heading: strings.nameYourExport,
           );
           if (name != null) await repository.rename(entry.id, name);
@@ -208,7 +212,20 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
     return Card(
       child: ListTile(
         isThreeLine: true,
-        leading: entry.preview == null
+        leading: format == 'PNG' && entry.available
+            ? SizedBox(
+                width: 56,
+                height: 70,
+                child: Image.file(
+                  File(entry.artifact.path),
+                  cacheWidth: 112,
+                  fit: BoxFit.contain,
+                  excludeFromSemantics: true,
+                  errorBuilder: (_, _, _) =>
+                      const Icon(Icons.broken_image_outlined),
+                ),
+              )
+            : entry.preview == null
             ? Icon(
                 format == 'MP4'
                     ? Icons.movie_outlined

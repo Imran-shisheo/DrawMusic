@@ -39,7 +39,7 @@ jobs:
     needs: setup-files
     if: needs.setup-files.outputs.app_exists == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
         with:
@@ -77,7 +77,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Exercise real Android audio and video APIs
-        timeout-minutes: 30
+        timeout-minutes: 40
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
@@ -100,7 +100,11 @@ jobs:
           export PYTHONPATH="$PWD/work/validation-deps"
           python3 scripts/validate-video.py work/runtime-output/fixture-video.mp4 work/runtime-fixtures/original-loop.wav work/runtime-output/inspection.json
           python3 scripts/validate-video.py work/runtime-output/ui-export-video.mp4 work/runtime-output/ui-export-audio.wav work/runtime-output/ui-inspection.json 640
+          python3 scripts/validate-video.py work/runtime-output/fixture-video-60.mp4 work/runtime-fixtures/original-loop.wav work/runtime-output/video-60-inspection.json 640 60
           python3 scripts/validate-runtime-midi.py
+          python3 scripts/validate-runtime-png.py
+          python3 scripts/validate-video.py work/runtime-output/expanded-video.mp4 work/runtime-output/expanded-audio.wav work/runtime-output/expanded-video-inspection.json 640
+          python3 scripts/validate-expanded-midi.py
       - name: Upload runtime evidence
         if: always()
         uses: actions/upload-artifact@v7

@@ -6,7 +6,9 @@ class UserPreferences {
     this.tutorialCompleted = false,
     this.editorTipsCompleted = false,
     this.languageCode = 'en',
+    this.darkTheme = false,
   });
+  final bool darkTheme;
   final double previewVolume;
   final String languageCode;
   final bool haptics, reduceMotion, tutorialCompleted, editorTipsCompleted;
@@ -17,6 +19,7 @@ class UserPreferences {
     bool? tutorialCompleted,
     bool? editorTipsCompleted,
     String? languageCode,
+    bool? darkTheme,
   }) => UserPreferences(
     previewVolume: previewVolume ?? this.previewVolume,
     haptics: haptics ?? this.haptics,
@@ -24,6 +27,7 @@ class UserPreferences {
     tutorialCompleted: tutorialCompleted ?? this.tutorialCompleted,
     editorTipsCompleted: editorTipsCompleted ?? this.editorTipsCompleted,
     languageCode: languageCode ?? this.languageCode,
+    darkTheme: darkTheme ?? this.darkTheme,
   );
   Map<String, dynamic> toJson() => {
     'schema': 1,
@@ -33,6 +37,7 @@ class UserPreferences {
     'tutorialCompleted': tutorialCompleted,
     'editorTipsCompleted': editorTipsCompleted,
     'languageCode': languageCode,
+    'darkTheme': darkTheme,
   };
   factory UserPreferences.fromJson(Map<String, dynamic> json) {
     if (json['schema'] != 1) {
@@ -44,13 +49,30 @@ class UserPreferences {
     }
     return UserPreferences(
       previewVolume: volume,
+      darkTheme: json['darkTheme'] as bool? ?? false,
       haptics: json['haptics'] as bool,
       reduceMotion: json['reduceMotion'] as bool,
       tutorialCompleted: json['tutorialCompleted'] as bool,
       editorTipsCompleted: json['editorTipsCompleted'] as bool? ?? false,
       // Only shipped translations are selectable; future/unsupported values
       // fall back without discarding unrelated settings.
-      languageCode: 'en',
+      languageCode:
+          const [
+            'en',
+            'fr',
+            'es',
+            'it',
+            'ko',
+            'ja',
+            'vi',
+            'hi',
+            'pt',
+            'th',
+            'fil',
+            'id',
+          ].contains(json['languageCode'])
+          ? json['languageCode'] as String
+          : 'en',
     );
   }
 }

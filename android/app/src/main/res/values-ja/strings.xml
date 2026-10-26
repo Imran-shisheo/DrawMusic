@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="export_open_chooser_title">書き出したファイルを開く</string>
+</resources>

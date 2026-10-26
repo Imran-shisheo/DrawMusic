@@ -1,6 +1,6 @@
 import '../../../creative_document/document.dart';
 
-enum ExportFormat { midi, wav, mp4 }
+enum ExportFormat { midi, wav, mp4, png }
 
 class ExportCancellation {
   bool _cancelled = false;
@@ -43,10 +43,11 @@ class ExportArtifact {
     this.width,
     this.height,
     this.durationSeconds,
+    this.framesPerSecond,
   });
   final String path, mime, name, projectId;
   final int revision;
-  final int? width, height;
+  final int? width, height, framesPerSecond;
   final double? durationSeconds;
 }
 
@@ -63,6 +64,18 @@ abstract interface class VideoExportPort {
     ProjectDocument document,
     ExportCancellation cancellation, {
     int width = 1080,
+    int fps = 30,
+    void Function(double)? onProgress,
+  });
+}
+
+/// Still-image output is independent of score compilation and playback state.
+abstract interface class ImageExportPort {
+  Future<ExportArtifact> exportImage(
+    ProjectDocument document,
+    ExportCancellation cancellation, {
+    int width = 1080,
+    bool transparentBackground = false,
     void Function(double)? onProgress,
   });
 }

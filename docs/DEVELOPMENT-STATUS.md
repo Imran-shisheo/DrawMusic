@@ -1,8 +1,14 @@
 # Development status
 
-Updated: 25 October 2026. Latest accepted application: **1.11.7+21**, source `d2e05fdedb4c8264ee9096e65d18fcc97797eeea`, Actions [40172814635](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40172814635). PRs #17–#20 deliver operational resources, Android recovery/soak checks, compact layouts and explicit unavailable sharing. Their GitHub pages record merge state. Later sections preserve checkpoint history; earlier pending statements are superseded by this acceptance record.
+Updated: **26 October 2026 — creative expansion 2.0.0+22**, branch `codex/creative-expansion`. The owner's uploaded scope supersedes older P1 deferrals and merging permission. All creative features remain free; leave this task's PR unmerged. Historical checkpoints below remain evidence only for their own source.
 
-Current gate: formatter/analyzer/Android lint, **82 Flutter / 20 JVM / eight real Android native tests**, full offline creation/save/reopen/export flow and independent MIDI/MP4 inspection pass. The native suite includes a **600-second streaming soak**, and the host-driven **Android force-stop/fresh-process recovery/playback/retry** check passed. All **12 Linux interruption/recovery/retry attempts** also passed. A real debug APK was built; its v2 signature passed locally. Physical Android audibility/routes/sharing/storage/accessibility/drawing performance and iOS audio/video/file adapters plus Mac/device validation remain open. P0 device completion is not claimed.
+**Current source validation:** formatter and analyzer pass; the full Flutter suite passes **169 tests**. `bash scripts/check-android.sh` now passes formatter/analyzer, 169 Flutter tests, 20 JVM tests, Android lint with zero errors, debug APK build and all twelve Linux interrupted-save/recovery/retry checks. Separate `assembleDebugAndroidTest` and APK v2 signature verification pass. Logs: work/creative-final-product-check.log, creative-final-instrumentation-build.log and creative-final-signature.log. Seventeen Android instrumentation cases are provided, including original native playback/codec/cancellation/public-copy/pixel/ten-minute soak plus new PNG/import/gradient/photo/catalog/60FPS coverage; compilation and hosted execution must be recorded separately. No old CI result is substituted for this expanded source. `EXPANSION_SOURCE_PENDING` will be replaced after checkpointing; see [full requirement matrix](CREATIVE-REQUIREMENT-MATRIX.md).
+
+**Implemented:** deterministic bounded simplification with exact score/Undo checks; shared-object history byte accounting; stable unknown-ID fallback and raw metadata/byte preservation; separate schema/sound versions and actual v1 fixtures; 13 original instruments, 12 keys/11 scales; original bass/arp/drum mixing and isolated MIDI channels; custom/linear/radial/photo/camera/crop/rotate/mirror backgrounds; 20 original templates, responsive gallery/navigation and playhead intersection feedback; true PNG/library/Open/Save/Share; 30/60FPS video options; twelve languages/330 keys, native labels and accessible compact controls; optional review threshold/cooldown; explicit expressive mode/stylus metadata/dark/tablet workspace; iOS source ports and scaffolding.
+
+**Open acceptance/limits:** physical Android audio latency/timbre/routes, sharing recipients, camera/grants/HEIC/activity death, TalkBack and release FPS/memory, real disk-full/power loss; human linguistic review; iOS compilation/signing/XCTest/AVFoundation/device validation. Images are retained conservatively, so destructive orphan GC/storage cleanup is not claimed. Native review UI is platform/quota controlled, with no submission claim. Original store branding/listing/external destinations need owner configuration; broken links are not added. Ads/rewards, purchases/subscriptions, accounts, uploads, paid services, hosted backup/collaboration and unspecified advanced composition are excluded or owner decisions.
+
+## Historical MVP checkpoint ledger
 
 | Gate | Current evidence |
 |---|---|
@@ -304,3 +310,29 @@ PR #18 merged as 6f3800d. PR #20 includes the compact-layout implementation from
 ### Test-runner compatibility resolution
 
 The subsequent CI-only experiment in runs 40174852183/40175089074 is not accepted evidence. Run 40174852183 completed all eight native tests and executed the UI scenario, but failed test loading because `--no-dds` makes the pinned Flutter integration runner request an unsupported VM service stream (`integration_test.VmServiceProxyGoldenFileComparator`). The experiment is reverted in full, restoring the exact application, native configuration, check scripts and recovery probe of the fully accepted d2e05f source. No assertion, gate or test is removed. The final documentation uses that accepted source and its artifacts; a new normal full-gate run will also run on this documentation checkpoint. PR #19's layout changes are included in PR #20, avoiding a separate merge of an earlier failing harness checkpoint.
+
+## Creative expansion engineering and continuation
+
+Source and behavior: CREATIVE-IMPLEMENTATION-PLAN.md; all F01–F25/QA01–QA23 rows in CREATIVE-REQUIREMENT-MATRIX.md. Detailed scope: DOCUMENT-COMPATIBILITY.md, MUSIC-CATALOG.md, MIDI-CATALOG-PARITY.md, GEOMETRY-MEMORY.md, EXPRESSIVE-INPUT.md, BACKGROUNDS.md, PNG-EXPORT.md, VIDEO-FRAME-RATE.md, TRANSLATIONS.md, RATING-FLOW.md, RAW-RECOVERY-EXPORT.md, IOS-IMPLEMENTATION.md. ASSET-PROVENANCE.md records all original synthesis/patterns/templates/gradients/platform glyphs and dependency licensing.
+
+The full-suite first integration run found the old opacity test could no longer reach the expanded panel's slider; opacity was moved ahead of advanced controls, and tests retain transactional Cancel/Apply/Undo/Redo/reopen/no-audio-requeue assertions against the new paper model. A native test compilation error needed an explicit Kotlin Set type. Concurrent source integration briefly referenced recovery strings before generation; all twelve resources were generated before the final gate. Creative UI test semantics cleanup was corrected with try/finally. No failed or unrun check is counted as passing.
+
+Independent review found and fixed MIDI arpeggio note-offs cutting held drawing notes (separate melodic channels14/15, percussion9), raw recovery options missing for undecodable projects, per-frame iOS photo loading/integrity gaps, rating modal/saving guards, and compaction Undo retention. New regression checks exercise those contracts. The current 169-test full run passes. The measured Linux VM history diagnostic retains one 100k-point exclusive previous scene at 14,529,854 accounted bytes under the 20MiB additional-history budget; observed whole-process RSS194.8–329.5MiB/peak372.5MiB includes VM/temp/GC and is not a physical heap/FPS target.
+
+All implementation runs in the selected cloud with the pinned SDK and refreshed proxy/CA, TLS enabled and unchanged HOME. A local /dev/kvm is absent; real Android execution uses the isolated existing hosted workflow. Runtime/job deadlines are increased to40/60minutes to accommodate17native cases, the600second soak, genuine60FPS encoding and expanded offline UI/export inspection; no test/assertion/lint gate is disabled. No force push, PR merge, store publish, personal-phone operation or scheduled task is authorized in this scope.
+
+If interrupted, source these environments and run:
+
+```bash
+source /workspace/drawmusic-tools/env.sh
+source cloud/env.sh
+export DASH__SUPPRESS_ANALYTICS=true
+bash scripts/check-android.sh
+(cd android && ./gradlew :app:assembleDebugAndroidTest --console=plain)
+```
+
+Then review the draft PR's new Actions run, exact17native results and independent exported-file reports. Fix any new failure and push normally, preserving all gates. Run Mac commands from IOS-IMPLEMENTATION.md only on the owner's Mac; do not convert source-only iOS status to accepted. Retained photo storage needs a deliberately reviewed reachability/deletion policy before enabling destructive collection.
+
+Final review also made all twenty template geometries distinct independently of their assigned voices, with a geometry-only uniqueness regression. Native lint found and corrected suspicious Kotlin indentation; photo recovery no longer consumes ready metadata before Dart acknowledgement. The worker verifies synchronous metadata publication, and AndroidX ExifInterface1.4.2 replaces the platform parser. Focused photo/model/panel checks and native source/instrumentation compilation/lint pass after those corrections; the final complete gate is being rerun on this source.
+
+Final local gate passed on the checkpointed application tree: formatter/analyzer,169Flutter/20JVM,lintzeroerrors,APKbuild/v2signature,17-testinstrumentationAPKcompilation and12Linuxinterruption/recovery/retry attempts. RealAndroid17-testexecution,offlineexpandedUI/nativefileinspection/60FPSprofile/600-secondsoak/force-stop remain pending the new hosted run. No physical or iOS native acceptance is claimed.

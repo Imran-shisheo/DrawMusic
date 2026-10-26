@@ -1,3 +1,5 @@
+import '../../rating/application/rating_provider.dart';
+
 import 'package:scribblesong/l10n/strings.dart';
 
 import 'dart:io';
@@ -11,7 +13,9 @@ import '../../export_library/data/export_actions.dart';
 
 import '../../../creative_document/document.dart';
 import '../data/file_export_adapter.dart';
+import '../data/file_image_export_adapter.dart';
 import '../data/android_video_export_adapter.dart';
+import '../data/ios_video_export_adapter.dart';
 import '../domain/export_port.dart';
 import '../../composition/domain/score.dart';
 
@@ -39,6 +43,9 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
   bool _fileActionBusy = false;
   double? _progress;
   int _width = 1080;
+  int _fps = 30;
+  int _imageWidth = 1080;
+  bool _transparentBackground = false;
   ExportFormat? _format;
   @override
   void initState() {
@@ -64,8 +71,32 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     super.dispose();
   }
 
+  bool get _hasMusic =>
+      widget.snapshot.strokes.isNotEmpty || widget.snapshot.mix.isActive;
   Future<void> _export(ExportFormat format) async {
+    if (format != ExportFormat.png && !_hasMusic) return;
     if (_busy || _fileActionBusy) return;
+    if (format == ExportFormat.png && widget.snapshot.strokes.isEmpty) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          scrollable: true,
+          title: Text(context.strings.pngEmptyTitle),
+          content: Text(context.strings.pngEmptyDescription),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(context.strings.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(context.strings.exportPng),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || confirmed != true || _busy || _fileActionBusy) return;
+    }
     final cancellation = ExportCancellation();
     _cancellation = cancellation;
     setState(() {
@@ -78,17 +109,31 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     try {
       final root = await getApplicationDocumentsDirectory();
       final directory = Directory('${root.path}/exports');
-      final artifact = format == ExportFormat.mp4
-          ? await AndroidVideoExportAdapter(directory).exportVideo(
+      void progress(double progress) {
+        if (mounted && !cancellation.cancelled) {
+          setState(() => _progress = progress);
+        }
+      }
+
+      final artifact = format == ExportFormat.png
+          ? await FileImageExportAdapter(directory).exportImage(
               widget.snapshot,
               cancellation,
-              width: _width,
-              onProgress: (progress) {
-                if (mounted && !cancellation.cancelled) {
-                  setState(() => _progress = progress);
-                }
-              },
+              width: _imageWidth,
+              transparentBackground: _transparentBackground,
+              onProgress: progress,
             )
+          : format == ExportFormat.mp4
+          ? await (Platform.isIOS
+                    ? IosVideoExportAdapter(directory)
+                    : AndroidVideoExportAdapter(directory))
+                .exportVideo(
+                  widget.snapshot,
+                  cancellation,
+                  width: _width,
+                  fps: _fps,
+                  onProgress: progress,
+                )
           : await FileExportAdapter(directory)
                 .export(widget.snapshot, format, cancellation);
       if (mounted) setState(() => _finalizing = true);
@@ -98,6 +143,14 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
             .record(artifact, widget.snapshot);
       } catch (_) {
         detailsSaved = false;
+      }
+      if (mounted && !cancellation.cancelled) {
+        try {
+          await (await ref.read(ratingCoordinatorProvider.future))
+              .recordSuccessfulTask();
+        } catch (_) {
+          /* Optional review counters never affect artifact success. */
+        }
       }
       if (mounted) ref.invalidate(exportListingProvider);
       if (mounted && !cancellation.cancelled) {
@@ -208,14 +261,53 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
               ),
             ),
             const SizedBox(height: 16),
+            Text(context.strings.pngExportDescription),
+            Semantics(
+              label: context.strings.pngOutputSize,
+              child: DropdownButton<int>(
+                key: const ValueKey('png-output-width'),
+                value: _imageWidth,
+                isExpanded: true,
+                items: [
+                  DropdownMenuItem(
+                    value: 1080,
+                    child: Text(context.strings.pngHd),
+                  ),
+                  DropdownMenuItem(
+                    value: 640,
+                    child: Text(context.strings.pngCompact),
+                  ),
+                ],
+                onChanged: (_busy || _fileActionBusy)
+                    ? null
+                    : (width) {
+                        if (width != null) setState(() => _imageWidth = width);
+                      },
+              ),
+            ),
+            SwitchListTile.adaptive(
+              title: Text(context.strings.transparentBackground),
+              value: _transparentBackground,
+              onChanged: (_busy || _fileActionBusy)
+                  ? null
+                  : (value) => setState(() => _transparentBackground = value),
+            ),
+            FilledButton.tonal(
+              onPressed: (_busy || _fileActionBusy)
+                  ? null
+                  : () => _export(ExportFormat.png),
+              child: Text(context.strings.exportPng),
+            ),
+            const SizedBox(height: 16),
             Text(
               context
                   .strings
                   .midiContainsNotesAndInstrumentInstructionsItMaySoundDiffer,
             ),
             const SizedBox(height: 8),
+            if (!_hasMusic) Text(context.strings.drawSomethingToHearIt),
             FilledButton.tonal(
-              onPressed: (_busy || _fileActionBusy)
+              onPressed: (_busy || _fileActionBusy || !_hasMusic)
                   ? null
                   : () => _export(ExportFormat.midi),
               child: Text(context.strings.exportMidi),
@@ -226,7 +318,7 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
               ),
             ),
             FilledButton.tonal(
-              onPressed: (_busy || _fileActionBusy)
+              onPressed: (_busy || _fileActionBusy || !_hasMusic)
                   ? null
                   : () => _export(ExportFormat.wav),
               child: Text(context.strings.exportWav),
@@ -238,6 +330,7 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
                   .mp4AnimatesThisDrawingWithItsMusicVideoExportCancelsIfYouL,
             ),
             DropdownButton<int>(
+              key: const ValueKey('video-output-width'),
               value: _width,
               isExpanded: true,
               items: [
@@ -258,8 +351,32 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
                       }
                     },
             ),
+            Semantics(
+              label: context.strings.videoFrameRate,
+              child: DropdownButton<int>(
+                key: const ValueKey('video-output-fps'),
+                itemHeight: null,
+                value: _fps,
+                isExpanded: true,
+                items: [
+                  DropdownMenuItem(
+                    value: 30,
+                    child: Text(context.strings.videoFps30),
+                  ),
+                  DropdownMenuItem(
+                    value: 60,
+                    child: Text(context.strings.videoFps60),
+                  ),
+                ],
+                onChanged: (_busy || _fileActionBusy)
+                    ? null
+                    : (fps) {
+                        if (fps != null) setState(() => _fps = fps);
+                      },
+              ),
+            ),
             FilledButton.tonal(
-              onPressed: (_busy || _fileActionBusy)
+              onPressed: (_busy || _fileActionBusy || !_hasMusic)
                   ? null
                   : () => _export(ExportFormat.mp4),
               child: Text(context.strings.exportMp4),

@@ -21,13 +21,13 @@ import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 /** Offline document rendering, never a screen/microphone recording. */
-internal class CanvasVideoEncoder {
-    private val fps = 30
+internal class CanvasVideoEncoder(private val backgroundRoot: File? = null) {
     private fun checkCancelled(cancel: AtomicBoolean) { if (cancel.get()) throw CancellationException("Export canceled") }
 
-    fun export(document: String, pcm: ByteArray, width: Int, output: File, cancel: AtomicBoolean,
+    fun export(document: String, pcm: ByteArray, width: Int, output: File, cancel: AtomicBoolean, fps: Int = 30,
         progress: (Double) -> Unit): Map<String, Any> {
         require(width == 1080 || width == 640)
+        require(fps == 30 || fps == 60) { "Unsupported video frame rate" }
         require(pcm.isNotEmpty() && pcm.size % 2 == 0 && pcm.size <= 2_000_000)
         val height = width * 5 / 4
         val doc = JSONObject(document)
@@ -68,14 +68,14 @@ internal class CanvasVideoEncoder {
             val frames = ceil(durationUs * fps / 1_000_000.0).toInt()
             val videoFormat = MediaFormat.createVideoFormat("video/avc", width, height).apply {
                 setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible)
-                setInteger(MediaFormat.KEY_BIT_RATE, if (width == 1080) 4_000_000 else 2_000_000)
+                setInteger(MediaFormat.KEY_BIT_RATE, (if (width == 1080) 4_000_000 else 2_000_000) * fps / 30)
                 setInteger(MediaFormat.KEY_FRAME_RATE, fps)
                 setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
                 setInteger(MediaFormat.KEY_COLOR_STANDARD, MediaFormat.COLOR_STANDARD_BT601_NTSC)
                 setInteger(MediaFormat.KEY_COLOR_RANGE, MediaFormat.COLOR_RANGE_LIMITED)
                 if (android.os.Build.VERSION.SDK_INT >= 29) setInteger(MediaFormat.KEY_MAX_B_FRAMES, 0)
             }
-            val renderer = DocumentFrames(doc, width, height)
+            val renderer = DocumentFrames(doc, width, height, backgroundRoot)
             try {
                 encodeTrack(videoFormat, video, frames, frames * 1_000_000L / fps, cancel,
                     { progress(.2 + .7 * it) }) { codec, index, ordinal ->
@@ -100,7 +100,7 @@ internal class CanvasVideoEncoder {
             checkCancelled(cancel)
             complete = true
             progress(1.0)
-            return mapOf("durationSeconds" to durationUs / 1_000_000.0, "width" to width, "height" to height, "audioResidualDelayFrames" to residualDelay)
+            return mapOf("durationSeconds" to durationUs / 1_000_000.0, "width" to width, "height" to height, "audioResidualDelayFrames" to residualDelay, "fps" to fps)
         } finally {
             scratch.deleteRecursively()
             if (!complete) output.delete()
@@ -245,12 +245,27 @@ internal class CanvasVideoEncoder {
     }
 }
 
-internal class DocumentFrames(document: JSONObject, private val width: Int, private val height: Int) {
+internal class DocumentFrames(document: JSONObject, private val width: Int, private val height: Int, private val backgroundRoot: File? = null) {
     private data class Mark(val path: Path?, val x: Float, val y: Float, val paint: Paint)
+    private val background = opaquePaperColor(document.getLong("background").toInt())
+    private val paper = document.optJSONObject("paper")
+    private val photo: Bitmap? = paper?.takeIf { it.optString("kind") == "photo" }?.let { definition ->
+        val id=definition.getString("assetId")
+        require(Regex("^[a-f0-9]{64}$").matches(id))
+        val root=backgroundRoot ?: error("Photo asset root unavailable")
+        val file=File(root,"$id.png")
+        require(file.isFile && file.length() in 1..33_554_432)
+        val bytes=file.readBytes()
+        val hash=java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString(""){"%02x".format(it)}
+        require(hash==id) { "Photo asset checksum mismatch" }
+        val bounds=android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds=true }
+        android.graphics.BitmapFactory.decodeByteArray(bytes,0,bytes.size,bounds)
+        require(bounds.outWidth in 1..2048 && bounds.outHeight in 1..2048)
+        android.graphics.BitmapFactory.decodeByteArray(bytes,0,bytes.size) ?: error("Photo asset unavailable")
+    }
     private val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     private val canvas = Canvas(bitmap)
     private val pixels = IntArray(width * height)
-    private val background = opaquePaperColor(document.getLong("background").toInt())
     private val cursor = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xff007e73.toInt(); strokeWidth = 2f * width / 400 }
     private val marks: List<Mark>
     init {
@@ -264,7 +279,10 @@ internal class DocumentFrames(document: JSONObject, private val width: Int, priv
             val stroke = strokes.getJSONObject(index)
             val color = when (stroke.getString("instrument")) {
                 "keys" -> 0xff7961c6.toInt(); "mallet" -> 0xffa46b16.toInt(); "bell" -> 0xff287e61.toInt()
-                else -> error("Instrument unavailable")
+                "warmSynth" -> 0xffa64d34.toInt(); "pluck" -> 0xff456990.toInt(); "flute" -> 0xff536d35.toInt()
+                "strings" -> 0xff9b4273.toInt(); "chime" -> 0xff53648c.toInt(); "bass" -> 0xff795548.toInt()
+                "chip" -> 0xff6c54a2.toInt(); "electronicBass" -> 0xff925328.toInt(); "guitar" -> 0xff846029.toInt()
+                "saxophone" -> 0xff986b17.toInt(); else -> 0xff7961c6.toInt()
             }
             val points = stroke.getJSONArray("points")
             budget += points.length(); require(points.length() > 0 && budget <= 100000)
@@ -300,7 +318,7 @@ internal class DocumentFrames(document: JSONObject, private val width: Int, priv
         }
     }
     fun render(fraction: Double): IntArray {
-        canvas.drawColor(background)
+        drawBackground()
         for (mark in marks) {
             if (mark.path != null) canvas.drawPath(mark.path,mark.paint)
             else { mark.paint.style=Paint.Style.FILL; canvas.drawCircle(mark.x,mark.y,mark.paint.strokeWidth/2,mark.paint) }
@@ -311,5 +329,43 @@ internal class DocumentFrames(document: JSONObject, private val width: Int, priv
         bitmap.getPixels(pixels,0,width,0,0,width,height)
         return pixels
     }
-    fun close() { bitmap.recycle() }
+    private fun drawBackground() {
+        val definition=paper
+        if(definition==null) { canvas.drawColor(background); return }
+        canvas.drawColor(android.graphics.Color.WHITE)
+        val opacity=definition.optDouble("opacity",1.0).also { require(it.isFinite() && it in 0.0..1.0) }
+        val paint=Paint(Paint.ANTI_ALIAS_FLAG).apply { alpha=(opacity*255).roundToInt(); isFilterBitmap=true }
+        val kind=definition.optString("kind","solid")
+        if(kind=="photo") {
+            val image=photo ?: error("Photo asset unavailable")
+            val crop=definition.optJSONArray("crop")
+            val left=crop?.getDouble(0) ?: 0.0; val top=crop?.getDouble(1) ?: 0.0
+            val cw=crop?.getDouble(2) ?: 1.0; val ch=crop?.getDouble(3) ?: 1.0
+            require(left>=0 && top>=0 && cw>=.05 && ch>=.05 && left+cw<=1.000001 && top+ch<=1.000001)
+            val turns=definition.optInt("quarterTurns",0).also { require(it in 0..3) }
+            val targetWidth=if(turns%2==1) height.toFloat() else width.toFloat()
+            val targetHeight=if(turns%2==1) width.toFloat() else height.toFloat()
+            val source=android.graphics.RectF((left*image.width).toFloat(),(top*image.height).toFloat(),((left+cw)*image.width).toFloat(),((top+ch)*image.height).toFloat())
+            val ratio=maxOf(targetWidth/source.width(),targetHeight/source.height())
+            val sw=targetWidth/ratio;val sh=targetHeight/ratio
+            val cover=android.graphics.RectF(source.centerX()-sw/2,source.centerY()-sh/2,source.centerX()+sw/2,source.centerY()+sh/2)
+            canvas.save();canvas.clipRect(0f,0f,width.toFloat(),height.toFloat())
+            canvas.translate(width/2f,height/2f);canvas.rotate(turns*90f)
+            if(definition.optBoolean("mirror",false)) canvas.scale(-1f,1f)
+            val matrix=android.graphics.Matrix()
+            matrix.setRectToRect(cover,android.graphics.RectF(-targetWidth/2,-targetHeight/2,targetWidth/2,targetHeight/2),android.graphics.Matrix.ScaleToFit.FILL)
+            canvas.drawBitmap(image,matrix,paint);canvas.restore()
+        } else {
+            val stops=definition.getJSONArray("colors")
+            require(stops.length() in 1..4)
+            val colors=IntArray(maxOf(2,stops.length())) { stops.getLong(minOf(it,stops.length()-1)).toInt() }
+            when(kind) {
+                "linear" -> paint.shader=android.graphics.LinearGradient(0f,0f,width.toFloat(),height.toFloat(),colors,null,android.graphics.Shader.TileMode.CLAMP)
+                "radial" -> paint.shader=android.graphics.RadialGradient(width/2f,height/2f,maxOf(width,height)/2f,colors,null,android.graphics.Shader.TileMode.CLAMP)
+                else -> { paint.color=colors[0];paint.alpha=(((colors[0] ushr 24)/255.0)*opacity*255).roundToInt() }
+            }
+            canvas.drawRect(0f,0f,width.toFloat(),height.toFloat(),paint)
+        }
+    }
+    fun close() { photo?.recycle(); bitmap.recycle() }
 }

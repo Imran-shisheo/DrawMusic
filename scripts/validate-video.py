@@ -19,10 +19,12 @@ a=next(s for s in probe['streams'] if s['codec_type']=='audio')
 assert v['codec_name']=='h264' and a['codec_name']=='aac'
 expected_width=int(sys.argv[4]) if len(sys.argv)>4 else 1080
 assert (v['width'],v['height'])==(expected_width,expected_width*5//4)
-assert abs(float(fractions.Fraction(v['avg_frame_rate']))-30)<.01
+expected_fps=int(sys.argv[5]) if len(sys.argv)>5 else 30
+assert expected_fps in (30,60)
+assert abs(float(fractions.Fraction(v['avg_frame_rate']))-expected_fps)<.01
 assert a['sample_rate']=='44100' and a['channels']==1
 vd,ad=float(v['duration']),float(a['duration'])
-assert abs(vd-ad)<=1/30+.002,(vd,ad)
+assert abs(vd-ad)<=1/expected_fps+.002,(vd,ad)
 with wave.open(str(wav)) as w:
     assert (w.getframerate(),w.getnchannels(),w.getsampwidth())==(44100,1,2)
     expected_duration=w.getnframes()/w.getframerate()
@@ -43,14 +45,18 @@ correlations=cross[lags % size]/norm
 index=int(np.argmax(correlations))
 best=(float(correlations[index]),float(lags[index]*1000/44100))
 assert best[0]>.75,best
-assert abs(best[1])<=1000/30,best
+assert abs(best[1])<=1000/expected_fps,best
 cursor_checks=[]
 paper_checks=[]
 style_checks=[]
 project_path=video.parent/'ui-project.json'
 project=json.loads(project_path.read_text()) if video.name=='ui-export-video.mp4' and project_path.exists() else None
 if project is not None:
-    argb=project['background'];alpha=(argb>>24)&255
+    if project.get('paper'):
+        paper=project['paper'];assert paper['kind']=='solid'
+        argb=paper['colors'][0];alpha=round(((argb>>24)&255)*paper['opacity'])
+    else:
+        argb=project['background'];alpha=(argb>>24)&255
     paper_rgb=[(((argb>>shift)&255)*alpha+255*(255-alpha)+127)//255 for shift in (16,8,0)]
 for time in (loop_seconds*.25,loop_seconds*.75):
     pixels=subprocess.check_output(['ffmpeg','-v','error','-ss',str(time),'-i',str(video),'-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','pipe:1'])
@@ -65,7 +71,7 @@ for time in (loop_seconds*.25,loop_seconds*.75):
         # The UI fixture includes an isolated tap. A filled cell must cover its
         # interior; an unchanged smooth dot cannot pass this area check.
         dot=next(s for s in reversed(project['strokes']) if len(s['points'])==1)
-        u,vv,_=dot['points'][0]
+        u,vv=dot['points'][0][:2]
         cx=min(39,int(u*40));cy=min(49,int(vv*50))
         color={'keys':(121,97,198),'mallet':(164,107,22),'bell':(40,126,97)}[dot['instrument']]
         matched=total=0

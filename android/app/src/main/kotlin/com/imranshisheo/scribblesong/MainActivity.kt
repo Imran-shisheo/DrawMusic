@@ -13,6 +13,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var backgroundFiles: BackgroundFilesChannel? = null
     private var exportFiles: ExportFilesChannel? = null
     private var videoExports: VideoExportChannel? = null
     private var session: StreamingAudioSession? = null
@@ -28,6 +29,7 @@ class MainActivity : FlutterActivity() {
     }
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        backgroundFiles=BackgroundFilesChannel(this,flutterEngine.dartExecutor.binaryMessenger)
         exportFiles=ExportFilesChannel(this,flutterEngine.dartExecutor.binaryMessenger)
         videoExports=VideoExportChannel(applicationContext,flutterEngine.dartExecutor.binaryMessenger)
         if (Build.VERSION.SDK_INT >= 33) {
@@ -89,8 +91,9 @@ class MainActivity : FlutterActivity() {
     override fun onPause() { session?.pause(); abandonFocus(); super.onPause() }
     @Deprecated("Required for Android 24–28 document picker compatibility")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if(backgroundFiles?.activityResult(requestCode,resultCode,data)==true) return
         if(exportFiles?.activityResult(requestCode,resultCode,data)==true) return
         super.onActivityResult(requestCode,resultCode,data)
     }
-    override fun onDestroy() { exportFiles?.close(); videoExports?.close(); releaseTrack(); unregisterReceiver(noisyReceiver); super.onDestroy() }
+    override fun onDestroy() { backgroundFiles?.close(); exportFiles?.close(); videoExports?.close(); releaseTrack(); unregisterReceiver(noisyReceiver); super.onDestroy() }
 }

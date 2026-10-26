@@ -52,6 +52,8 @@ flutter {
 }
 
 dependencies {
+    // Pin the maintained EXIF parser; do not use older platform parser versions.
+    implementation("androidx.exifinterface:exifinterface:1.4.2")
     // Align Flutter integration_test's older dynamic AndroidX ranges with the
     // native runner under AGP's consistent debug/test dependency resolution.
     debugImplementation("androidx.test:runner:1.6.2")

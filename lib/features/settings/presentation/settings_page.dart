@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../application/settings_controller.dart';
+import 'language_page.dart';
 
 final appInfoProvider = FutureProvider<PackageInfo>(
   (ref) => PackageInfo.fromPlatform(),
@@ -33,7 +34,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ListTile(
             leading: const Icon(Icons.language),
             title: Text(context.strings.language),
-            subtitle: Text(context.strings.english),
+            subtitle: Text(
+              nativeLanguageNames[preferences.languageCode] ??
+                  nativeLanguageNames['en']!,
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push('/language'),
           ),
@@ -92,6 +96,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   .strings
                   .previewIsMutedExportsStillContainMusicAlsoCheckYourDeviceM,
             ),
+          SwitchListTile(
+            title: Text(context.strings.darkTheme),
+            value: preferences.darkTheme,
+            onChanged: busy
+                ? null
+                : (value) => ref
+                      .read(settingsProvider.notifier)
+                      .save(preferences.copyWith(darkTheme: value)),
+          ),
           SwitchListTile(
             title: Text(context.strings.hapticFeedback),
             subtitle: Text(
