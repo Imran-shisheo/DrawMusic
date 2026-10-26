@@ -394,6 +394,13 @@ void main() {
       await tester.scrollUntilVisible(find.text('日本語'), 200);
       await reveal(find.text('日本語'));
       await tester.tap(find.text('日本語').hitTestable());
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ListTile>(find.byKey(const ValueKey('language-ja')))
+            .selected,
+        isTrue,
+      );
       await tester.tap(find.text('Apply'));
       await until(
         () async =>
