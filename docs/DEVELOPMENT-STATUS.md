@@ -340,3 +340,7 @@ Final local gate passed on the checkpointed application tree: formatter/analyzer
 Local accepted application source `5e0051217f3a775458c4efc081b7d361eb70c947` passed all product checks above; Android lint0errors/11nonblockingwarnings (resource/KTX/lifecyclelint suggestions, not ignored errors). The next checkpoint only records this source/evidence. Reviewable work remains unmerged; hosted17-native/offlineUI/export/60FPS/soak/force-stop acceptance is pending.
 
 The expanded native UI harness snapshots existing artifacts before each export. Final source review found that the first fresh-install export directory can legitimately be absent; the harness now treats that as an empty set before the real export, retaining the assertion that exactly one new file is published. Product code is unchanged by this harness correction.
+
+### First expanded hosted runtime failure — diagnosis pending
+
+Actions 40316035590 at source 2cca4dafb8e5023684e8b40ccdab8abb037336b0 passed the product gate and uploaded APK artifact12647950832. The real Android runtime step failed at12:10:44UTC on26October; subsequent encoded-file inspection remained active, and GitHub returned BlobNotFound for the unfinished job log. This is not a native17-test acceptance or a successful full gate. Exact cause awaits the completed log. This status-only checkpoint preserves all test/lint/runtime assertions and uses the normal workflow concurrency setting; new-source checks remain mandatory. No physical or iOS result is inferred.
