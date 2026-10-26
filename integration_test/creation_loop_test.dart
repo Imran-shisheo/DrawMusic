@@ -392,7 +392,8 @@ void main() {
       await tester.tap(find.text('Language'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('日本語'), 200);
-      await tester.tap(find.text('日本語'));
+      await reveal(find.text('日本語'));
+      await tester.tap(find.text('日本語').hitTestable());
       await tester.tap(find.text('Apply'));
       await until(
         () async =>
