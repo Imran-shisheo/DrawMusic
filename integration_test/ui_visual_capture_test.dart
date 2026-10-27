@@ -27,6 +27,7 @@ import 'package:scribblesong/features/settings/domain/preferences.dart';
 import 'package:scribblesong/main.dart' as app;
 
 import 'support/ui_capture_metrics.dart';
+import 'support/ui_frame_clock.dart';
 
 const _token = String.fromEnvironment('UI_CAPTURE_TOKEN');
 const _port = int.fromEnvironment('UI_CAPTURE_PORT', defaultValue: 8765);
@@ -378,60 +379,71 @@ void main() {
       final controller = controllers.single;
       final clockSamples = <Map<String, Object?>>[];
       final stopwatch = Stopwatch();
+      final frameClock = UiFrameClockObserver(binding);
       // This phase precedes every recording: app motion/lifecycle and actual
       // clock progress survive a later encoder failure, without recorder load.
       await measure(
         'home-ambient-visible',
         () async {
           stopwatch.start();
-          for (var index = 0; index < 34; index++) {
-            await wait(500);
-            final createBox = tester.getRect(create);
-            final auroraBox = tester.getRect(aurora);
-            final logicalViewport =
-                Offset.zero &
-                (tester.view.physicalSize / tester.view.devicePixelRatio);
-            clockSamples.add({
-              'sample': index,
-              'stopwatchElapsedUs': stopwatch.elapsedMicroseconds,
-              'dateTimeWallUs': DateTime.now().microsecondsSinceEpoch,
-              'currentFrameTimeStampUs':
-                  binding.currentFrameTimeStamp.inMicroseconds,
-              'currentSystemFrameTimeStampUs':
-                  binding.currentSystemFrameTimeStamp.inMicroseconds,
-              'timeDilation': timeDilation,
-              'auroraValue': controller.value,
-              'auroraLastElapsedUs':
-                  controller.lastElapsedDuration?.inMicroseconds,
-              'auroraIsAnimating': controller.isAnimating,
-              'auroraAnimationStatus': controller.status.name,
-              'auroraTickerModeEnabled': TickerMode.valuesOf(
-                tester.element(aurora),
-              ).enabled,
-              'appLifecycle': binding.lifecycleState?.name,
-              'reducedMotion': MediaQuery.disableAnimationsOf(
-                tester.element(create),
-              ),
-              'homeCreateHitTestable': create
-                  .hitTestable()
-                  .evaluate()
-                  .isNotEmpty,
-              'homeCreateBounds': [
-                createBox.left,
-                createBox.top,
-                createBox.width,
-                createBox.height,
-              ],
-              'auroraBounds': [
-                auroraBox.left,
-                auroraBox.top,
-                auroraBox.width,
-                auroraBox.height,
-              ],
-              'auroraIntersectsViewport': auroraBox.overlaps(logicalViewport),
-            });
+          frameClock.start();
+          try {
+            for (var index = 0; index < 34; index++) {
+              await wait(500);
+              final createBox = tester.getRect(create);
+              final auroraBox = tester.getRect(aurora);
+              final logicalViewport =
+                  Offset.zero &
+                  (tester.view.physicalSize / tester.view.devicePixelRatio);
+              clockSamples.add({
+                'sample': index,
+                'stopwatchElapsedUs': stopwatch.elapsedMicroseconds,
+                'dateTimeWallUs': DateTime.now().microsecondsSinceEpoch,
+                'currentFrameTimeStampUs':
+                    frameClock.latest?['currentFrameTimeStampUs'],
+                'currentSystemFrameTimeStampUs':
+                    frameClock.latest?['currentSystemFrameTimeStampUs'],
+                'postFrameDateTimeWallUs':
+                    frameClock.latest?['postFrameDateTimeWallUs'],
+                'postFrameObserverElapsedUs':
+                    frameClock.latest?['postFrameObserverElapsedUs'],
+                'observedFrameworkPostFrames': frameClock.observedPostFrames,
+                'timeDilation': timeDilation,
+                'auroraValue': controller.value,
+                'auroraLastElapsedUs':
+                    controller.lastElapsedDuration?.inMicroseconds,
+                'auroraIsAnimating': controller.isAnimating,
+                'auroraAnimationStatus': controller.status.name,
+                'auroraTickerModeEnabled': TickerMode.valuesOf(
+                  tester.element(aurora),
+                ).enabled,
+                'appLifecycle': binding.lifecycleState?.name,
+                'reducedMotion': MediaQuery.disableAnimationsOf(
+                  tester.element(create),
+                ),
+                'homeCreateHitTestable': create
+                    .hitTestable()
+                    .evaluate()
+                    .isNotEmpty,
+                'homeCreateBounds': [
+                  createBox.left,
+                  createBox.top,
+                  createBox.width,
+                  createBox.height,
+                ],
+                'auroraBounds': [
+                  auroraBox.left,
+                  auroraBox.top,
+                  auroraBox.width,
+                  auroraBox.height,
+                ],
+                'auroraIntersectsViewport': auroraBox.overlaps(logicalViewport),
+              });
+            }
+          } finally {
+            frameClock.stop();
+            stopwatch.stop();
           }
-          stopwatch.stop();
         },
         visibleScope: {
           'route': router().routeInformationProvider.value.uri.toString(),
@@ -451,6 +463,7 @@ void main() {
           'controllerRuntimeType': controller.runtimeType.toString(),
           'controllerDurationUs': controller.duration?.inMicroseconds,
           'clockSamples': clockSamples,
+          'schedulerClockObservation': 'Nullable cache from the latest real post-frame callback; missing/stale observations remain explicit, never fabricated idle-frame timestamps.',
           'clockObservationScope': 'Bounded reads of the actual Aurora AnimatedBuilder controller and real framework/Dart clocks; no app hooks, clock mutation, padding or timing acceptance inference.',
           'baselineComparison': 'No equivalent before phase exists; standalone after-source observation.',
         },
@@ -459,7 +472,31 @@ void main() {
       expect(MediaQuery.disableAnimationsOf(tester.element(create)), isFalse);
       // Only after unrecorded evidence is persisted, capture real decorative
       // motion. The native MP4 independently requires >=16s without retiming.
-      await clip('00-home-ambient', () async => wait(40000));
+      await clip('00-home-ambient', () async {
+        final startElapsed = controller.lastElapsedDuration?.inMicroseconds;
+        final period = controller.duration?.inMicroseconds;
+        final startValue = controller.value;
+        final recordingWatch = Stopwatch()..start();
+        expect(
+          startElapsed,
+          isNotNull,
+          reason: 'Actual sculpture has no frame-clock history',
+        );
+        expect(period, isNotNull);
+        expect(controller.isAnimating, isTrue);
+        await wait(40000);
+        recordingWatch.stop();
+        final endElapsed = controller.lastElapsedDuration?.inMicroseconds;
+        final advanced = startElapsed != null && endElapsed != null
+            ? endElapsed - startElapsed
+            : null;
+        debugPrint(
+          'UI_RECORDED_AURORA_CLOCK ${jsonEncode({'actualControllerStartElapsedUs': startElapsed, 'actualControllerEndElapsedUs': endElapsed, 'actualControllerAdvancedUs': advanced, 'authoredControllerPeriodUs': period, 'actualControllerStartValue': startValue, 'actualControllerEndValue': controller.value, 'actualControllerAnimatingAtEnd': controller.isAnimating, 'dartObservationElapsedUs': recordingWatch.elapsedMicroseconds, 'scope': 'Unwrapped actual sculpture controller interval while native recording is active; no clock mutation, padding, frame repetition or retiming.'})}',
+        );
+        expect(controller.isAnimating, isTrue);
+        expect(advanced, isNotNull);
+        expect(advanced!, greaterThanOrEqualTo(period!));
+      });
     }
     await clip('01-root-navigation', () async {
       await tab('Library');

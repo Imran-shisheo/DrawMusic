@@ -114,6 +114,11 @@ def main():
             if 'UI_CAPTURE_TOKEN=' not in line:
                 print(line, flush=True)
         print(f'UI_INSPECT_END {name}', flush=True)
+    drive = ROOT / 'flutter-drive.log'
+    if drive.exists():
+        matching = [line for line in drive.read_text(errors='replace').splitlines() if 'UI_RECORDED_AURORA_CLOCK ' in line]
+        for line in matching[:4]:
+            print(line[line.index('UI_RECORDED_AURORA_CLOCK '):][:4000], flush=True)
     for path in sorted((ROOT / 'performance').glob('*.json')):
         value = json.loads(path.read_text())
         value.pop('rawFrames', None)

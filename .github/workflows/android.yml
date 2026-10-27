@@ -12,7 +12,9 @@ permissions:
   actions: read
 concurrency:
   group: android-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Preserve a running native soak while a diagnostic/docs update is queued.
+  # The conservative gate proof prevents an untested queued head being skipped.
+  cancel-in-progress: false
 jobs:
   setup-files:
     name: Validate setup and detect Flutter project
