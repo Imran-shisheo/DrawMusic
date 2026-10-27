@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/ui-capture-inspect.yml
       - cloud/ui-capture-inspect.json
+      - scripts/inspect-ui-capture.py
 permissions:
   contents: read
   actions: read
@@ -20,11 +21,11 @@ jobs:
         name: Read bounded diagnostic artifact request
         run: |
           python3 - <<'PY'
-          import json,os
+          import json,os,re
           from pathlib import Path
           request=json.loads(Path('cloud/ui-capture-inspect.json').read_text())
-          assert isinstance(request['runId'],int) and request['runId']>0
-          assert isinstance(request['artifactName'],str) and request['artifactName'].startswith('drawmusic-ui-visuals-')
+          assert type(request['runId']) is int and request['runId']>0
+          assert isinstance(request['artifactName'],str) and re.fullmatch(r'drawmusic-ui-visuals-[0-9a-f]{40}',request['artifactName'])
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
               out.write(f"run={request['runId']}\nname={request['artifactName']}\n")
           PY
@@ -35,17 +36,5 @@ jobs:
           run-id: ${{ steps.request.outputs.run }}
           name: ${{ steps.request.outputs.name }}
           path: work/ui-capture-inspect
-      - name: Print actual diagnostic failure (no product test pass)
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          root=Path('work/ui-capture-inspect')
-          for name in ('source-provenance.json','capture-report.json','flutter-drive.log'):
-              path=root/name
-              print(f'UI_INSPECT_START {name}',flush=True)
-              text=path.read_text(errors='replace') if path.exists() else 'Missing diagnostic file'
-              for line in text.splitlines()[-180:]:
-                  if 'UI_CAPTURE_TOKEN=' in line: continue
-                  print(line,flush=True)
-              print(f'UI_INSPECT_END {name}',flush=True)
-          PY
+      - name: Inspect actual diagnostic logs and requested exact PNGs (not a product test)
+        run: python3 scripts/inspect-ui-capture.py

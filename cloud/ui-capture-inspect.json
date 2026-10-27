@@ -1,4 +1,10 @@
 {
-  "runId": 40491741921,
-  "artifactName": "drawmusic-ui-visuals-d15748333fb699b6015d3b5e7ce3f4a6afc1c20f"
+  "runId": 40494582903,
+  "artifactName": "drawmusic-ui-visuals-873ffcf460f8b54fcc14b76427890ca7749e96fa",
+  "screenshots": [
+    "01-home.png",
+    "05-editor-drawn.png",
+    "10-export-selection.png",
+    "17-editor-compact-large-text.png"
+  ]
 }
