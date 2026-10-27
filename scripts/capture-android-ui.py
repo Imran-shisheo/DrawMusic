@@ -204,6 +204,12 @@ def main():
         capture.report['passed'] = True
     except Exception as error:
         capture.report['error'] = str(error)
+        log = OUTPUT / 'flutter-drive.log'
+        if log.exists():
+            print('Actual profile test failure log:', flush=True)
+            for line in log.read_text(errors='replace').splitlines()[-150:]:
+                if 'UI_CAPTURE_TOKEN=' not in line:
+                    print(line, flush=True)
         raise
     finally:
         if capture.recording:

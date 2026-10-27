@@ -48,7 +48,7 @@ class _CaptureHost {
       Uri.parse('http://127.0.0.1:$_port/event'),
     );
     request.headers.contentType = ContentType.json;
-    request.write(
+    final payload = utf8.encode(
       jsonEncode({
         'token': _token,
         'sequence': ++sequence,
@@ -57,6 +57,10 @@ class _CaptureHost {
         ...extra,
       }),
     );
+    // A bounded Content-Length is the capture protocol. HttpClient's default
+    // streaming/chunked request has no length and is deliberately rejected.
+    request.contentLength = payload.length;
+    request.add(payload);
     final response = await request.close().timeout(const Duration(seconds: 35));
     final value = jsonDecode(await utf8.decoder.bind(response).join()) as Map;
     if (response.statusCode != 200 ||
