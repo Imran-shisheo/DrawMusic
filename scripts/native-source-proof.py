@@ -36,6 +36,7 @@ CAPTURE_ONLY = frozenset({
     'test/ui_static_backdrop_probe_test.dart',
     'scripts/capture-android-ui.py',
     'scripts/prepare-ui-capture-source.py',
+    'scripts/check-android-visuals.sh',
     'scripts/ui_capture_mp4.py',
     'scripts/test-ui-capture-host.py',
     'scripts/test-ui-capture-mp4.py',

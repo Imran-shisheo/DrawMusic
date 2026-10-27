@@ -89,15 +89,59 @@ def decode_recording(target):
             'scope': 'Actual complete video-track software decode to null output; not audio, physical presentation/smoothness or iOS validation'}
 
 
+def host_cpu_context():
+    """Only processor count/quota/model; never host IDs or full environment."""
+    def text(path):
+        try: return Path(path).read_text().strip()
+        except OSError: return None
+    try:
+        value = subprocess.run(['nproc'], capture_output=True, text=True, timeout=2, check=True).stdout.strip()
+        processors = int(value) if value.isdigit() else None
+    except (OSError, ValueError, subprocess.SubprocessError): processors = None
+    cpuinfo = text('/proc/cpuinfo') or ''
+    model = next((line.split(':', 1)[1].strip() for line in cpuinfo.splitlines() if line.startswith('model name') and ':' in line), None)
+    return {'nproc': processors, 'cgroupCpuMax': text('/sys/fs/cgroup/cpu.max'),
+            'cpuModel': model, 'scope': 'Actual host CPU context; missing fields remain null, no machine IDs'}
+
+
+PROBE_PROFILES = ('diagnostic-static-backdrop-normal', 'diagnostic-static-backdrop-solid')
+RESPONSIVE_SHOTS = {
+    'compact': ('16-home-compact-large-text', '17-editor-compact-large-text'),
+    'tablet': ('18-home-tablet', '19-editor-tablet'),
+    'light': ('22-home-light', '23-editor-light'),
+}
+INITIAL_DISPLAYS = {
+    'compact': ('640x1280', '320', '2.0'),
+    'tablet': ('1600x2400', '240', '1.0'),
+    'light': ('1080x2400', '420', '1.0'),
+} # Applied before Flutter/app process launch, never to a live VM service.
+
+
+
 class Capture:
-    def __init__(self):
+    def __init__(self, *, static_backdrop_probe=False, responsive_preset=None):
+        if responsive_preset not in (None, *RESPONSIVE_SHOTS) or (static_backdrop_probe and responsive_preset is not None):
+            raise ValueError('Unknown or conflicting responsive/probe mode')
+        self.responsive_preset = responsive_preset
+        self.responsive_snapshots = []
         self.token = secrets.token_hex(16)
         self.sequence = 0
         self.lock = threading.Lock()
         self.recording = None
         self.perf = None
         self.complete = False
+        self.static_backdrop_probe = static_backdrop_probe
+        self.probe_profiles = []
+        self.probe_restored = False
+        self.probe_cache_size = None
         self.report = {'passed': False, 'scope': 'Owned API35 QEMU profile-build screenshots, silent interaction recordings and real engine timings; not phone/iOS acceptance', 'events': [], 'recordingsHaveAudio': False}
+
+        if responsive_preset is not None:
+            self.report.update(scope='Actual responsive screenshot subset only; not full23 capture, performance, audio, physical-device or iOS acceptance',
+                               responsivePreset=responsive_preset, responsiveSubsetPassed=False, normalFullCapturePassed=False)
+        if static_backdrop_probe:
+            self.report.update(scope='Diagnostic-only same-run static radial-backdrop A/B; not normal product capture or smoothness/device acceptance',
+                               diagnosticOnly=True, normalProductCapturePassed=False, normalFootageProduced=False)
 
     def _cleanup_failed_start(self, remote, pid, process, log, error):
         diagnostic = {'error': str(error).replace(self.token, '[redacted]'),
@@ -274,6 +318,15 @@ class Capture:
             self.sequence += 1
             operation, name = body.get('operation'), slug(body.get('name'))
             item = {'sequence': self.sequence, 'operation': operation, 'name': name, 'hostMonotonicSeconds': time.monotonic()}
+            if self.responsive_preset is not None:
+                if operation not in ('metadata', 'snapshot', 'responsive_complete'):
+                    raise ValueError('Responsive subset rejects recording profiling live display and full completion')
+                if operation == 'snapshot':
+                    wanted = RESPONSIVE_SHOTS[self.responsive_preset]
+                    if len(self.responsive_snapshots) >= 2 or name != wanted[len(self.responsive_snapshots)]:
+                        raise ValueError('Responsive subset requires exactly its ordered two screenshots')
+            if self.static_backdrop_probe and operation not in ('metadata', 'perf_start', 'perf_finish', 'static_backdrop_restored', 'diagnostic_complete'):
+                raise ValueError('Probe-only host rejects normal screenshots recordings and completion')
             if operation == 'snapshot':
                 deadline = time.monotonic() + 20
                 attempts = 0
@@ -302,6 +355,23 @@ class Capture:
                 target = OUTPUT / 'screenshots' / f'{name}.png'
                 target.write_bytes(result.stdout)
                 item.update(file=str(target), bytes=len(result.stdout), sha256=hashlib.sha256(result.stdout).hexdigest())
+                readiness = body.get('screenshotReadiness')
+                if readiness is not None:
+                    if (not isinstance(readiness, dict) or
+                            len(json.dumps(readiness).encode()) > 16_384 or
+                            readiness.get('expectedScene') != name or
+                            type(readiness.get('matchedEngineFrameNumber')) is not int or
+                            readiness['matchedEngineFrameNumber'] < 0 or
+                            type(readiness.get('rasterFrameNumber')) is not int or
+                            readiness.get('rasterFrameNumber') != readiness['matchedEngineFrameNumber']):
+                        raise ValueError('Invalid bounded exact-scene screenshot witness')
+                    # Retain the ORIGINAL frame-associated scaler/geometry
+                    # witness: Android log lines may truncate long JSON.
+                    item['screenshotReadiness'] = readiness
+                if self.responsive_preset is not None:
+                    if readiness is None:
+                        raise ValueError('Responsive snapshot requires original exact-frame readiness')
+                    self.responsive_snapshots.append(name)
             elif operation == 'record_start':
                 item.update(self.record_start(name))
             elif operation == 'record_stop':
@@ -309,6 +379,8 @@ class Capture:
                     raise ValueError('Recording name mismatch')
                 item.update(self.record_stop())
             elif operation == 'perf_start':
+                if self.static_backdrop_probe and (len(self.probe_profiles) >= 2 or name != PROBE_PROFILES[len(self.probe_profiles)]):
+                    raise ValueError('Probe requires exactly ordered normal/solid A/B phases')
                 if self.recording or self.perf:
                     raise RuntimeError('Profile phase must run without screenrecord or overlapping phases')
                 self.perf = name
@@ -319,6 +391,29 @@ class Capture:
                     raise ValueError('Missing real performance result')
                 self.perf = None
                 result = body['result']
+                if self.static_backdrop_probe:
+                    scope = result.get('visibleScope', {})
+                    samples = scope.get('clockSamples', [])
+                    solid = name == PROBE_PROFILES[1]
+                    if (result.get('diagnosticOnly') is not True or scope.get('diagnosticOnly') is not True or
+                            scope.get('solidMode') is not solid or len(samples) != 34 or
+                            scope.get('nominalObservationMilliseconds') != 17000 or
+                            any(sample.get('backdropSolid') is not solid or
+                                sample.get('sameAuroraStateControllerTexture') is not True or
+                                sample.get('auroraIsAnimating') is not True or
+                                sample.get('auroraTickerModeEnabled') is not True or
+                                sample.get('appLifecycle') != 'resumed' or sample.get('reducedMotion') is not False or
+                                sample.get('timeDilation') != 1 or len(sample.get('staticCacheRawImages', [])) != 1
+                                for sample in samples)):
+                        raise ValueError('Missing bounded diagnostic clocks/cache/live-state evidence')
+                    sizes = {(sample['staticCacheRawImages'][0].get('width'), sample['staticCacheRawImages'][0].get('height')) for sample in samples}
+                    if (len(sizes) != 1 or any(not isinstance(value, int) or value <= 0 for size in sizes for value in size) or
+                            (self.probe_cache_size is not None and sizes != {self.probe_cache_size})):
+                        raise ValueError('Static texture changed across same-run A/B')
+                    self.probe_cache_size = next(iter(sizes))
+                    if not result.get('rawFrames'):
+                        raise ValueError('No real Flutter frame samples')
+                    self.probe_profiles.append(name)
                 if not result.get('rawFrames'):
                     raise ValueError('No real Flutter frame samples')
                 (OUTPUT / 'performance' / f'{name}.json').write_text(json.dumps(result, indent=2) + '\n')
@@ -345,7 +440,45 @@ class Capture:
                 adb('shell', 'wm', 'density', density)
                 adb('shell', 'settings', 'put', 'system', 'font_scale', scale)
                 item.update(physicalSize=size, densityDpi=density, systemFontScale=scale)
+            elif operation == 'responsive_complete':
+                if (self.responsive_preset is None or name != self.responsive_preset or self.recording or self.perf or
+                        body.get('passed') is not True or body.get('subsetOnly') is not True or
+                        body.get('normalFullCapturePassed') is not False or
+                        body.get('responsivePreset') != self.responsive_preset or
+                        self.responsive_snapshots != list(RESPONSIVE_SHOTS[self.responsive_preset]) or
+                        self.report.get('appMetadata', {}).get('captureMode') != 'responsive-' + self.responsive_preset):
+                    raise ValueError('Incomplete or mismatched responsive screenshot subset')
+                self.complete = True
+                self.report.update(responsiveSubsetPassed=True, completedScreenshotNames=list(self.responsive_snapshots))
+            elif operation == 'static_backdrop_restored':
+                restored = body.get('restoredRasterEvidence', {})
+                frames = restored.get('matchedNaturalFrames', [])
+                if (not self.static_backdrop_probe or name != 'static-backdrop-probe' or
+                        body.get('diagnosticOnly') is not True or body.get('exactDecorationRestored') is not True or
+                        body.get('freshLookupSameTarget') is not True or restored.get('manualFrameRequests') != 0 or
+                        len(frames) < 2 or len({frame.get('rasterFrameNumber') for frame in frames}) < 2 or
+                        any(not isinstance(frame.get('rasterFrameNumber'), int) or frame['rasterFrameNumber'] < 0 or frame.get('matchedEngineFrameNumber') != frame['rasterFrameNumber'] for frame in frames)):
+                    raise ValueError('No exact restoration joined to two natural raster completions')
+                self.probe_restored = self.probe_profiles == list(PROBE_PROFILES) and self.perf is None
+                item['restorationAfterBothProfiles'] = self.probe_restored
+                (OUTPUT / 'performance' / 'diagnostic-static-backdrop-restoration.json').write_text(json.dumps({
+                    key: value for key, value in body.items() if key not in ('token', 'sequence')}, indent=2)+'\n')
+            elif operation == 'diagnostic_complete':
+                if (not self.static_backdrop_probe or name != 'static-backdrop-probe' or self.recording or self.perf or
+                        self.probe_profiles != list(PROBE_PROFILES) or not self.probe_restored or
+                        self.report.get('appMetadata', {}).get('captureMode') != 'diagnostic-static-backdrop-only' or
+                        body.get('passed') is not True or body.get('diagnosticOnly') is not True or body.get('normalFootageProduced') is not False):
+                    raise ValueError('Incomplete diagnostic-only A/B and restoration')
+                self.complete = True
+                self.report['diagnosticPassed'] = True
             elif operation == 'metadata':
+                mode = body.get('captureMode')
+                if ((self.responsive_preset is not None and mode != 'responsive-' + self.responsive_preset) or
+                        (self.responsive_preset is None and isinstance(mode, str) and mode.startswith('responsive-'))):
+                    raise ValueError('Host/app responsive mode mismatch')
+                if ((self.static_backdrop_probe and body.get('captureMode') != 'diagnostic-static-backdrop-only') or
+                        (not self.static_backdrop_probe and body.get('captureMode') == 'diagnostic-static-backdrop-only')):
+                    raise ValueError('Host/app diagnostic mode mismatch')
                 if body.get('buildMode') != 'profile' or body.get('animationsDisabled') is not False:
                     raise ValueError('Capture must use profile mode with animations enabled')
                 self.report['appMetadata'] = {key: value for key, value in body.items() if key not in ('token', 'sequence')}
@@ -361,6 +494,59 @@ class Capture:
             return {'ok': True, 'sequence': self.sequence}
 
 
+
+def finalize_capture(capture, server, port):
+    """Retain original failure evidence and close the server even when ADB dies."""
+    was_passed = capture.report.get('passed') is True
+    errors = []
+
+    def failed(stage, error):
+        errors.append({'stage': stage, 'error': safe_capture_error(error, capture.token)})
+        capture.report['passed'] = False
+        capture.report['cleanupErrors'] = list(errors)
+
+    def persist():
+        try:
+            temporary = OUTPUT / 'capture-report.json.tmp'
+            temporary.write_text(json.dumps(capture.report, indent=2) + '\n')
+            temporary.replace(OUTPUT / 'capture-report.json')
+        except Exception as error:
+            failed('persist-original-report', error)
+
+    try:
+        if capture.recording:
+            try:
+                capture.record_stop()
+            except Exception as error:
+                failed('finalize-owned-recording', error)
+        # Do this BEFORE any further ADB operation: offline logcat previously
+        # masked the driver failure and prevented final event/SHA preservation.
+        persist()
+        try:
+            output = adb('logcat', '-d', '-s', 'AndroidRuntime', 'flutter', required=False).stdout
+            (OUTPUT / 'android-logcat.txt').write_text(output)
+        except Exception as error:
+            failed('collect-logcat', error)
+    finally:
+        try:
+            adb('reverse', '--remove', f'tcp:{port}', required=False)
+        except Exception as error:
+            failed('remove-owned-reverse', error)
+        try:
+            server.shutdown()
+        except Exception as error:
+            failed('shutdown-local-server', error)
+        finally:
+            try:
+                server.server_close()
+            except Exception as error:
+                failed('close-local-server', error)
+        persist()
+    if errors and was_passed:
+        raise RuntimeError('Capture cleanup failed; original evidence retained and capture is not accepted.')
+    return errors
+
+
 def main():
     if os.environ.get('GITHUB_ACTIONS') != 'true':
         raise RuntimeError('Only the disposable GitHub Actions emulator is authorized')
@@ -372,8 +558,13 @@ def main():
     for folder in ('screenshots', 'recordings', 'performance'):
         (OUTPUT / folder).mkdir(parents=True, exist_ok=True)
     provenance = json.loads((OUTPUT / 'source-provenance.json').read_text())
-    capture = Capture()
+    diagnostic = provenance.get('diagnosticOnly')
+    if diagnostic not in (None, 'static-backdrop'):
+        raise RuntimeError('Unknown capture diagnostic mode')
+    responsive = provenance.get('responsivePreset')
+    capture = Capture(static_backdrop_probe=diagnostic == 'static-backdrop', responsive_preset=responsive)
     capture.report['source'] = provenance
+    capture.report['hostCpuContext'] = host_cpu_context()
     capture.report['nativeImeWithHardwareKeyboard'] = True
 
     class Handler(BaseHTTPRequestHandler):
@@ -404,9 +595,16 @@ def main():
         adb('shell', 'settings', 'put', 'global', key, '1.0')
         if float(adb('shell', 'settings', 'get', 'global', key).stdout.strip()) != 1:
             raise RuntimeError('System animation scale is not enabled')
-    adb('shell', 'wm', 'size', '1080x2400')
-    adb('shell', 'wm', 'density', '420')
-    adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
+    if responsive is not None or capture.static_backdrop_probe:
+        # Fresh owned job; prove no old app/VM-service process is live before wm.
+        adb('shell', 'am', 'force-stop', PACKAGE, required=False)
+        if adb('shell', 'pidof', PACKAGE, required=False).stdout.strip():
+            raise RuntimeError('Refusing responsive wm configuration with a live app process')
+    size, density, scale = INITIAL_DISPLAYS.get(responsive, INITIAL_DISPLAYS['light'])
+    adb('shell', 'wm', 'size', size)
+    adb('shell', 'wm', 'density', density)
+    adb('shell', 'settings', 'put', 'system', 'font_scale', scale)
+    capture.report['initialDisplayBeforeAppLaunch'] = {'physicalSize': size, 'densityDpi': density, 'systemFontScale': scale}
     # Fresh owned diagnostic app data; never an owner's existing installation.
     adb('shell', 'am', 'force-stop', PACKAGE, required=False)
     adb('uninstall', PACKAGE, required=False)
@@ -416,6 +614,10 @@ def main():
                f'--dart-define=UI_CAPTURE_TOKEN={capture.token}',
                f'--dart-define=UI_CAPTURE_PORT={port}',
                f'--dart-define=UI_CAPTURE_LABEL={provenance["label"]}']
+    if capture.static_backdrop_probe:
+        command.append('--dart-define=UI_STATIC_BACKDROP_PROBE=true')
+    if responsive is not None:
+        command.append('--dart-define=UI_RESPONSIVE_PRESET=' + responsive)
     capture.report['profileProcessBudgetSeconds'] = PROFILE_PROCESS_TIMEOUT_SECONDS
     capture.report['profileProcessBudgetScope'] = 'Whole Flutter drive process, including cold profile compilation and runtime; all per-operation acceptance gates remain independent.'
     try:
@@ -435,16 +637,7 @@ def main():
                     print(line.replace(capture.token, '[redacted]'), flush=True)
         raise_capture_failure(error, capture.token)
     finally:
-        if capture.recording:
-            try:
-                capture.record_stop()
-            except Exception as error:
-                capture.report['recordingCleanupError'] = safe_capture_error(error, capture.token)
-        (OUTPUT / 'android-logcat.txt').write_text(adb('logcat', '-d', '-s', 'AndroidRuntime', 'flutter', required=False).stdout)
-        (OUTPUT / 'capture-report.json').write_text(json.dumps(capture.report, indent=2) + '\n')
-        adb('reverse', '--remove', f'tcp:{port}', required=False)
-        server.shutdown()
-        server.server_close()
+        finalize_capture(capture, server, port)
         print(json.dumps({'passed': capture.report['passed'], 'events': len(capture.report['events']), 'scope': capture.report['scope']}), flush=True)
 
 

@@ -1,5 +1,6 @@
 {
   "schema": 1,
   "label": "after",
-  "sourceRef": "f9fc4baad071cf5a61e857898a1609c4cc3b9996"
+  "sourceRef": "f9fc4baad071cf5a61e857898a1609c4cc3b9996",
+  "responsivePreset": "compact"
 }

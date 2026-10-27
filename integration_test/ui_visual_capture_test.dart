@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart' show timeDilation;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +14,7 @@ import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:scribblesong/app/app.dart';
+import 'package:scribblesong/app/providers.dart' show libraryProvider;
 import 'package:scribblesong/creative_document/document.dart';
 import 'package:scribblesong/features/backgrounds/domain/background.dart';
 import 'package:scribblesong/features/export/data/file_export_adapter.dart';
@@ -28,8 +30,16 @@ import 'package:scribblesong/main.dart' as app;
 
 import 'support/ui_capture_metrics.dart';
 import 'support/ui_frame_clock.dart';
+import 'support/ui_static_backdrop_probe.dart';
 import 'support/ui_presentation_fence.dart';
 
+const _staticBackdropProbe = bool.fromEnvironment('UI_STATIC_BACKDROP_PROBE');
+const _responsivePreset = String.fromEnvironment('UI_RESPONSIVE_PRESET');
+const _responsiveShots = {
+  'compact': ['16-home-compact-large-text', '17-editor-compact-large-text'],
+  'tablet': ['18-home-tablet', '19-editor-tablet'],
+  'light': ['22-home-light', '23-editor-light'],
+};
 const _token = String.fromEnvironment('UI_CAPTURE_TOKEN');
 const _port = int.fromEnvironment('UI_CAPTURE_PORT', defaultValue: 8765);
 const _label = String.fromEnvironment(
@@ -216,6 +226,12 @@ void main() {
       reason: 'Debug mode is not motion-performance evidence',
     );
     expect(RegExp(r'^[a-f0-9]{32}$').hasMatch(_token), isTrue);
+    expect(
+      _responsivePreset.isEmpty ||
+          _responsiveShots.containsKey(_responsivePreset),
+      isTrue,
+    );
+    expect(!(_staticBackdropProbe && _responsivePreset.isNotEmpty), isTrue);
     final host = _CaptureHost();
     addTearDown(host.close);
     await _seedFixtures();
@@ -424,6 +440,15 @@ void main() {
     }
 
     Future<void> shot(String name) async {
+      if (_responsivePreset.isNotEmpty &&
+          !_responsiveShots[_responsivePreset]!.contains(name)) {
+        throw StateError('Screenshot outside requested responsive subset');
+      }
+      if (_staticBackdropProbe) {
+        throw StateError(
+          'Diagnostic-only probe cannot emit normal screenshots',
+        );
+      }
       await until(() => expectedShot(name));
       final fence = UiPresentationFence(
         binding,
@@ -476,6 +501,12 @@ void main() {
     }
 
     Future<void> clip(String name, Future<void> Function() action) async {
+      if (_responsivePreset.isNotEmpty) {
+        throw StateError('Responsive subset cannot record normal clips');
+      }
+      if (_staticBackdropProbe) {
+        throw StateError('Diagnostic-only probe cannot emit normal recordings');
+      }
       await host.event('record_start', name);
       try {
         await action();
@@ -500,6 +531,11 @@ void main() {
       Future<void> Function() action, {
       Map<String, Object?> visibleScope = const {},
     }) async {
+      if (_responsivePreset.isNotEmpty) {
+        throw StateError(
+          'Responsive subset cannot report performance profiles',
+        );
+      }
       await host.event('perf_start', name);
       await wait(1500); // Flush earlier engine timing batches.
       final frames = <ui.FrameTiming>[];
@@ -533,6 +569,10 @@ void main() {
         measured,
         tester.view.display.refreshRate,
       );
+      if (name.startsWith('diagnostic-static-backdrop-')) {
+        result['scope'] = 'One opt-in same-run radial-backdrop diagnostic; not normal Home/product, video, smoothness or device acceptance';
+        result['diagnosticOnly'] = true;
+      }
       result['observationElapsedUs'] = end - start;
       if (visibleScope.isNotEmpty) result['visibleScope'] = visibleScope;
       await host.event('perf_finish', name, {
@@ -541,7 +581,130 @@ void main() {
       });
     }
 
-    await until(() => find.text('Paper hills').evaluate().isNotEmpty);
+    Future<void> collectHomeClock({
+      required Finder create,
+      required Finder aurora,
+      required AnimationController controller,
+      required List<Map<String, Object?>> clockSamples,
+      required Stopwatch stopwatch,
+      required UiFrameClockObserver frameClock,
+      void Function()? verify,
+      Map<String, Object?> Function()? additionalFields,
+    }) async {
+      stopwatch.start();
+      frameClock.start();
+      try {
+        for (var index = 0; index < 34; index++) {
+          verify?.call();
+          await wait(500);
+          verify?.call();
+          final createBox = tester.getRect(create);
+          final auroraBox = tester.getRect(aurora);
+          final logicalViewport =
+              Offset.zero &
+              (tester.view.physicalSize / tester.view.devicePixelRatio);
+          clockSamples.add({
+            if (additionalFields != null) ...additionalFields(),
+            'staticCacheRawImages': tester
+                .widgetList<RawImage>(
+                  find.descendant(of: aurora, matching: find.byType(RawImage)),
+                )
+                .map(
+                  (widget) => {
+                    'width': widget.image?.width,
+                    'height': widget.image?.height,
+                  },
+                )
+                .toList(),
+            'sample': index,
+            'stopwatchElapsedUs': stopwatch.elapsedMicroseconds,
+            'dateTimeWallUs': DateTime.now().microsecondsSinceEpoch,
+            'currentFrameTimeStampUs':
+                frameClock.latest?['currentFrameTimeStampUs'],
+            'currentSystemFrameTimeStampUs':
+                frameClock.latest?['currentSystemFrameTimeStampUs'],
+            'postFrameDateTimeWallUs':
+                frameClock.latest?['postFrameDateTimeWallUs'],
+            'postFrameObserverElapsedUs':
+                frameClock.latest?['postFrameObserverElapsedUs'],
+            'observedFrameworkPostFrames': frameClock.observedPostFrames,
+            'timeDilation': timeDilation,
+            'auroraValue': controller.value,
+            'auroraLastElapsedUs':
+                controller.lastElapsedDuration?.inMicroseconds,
+            'auroraIsAnimating': controller.isAnimating,
+            'auroraAnimationStatus': controller.status.name,
+            'auroraTickerModeEnabled': TickerMode.valuesOf(
+              tester.element(aurora),
+            ).enabled,
+            'appLifecycle': binding.lifecycleState?.name,
+            'reducedMotion': MediaQuery.disableAnimationsOf(
+              tester.element(create),
+            ),
+            'homeCreateHitTestable': create.hitTestable().evaluate().isNotEmpty,
+            'homeCreateBounds': [
+              createBox.left,
+              createBox.top,
+              createBox.width,
+              createBox.height,
+            ],
+            'auroraBounds': [
+              auroraBox.left,
+              auroraBox.top,
+              auroraBox.width,
+              auroraBox.height,
+            ],
+            'auroraIntersectsViewport': auroraBox.overlaps(logicalViewport),
+          });
+        }
+      } finally {
+        frameClock.stop();
+        stopwatch.stop();
+      }
+    }
+
+    Map<String, Object?>? subsetHomeReadiness;
+    if (_responsivePreset.isNotEmpty) {
+      await until(() {
+        final home = find.byWidgetPredicate(
+          (widget) => widget.runtimeType.toString() == 'HomePage',
+        );
+        final create = key('home-start'), artwork = key('home-artwork');
+        if (home.evaluate().length != 1 ||
+            create.hitTestable().evaluate().isEmpty ||
+            artwork.evaluate().length != 1 ||
+            !renderedAnchor(home)) {
+          return false;
+        }
+        final projects = container()
+            .read(libraryProvider)
+            .asData
+            ?.value
+            .projects;
+        if (projects == null ||
+            projects.isEmpty ||
+            !projects.any(
+              (project) =>
+                  project.id == 'capture-morning' &&
+                  project.title == 'Morning tide',
+            )) {
+          return false;
+        }
+        final selected = tester.widget<Semantics>(artwork).properties.label;
+        if (selected != projects.first.title) return false;
+        subsetHomeReadiness = {
+          'visibleHomeRendered': true,
+          'homeCreateHitTestable': true,
+          'realRepositoryFixtureLoaded': 'capture-morning',
+          'actualRecentTitle': selected,
+          'lazyGalleryRequired': false,
+          'scrollForced': false,
+        };
+        return router().routeInformationProvider.value.uri.path == '/home';
+      });
+    } else {
+      await until(() => find.text('Paper hills').evaluate().isNotEmpty);
+    }
     // Widget existence alone did not prove native splash handoff in the first
     // after run. Wait for an actual engine-rasterized frame as well; the host
     // independently rejects the observed flat compositor/splash image.
@@ -551,8 +714,14 @@ void main() {
     await wait(1500);
     await host.event('metadata', 'session', {
       'firstFrameRasterized': binding.firstFrameRasterized,
+      'subsetHomeReadiness': ?subsetHomeReadiness,
       'label': _label,
       'buildMode': 'profile',
+      'captureMode': _responsivePreset.isNotEmpty
+          ? 'responsive-$_responsivePreset'
+          : (_staticBackdropProbe
+                ? 'diagnostic-static-backdrop-only'
+                : 'normal-product-ui-capture'),
       'physicalSize': [
         tester.view.physicalSize.width,
         tester.view.physicalSize.height,
@@ -570,6 +739,227 @@ void main() {
       ),
       isFalse,
     );
+    if (_responsivePreset.isNotEmpty) {
+      expect(_label, 'after');
+      // The owned host applied the actual display/font preset before app.main.
+      // No live wm/density/font change or MediaQuery override occurs here.
+      if (_responsivePreset == 'light') {
+        await preference(dark: false, reduce: false);
+      }
+      final names = _responsiveShots[_responsivePreset]!;
+      await shot(names.first);
+      await route('/editor/capture-morning');
+      await shot(names.last);
+      await host.event('responsive_complete', _responsivePreset, {
+        'passed': true,
+        'subsetOnly': true,
+        'responsivePreset': _responsivePreset,
+        'normalFullCapturePassed': false,
+      });
+      binding.reportData = {
+        'responsiveSubsetPassed': true,
+        'responsivePreset': _responsivePreset,
+        'completedScreenshotNames': names,
+        'normalFullCapturePassed': false,
+      };
+      expect(tester.takeException(), isNull);
+      return;
+    }
+    if (_staticBackdropProbe) {
+      expect(
+        _label,
+        'after',
+        reason: 'Backdrop probe requires the current immersive source',
+      );
+      final home = find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString() == 'HomePage',
+      );
+      final create = key('home-start');
+      final aurora = find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString() == 'AuroraScene',
+      );
+      expect(home, findsOneWidget);
+      expect(aurora, findsOneWidget);
+      expect(create.hitTestable(), findsOneWidget);
+      expect(router().routeInformationProvider.value.uri.path, '/home');
+      RenderDecoratedBox lookupBackdrop() {
+        expect(home, findsOneWidget);
+        expect(renderedAnchor(home), isTrue);
+        final backdrop = find.descendant(
+          of: home,
+          matching: find.byWidgetPredicate(
+            (widget) => widget.runtimeType.toString() == 'SceneBackdrop',
+          ),
+        );
+        expect(backdrop, findsOneWidget);
+        final element = tester.element(backdrop),
+            homeElement = tester.element(home);
+        var belongsToHome = false;
+        element.visitAncestorElements((ancestor) {
+          if (identical(ancestor, homeElement)) belongsToHome = true;
+          return true;
+        });
+        expect(belongsToHome, isTrue);
+        final direct = <Element>[];
+        element.visitChildElements(direct.add);
+        expect(direct, hasLength(1));
+        expect(direct.single.widget, isA<DecoratedBox>());
+        final render = direct.single.findRenderObject();
+        expect(render, isA<RenderDecoratedBox>());
+        return render! as RenderDecoratedBox;
+      }
+
+      AnimationController actualController() {
+        final controllers = tester
+            .widgetList<AnimatedBuilder>(
+              find.descendant(
+                of: aurora,
+                matching: find.byType(AnimatedBuilder),
+              ),
+            )
+            .map((builder) => builder.animation)
+            .whereType<AnimationController>()
+            .toSet();
+        expect(controllers, hasLength(1));
+        return controllers.single;
+      }
+
+      List<ui.Image> actualTextures() => tester
+          .widgetList<RawImage>(
+            find.descendant(of: aurora, matching: find.byType(RawImage)),
+          )
+          .map((widget) => widget.image)
+          .whereType<ui.Image>()
+          .toList();
+      await until(() => actualTextures().length == 1);
+      final homeScaffold = find.descendant(
+        of: home,
+        matching: find.byType(Scaffold),
+      );
+      expect(homeScaffold, findsOneWidget);
+      final context = tester.element(homeScaffold);
+      final viewport =
+          Offset.zero &
+          (tester.view.physicalSize / tester.view.devicePixelRatio);
+      final controller = actualController(),
+          initialState = tester.state(aurora),
+          texture = actualTextures().single;
+      final originalAuroraBounds = tester.getRect(aurora),
+          originalCreateBounds = tester.getRect(create);
+      final originalDpr = tester.view.devicePixelRatio;
+      final probe = UiStaticBackdropProbe(
+        target: lookupBackdrop(),
+        lookupCurrentTarget: lookupBackdrop,
+        homeScaffold: context.findRenderObject()! as RenderBox,
+        viewport: viewport,
+        expectedSurface: Theme.of(context).colorScheme.surface,
+      );
+      void verify(bool solidMode) {
+        probe.verify(solidMode: solidMode);
+        expect(router().routeInformationProvider.value.uri.path, '/home');
+        expect(tester.state(aurora), same(initialState));
+        expect(actualController(), same(controller));
+        expect(actualTextures(), hasLength(1));
+        expect(actualTextures().single, same(texture));
+        expect(controller.isAnimating, isTrue);
+        expect(controller.duration, const Duration(seconds: 16));
+        expect(TickerMode.valuesOf(tester.element(aurora)).enabled, isTrue);
+        expect(binding.lifecycleState, AppLifecycleState.resumed);
+        expect(MediaQuery.disableAnimationsOf(tester.element(create)), isFalse);
+        expect(timeDilation, 1);
+        expect(tester.view.devicePixelRatio, originalDpr);
+        expect(tester.getRect(aurora), originalAuroraBounds);
+        expect(tester.getRect(create), originalCreateBounds);
+        expect(create.hitTestable(), findsOneWidget);
+      }
+
+      bool expected(bool solidMode) {
+        try {
+          verify(solidMode);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      Future<void> phase(String name, bool solidMode) async {
+        verify(solidMode);
+        final samples = <Map<String, Object?>>[], watch = Stopwatch();
+        final clock = UiFrameClockObserver(binding);
+        final elapsedBefore = controller.lastElapsedDuration?.inMicroseconds;
+        expect(elapsedBefore, isNotNull);
+        await measure(
+          name,
+          () => collectHomeClock(
+            create: create,
+            aurora: aurora,
+            controller: controller,
+            clockSamples: samples,
+            stopwatch: watch,
+            frameClock: clock,
+            verify: () => verify(solidMode),
+            additionalFields: () => {
+              'backdropSolid': solidMode,
+              'sameAuroraStateControllerTexture': true,
+            },
+          ),
+          visibleScope: {
+            'diagnosticOnly': true,
+            'probe': 'single-static-radial-backdrop',
+            'solidMode': solidMode,
+            'recordingDuringMeasurement': false,
+            'target': probe.witness(),
+            'devicePixelRatio': originalDpr,
+            'nominalObservationMilliseconds': 17000,
+            'sameAuroraStateControllerTextureRequired': true,
+            'clockSamples': samples,
+          },
+        );
+        verify(solidMode);
+        expect(
+          controller.lastElapsedDuration!.inMicroseconds,
+          greaterThan(elapsedBefore!),
+        );
+      }
+
+      Map<String, Object>? restoredFrames;
+      try {
+        await phase('diagnostic-static-backdrop-normal', false);
+        probe.applySolid();
+        await waitForNaturalProbeRasters(
+          binding,
+          expected: () => expected(true),
+        );
+        await phase('diagnostic-static-backdrop-solid', true);
+      } finally {
+        probe.restore();
+        restoredFrames = await waitForNaturalProbeRasters(
+          binding,
+          expected: () => expected(false),
+        );
+        verify(false);
+        await host.event('static_backdrop_restored', 'static-backdrop-probe', {
+          'diagnosticOnly': true,
+          'exactDecorationRestored': true,
+          'freshLookupSameTarget': true,
+          'restoredRasterEvidence': restoredFrames,
+          'target': probe.witness(),
+        });
+      }
+      await host.event('diagnostic_complete', 'static-backdrop-probe', {
+        'passed': true,
+        'diagnosticOnly': true,
+        'normalFootageProduced': false,
+      });
+      binding.reportData = {
+        'diagnosticPassed': true,
+        'diagnosticOnly': true,
+        'normalProductCapturePassed': false,
+        'normalFootageProduced': false,
+      };
+      expect(tester.takeException(), isNull);
+      return;
+    }
     await shot('01-home');
     if (_label == 'after') {
       final create = key('home-start');
@@ -600,79 +990,14 @@ void main() {
       await measure(
         'home-ambient-visible',
         () async {
-          stopwatch.start();
-          frameClock.start();
-          try {
-            for (var index = 0; index < 34; index++) {
-              await wait(500);
-              final createBox = tester.getRect(create);
-              final auroraBox = tester.getRect(aurora);
-              final logicalViewport =
-                  Offset.zero &
-                  (tester.view.physicalSize / tester.view.devicePixelRatio);
-              clockSamples.add({
-                'staticCacheRawImages': tester
-                    .widgetList<RawImage>(
-                      find.descendant(
-                        of: aurora,
-                        matching: find.byType(RawImage),
-                      ),
-                    )
-                    .map(
-                      (widget) => {
-                        'width': widget.image?.width,
-                        'height': widget.image?.height,
-                      },
-                    )
-                    .toList(),
-                'sample': index,
-                'stopwatchElapsedUs': stopwatch.elapsedMicroseconds,
-                'dateTimeWallUs': DateTime.now().microsecondsSinceEpoch,
-                'currentFrameTimeStampUs':
-                    frameClock.latest?['currentFrameTimeStampUs'],
-                'currentSystemFrameTimeStampUs':
-                    frameClock.latest?['currentSystemFrameTimeStampUs'],
-                'postFrameDateTimeWallUs':
-                    frameClock.latest?['postFrameDateTimeWallUs'],
-                'postFrameObserverElapsedUs':
-                    frameClock.latest?['postFrameObserverElapsedUs'],
-                'observedFrameworkPostFrames': frameClock.observedPostFrames,
-                'timeDilation': timeDilation,
-                'auroraValue': controller.value,
-                'auroraLastElapsedUs':
-                    controller.lastElapsedDuration?.inMicroseconds,
-                'auroraIsAnimating': controller.isAnimating,
-                'auroraAnimationStatus': controller.status.name,
-                'auroraTickerModeEnabled': TickerMode.valuesOf(
-                  tester.element(aurora),
-                ).enabled,
-                'appLifecycle': binding.lifecycleState?.name,
-                'reducedMotion': MediaQuery.disableAnimationsOf(
-                  tester.element(create),
-                ),
-                'homeCreateHitTestable': create
-                    .hitTestable()
-                    .evaluate()
-                    .isNotEmpty,
-                'homeCreateBounds': [
-                  createBox.left,
-                  createBox.top,
-                  createBox.width,
-                  createBox.height,
-                ],
-                'auroraBounds': [
-                  auroraBox.left,
-                  auroraBox.top,
-                  auroraBox.width,
-                  auroraBox.height,
-                ],
-                'auroraIntersectsViewport': auroraBox.overlaps(logicalViewport),
-              });
-            }
-          } finally {
-            frameClock.stop();
-            stopwatch.stop();
-          }
+          await collectHomeClock(
+            create: create,
+            aurora: aurora,
+            controller: controller,
+            clockSamples: clockSamples,
+            stopwatch: stopwatch,
+            frameClock: frameClock,
+          );
         },
         visibleScope: {
           'route': router().routeInformationProvider.value.uri.toString(),

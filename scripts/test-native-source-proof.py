@@ -106,7 +106,7 @@ class RealGitNativeInputs(unittest.TestCase):
                      'cloud/ui-capture-request.json', 'scripts/capture-android-ui.py',
                      'integration_test/support/ui_static_backdrop_probe.dart',
                      'test/ui_static_backdrop_probe_test.dart',
-                     'scripts/prepare-ui-capture-source.py', '.github/workflows/ui-visuals.yml',
+                     'scripts/prepare-ui-capture-source.py', 'scripts/check-android-visuals.sh', '.github/workflows/ui-visuals.yml',
                      'scripts/native-source-proof.py', '.github/workflows/ui-capture-inspect.yml'):
             self.write(name, 'capture/docs-only change')
         self.commit()

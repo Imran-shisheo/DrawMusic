@@ -7,6 +7,8 @@ on:
       - integration_test/ui_visual_capture_test.dart
       - integration_test/support/ui_capture_metrics.dart
       - integration_test/support/ui_frame_clock.dart
+      - integration_test/support/ui_static_backdrop_probe.dart
+      - test/ui_static_backdrop_probe_test.dart
       - test/ui_frame_clock_test.dart
       - integration_test/support/ui_presentation_fence.dart
       - test/ui_presentation_fence_test.dart
@@ -36,6 +38,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Pin product source independently of diagnostic instrumentation
+        id: pin-source
         run: python3 scripts/prepare-ui-capture-source.py
       - uses: actions/setup-java@v6
         with:
@@ -58,7 +61,9 @@ jobs:
           flutter pub get
           dart format --output=none --set-exit-if-changed integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart test/ui_frame_clock_test.dart integration_test/support/ui_presentation_fence.dart test/ui_presentation_fence_test.dart test_driver/ui_visual_capture_driver.dart
           flutter analyze --no-pub integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart test/ui_frame_clock_test.dart integration_test/support/ui_presentation_fence.dart test/ui_presentation_fence_test.dart test_driver/ui_visual_capture_driver.dart
-          flutter test --no-pub test/ui_frame_clock_test.dart test/ui_presentation_fence_test.dart
+          dart format --output=none --set-exit-if-changed integration_test/support/ui_static_backdrop_probe.dart test/ui_static_backdrop_probe_test.dart
+          flutter analyze --no-pub integration_test/support/ui_static_backdrop_probe.dart test/ui_static_backdrop_probe_test.dart
+          flutter test --no-pub test/ui_frame_clock_test.dart test/ui_presentation_fence_test.dart test/ui_static_backdrop_probe_test.dart
           python3 -m py_compile scripts/capture-android-ui.py scripts/ui_capture_mp4.py scripts/test-ui-capture-mp4.py
       - name: Enable disposable emulator acceleration
         run: |
@@ -85,11 +90,13 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - name: Build normal installable product debug APK from the pinned source
+        if: steps.pin-source.outputs.product_apk_required != 'false'
         run: |
           source cloud/env.sh
           flutter build apk --debug --target lib/main.dart
           "$ANDROID_HOME/build-tools/$DRAWMUSIC_ANDROID_BUILD_TOOLS/apksigner" verify --verbose build/app/outputs/flutter-apk/app-debug.apk
       - name: Upload pinned-source normal debug APK
+        if: success() && steps.pin-source.outputs.product_apk_required != 'false'
         uses: actions/upload-artifact@v7
         with:
           name: drawmusic-ui-product-apk-${{ github.sha }}
