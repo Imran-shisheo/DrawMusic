@@ -992,6 +992,6 @@
   "productSourceSha": "73bb548a221a4b1626e2516f5958d0141043c4ae",
   "scopeOfSourcePin": "Exact product source; this metadata-only commit does not change app/native/tests/assets.",
   "applicationTreeUnchangedThrough": "42e2d12acdeb73da1e67ff01ee41223aae264890",
-  "optimizedReferenceRecheckSource": "c85686075271c6068eb1259e2f39ea41d439220c",
-  "scopeOfOptimizedRecheck": "338-test local suite and separate76-state/eight-reference check passed without regenerated references; enabled cache has separate actual-image resource/continuity tests. This is not new native-motion/IME/performance acceptance."
+  "optimizedReferenceRecheckSource": "f9fc4baad071cf5a61e857898a1609c4cc3b9996",
+  "scopeOfOptimizedRecheck": "355-test local suite and separate76-state/eight-reference check passed without regenerated references; content-measured compact layouts, system-chrome styles and enabled cache have additional actual-font/resource tests. Native acceptance remains source-specific."
 }
