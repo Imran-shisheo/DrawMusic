@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show timeDilation;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -64,7 +65,13 @@ class _CaptureHost {
     // Stopping a clip includes bounded native finalization, ADB transfer and
     // whole-video decoding on the host before the event can claim success.
     final response = await request.close().timeout(
-      Duration(seconds: operation == 'record_stop' ? 100 : 35),
+      Duration(
+        seconds: operation == 'record_stop'
+            ? 100
+            : operation == 'record_start'
+            ? 60
+            : 35,
+      ),
     );
     final value = jsonDecode(await utf8.decoder.bind(response).join()) as Map;
     if (response.statusCode != 200 ||
@@ -291,6 +298,15 @@ void main() {
       } finally {
         binding.removeTimingsCallback(receive);
       }
+      if (name == 'home-ambient-visible') {
+        // Persist observer data even if zero engine samples subsequently make
+        // the mandatory FrameTiming summary fail. Never turn absence into pass.
+        await host.event('diagnostic', 'home-motion-clock', {
+          'observations': visibleScope,
+          'observationElapsedUs': end - start,
+          'recordingDuringMeasurement': false,
+        });
+      }
       final measured = frames.where((value) {
         final wall = value.timestampInMicroseconds(
           ui.FramePhase.rasterFinishWallTime,
@@ -340,27 +356,86 @@ void main() {
     );
     await shot('01-home');
     if (_label == 'after') {
-      // Record actual decorative motion before interacting. A still screenshot
-      // cannot establish the immersive Home sculpture's motion requirement.
-      await clip('00-home-ambient', () async => wait(18000));
       final create = key('home-start');
       expect(create.hitTestable(), findsOneWidget);
       final createContext = tester.element(create);
       expect(MediaQuery.disableAnimationsOf(createContext), isFalse);
       final bounds = tester.getRect(create);
+      // Avoid a production-class import: the old before-source has no Aurora.
+      // Observe the actual mounted widget/controller, never a diagnostic clock.
+      final aurora = find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString() == 'AuroraScene',
+      );
+      expect(aurora, findsOneWidget);
+      final controllers = tester
+          .widgetList<AnimatedBuilder>(
+            find.descendant(of: aurora, matching: find.byType(AnimatedBuilder)),
+          )
+          .map((builder) => builder.animation)
+          .whereType<AnimationController>()
+          .toSet();
+      expect(controllers, hasLength(1));
+      final controller = controllers.single;
+      final clockSamples = <Map<String, Object?>>[];
+      final stopwatch = Stopwatch();
+      // This phase precedes every recording: app motion/lifecycle and actual
+      // clock progress survive a later encoder failure, without recorder load.
       await measure(
         'home-ambient-visible',
         () async {
-          await wait(17000);
-          expect(create.hitTestable(), findsOneWidget);
-          expect(
-            MediaQuery.disableAnimationsOf(tester.element(create)),
-            isFalse,
-          );
+          stopwatch.start();
+          for (var index = 0; index < 34; index++) {
+            await wait(500);
+            final createBox = tester.getRect(create);
+            final auroraBox = tester.getRect(aurora);
+            final logicalViewport =
+                Offset.zero &
+                (tester.view.physicalSize / tester.view.devicePixelRatio);
+            clockSamples.add({
+              'sample': index,
+              'stopwatchElapsedUs': stopwatch.elapsedMicroseconds,
+              'dateTimeWallUs': DateTime.now().microsecondsSinceEpoch,
+              'currentFrameTimeStampUs':
+                  binding.currentFrameTimeStamp.inMicroseconds,
+              'currentSystemFrameTimeStampUs':
+                  binding.currentSystemFrameTimeStamp.inMicroseconds,
+              'timeDilation': timeDilation,
+              'auroraValue': controller.value,
+              'auroraLastElapsedUs':
+                  controller.lastElapsedDuration?.inMicroseconds,
+              'auroraIsAnimating': controller.isAnimating,
+              'auroraAnimationStatus': controller.status.name,
+              'auroraTickerModeEnabled': TickerMode.valuesOf(
+                tester.element(aurora),
+              ).enabled,
+              'appLifecycle': binding.lifecycleState?.name,
+              'reducedMotion': MediaQuery.disableAnimationsOf(
+                tester.element(create),
+              ),
+              'homeCreateHitTestable': create
+                  .hitTestable()
+                  .evaluate()
+                  .isNotEmpty,
+              'homeCreateBounds': [
+                createBox.left,
+                createBox.top,
+                createBox.width,
+                createBox.height,
+              ],
+              'auroraBounds': [
+                auroraBox.left,
+                auroraBox.top,
+                auroraBox.width,
+                auroraBox.height,
+              ],
+              'auroraIntersectsViewport': auroraBox.overlaps(logicalViewport),
+            });
+          }
+          stopwatch.stop();
         },
         visibleScope: {
           'route': router().routeInformationProvider.value.uri.toString(),
-          'homeCreateHitTestableAtStartAndEnd': true,
+          'homeCreateHitTestableAtStart': true,
           'homeCreateBounds': [
             bounds.left,
             bounds.top,
@@ -370,12 +445,21 @@ void main() {
           'homeScrollOffset': Scrollable.maybeOf(createContext)
               ?.position
               .pixels,
-          'animationsDisabled': false,
+          'animationsDisabledAtStart': false,
           'nominalObservationMilliseconds': 17000,
           'screenRecordingActive': false,
+          'controllerRuntimeType': controller.runtimeType.toString(),
+          'controllerDurationUs': controller.duration?.inMicroseconds,
+          'clockSamples': clockSamples,
+          'clockObservationScope': 'Bounded reads of the actual Aurora AnimatedBuilder controller and real framework/Dart clocks; no app hooks, clock mutation, padding or timing acceptance inference.',
           'baselineComparison': 'No equivalent before phase exists; standalone after-source observation.',
         },
       );
+      expect(create.hitTestable(), findsOneWidget);
+      expect(MediaQuery.disableAnimationsOf(tester.element(create)), isFalse);
+      // Only after unrecorded evidence is persisted, capture real decorative
+      // motion. The native MP4 independently requires >=16s without retiming.
+      await clip('00-home-ambient', () async => wait(40000));
     }
     await clip('01-root-navigation', () async {
       await tab('Library');

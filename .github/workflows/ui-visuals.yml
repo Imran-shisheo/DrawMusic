@@ -11,6 +11,8 @@ on:
       - scripts/prepare-ui-capture-source.py
       - scripts/check-android-visuals.sh
       - scripts/test-ui-capture-host.py
+      - scripts/ui_capture_mp4.py
+      - scripts/test-ui-capture-mp4.py
       - scripts/prepare-runtime-inspectors.sh
       - .github/workflows/ui-visuals.yml
   workflow_dispatch:
@@ -42,6 +44,7 @@ jobs:
         run: |
           bash scripts/prepare-runtime-inspectors.sh --video-only
           python3 scripts/test-ui-capture-host.py
+          python3 scripts/test-ui-capture-mp4.py
       - name: Prepare pinned Flutter and Android SDK
         run: bash scripts/setup-cloud-android.sh
       - name: Resolve pinned product dependencies and validate diagnostic sources
@@ -51,7 +54,7 @@ jobs:
           flutter pub get
           dart format --output=none --set-exit-if-changed integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart test_driver/ui_visual_capture_driver.dart
           flutter analyze --no-pub integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart test_driver/ui_visual_capture_driver.dart
-          python3 -m py_compile scripts/capture-android-ui.py
+          python3 -m py_compile scripts/capture-android-ui.py scripts/ui_capture_mp4.py scripts/test-ui-capture-mp4.py
       - name: Enable disposable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

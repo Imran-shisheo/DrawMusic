@@ -6,6 +6,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:scribblesong/features/export_library/presentation/exports_page.dart';
 import 'package:scribblesong/app/app.dart';
 import 'package:scribblesong/app/providers.dart';
 import 'package:scribblesong/creative_document/document.dart';
@@ -113,27 +115,31 @@ void main() {
       final repo = MemoryRepository()..documents[doc.id] = doc;
       final router = buildRouter();
       addTearDown(router.dispose);
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            repositoryProvider.overrideWith((ref) async => repo),
-            preferencesStoreProvider.overrideWith(
-              (ref) async => MemoryPreferencesStore(),
+      Future<void> mount(GoRouter route) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              repositoryProvider.overrideWith((ref) async => repo),
+              preferencesStoreProvider.overrideWith(
+                (ref) async => MemoryPreferencesStore(),
+              ),
+              audioEngineProvider.overrideWithValue(TestAudio()),
+              exportLibraryProvider.overrideWith(
+                (ref) async => _GalleryCatalog(entries),
+              ),
+              exportFileActionsProvider.overrideWithValue(actions),
+            ],
+            child: MaterialApp.router(
+              theme: buildTheme(brightness: Brightness.dark),
+              routerConfig: route,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
             ),
-            audioEngineProvider.overrideWithValue(TestAudio()),
-            exportLibraryProvider.overrideWith(
-              (ref) async => _GalleryCatalog(entries),
-            ),
-            exportFileActionsProvider.overrideWithValue(actions),
-          ],
-          child: MaterialApp.router(
-            theme: buildTheme(brightness: Brightness.dark),
-            routerConfig: router,
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
           ),
-        ),
-      );
+        );
+      }
+
+      await mount(router);
       router.go('/exports');
       await tester.pumpAndSettle();
       expect(entries, hasLength(4));
@@ -164,6 +170,46 @@ void main() {
       expect(actions.saved.single.name, 'Paper hills.wav');
       expect(actions.saved.single.mime, 'audio/wav');
       expect(actions.saved.single.path, '${root.path}/Paper hills.wav');
+      expect(tester.takeException(), isNull);
+      final firstContainer = ProviderScope.containerOf(
+        tester.element(find.byType(ExportsPage)),
+      );
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+      final freshRouter = buildRouter();
+      addTearDown(freshRouter.dispose);
+      await mount(freshRouter);
+      freshRouter.go('/exports');
+      await tester.pumpAndSettle();
+      final freshContainer = ProviderScope.containerOf(
+        tester.element(find.byType(ExportsPage)),
+      );
+      expect(identical(freshContainer, firstContainer), isFalse);
+      final freshCatalog = await freshContainer.read(
+        exportListingProvider.future,
+      );
+      expect(
+        freshCatalog.entries.map((entry) => entry.artifact.name),
+        containsAll([
+          'Paper hills.mp4',
+          'Paper hills.wav',
+          'Paper hills.png',
+          'Paper hills.mid',
+        ]),
+      );
+      expect(
+        find.text('Paper hills.mp4'),
+        findsNothing,
+        reason:
+            'Fresh route has no retained scroll/cache from the first visit.',
+      );
+      for (final extension in ['mp4', 'wav', 'png', 'mid']) {
+        await revealExportGalleryItem(
+          tester,
+          find.text('Paper hills.$extension'),
+        );
+        expect(find.text('Paper hills.$extension'), findsOneWidget);
+      }
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },

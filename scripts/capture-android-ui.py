@@ -16,6 +16,8 @@ import subprocess
 import threading
 import time
 
+from ui_capture_mp4 import encoded_avc_readiness
+
 DEVICE = 'emulator-5554'
 PACKAGE = 'com.imranshisheo.scribblesong'
 OUTPUT = Path('work/ui-capture')
@@ -84,6 +86,74 @@ class Capture:
         self.complete = False
         self.report = {'passed': False, 'scope': 'Owned API35 QEMU profile-build screenshots, silent interaction recordings and real engine timings; not phone/iOS acceptance', 'events': [], 'recordingsHaveAudio': False}
 
+    def _cleanup_failed_start(self, remote, pid, process, log, error):
+        diagnostic = {'error': str(error).replace(self.token, '[redacted]'),
+                      'nativeSignalSent': False, 'ownedAdbTerminated': False}
+        try:
+            if process.poll() is None:
+                try:
+                    cmd = adb('shell', 'cat', f'/proc/{pid}/cmdline', required=False, timeout=2).stdout
+                    if remote in cmd:
+                        adb('shell', 'kill', '-2', pid, timeout=2)
+                        diagnostic['nativeSignalSent'] = True
+                    else:
+                        diagnostic['nativeIdentityChanged'] = True
+                except Exception as cleanup_error:
+                    diagnostic['identityOrSignalError'] = str(cleanup_error).replace(self.token, '[redacted]')[-500:]
+                try:
+                    process.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    # This Popen is the exact ADB child created here, never a
+                    # discovered/reused native PID. Unknown native identity is
+                    # never signaled, even during failed-start cleanup.
+                    process.terminate()
+                    diagnostic['ownedAdbTerminated'] = True
+                    try: process.wait(timeout=1)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        diagnostic['ownedAdbKilledAfterTerminateTimeout'] = True
+                        try: process.wait(timeout=1)
+                        except subprocess.TimeoutExpired:
+                            diagnostic['ownedAdbWaitTimedOut'] = True
+        except Exception as cleanup_error:
+            diagnostic['cleanupError'] = str(cleanup_error).replace(self.token, '[redacted]')[-500:]
+        finally:
+            try:
+                log.flush()
+                diagnostic['logTail'] = Path(log.name).read_text(errors='replace')[-2000:].replace(self.token, '[redacted]')
+            except Exception as log_error:
+                diagnostic['logError'] = str(log_error)[-500:]
+            finally:
+                try: log.close()
+                except Exception as log_error: diagnostic['logCloseError'] = str(log_error)[-500:]
+                self.report.setdefault('recorderStartupFailures', []).append(diagnostic)
+
+    def _await_encoded_media(self, remote, pid, process):
+        deadline = time.monotonic() + 25
+        last = {'ready': False, 'reason': 'No output file yet'}
+        while time.monotonic() < deadline:
+            cmd = adb('shell', 'cat', f'/proc/{pid}/cmdline', required=False, timeout=3).stdout
+            if process.poll() is not None or remote not in cmd:
+                raise RuntimeError('Recorder exited/identity changed before encoded media; refusing signal')
+            size = adb('shell', 'stat', '-c', '%s', remote, required=False, timeout=3).stdout.strip()
+            if size.isdigit():
+                def read_at(offset, count):
+                    if count <= 0 or time.monotonic() >= deadline: return b''
+                    block, within = divmod(offset, 4096)
+                    blocks = (within + count + 4095) // 4096
+                    output = adb('exec-out', 'dd', f'if={remote}', 'bs=4096',
+                                 f'skip={block}', f'count={blocks}', binary=True, required=False, timeout=3).stdout
+                    return output[within:within+count]
+                last = encoded_avc_readiness(read_at, int(size))
+                if last['ready']:
+                    last.update(hostReadyMonotonicSeconds=time.monotonic(),
+                                guestUptimeAtReadiness=optional_dump('cat', '/proc/uptime').strip())
+                    return last
+            time.sleep(.3)
+        # The caller performs bounded ownership-guarded cleanup for every
+        # encoded-readiness failure, including this timeout.
+        raise RuntimeError(f'Actual encoded AVC media not ready within25s: {last}')
+
     def record_start(self, name):
         if self.recording or adb('shell', 'pidof', 'screenrecord', required=False).stdout.strip():
             raise RuntimeError('Another screen recording is active')
@@ -94,6 +164,8 @@ class Capture:
             attempt_offset = path.stat().st_size if path.exists() else 0
             log = path.open('a')
             log.write(f'Owned codec startup attempt {width}x{height}\n'); log.flush()
+            start_clock = {'hostStartedMonotonicSeconds': time.monotonic(),
+                           'guestUptimeBeforeStart': optional_dump('cat', '/proc/uptime').strip()}
             process = subprocess.Popen(['adb', '-s', DEVICE, 'shell', 'screenrecord', '--verbose', '--bit-rate', str(bitrate), '--size', f'{width}x{height}', '--time-limit', '180', remote], stdout=log, stderr=subprocess.STDOUT)
             deadline = time.monotonic() + 8
             verified_since = None
@@ -107,8 +179,14 @@ class Capture:
                         raise RuntimeError('Recorder startup identity differs; refusing signal/fallback')
                     if verified_since is None: verified_since = time.monotonic()
                     if time.monotonic() - verified_since >= 1.5:
+                        try:
+                            media = self._await_encoded_media(remote, pid, process)
+                        except Exception as error:
+                            self._cleanup_failed_start(remote, pid, process, log, error)
+                            raise
                         settings = {'width': width, 'height': height, 'bitrate': bitrate,
-                                    'startupOwnershipVerifiedSeconds': 1.5, 'codecFallbackAttempts': attempts}
+                                    'startupOwnershipVerifiedSeconds': 1.5, 'codecFallbackAttempts': attempts,
+                                    'startupClocks': start_clock, 'firstEncodedVideo': media}
                         self.recording = (name, remote, pid, process, log, settings)
                         return settings
                 else:
@@ -134,6 +212,8 @@ class Capture:
         if not self.recording:
             raise RuntimeError('No owned recording is active')
         name, remote, pid, process, log, settings = self.recording
+        stop_clock = {'hostStopRequestedMonotonicSeconds': time.monotonic(),
+                      'guestUptimeBeforeStop': optional_dump('cat', '/proc/uptime').strip()}
         self.recording = None
         try:
             cmd = adb('shell', 'cat', f'/proc/{pid}/cmdline', required=False).stdout
@@ -160,14 +240,19 @@ class Capture:
         metadata = json.loads(probe.stdout)
         stream = metadata.get('streams', [{}])[0]
         duration = float(metadata.get('format', {}).get('duration', 0))
+        # Persist failure metadata too; rejected short clips remain diagnosable
+        # without weakening or retiming their duration.
+        (OUTPUT / 'recordings' / f'{name}-inspection.json').write_text(json.dumps({
+            'status': 'PENDING_ACCEPTANCE', 'codec': metadata, 'recorderSettings': settings,
+            'stopClocks': stop_clock, 'bytes': target.stat().st_size}, indent=2)+'\n')
         if stream.get('codec_name') != 'h264' or duration <= 0 or (stream.get('width'), stream.get('height')) != (settings['width'], settings['height']):
             raise RuntimeError('MP4 metadata does not identify the requested real AVC video')
         if name == '00-home-ambient' and duration < 16:
-            raise RuntimeError('Actual ambient MP4 did not cover the authored16s loop')
+            raise RuntimeError(f'Actual ambient MP4 duration={duration}s did not cover authored16s loop; stopClocks={stop_clock}')
         decoded = decode_recording(target)
         return {'file': str(target), 'bytes': target.stat().st_size, 'audio': False,
                 'sha256': hashlib.sha256(target.read_bytes()).hexdigest(),
-                'codec': metadata, 'wholeVideoDecode': decoded, 'recorderSettings': settings}
+                'codec': metadata, 'wholeVideoDecode': decoded, 'recorderSettings': settings, 'stopClocks': stop_clock}
 
     def event(self, body):
         with self.lock:
@@ -228,6 +313,16 @@ class Capture:
                 (OUTPUT / 'performance' / f'{name}-memory-after.txt').write_text(adb('shell', 'dumpsys', 'meminfo', PACKAGE).stdout)
                 item.update(frameSamples=len(result['rawFrames']), recordingDuringMeasurement=False,
                             pssScope='Before/after whole-app process snapshots, not measured peak or physical-device memory')
+            elif operation == 'diagnostic':
+                observations = body.get('observations')
+                samples = observations.get('clockSamples') if isinstance(observations, dict) else None
+                if name != 'home-motion-clock' or self.recording or body.get('recordingDuringMeasurement') is not False or not isinstance(samples, list) or not 1 <= len(samples) <= 40:
+                    raise ValueError('Invalid bounded unrecorded Home clock observation')
+                (OUTPUT / 'performance' / f'{name}.json').write_text(json.dumps({
+                    'scope': 'Actual unrecorded controller/lifecycle/framework-clock observations; not physical performance or proof of encoder causality by itself',
+                    'observationElapsedUs': body.get('observationElapsedUs'),
+                    'observations': observations}, indent=2)+'\n')
+                item.update(clockSamples=len(samples), recordingDuringMeasurement=False)
             elif operation == 'display':
                 displays = {'phone': ('1080x2400', '420', '1.0'), 'compact': ('640x1280', '320', '2.0'), 'tablet': ('1600x2400', '240', '1.0')}
                 if name not in displays or self.recording or self.perf:

@@ -327,11 +327,40 @@ void main() {
       await tester.tap(find.text('Library'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Exports'));
-      await until(
-        () async => find.text('Paper hills.mp4').evaluate().isNotEmpty,
+      await until(() async => find.byType(ExportsPage).evaluate().isNotEmpty);
+      final persistedCatalogContainer = ProviderScope.containerOf(
+        tester.element(find.byType(ExportsPage)),
       );
-      expect(find.text('Paper hills.wav'), findsOneWidget);
-      expect(find.text('Paper hills.mid'), findsOneWidget);
+      final persistedCatalog = await persistedCatalogContainer.read(
+        exportListingProvider.future,
+      );
+      expect(persistedCatalog.entries.length, 4);
+      expect(
+        persistedCatalog.entries.map((entry) => entry.artifact.name),
+        containsAll([
+          'Paper hills.mp4',
+          'Paper hills.wav',
+          'Paper hills.png',
+          'Paper hills.mid',
+        ]),
+      );
+      expect(
+        persistedCatalog.entries.every(
+          (entry) =>
+              entry.available &&
+              !entry.legacy &&
+              entry.artifact.projectId == snapshot.id,
+        ),
+        isTrue,
+      );
+      await tester.pumpAndSettle();
+      for (final extension in ['mp4', 'wav', 'png', 'mid']) {
+        await revealExportGalleryItem(
+          tester,
+          find.text('Paper hills.$extension'),
+        );
+        expect(find.text('Paper hills.$extension'), findsOneWidget);
+      }
       await tester.tap(find.text('Home'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
