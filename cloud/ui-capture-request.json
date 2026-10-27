@@ -1,6 +1,6 @@
 {
   "schema": 1,
   "label": "after",
-  "sourceRef": "f9fc4baad071cf5a61e857898a1609c4cc3b9996",
-  "diagnostic": "static-backdrop"
+  "sourceRef": "9af0d6f329ba17b4e8dac55fca4a5cb529b4753f",
+  "responsivePreset": "tablet"
 }
