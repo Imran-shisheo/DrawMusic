@@ -25,7 +25,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settings => 'Cài đặt';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => 'Một nét nhỏ.\nMột chút nhạc.';
@@ -434,7 +434,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments =>
-      'Mỗi nhạc cụ nguyên gốc có tên. Nét mới dùng âm sắc đã chọn; nét cũ giữ âm sắc trước.';
+      'Có mười ba âm sắc nguyên gốc. Chọn cho nét mới; nét cũ giữ âm sắc của mình.';
 
   @override
   String get setThePace => 'Đặt nhịp độ';
@@ -448,7 +448,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo =>
-      'Chọn giọng và thang âm. Cùng bản nhạc dùng cho nghe thử và xuất.';
+      'Chọn trong mười hai âm chủ và mười một thang âm. Cùng bản nhạc dùng cho nghe thử và xuất.';
 
   @override
   String get warmPaper => 'Giấy ấm';
@@ -608,7 +608,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get creationGuide => 'Hướng dẫn sáng tạo';
 
   @override
-  String get welcomeToScribbleSong => 'Chào mừng đến ScribbleSong';
+  String get welcomeToScribbleSong => 'Chào mừng đến Doodimo';
 
   @override
   String get howToCreateALoop => 'Cách tạo vòng nhạc';
@@ -1111,4 +1111,133 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get erasureLimitRejected =>
       'Chưa áp dụng thao tác xóa vì sẽ vượt giới hạn bản vẽ. Hoàn tác một số nét hoặc lưu bản vẽ này và bắt đầu bản vẽ mới.';
+
+  @override
+  String get exportIntentImage => 'Hình ảnh';
+
+  @override
+  String get exportIntentSound => 'Âm thanh';
+
+  @override
+  String get exportIntentVideo => 'Video';
+
+  @override
+  String get exportIntentNotes => 'Nốt nhạc';
+
+  @override
+  String get exportIntentImageDescription =>
+      'Bản vẽ với giấy hoặc nền trong suốt.';
+
+  @override
+  String get exportIntentSoundDescription =>
+      'Bản để nghe với âm sắc nguyên gốc của bạn.';
+
+  @override
+  String get exportIntentVideoDescription =>
+      'Bản vẽ và âm nhạc chuyển động cùng nhau.';
+
+  @override
+  String get exportIntentNotesDescription =>
+      'Nốt có thể chỉnh sửa cho ứng dụng nhạc khác.';
+
+  @override
+  String get exportChooseFormat => 'Chọn điều muốn giữ';
+
+  @override
+  String get exportPreparing => 'Đang chuẩn bị xuất';
+
+  @override
+  String get exportFinalizing => 'Đang thêm vào thư viện';
+
+  @override
+  String get exportReadyTitle => 'Sẵn sàng lưu giữ';
+
+  @override
+  String get exportTryAgain => 'Thử xuất lại';
+
+  @override
+  String get exportAnotherFormat => 'Chọn định dạng khác';
+
+  @override
+  String get libraryEditable => 'Bản vẽ chỉnh sửa được';
+
+  @override
+  String get libraryDrawingsSubtitle =>
+      'Nét phác của bạn, sẵn sàng cho nốt tiếp theo.';
+
+  @override
+  String get libraryExportsSubtitle =>
+      'Tệp hoàn tất, được giữ trên thiết bị này.';
+
+  @override
+  String get libraryNewDrawing => 'Bắt đầu bản vẽ';
+
+  @override
+  String get uiAppearance => 'Giao diện';
+
+  @override
+  String get uiSoundFeedback => 'Âm thanh và phản hồi';
+
+  @override
+  String get uiAccessibilityMotion => 'Trợ năng và chuyển động';
+
+  @override
+  String get uiHelpInfo => 'Trợ giúp và thông tin';
+
+  @override
+  String get uiComfortPreferences => 'Biến không gian này thành của bạn.';
+
+  @override
+  String get uiSoundDetails => 'Về phát nhạc và phản hồi';
+
+  @override
+  String get uiMotionDetails => 'Về tùy chọn chuyển động';
+
+  @override
+  String get uiWelcomeSummary => 'Vẽ một nét. Chọn âm sắc. Nhấn Phát.';
+
+  @override
+  String get uiOpenSourceLicenses => 'Giấy phép nguồn mở';
+
+  @override
+  String get backgroundColorTab => 'Màu';
+
+  @override
+  String get backgroundGradientTab => 'Chuyển sắc';
+
+  @override
+  String get cropWorkspace => 'Cắt ảnh';
+
+  @override
+  String get cropMoveHint =>
+      'Kéo để di chuyển ảnh. Chụm để thu phóng hoặc dùng điều khiển để căn chính xác.';
+
+  @override
+  String get backgroundPresets => 'Bảng màu giấy';
+
+  @override
+  String get backgroundCustomColors => 'Màu tùy chọn';
+
+  @override
+  String get editorTools => 'Công cụ vẽ';
+
+  @override
+  String get musicSettings => 'Cài đặt âm nhạc';
+
+  @override
+  String get voiceChooserHint =>
+      'Chọn âm sắc cho nét tiếp theo. Nét hiện có giữ nguyên âm sắc.';
+
+  @override
+  String welcomeToBrand(String name) {
+    return 'Chào mừng đến $name';
+  }
+
+  @override
+  String get backgroundPanelTitle => 'Giấy và ảnh';
+
+  @override
+  String exportFpsChoice(String fps) {
+    return '$fps FPS';
+  }
 }

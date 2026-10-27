@@ -64,8 +64,15 @@ Future<List<int>> _pixel(
   Offset fraction = const Offset(.5, .5),
   int tile = 0,
 }) async {
-  final listTile = tester.widget<ListTile>(find.byType(ListTile).at(tile));
-  final leading = find.byWidget(listTile.leading!);
+  final leading = find
+      .byWidgetPredicate(
+        (widget) =>
+            widget.key is ValueKey<String> &&
+            ((widget.key! as ValueKey<String>).value.startsWith(
+              'export-thumbnail-',
+            )),
+      )
+      .at(tile);
   final box = tester.getRect(leading);
   final point = Offset(
     box.left + box.width * fraction.dx,

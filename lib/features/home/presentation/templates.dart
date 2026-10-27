@@ -1,11 +1,14 @@
-import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../domain/template_catalog.dart';
+import '../../../design_system/brand_colors.dart';
+import '../../../design_system/doodimo_icon.dart';
+import '../../../design_system/motion.dart';
+import '../../../l10n/strings.dart';
 import '../../../l10n/template_descriptions.dart';
-import '../../editor/presentation/canvas.dart';
 import '../../backgrounds/presentation/background_surface.dart';
+import '../../editor/presentation/canvas.dart';
+import '../domain/template_catalog.dart';
 
 class TemplateGallery extends StatelessWidget {
   const TemplateGallery({super.key});
@@ -13,62 +16,30 @@ class TemplateGallery extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        context.strings.tryAStartingPoint,
-        style: Theme.of(context).textTheme.titleLarge,
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              context.strings.tryAStartingPoint,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          const DoodimoIcon(DoodimoGlyph.music),
+        ],
       ),
-      const SizedBox(height: 12),
+      const SizedBox(height: 16),
       LayoutBuilder(
         builder: (context, constraints) {
-          final two = constraints.maxWidth >= 288;
-          final width = two
-              ? (constraints.maxWidth - 12) / 2
-              : constraints.maxWidth;
+          final columns = (constraints.maxWidth / 170).floor().clamp(1, 4);
+          final width = (constraints.maxWidth - 16 * (columns - 1)) / columns;
           return Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: 16,
+            runSpacing: 24,
             children: [
-              for (final template in originalTemplates)
+              for (var i = 0; i < originalTemplates.length; i++)
                 SizedBox(
                   width: width,
-                  child: Semantics(
-                    label:
-                        '${template.title}. ${localizedTemplateDescription(context, template.kind)}',
-                    button: true,
-                    child: Card(
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () => context.push('/editor/${template.id}'),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            children: [
-                              ExcludeSemantics(
-                                child: SizedBox(
-                                  height: 120,
-                                  width: 96,
-                                  child: BackgroundSurface(
-                                    paper: template
-                                        .create()
-                                        .effectiveBackground,
-                                    maxWidth: 320,
-                                    maxHeight: 400,
-                                    child: CustomPaint(
-                                      painter: DrawingPainter(
-                                        template.create(),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(template.title),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: _TemplateSleeve(index: i),
                 ),
             ],
           );
@@ -76,4 +47,106 @@ class TemplateGallery extends StatelessWidget {
       ),
     ],
   );
+}
+
+class _TemplateSleeve extends StatefulWidget {
+  const _TemplateSleeve({required this.index});
+  final int index;
+  @override
+  State<_TemplateSleeve> createState() => _TemplateSleeveState();
+}
+
+class _TemplateSleeveState extends State<_TemplateSleeve> {
+  bool _pressed = false;
+  @override
+  Widget build(BuildContext context) {
+    final template = originalTemplates[widget.index];
+    final colors = Theme.of(context).colorScheme;
+    final document = template.create();
+    final sleeve = [
+      DoodimoColors.lavender,
+      DoodimoColors.lime,
+      DoodimoColors.coral,
+    ][widget.index % 3];
+    final caption = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(
+            template.title,
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(color: colors.onSurface),
+          ),
+        ),
+        const SizedBox(width: 8),
+        DoodimoIcon(
+          DoodimoGlyph.arrowUpRight,
+          size: 18,
+          color: colors.onSurfaceVariant,
+        ),
+      ],
+    );
+    void open() => context.push('/editor/${template.id}');
+    return Semantics(
+      button: true,
+      label:
+          '${template.title}. ${localizedTemplateDescription(context, template.kind)}',
+      onTap: open,
+      child: ExcludeSemantics(
+        child: AnimatedScale(
+          scale: _pressed ? .98 : 1,
+          duration: CreativeMotion.duration(context, CreativeMotion.press),
+          curve: CreativeMotion.curve,
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: open,
+              onTapDown: (_) => setState(() => _pressed = true),
+              onTapCancel: () => setState(() => _pressed = false),
+              onTapUp: (_) => setState(() => _pressed = false),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  caption,
+                  const SizedBox(height: 10),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: sleeve,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: AspectRatio(
+                        aspectRatio: 4 / 5,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: .08),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: BackgroundSurface(
+                            paper: document.effectiveBackground,
+                            maxWidth: 320,
+                            maxHeight: 400,
+                            child: CustomPaint(
+                              painter: DrawingPainter(document),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

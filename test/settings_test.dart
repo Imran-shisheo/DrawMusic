@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:scribblesong/app/app.dart';
+import 'package:scribblesong/design_system/brand.dart';
 import 'package:scribblesong/features/settings/application/settings_controller.dart';
 import 'package:scribblesong/features/settings/data/file_preferences_store.dart';
 import 'package:scribblesong/features/settings/domain/preferences.dart';
@@ -83,7 +84,7 @@ void main() {
       );
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
-      expect(find.text('Welcome to ScribbleSong'), findsOneWidget);
+      expect(find.text('Welcome to ${AppBrand.displayName}'), findsOneWidget);
       await tester.ensureVisible(find.text('Start creating'));
       await tester.tap(find.text('Start creating'));
       await tester.pumpAndSettle();
@@ -91,11 +92,21 @@ void main() {
       expect(find.text('Home'), findsOneWidget);
       await tester.tap(find.text('Settings'));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('Haptic feedback'));
+      await tester.scrollUntilVisible(find.text('Haptic feedback'), 180);
+      await Scrollable.ensureVisible(
+        tester.element(find.text('Haptic feedback')),
+        alignment: .2,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Haptic feedback'));
       await tester.pumpAndSettle();
       expect(store.preferences.haptics, isTrue);
-      await tester.ensureVisible(find.text('Replay creation guide'));
+      await tester.scrollUntilVisible(find.text('Replay creation guide'), 180);
+      await Scrollable.ensureVisible(
+        tester.element(find.text('Replay creation guide')),
+        alignment: .2,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Replay creation guide'));
       await tester.pumpAndSettle();
       expect(find.text('How to create a loop'), findsOneWidget);
@@ -106,7 +117,7 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
-      expect(find.text('Welcome to ScribbleSong'), findsNothing);
+      expect(find.text('Welcome to ${AppBrand.displayName}'), findsNothing);
       expect(store.preferences.haptics, isTrue);
       await tester.pumpWidget(const SizedBox());
     },
@@ -128,7 +139,7 @@ void main() {
       await tester.ensureVisible(find.text('Start creating'));
       await tester.tap(find.text('Start creating'));
       await tester.pumpAndSettle();
-      expect(find.text('Welcome to ScribbleSong'), findsOneWidget);
+      expect(find.text('Welcome to ${AppBrand.displayName}'), findsOneWidget);
       expect(store.preferences.tutorialCompleted, isFalse);
       expect(
         find.text('Could not save preferences. Check storage, then retry.'),
@@ -197,6 +208,12 @@ void main() {
       await tester.tap(find.text('Settings'));
       await tester.pumpAndSettle();
       store.fail = true;
+      await tester.scrollUntilVisible(find.byType(Slider), 180);
+      await Scrollable.ensureVisible(
+        tester.element(find.byType(Slider)),
+        alignment: .2,
+      );
+      await tester.pumpAndSettle();
       await tester.drag(find.byType(Slider), const Offset(-600, 0));
       await tester.pumpAndSettle();
       expect(store.preferences.previewVolume, .75);
@@ -205,6 +222,11 @@ void main() {
         findsOneWidget,
       );
       store.fail = false;
+      await Scrollable.ensureVisible(
+        tester.element(find.text('Retry preferences')),
+        alignment: .2,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Retry preferences'));
       await tester.pumpAndSettle();
       expect(store.preferences.previewVolume, 0);

@@ -351,6 +351,16 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     _preview.value++;
   }
 
+  Offset? _currentLocal(PointerEvent event) {
+    final box = context.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return null;
+    // Flutter retains the original pointer-down hit-test transform throughout a
+    // gesture. Use the live canvas transform after orientation/workspace changes
+    // instead of interpreting move samples through that stale cached transform.
+    final local = box.globalToLocal(event.position);
+    return local.dx.isFinite && local.dy.isFinite ? local : null;
+  }
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
@@ -365,6 +375,8 @@ class DrawingCanvasState extends State<DrawingCanvas> {
           behavior: HitTestBehavior.opaque,
           onPointerDown: (event) {
             if (_pointer != null) return;
+            final local = _currentLocal(event);
+            if (local == null) return;
             if (!widget.eraser &&
                 _basePointCount >= simplificationPointThreshold) {
               final result = simplifyGeometry(
@@ -382,15 +394,16 @@ class DrawingCanvasState extends State<DrawingCanvas> {
             _clock
               ..reset()
               ..start();
-            _sample(event.localPosition, size, input: event);
+            _sample(local, size, input: event);
           },
           onPointerMove: (event) {
             if (event.pointer != _pointer) return;
-            if (!(Offset.zero & size).contains(event.localPosition)) {
+            final local = _currentLocal(event);
+            if (local == null || !(Offset.zero & size).contains(local)) {
               finish();
               return;
             }
-            _sample(event.localPosition, size, input: event);
+            _sample(local, size, input: event);
           },
           onPointerUp: (event) {
             if (event.pointer == _pointer) finish();

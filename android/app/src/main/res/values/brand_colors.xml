@@ -1,0 +1,5 @@
+<resources>
+    <color name="doodimo_icon_background">#F8F7F3</color>
+    <color name="doodimo_launch_background">#F8F7F3</color>
+    <color name="doodimo_launch_ink">#223C35</color>
+</resources>

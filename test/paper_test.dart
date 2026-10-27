@@ -1,3 +1,5 @@
+import 'support/editor_controls.dart';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -134,7 +136,7 @@ void main() {
       expect(audio.playing, isTrue);
       await tester.pumpAndSettle();
       final queues = audio.queued.length, prepares = audio.prepares;
-      await tester.tap(find.byTooltip('Paper color'));
+      await openEditorTool(tester, 'paper');
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byType(Slider));
       await tester.drag(find.byType(Slider), const Offset(-600, 0));
@@ -150,7 +152,7 @@ void main() {
         doc().effectiveBackground.toJson(),
         original.effectiveBackground.toJson(),
       );
-      await tester.tap(find.byTooltip('Paper color'));
+      await openEditorTool(tester, 'paper');
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byTooltip('Lilac paper'));
       await tester.tap(find.byTooltip('Lilac paper'));

@@ -5,7 +5,7 @@
   "home": "Home",
   "library": "Library",
   "settings": "Settings",
-  "scribblesong": "ScribbleSong",
+  "scribblesong": "Doodimo",
   "aLittleLineALittleMusic": "A little line.\nA little music.",
   "turnYourMarksIntoAMelodyStartWithABlankPageAndSeeWhereItTa": "Turn your marks into a melody. Start with a blank page and see where it takes you.",
   "makeYourFirstLoop": "Make your first loop",
@@ -150,11 +150,11 @@
   "leftToRightFollowsEightBeatsHigherMarksMakeHigherNotesVert": "Left to right follows eight beats. Higher marks make higher notes; vertical marks can form chords. Erase and Undo let you explore safely.",
   "listenAndPause": "Listen and pause",
   "playRepeatsYourDrawingTapPauseToKeepYourPlaceOrReplayToSta": "Play repeats your drawing. Tap Pause to keep your place, or Replay to start over. Music pauses when you leave the app.",
-  "cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments": "Cloud keys, Wood drops and Glass stars are named original instruments. Each new stroke uses the selected voice; existing strokes keep theirs.",
+  "cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments": "Thirteen original voices are available. Choose a sound for new marks; existing strokes keep theirs.",
   "setThePace": "Set the pace",
   "tapTheBpmNumberForTheTempoSliderHoldMinusOrPlusToRepeatFro": "Tap the BPM number for the tempo slider. Hold minus or plus to repeat, from 60 to 200 BPM. Tempo updates arrive on a beat; drawing updates arrive on a loop.",
   "keyAndScale": "Key and scale",
-  "thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo": "Choose any root key and scale to change the mood. The same score drives preview and exports.",
+  "thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo": "Choose any of twelve root keys and eleven scale families. The same score drives preview and exports.",
   "warmPaper": "Warm paper",
   "mintPaper": "Mint paper",
   "lilacPaper": "Lilac paper",
@@ -325,7 +325,7 @@
   "showingFirst80Events": "Showing the first 80 events.",
   "welcome": "Welcome",
   "creationGuide": "Creation guide",
-  "welcomeToScribbleSong": "Welcome to ScribbleSong",
+  "welcomeToScribbleSong": "Welcome to Doodimo",
   "howToCreateALoop": "How to create a loop",
   "pressAndHoldToRepeat": "Press and hold to repeat",
   "preferencesLoadFailed": "Could not load preferences. Your drawings are safe. Retry or continue for now.",
@@ -519,5 +519,59 @@
   "templateDescription19": "Four warm synthesizer chords with bass and drum accompaniment.",
   "recoveryExport": "Export recovery data",
   "recoveryExportFailed": "Could not export recovery data. The original files are preserved.",
-  "erasureLimitRejected": "Erasure was not applied because it would exceed the drawing limit. Undo some ink, or save this drawing and start a new one."
+  "erasureLimitRejected": "Erasure was not applied because it would exceed the drawing limit. Undo some ink, or save this drawing and start a new one.",
+  "exportIntentImage": "Image",
+  "exportIntentSound": "Sound",
+  "exportIntentVideo": "Video",
+  "exportIntentNotes": "Notes",
+  "exportIntentImageDescription": "Artwork with your paper or a transparent background.",
+  "exportIntentSoundDescription": "A listening copy with your original sounds.",
+  "exportIntentVideoDescription": "Your drawing and music, moving together.",
+  "exportIntentNotesDescription": "Editable notes for another music app.",
+  "exportChooseFormat": "Choose what to keep",
+  "exportPreparing": "Preparing your export",
+  "exportFinalizing": "Adding to your library",
+  "exportReadyTitle": "Ready to keep",
+  "exportTryAgain": "Try export again",
+  "exportAnotherFormat": "Choose another format",
+  "libraryEditable": "Editable drawing",
+  "libraryDrawingsSubtitle": "Your sketches, ready for their next note.",
+  "libraryExportsSubtitle": "Finished files, kept on this device.",
+  "libraryNewDrawing": "Start a drawing",
+  "uiAppearance": "Appearance",
+  "uiSoundFeedback": "Sound & feedback",
+  "uiAccessibilityMotion": "Accessibility & motion",
+  "uiHelpInfo": "Help & app information",
+  "uiComfortPreferences": "Make this space your own.",
+  "uiSoundDetails": "About playback & feedback",
+  "uiMotionDetails": "About motion preferences",
+  "uiWelcomeSummary": "Draw a line. Give it a voice. Press play.",
+  "uiOpenSourceLicenses": "Open-source licenses",
+  "backgroundColorTab": "Color",
+  "backgroundGradientTab": "Gradient",
+  "cropWorkspace": "Crop image",
+  "cropMoveHint": "Drag to move the photo. Pinch to zoom, or use the controls for precise framing.",
+  "backgroundPresets": "Paper palettes",
+  "backgroundCustomColors": "Custom colors",
+  "editorTools": "Sketch tools",
+  "musicSettings": "Music settings",
+  "voiceChooserHint": "Choose a sound for your next marks. Existing strokes keep their voice.",
+  "welcomeToBrand": "Welcome to {name}",
+  "@welcomeToBrand": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "backgroundPanelTitle": "Paper & photo",
+  "exportFpsChoice": "{fps} FPS",
+  "@exportFpsChoice": {
+    "description": "Compact video frame-rate choice; full 60 FPS performance warning is displayed separately. FPS is frames per second.",
+    "placeholders": {
+      "fps": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -18,6 +18,14 @@ import '../../settings/application/settings_controller.dart';
 import '../../../creative_document/document.dart';
 import 'accompaniment_panel.dart';
 import 'responsive_workspace.dart';
+import 'editor_voice_panel.dart';
+import 'editor_music_panel.dart';
+import 'editor_tools_panel.dart';
+import '../../../design_system/motion.dart';
+import '../../../design_system/doodimo_icon.dart';
+import '../../../design_system/brand_colors.dart';
+import 'studio_control.dart';
+import 'instrument_glyph.dart';
 import '../../rating/application/rating_provider.dart';
 import '../../rating/presentation/rating_offer.dart';
 import '../../../design_system/paper_panel.dart';
@@ -232,6 +240,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       !_preparing &&
       !_leaving &&
       !_tipsShowing &&
+      !_panelShowing &&
       !ref.read(editorProvider).saving &&
       _canvas.currentState?.hasActiveGesture != true &&
       ModalRoute.of(context)?.isCurrent == true;
@@ -517,42 +526,86 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     }
   }
 
-  Future<void> _tempoPanel() async {
-    var tempo = ref.read(editorProvider).document.tempo;
-    final chosen = await showDialog<int>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialog) => AlertDialog(
-          title: Text(context.strings.loopTempo),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(context.strings.tempoValue(context.formatNumber(tempo))),
-              Slider(
-                min: 60,
-                max: 200,
-                divisions: 140,
-                value: tempo.toDouble(),
-                label: context.strings.tempoValue(context.formatNumber(tempo)),
-                onChanged: (value) => setDialog(() => tempo = value.round()),
+  bool _panelShowing = false;
+
+  Future<void> _chooseVoice() async {
+    if (_panelShowing) return;
+    _panelShowing = true;
+    _canvas.currentState?.finish();
+    try {
+      final chosen = await showEditorVoicePanel(context, _instrument);
+      if (chosen != null && mounted) {
+        _selectionFeedback();
+        setState(() {
+          _instrument = chosen;
+          _eraser = false;
+        });
+      }
+    } finally {
+      _panelShowing = false;
+    }
+  }
+
+  Future<void> _musicSettings() async {
+    if (_panelShowing) return;
+    _panelShowing = true;
+    _canvas.currentState?.finish();
+    try {
+      final chosen = await showEditorMusicPanel(
+        context,
+        ref.read(editorProvider).document,
+      );
+      if (chosen != null && mounted) {
+        _edit(
+          ref
+              .read(editorProvider)
+              .document
+              .copyWith(
+                tempo: chosen.tempo,
+                root: chosen.rootChanged ? chosen.root : null,
+                scale: chosen.scaleChanged ? chosen.scale : null,
+                expressionMode: chosen.expression,
+                mix: chosen.mix,
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(context.strings.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, tempo),
-              child: Text(context.strings.apply),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (chosen != null && mounted) {
-      _edit(ref.read(editorProvider).document.copyWith(tempo: chosen));
+        );
+      }
+    } finally {
+      _panelShowing = false;
+    }
+  }
+
+  Future<void> _tools() async {
+    if (_panelShowing) return;
+    _panelShowing = true;
+    _canvas.currentState?.finish();
+    try {
+      final action = await showEditorToolsPanel(
+        context,
+        ref.read(editorProvider).document,
+      );
+      if (!mounted || action == null) return;
+      switch (action) {
+        case EditorToolAction.paper:
+          await _background();
+        case EditorToolAction.style:
+          await _drawingStyle();
+        case EditorToolAction.mix:
+          final mix = await showAccompanimentPanel(
+            context,
+            ref.read(editorProvider).document.mix,
+          );
+          if (mix != null && mounted) {
+            _edit(ref.read(editorProvider).document.copyWith(mix: mix));
+          }
+        case EditorToolAction.score:
+          await _describe();
+        case EditorToolAction.clear:
+          await _clear();
+        case EditorToolAction.tips:
+          await _showTips();
+      }
+    } finally {
+      _panelShowing = false;
     }
   }
 
@@ -693,420 +746,63 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         );
       }
     });
-    return PopScope(
-      canPop: _allowPop,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) unawaited(_leave());
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            tooltip: context.strings.backToGallery,
-            onPressed: _leaving ? null : _leave,
-            icon: const Icon(Icons.arrow_back),
-          ),
-          title: Semantics(
-            button: true,
-            label: context.strings.renameDrawingLabel(doc.title),
-            child: ExcludeSemantics(
-              child: InkWell(
-                onTap: _rename,
-                child: Text(
-                  doc.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            IconButton(
-              tooltip: context.strings.editorTips,
-              onPressed: _showTips,
-              icon: const Icon(Icons.help_outline),
-            ),
-            IconButton(
-              tooltip: context.strings.exportLoop,
-              onPressed: _leaving
-                  ? null
-                  : () async {
-                      _canvas.currentState?.finish();
-                      await _pause();
-                      if (context.mounted) {
-                        await showExportSheet(
-                          context,
-                          ref.read(editorProvider).document,
-                        );
-                        if (mounted) await _offerRating();
-                      }
-                    },
-              icon: const Icon(Icons.ios_share),
-            ),
-            IconButton(
-              tooltip: context.strings.saveDrawing,
-              onPressed: state.saving ? null : _explicitSave,
-              icon: const Icon(Icons.save_outlined),
-            ),
-          ],
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: LayoutBuilder(
-              builder: (context, constraints) => ResponsiveEditorLayout(
-                width: constraints.maxWidth,
+    final colors = Theme.of(context).colorScheme;
+    final type = Theme.of(context).textTheme;
+    final textScale = MediaQuery.textScalerOf(context);
+    final largeText = textScale.scale(14) > 21;
+    final saveStatus = state.saving
+        ? context.strings.saving
+        : state.dirty
+        ? context.strings.changesPending
+        : context.strings.savedOnThisDevice;
+    final hasMusic = doc.strokes.isNotEmpty || doc.mix.isActive;
+    final pending = _prepared && _wantedRevision != _heardRevision;
+    final pendingStatus = pending
+        ? (_pendingBoundary == UpdateBoundary.beat
+              ? context.strings.updatesNextBeat
+              : context.strings.updatesNextLoop)
+        : (!hasMusic ? context.strings.drawSomethingToHearIt : '');
+
+    final viewport = MediaQuery.sizeOf(context);
+    final stackedPod =
+        largeText || viewport.width < 380 || viewport.width >= 900;
+    const forest = DoodimoColors.ink,
+        cream = DoodimoColors.paper,
+        lime = DoodimoColors.lime;
+    final showModeGlyph = !largeText && MediaQuery.sizeOf(context).width >= 380;
+    final toolbar = Row(
+      children: [
+        Expanded(
+          child: Material(
+            color: colors.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(24),
+            child: Padding(
+              padding: const EdgeInsets.all(4),
+              child: Row(
                 children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: constraints.maxHeight * .32,
-                    ),
-                    child: SingleChildScrollView(
-                      key: const ValueKey('editor-tools-scroll'),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (doc.hasCompatibilityFallbacks)
-                            Text(context.strings.compatibilityFallback),
-                          if (widget.recovered)
-                            Text(
-                              context
-                                  .strings
-                                  .recoveredThePreviousCompleteRevisionTheDamagedFileIsPreser,
-                            ),
-                          if (repo.hasError)
-                            Text(
-                              context
-                                  .strings
-                                  .storageUnavailableRetryFromDraftsBeforeLeaving,
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          if (state.error != null)
-                            TextButton(
-                              onPressed: () => controller.save(),
-                              child: Text(context.strings.drawingSaveRetry),
-                            ),
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              RepeatingIconButton(
-                                tooltip: context.strings.slower,
-                                onStep: doc.tempo > 60
-                                    ? () => _changeTempo(-1)
-                                    : null,
-                                icon: Icons.remove,
-                              ),
-                              TextButton(
-                                key: _tempoTarget,
-                                onPressed: _tempoPanel,
-                                child: Text(
-                                  context.strings.tempoValue(
-                                    context.formatNumber(doc.tempo),
-                                  ),
-                                ),
-                              ),
-                              RepeatingIconButton(
-                                tooltip: context.strings.faster,
-                                onStep: doc.tempo < 200
-                                    ? () => _changeTempo(1)
-                                    : null,
-                                icon: Icons.add,
-                              ),
-                              IconButton(
-                                tooltip: context.strings.drawingStyle,
-                                onPressed: _drawingStyle,
-                                icon: Icon(
-                                  doc.style == DrawingStyle.smooth
-                                      ? Icons.gesture
-                                      : Icons.grid_on,
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: context.strings.paperColor,
-                                onPressed: _background,
-                                icon: const Icon(Icons.palette_outlined),
-                              ),
-                              Tooltip(
-                                message: context.strings.expressiveModeHelp,
-                                child: FilterChip(
-                                  label: Text(context.strings.expressiveMode),
-                                  selected:
-                                      doc.expressionMode ==
-                                      ExpressionMode.expressive,
-                                  onSelected: (enabled) {
-                                    _canvas.currentState?.finish();
-                                    _edit(
-                                      ref
-                                          .read(editorProvider)
-                                          .document
-                                          .copyWith(
-                                            expressionMode: enabled
-                                                ? ExpressionMode.expressive
-                                                : ExpressionMode.geometry,
-                                          ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: context.strings.clearDrawing,
-                                onPressed: doc.strokes.isEmpty ? null : _clear,
-                                icon: const Icon(Icons.delete_sweep_outlined),
-                              ),
-                            ],
-                          ),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                ChoiceChip(
-                                  label: Text(context.strings.draw),
-                                  selected: !_eraser,
-                                  onSelected: (_) {
-                                    _canvas.currentState?.finish();
-                                    setState(() => _eraser = false);
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                ChoiceChip(
-                                  label: Text(context.strings.erase),
-                                  selected: _eraser,
-                                  onSelected: (_) {
-                                    _canvas.currentState?.finish();
-                                    setState(() => _eraser = true);
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                IconButton(
-                                  tooltip: context.strings.describeScore,
-                                  onPressed: _describing ? null : _describe,
-                                  icon: const Icon(Icons.list_alt),
-                                ),
-                                Semantics(
-                                  label: context.strings.rootKey,
-                                  child: DropdownButton<RootKey>(
-                                    value: doc.root,
-                                    items: [
-                                      for (final root in RootKey.values)
-                                        DropdownMenuItem(
-                                          value: root,
-                                          child: Text(root.label),
-                                        ),
-                                    ],
-                                    onChanged: (root) {
-                                      if (root != null) {
-                                        _canvas.currentState?.finish();
-                                        _edit(
-                                          ref
-                                              .read(editorProvider)
-                                              .document
-                                              .copyWith(root: root),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                                IconButton(
-                                  tooltip: context.strings.accompaniment,
-                                  icon: const Icon(Icons.queue_music),
-                                  onPressed: () async {
-                                    _canvas.currentState?.finish();
-                                    final mix = await showAccompanimentPanel(
-                                      context,
-                                      ref.read(editorProvider).document.mix,
-                                    );
-                                    if (mix != null && mounted) {
-                                      _edit(
-                                        ref
-                                            .read(editorProvider)
-                                            .document
-                                            .copyWith(mix: mix),
-                                      );
-                                    }
-                                  },
-                                ),
-                                DropdownButton<MusicalScale>(
-                                  key: _scaleTarget,
-                                  value: doc.scale,
-                                  items: [
-                                    for (final scale in MusicalScale.values)
-                                      DropdownMenuItem(
-                                        value: scale,
-                                        child: Text(
-                                          doc.root == RootKey.c &&
-                                                  scale == MusicalScale.major
-                                              ? context.strings.cMajorPentatonic
-                                              : doc.root == RootKey.c &&
-                                                    scale == MusicalScale.minor
-                                              ? context.strings.cMinorPentatonic
-                                              : '${doc.root.label} ${scaleName(context, scale)}',
-                                        ),
-                                      ),
-                                  ],
-                                  onChanged: (scale) {
-                                    if (scale != null) {
-                                      _edit(
-                                        ref
-                                            .read(editorProvider)
-                                            .document
-                                            .copyWith(scale: scale),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
                   Expanded(
-                    child: Center(
-                      child: AspectRatio(
-                        aspectRatio: .8,
-                        child: DrawingCanvas(
-                          key: _canvas,
-                          document: doc,
-                          instrument: _instrument,
-                          eraser: _eraser,
-                          cursor: _cursor,
-                          onCommit: (strokes) => _edit(
-                            ref
-                                .read(editorProvider)
-                                .document
-                                .copyWith(strokes: strokes),
-                          ),
-                          onSimplified: (before, after) =>
-                              _message(context.strings.geometrySimplified),
-                          onLimit: () =>
-                              _message(context.strings.drawingPointLimit),
-                          onEraseRejected: () =>
-                              _message(context.strings.erasureLimitRejected),
-                        ),
-                      ),
+                    child: _EditorModeButton(
+                      label: context.strings.draw,
+                      glyph: DoodimoGlyph.draw,
+                      showGlyph: showModeGlyph,
+                      selected: !_eraser,
+                      onPressed: () {
+                        _canvas.currentState?.finish();
+                        setState(() => _eraser = false);
+                      },
                     ),
                   ),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: constraints.maxHeight * .32,
-                    ),
-                    child: SingleChildScrollView(
-                      key: const ValueKey('editor-transport-scroll'),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              IconButton(
-                                tooltip: context.strings.undo,
-                                onPressed: controller.canUndo
-                                    ? () {
-                                        _historyEdit(redo: false);
-                                      }
-                                    : null,
-                                icon: const Icon(Icons.undo),
-                              ),
-                              IconButton(
-                                tooltip: context.strings.redo,
-                                onPressed: controller.canRedo
-                                    ? () {
-                                        _historyEdit(redo: true);
-                                      }
-                                    : null,
-                                icon: const Icon(Icons.redo),
-                              ),
-                              IconButton.filled(
-                                key: _playTarget,
-                                tooltip: _playing
-                                    ? context.strings.pause
-                                    : context.strings.play,
-                                onPressed:
-                                    (!_playing &&
-                                            doc.strokes.isEmpty &&
-                                            !doc.mix.isActive) ||
-                                        _preparing
-                                    ? null
-                                    : () => _play(),
-                                icon: _preparing
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : Icon(
-                                        _playing
-                                            ? Icons.pause
-                                            : Icons.play_arrow,
-                                      ),
-                                iconSize: 36,
-                              ),
-                              IconButton(
-                                tooltip: context.strings.replay,
-                                onPressed:
-                                    doc.strokes.isEmpty && !doc.mix.isActive
-                                    ? null
-                                    : () => _play(replay: true),
-                                icon: const Icon(Icons.replay),
-                              ),
-                            ],
-                          ),
-                          if (_prepared && _wantedRevision != _heardRevision)
-                            Text(
-                              _pendingBoundary == UpdateBoundary.beat
-                                  ? context.strings.updatesNextBeat
-                                  : context.strings.updatesNextLoop,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          Text(
-                            doc.strokes.isEmpty && !doc.mix.isActive
-                                ? context.strings.drawSomethingToHearIt
-                                : state.saving
-                                ? context.strings.saving
-                                : state.dirty
-                                ? context.strings.changesPending
-                                : context.strings.savedOnThisDevice,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 4),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                for (final instrument in Instrument.values)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                    ),
-                                    child: ChoiceChip(
-                                      key: instrument == Instrument.keys
-                                          ? _voiceTarget
-                                          : null,
-                                      avatar: Icon(
-                                        instrumentIcons[instrument.index],
-                                        color:
-                                            instrumentColors[instrument.index],
-                                      ),
-                                      label: Text(
-                                        instrumentName(context, instrument),
-                                      ),
-                                      selected: _instrument == instrument,
-                                      onSelected: (_) {
-                                        _canvas.currentState?.finish();
-                                        _selectionFeedback();
-                                        setState(() {
-                                          _instrument = instrument;
-                                          _eraser = false;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: _EditorModeButton(
+                      label: context.strings.erase,
+                      glyph: DoodimoGlyph.erase,
+                      showGlyph: showModeGlyph,
+                      selected: _eraser,
+                      onPressed: () {
+                        _canvas.currentState?.finish();
+                        setState(() => _eraser = true);
+                      },
                     ),
                   ),
                 ],
@@ -1114,6 +810,492 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
             ),
           ),
         ),
+        if (!largeText) ...[
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: context.strings.undo,
+            onPressed: controller.canUndo
+                ? () => _historyEdit(redo: false)
+                : null,
+            icon: const DoodimoIcon(DoodimoGlyph.undo),
+          ),
+          IconButton(
+            tooltip: context.strings.redo,
+            onPressed: controller.canRedo
+                ? () => _historyEdit(redo: true)
+                : null,
+            icon: const DoodimoIcon(DoodimoGlyph.redo),
+          ),
+        ],
+      ],
+    );
+    final voice = StudioControl(
+      key: _voiceTarget,
+      interactionKey: const ValueKey('current-voice'),
+      label:
+          '${context.strings.chooseAVoice}: ${instrumentName(context, _instrument)}',
+      onPressed: _chooseVoice,
+      fill: forest,
+      foreground: cream,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      radius: 20,
+      child: Row(
+        children: [
+          if (largeText)
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: instrumentColors[_instrument.index],
+                shape: BoxShape.circle,
+              ),
+            )
+          else
+            Container(
+              width: 32,
+              height: 32,
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: cream,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: InstrumentGlyph(
+                _instrument,
+                color: instrumentColors[_instrument.index],
+                size: 20,
+              ),
+            ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              instrumentName(context, _instrument),
+              style: type.bodyMedium?.copyWith(
+                color: cream,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          if (stackedPod) ...[
+            const SizedBox(width: 8),
+            const DoodimoIcon(DoodimoGlyph.chevronDown, color: cream, size: 18),
+          ],
+        ],
+      ),
+    );
+    final summary = Material(
+      color: colors.secondaryContainer,
+      borderRadius: BorderRadius.circular(18),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          children: [
+            if (!largeText)
+              RepeatingIconButton(
+                tooltip: context.strings.slower,
+                onStep: doc.tempo > 60 ? () => _changeTempo(-1) : null,
+                icon: Icons.remove_rounded,
+              ),
+            Expanded(
+              child: StudioControl(
+                key: const ValueKey('music-settings'),
+                label:
+                    '${context.strings.musicSettings}: ${context.strings.tempoValue(context.formatNumber(doc.tempo))}, ${doc.root.label} ${scaleName(context, doc.scale)}',
+                onPressed: _musicSettings,
+                fill: Colors.transparent,
+                foreground: colors.onSecondaryContainer,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                radius: 16,
+                child: Row(
+                  children: [
+                    if (largeText)
+                      Expanded(
+                        key: _scaleTarget,
+                        child: Text(
+                          '${context.strings.tempoValue(context.formatNumber(doc.tempo))} · ${doc.root.label} ${scaleName(context, doc.scale)}',
+                          key: _tempoTarget,
+                          style: type.labelMedium?.copyWith(
+                            color: colors.onSecondaryContainer,
+                          ),
+                        ),
+                      )
+                    else ...[
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              context.strings.tempoValue(
+                                context.formatNumber(doc.tempo),
+                              ),
+                              key: _tempoTarget,
+                              style: type.labelLarge?.copyWith(
+                                color: colors.onSecondaryContainer,
+                              ),
+                            ),
+                            Text(
+                              '${doc.root.label} ${scaleName(context, doc.scale)}',
+                              key: _scaleTarget,
+                              style: type.labelSmall?.copyWith(
+                                color: colors.onSecondaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      DoodimoIcon(
+                        DoodimoGlyph.chevronDown,
+                        color: colors.onSecondaryContainer,
+                        size: 18,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            if (!largeText)
+              RepeatingIconButton(
+                tooltip: context.strings.faster,
+                onStep: doc.tempo < 200 ? () => _changeTempo(1) : null,
+                icon: Icons.add_rounded,
+              ),
+          ],
+        ),
+      ),
+    );
+    final play = DecoratedBox(
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x33000000),
+            offset: Offset(0, 4),
+            blurRadius: 5,
+          ),
+        ],
+      ),
+      child: SizedBox.square(
+        dimension: 64,
+        child: IconButton.filled(
+          key: _playTarget,
+          style: IconButton.styleFrom(
+            backgroundColor: lime,
+            foregroundColor: forest,
+            disabledBackgroundColor: const Color(0xff52634c),
+            disabledForegroundColor: cream.withValues(alpha: .6),
+          ),
+          tooltip: _playing ? context.strings.pause : context.strings.play,
+          onPressed: (!_playing && !hasMusic) || _preparing
+              ? null
+              : () => _play(),
+          icon: SizedBox.square(
+            dimension: 30,
+            child: _preparing
+                ? const Padding(
+                    padding: EdgeInsets.all(3),
+                    child: CircularProgressIndicator(
+                      color: forest,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : AnimatedSwitcher(
+                    duration: CreativeMotion.duration(
+                      context,
+                      CreativeMotion.selection,
+                    ),
+                    child: DoodimoIcon(
+                      _playing ? DoodimoGlyph.pause : DoodimoGlyph.play,
+                      key: ValueKey(_playing),
+                      size: 30,
+                      color: (!_playing && !hasMusic)
+                          ? cream.withValues(alpha: .6)
+                          : forest,
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+    final replay = IconButton(
+      tooltip: context.strings.replay,
+      style: IconButton.styleFrom(
+        foregroundColor: cream,
+        disabledForegroundColor: cream.withValues(alpha: .3),
+      ),
+      onPressed: hasMusic ? () => _play(replay: true) : null,
+      icon: const DoodimoIcon(DoodimoGlyph.replay),
+    );
+    final tools = IconButton(
+      key: const ValueKey('editor-tools'),
+      tooltip: context.strings.editorTools,
+      style: IconButton.styleFrom(foregroundColor: cream),
+      onPressed: _tools,
+      icon: const DoodimoIcon(DoodimoGlyph.more),
+    );
+    final transport = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: .14),
+            offset: const Offset(0, 5),
+            blurRadius: 14,
+          ),
+        ],
+      ),
+      child: Material(
+        color: forest,
+        borderRadius: BorderRadius.circular(28),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: stackedPod
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    voice,
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        if (largeText) ...[
+                          IconButton(
+                            tooltip: context.strings.undo,
+                            style: IconButton.styleFrom(foregroundColor: cream),
+                            onPressed: controller.canUndo
+                                ? () => _historyEdit(redo: false)
+                                : null,
+                            icon: const DoodimoIcon(DoodimoGlyph.undo),
+                          ),
+                          IconButton(
+                            tooltip: context.strings.redo,
+                            style: IconButton.styleFrom(foregroundColor: cream),
+                            onPressed: controller.canRedo
+                                ? () => _historyEdit(redo: true)
+                                : null,
+                            icon: const DoodimoIcon(DoodimoGlyph.redo),
+                          ),
+                        ] else
+                          const SizedBox(width: 96),
+                        play,
+                        replay,
+                        tools,
+                      ],
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: voice),
+                    const SizedBox(width: 8),
+                    play,
+                    replay,
+                    tools,
+                  ],
+                ),
+        ),
+      ),
+    );
+    final alerts = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (doc.hasCompatibilityFallbacks)
+          Text(context.strings.compatibilityFallback),
+        if (widget.recovered)
+          Text(
+            context
+                .strings
+                .recoveredThePreviousCompleteRevisionTheDamagedFileIsPreser,
+          ),
+        if (repo.hasError)
+          Text(
+            context.strings.storageUnavailableRetryFromDraftsBeforeLeaving,
+            style: TextStyle(color: colors.error),
+          ),
+        if (state.error != null)
+          TextButton(
+            onPressed: () => controller.save(),
+            child: Text(context.strings.drawingSaveRetry),
+          ),
+      ],
+    );
+    final canvas = Center(
+      child: AspectRatio(
+        aspectRatio: .8,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadow.withValues(alpha: .07),
+                blurRadius: 20,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: DrawingCanvas(
+            key: _canvas,
+            document: doc,
+            instrument: _instrument,
+            eraser: _eraser,
+            cursor: _cursor,
+            onCommit: (strokes) => _edit(
+              ref.read(editorProvider).document.copyWith(strokes: strokes),
+            ),
+            onSimplified: (before, after) =>
+                _message(context.strings.geometrySimplified),
+            onLimit: () => _message(context.strings.drawingPointLimit),
+            onEraseRejected: () =>
+                _message(context.strings.erasureLimitRejected),
+          ),
+        ),
+      ),
+    );
+    return PopScope(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) unawaited(_leave());
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          toolbarHeight: textScale.scale(14) > 21 ? 80 : 64,
+          leading: IconButton(
+            tooltip: context.strings.backToGallery,
+            onPressed: _leaving ? null : _leave,
+            icon: const DoodimoIcon(DoodimoGlyph.back),
+          ),
+          titleSpacing: 0,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Semantics(
+                button: true,
+                label: context.strings.renameDrawingLabel(doc.title),
+                onTap: _rename,
+                child: ExcludeSemantics(
+                  child: InkWell(
+                    onTap: _rename,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          doc.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: type.titleMedium,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Text(
+                pending ? pendingStatus : saveStatus,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: type.labelSmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              tooltip: context.strings.saveDrawing,
+              onPressed: state.saving ? null : _explicitSave,
+              icon: const DoodimoIcon(DoodimoGlyph.save),
+            ),
+            IconButton(
+              tooltip: context.strings.exportLoop,
+              onPressed: () async {
+                _canvas.currentState?.finish();
+                await _pause();
+                if (context.mounted) {
+                  await showExportSheet(
+                    context,
+                    ref.read(editorProvider).document,
+                  );
+                  if (mounted) await _offerRating();
+                }
+              },
+              icon: const DoodimoIcon(DoodimoGlyph.export),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          minimum: EdgeInsets.only(
+            left: MediaQuery.viewPaddingOf(context).left,
+            right: MediaQuery.viewPaddingOf(context).right,
+            bottom: MediaQuery.viewPaddingOf(context).bottom,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: ResponsiveEditorLayout(
+              toolbar: toolbar,
+              summary: summary,
+              transport: transport,
+              canvas: canvas,
+              alerts: alerts,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditorModeButton extends StatelessWidget {
+  const _EditorModeButton({
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+    required this.glyph,
+    required this.showGlyph,
+  });
+  final String label;
+  final bool selected, showGlyph;
+  final VoidCallback onPressed;
+  final DoodimoGlyph glyph;
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return StudioControl(
+      label: label,
+      selected: selected,
+      onPressed: onPressed,
+      fill: selected ? colors.primary : Colors.transparent,
+      foreground: selected ? colors.onPrimary : colors.onSurface,
+      radius: 20,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (showGlyph) ...[
+            DoodimoIcon(
+              glyph,
+              size: 18,
+              color: selected ? colors.onPrimary : colors.onSurface,
+            ),
+            const SizedBox(width: 6),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: selected ? colors.onPrimary : colors.onSurface,
+                fontWeight: FontWeight.w600,
+                decoration: selected
+                    ? TextDecoration.underline
+                    : TextDecoration.none,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

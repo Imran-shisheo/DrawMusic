@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="export_open_chooser_title">Open exported file</string>
+    <string name="app_name" translatable="false">Doodimo</string>
 </resources>

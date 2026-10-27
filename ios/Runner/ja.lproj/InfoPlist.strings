@@ -1,1 +1,4 @@
 "NSCameraUsageDescription" = "背景を撮影すると選んだときだけカメラを使います。写真はこの端末内に保存されます。";
+
+"CFBundleDisplayName" = "Doodimo";
+"CFBundleName" = "Doodimo";

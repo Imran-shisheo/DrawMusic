@@ -1,4 +1,7 @@
+import 'support/editor_controls.dart';
+
 import 'package:flutter/material.dart';
+import 'package:scribblesong/design_system/creative_dock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/app/app.dart';
@@ -42,7 +45,7 @@ void main() {
       Future<void> tab(String name) async {
         await tester.tap(
           find.descendant(
-            of: find.byType(NavigationBar),
+            of: find.byType(CreativeDock),
             matching: find.text(name),
           ),
         );
@@ -96,7 +99,7 @@ void main() {
         const Offset(40, 30),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Clear drawing'));
+      await openEditorTool(tester, 'clear');
       await tester.pumpAndSettle();
       expect(find.byType(AlertDialog), findsOneWidget);
       await tester.binding.handlePopRoute();
@@ -109,7 +112,7 @@ void main() {
         find.textContaining('Completed exports will appear here.'),
         findsOneWidget,
       );
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(CreativeDock), findsOneWidget);
     },
   );
 }

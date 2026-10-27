@@ -1,3 +1,5 @@
+import 'support/editor_controls.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,7 +39,7 @@ void main() {
           tester.widget<DrawingCanvas>(find.byType(DrawingCanvas)).document;
       final first = await tester.startGesture(at(.2, .5), pointer: 7);
       await first.moveTo(at(.3, .4));
-      await tester.tap(find.text('Wood drops'));
+      await chooseEditorVoice(tester, Instrument.mallet);
       await tester.pumpAndSettle();
       await first.up();
       await tester.pumpAndSettle();

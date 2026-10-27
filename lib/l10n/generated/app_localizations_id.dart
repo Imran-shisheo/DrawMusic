@@ -26,7 +26,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings => 'Pengaturan';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => 'Sedikit garis.\nSedikit musik.';
@@ -438,7 +438,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments =>
-      'Setiap instrumen asli memiliki nama. Goresan baru memakai suara pilihan; goresan lama tetap memakai suaranya.';
+      'Tersedia tiga belas suara asli. Pilih untuk goresan baru; goresan lama tetap memakai suaranya.';
 
   @override
   String get setThePace => 'Atur irama';
@@ -452,7 +452,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo =>
-      'Pilih nada dasar dan tangga nada. Partitur yang sama dipakai untuk pratinjau dan ekspor.';
+      'Pilih dari dua belas nada dasar dan sebelas tangga nada. Partitur yang sama dipakai untuk pratinjau dan ekspor.';
 
   @override
   String get warmPaper => 'Kertas hangat';
@@ -613,7 +613,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get creationGuide => 'Panduan kreasi';
 
   @override
-  String get welcomeToScribbleSong => 'Selamat datang di ScribbleSong';
+  String get welcomeToScribbleSong => 'Selamat datang di Doodimo';
 
   @override
   String get howToCreateALoop => 'Cara membuat putaran';
@@ -1132,4 +1132,133 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get erasureLimitRejected =>
       'Penghapusan tidak diterapkan karena akan melampaui batas gambar. Urungkan beberapa goresan, atau simpan gambar ini dan mulai gambar baru.';
+
+  @override
+  String get exportIntentImage => 'Gambar';
+
+  @override
+  String get exportIntentSound => 'Suara';
+
+  @override
+  String get exportIntentVideo => 'Video';
+
+  @override
+  String get exportIntentNotes => 'Nada';
+
+  @override
+  String get exportIntentImageDescription =>
+      'Karya dengan kertas atau latar transparan.';
+
+  @override
+  String get exportIntentSoundDescription =>
+      'Salinan untuk didengar dengan suara asli Anda.';
+
+  @override
+  String get exportIntentVideoDescription =>
+      'Gambar dan musik Anda bergerak bersama.';
+
+  @override
+  String get exportIntentNotesDescription =>
+      'Nada yang dapat diedit untuk aplikasi musik lain.';
+
+  @override
+  String get exportChooseFormat => 'Pilih yang ingin disimpan';
+
+  @override
+  String get exportPreparing => 'Menyiapkan ekspor';
+
+  @override
+  String get exportFinalizing => 'Menambahkan ke pustaka';
+
+  @override
+  String get exportReadyTitle => 'Siap disimpan';
+
+  @override
+  String get exportTryAgain => 'Coba ekspor lagi';
+
+  @override
+  String get exportAnotherFormat => 'Pilih format lain';
+
+  @override
+  String get libraryEditable => 'Gambar dapat diedit';
+
+  @override
+  String get libraryDrawingsSubtitle =>
+      'Sketsa Anda, siap untuk nada berikutnya.';
+
+  @override
+  String get libraryExportsSubtitle =>
+      'Berkas selesai, disimpan di perangkat ini.';
+
+  @override
+  String get libraryNewDrawing => 'Mulai gambar';
+
+  @override
+  String get uiAppearance => 'Tampilan';
+
+  @override
+  String get uiSoundFeedback => 'Suara dan umpan balik';
+
+  @override
+  String get uiAccessibilityMotion => 'Aksesibilitas dan gerakan';
+
+  @override
+  String get uiHelpInfo => 'Bantuan dan informasi';
+
+  @override
+  String get uiComfortPreferences => 'Jadikan ruang ini milik Anda.';
+
+  @override
+  String get uiSoundDetails => 'Tentang pemutaran dan umpan balik';
+
+  @override
+  String get uiMotionDetails => 'Tentang preferensi gerakan';
+
+  @override
+  String get uiWelcomeSummary => 'Gambar garis. Beri suara. Tekan Putar.';
+
+  @override
+  String get uiOpenSourceLicenses => 'Lisensi sumber terbuka';
+
+  @override
+  String get backgroundColorTab => 'Warna';
+
+  @override
+  String get backgroundGradientTab => 'Gradien';
+
+  @override
+  String get cropWorkspace => 'Potong gambar';
+
+  @override
+  String get cropMoveHint =>
+      'Seret untuk memindahkan foto. Cubit untuk memperbesar atau gunakan kontrol untuk bingkai yang tepat.';
+
+  @override
+  String get backgroundPresets => 'Palet kertas';
+
+  @override
+  String get backgroundCustomColors => 'Warna khusus';
+
+  @override
+  String get editorTools => 'Alat menggambar';
+
+  @override
+  String get musicSettings => 'Pengaturan musik';
+
+  @override
+  String get voiceChooserHint =>
+      'Pilih suara untuk goresan berikutnya. Goresan lama tetap memakai suaranya.';
+
+  @override
+  String welcomeToBrand(String name) {
+    return 'Selamat datang di $name';
+  }
+
+  @override
+  String get backgroundPanelTitle => 'Kertas dan foto';
+
+  @override
+  String exportFpsChoice(String fps) {
+    return '$fps FPS';
+  }
 }

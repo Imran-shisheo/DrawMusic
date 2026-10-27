@@ -12,6 +12,11 @@ flutter pub get
 dart format --output=none --set-exit-if-changed lib test integration_test tool
 flutter analyze --fatal-infos
 flutter test
+flutter test --no-pub test/ui_visual_capture_test.dart \
+  --dart-define=UI_VISUAL_VERIFY=true \
+  --dart-define=UI_CAPTURE_PREVIEW_ONLY=true \
+  --dart-define=UI_CAPTURE_DIR=work/ui-golden-verification
+python3 scripts/check-brand-icons.py
 flutter build apk --debug
 # Exercise native contracts and enforce Android minimum-SDK API compatibility.
 (cd android && ./gradlew :app:testDebugUnitTest :app:lintDebug --console=plain)

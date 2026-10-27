@@ -1,3 +1,5 @@
+import 'support/editor_controls.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -94,12 +96,10 @@ void main() {
       final repository = MemoryRepository();
       await mountEditor(tester, repository: repository);
       final original = current(tester).strokes.single;
-      await tapReachable(tester, find.text('Amber pad'));
+      await chooseEditorVoice(tester, Instrument.warmSynth);
       expect(
-        tester
-            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Amber pad'))
-            .selected,
-        isTrue,
+        tester.widget<DrawingCanvas>(find.byType(DrawingCanvas)).instrument,
+        Instrument.warmSynth,
       );
       final rect = tester.getRect(find.byKey(const ValueKey('drawing-canvas')));
       final pen = await tester.startGesture(
@@ -114,14 +114,25 @@ void main() {
       expect(identical(current(tester).strokes.first, original), isTrue);
       expect(current(tester).strokes.last.instrument, Instrument.warmSynth);
       final geometry = current(tester).strokes;
+      await openEditorMusic(tester);
       await tapReachable(tester, find.byType(DropdownButton<RootKey>));
       await tester.tap(find.text('D').last);
       await tester.pumpAndSettle();
+      expect(
+        current(tester).root,
+        RootKey.c,
+        reason: 'music preview is transactional until Apply',
+      );
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
       expect(current(tester).root, RootKey.d);
       expect(current(tester).strokes, geometry);
+      await openEditorMusic(tester);
       await tapReachable(tester, find.byType(DropdownButton<MusicalScale>));
-      await tester.ensureVisible(find.text('D Harmonic minor').last);
-      await tester.tap(find.text('D Harmonic minor').last);
+      await tester.ensureVisible(find.text('Harmonic minor').last);
+      await tester.tap(find.text('Harmonic minor').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
       expect(current(tester).scale, MusicalScale.harmonicMinor);
       expect(current(tester).strokes, geometry);
@@ -161,7 +172,7 @@ void main() {
             .first,
       );
       expect(play().onPressed, isNull);
-      await tapReachable(tester, find.byTooltip('Accompaniment'));
+      await openEditorTool(tester, 'mix');
       await tapReachable(
         tester,
         find.widgetWithText(SwitchListTile, 'Earth bass'),
@@ -169,7 +180,7 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(current(tester).mix.isConfigured, isFalse);
-      await tapReachable(tester, find.byTooltip('Accompaniment'));
+      await openEditorTool(tester, 'mix');
       await tapReachable(
         tester,
         find.widgetWithText(SwitchListTile, 'Earth bass'),
@@ -185,9 +196,7 @@ void main() {
       await tester.tap(find.byTooltip('Play'));
       await waitFor(tester, () => audio.playing);
       expect(audio.plays, 1);
-      await tester.ensureVisible(find.byTooltip('Accompaniment'));
-      await tester.tap(find.byTooltip('Accompaniment'));
-      await tester.pumpAndSettle();
+      await openEditorTool(tester, 'mix');
       await tester.ensureVisible(find.byTooltip('Mute layer'));
       await tester.tap(find.byTooltip('Mute layer'));
       await tester.pump();
@@ -219,7 +228,10 @@ void main() {
       await mountEditor(tester, repository: repository);
       final geometry = current(tester).strokes;
       expect(current(tester).expressionMode, ExpressionMode.geometry);
+      await openEditorMusic(tester);
       await tapReachable(tester, find.text('Expressive dynamics'));
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
       expect(current(tester).expressionMode, ExpressionMode.expressive);
       expect(current(tester).soundVersion, 2);
       await tester.tap(find.byTooltip('Save drawing'));
@@ -253,10 +265,13 @@ void main() {
           find.byKey(const ValueKey('drawing-canvas')),
         );
         expect(canvas.height, greaterThan(48));
-        await tapReachable(tester, find.byTooltip(strings.accompaniment));
+        await openEditorTool(tester, 'mix');
         await tester.tap(find.text(strings.cancel));
         await tester.pumpAndSettle();
+        await openEditorMusic(tester);
         await tapReachable(tester, find.text(strings.expressiveMode));
+        await tester.tap(find.text(strings.apply));
+        await tester.pumpAndSettle();
         expect(current(tester).expressionMode, ExpressionMode.expressive);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
@@ -309,7 +324,7 @@ void main() {
           Theme.of(tester.element(find.text('Dark theme'))).brightness,
           Brightness.dark,
         );
-        expect(tester, meetsGuideline(textContrastGuideline));
+        await expectLater(tester, meetsGuideline(textContrastGuideline));
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       } finally {

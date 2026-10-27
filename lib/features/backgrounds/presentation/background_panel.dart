@@ -1,10 +1,15 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../../../l10n/strings.dart';
+import '../../../design_system/creative_panel.dart';
+import '../../../design_system/motion.dart';
+import 'photo_crop_workspace.dart';
 import '../domain/background.dart';
 import '../data/background_assets.dart';
 import 'background_painter.dart';
@@ -15,7 +20,7 @@ Future<BackgroundDefinition?> showBackgroundPanel(
   BuildContext context,
   BackgroundDefinition initial, {
   BackgroundAssets? assets,
-}) => showDialog<BackgroundDefinition>(
+}) => showCreativePanel<BackgroundDefinition>(
   context: context,
   builder: (context) => _BackgroundPanel(initial: initial, assets: assets),
 );
@@ -31,6 +36,9 @@ class _BackgroundPanel extends StatefulWidget {
 class _BackgroundPanelState extends State<_BackgroundPanel> {
   late BackgroundDefinition pending = widget.initial;
   ui.Image? image;
+  final previewTarget = GlobalKey();
+  double? previewWidthLimit;
+  Object? previewLayout;
   bool busy = false;
   late final firstColor = TextEditingController(
     text: _hex(pending.colors.first),
@@ -38,7 +46,6 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
   late final secondColor = TextEditingController(
     text: _hex(pending.colors[math.min(1, pending.colors.length - 1)]),
   );
-  int kindSelection = 0;
   bool get gradient =>
       pending.kind == BackgroundKind.linear ||
       pending.kind == BackgroundKind.radial;
@@ -93,6 +100,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
       final previous = image;
       setState(() => image = next);
       previous?.dispose();
+      if (next != null) _schedulePreview(token);
     } catch (_) {
       next?.dispose();
       if (mounted && token == generation) {
@@ -131,6 +139,51 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final layout = (
+      MediaQuery.sizeOf(context),
+      MediaQuery.textScalerOf(context).scale(1),
+      MediaQuery.viewInsetsOf(context).bottom,
+      Localizations.localeOf(context),
+    );
+    if (layout != previewLayout) {
+      previewWidthLimit = null;
+      previewLayout = layout;
+    }
+    if (image != null) _schedulePreview(generation);
+  }
+
+  void _schedulePreview(int token) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || token != generation) return;
+      final compact =
+          MediaQuery.sizeOf(context).height < 500 ||
+          MediaQuery.textScalerOf(context).scale(1) > 1.5;
+      final target = previewTarget.currentContext;
+      if (!compact || target == null) return;
+      final viewport = Scrollable.maybeOf(target)?.position.viewportDimension;
+      final frame = target.size;
+      if (viewport != null && frame != null) {
+        final limit = math.max(48.0, math.max(60.0, viewport - 12) * .8);
+        if (frame.width > limit + .1) {
+          setState(() => previewWidthLimit = limit);
+          _schedulePreview(token);
+          return;
+        }
+      }
+      unawaited(
+        Scrollable.ensureVisible(
+          target,
+          alignment: .2,
+          duration: CreativeMotion.duration(context, CreativeMotion.selection),
+          curve: CreativeMotion.curve,
+        ),
+      );
+    });
+  }
+
+  @override
   void dispose() {
     generation++;
     image?.dispose();
@@ -154,7 +207,6 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
     secondColor.value = TextEditingValue(
       text: _hex(next.colors[math.min(1, next.colors.length - 1)]),
     );
-    kindSelection++;
   }
 
   void _color(String text, bool second) {
@@ -169,368 +221,466 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final strings = context.strings;
-    final colorNames = [
-      (0xf7f5eb, strings.warmPaper),
-      (0xeef5f1, strings.mintPaper),
-      (0xf3eef9, strings.lilacPaper),
-      (0xffeeee, strings.rosePaper),
-    ];
-    String kindName(BackgroundKind kind) => switch (kind) {
-      BackgroundKind.solid => strings.solidBackground,
-      BackgroundKind.linear => strings.linearBackground,
-      BackgroundKind.radial => strings.radialBackground,
-      BackgroundKind.photo => strings.photoBackground,
-    };
-    final crop = pending.crop;
-    Widget cropSlider(
-      String label,
-      double value,
-      double minimum,
-      double maximum,
-      ValueChanged<double> change,
-    ) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label),
-        Slider(
-          value: value.clamp(minimum, maximum),
-          min: minimum,
-          max: maximum,
-          label: context.strings.percentValue(
-            context.formatNumber((value * 100).round()),
+  void _changeKind(BackgroundKind kind) {
+    if (busy) return;
+    setState(
+      () => _selectPaper(
+        BackgroundDefinition(
+          kind: kind,
+          colors: pending.colors.length > 1
+              ? pending.colors
+              : [pending.colors.first, 0xffd8e9f3],
+          opacity: pending.opacity,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _photoSource() async {
+    final camera = await showCreativePanel<bool>(
+      context: context,
+      builder: (sheetContext) => CreativePanel(
+        title: sheetContext.strings.photoBackground,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(sheetContext),
+            child: Text(sheetContext.strings.cancel),
           ),
-          onChanged: busy ? null : change,
-          semanticFormatterCallback: (n) =>
-              '$label ${context.strings.percentValue(context.formatNumber((n * 100).round()))}',
+        ],
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: () => Navigator.pop(sheetContext, false),
+                icon: const Icon(Icons.photo_library_outlined),
+                label: Text(sheetContext.strings.choosePhoto),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.pop(sheetContext, true),
+                icon: const Icon(Icons.camera_alt_outlined),
+                label: Text(sheetContext.strings.takePhoto),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (camera != null && mounted) await _pick(camera);
+  }
+
+  Widget _preview(double width) {
+    Widget picture = RepaintBoundary(
+      key: const ValueKey('paper-preview-boundary'),
+      child: CustomPaint(
+        key: const ValueKey('paper-preview'),
+        painter: _BackgroundPreview(pending, image),
+        child: const SizedBox.expand(),
+      ),
+    );
+    if (pending.kind == BackgroundKind.photo && image != null) {
+      picture = IgnorePointer(
+        ignoring: busy,
+        child: ExcludeFocus(
+          excluding: busy,
+          child: PhotoCropWorkspace(
+            key: const ValueKey('background-crop-workspace'),
+            paper: pending,
+            image: image!,
+            onChanged: (crop) =>
+                setState(() => pending = pending.copyWith(crop: crop)),
+            child: picture,
+          ),
+        ),
+      );
+    }
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Semantics(
+          label: context.strings.paperPreview,
+          child: SizedBox(
+            key: previewTarget,
+            width: width,
+            child: AspectRatio(
+              aspectRatio: 4 / 5,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: .08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                  border: Border.all(color: scheme.outlineVariant),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: picture,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          pending.kind == BackgroundKind.photo
+              ? MediaQuery.textScalerOf(context).scale(1) > 1.5
+                    ? context.strings.cropWorkspace
+                    : context.strings.cropMoveHint
+              : context.strings.paperPreview,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
     );
-    return AlertDialog(
-      title: Text(strings.paperColor),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DropdownButtonFormField<BackgroundKind>(
-              initialValue: pending.kind,
-              key: ValueKey(('background-kind', pending.kind, kindSelection)),
-              isExpanded: true,
-              decoration: InputDecoration(labelText: strings.backgroundType),
-              items: [
-                for (final kind in BackgroundKind.values)
-                  DropdownMenuItem(
-                    value: kind,
-                    child: Text(kindName(kind), maxLines: 2),
-                  ),
-              ],
-              onChanged: busy
-                  ? null
-                  : (kind) {
-                      if (kind == null) return;
-                      if (kind == BackgroundKind.photo) {
-                        setState(() => kindSelection++);
-                        _pick(false);
-                        return;
-                      }
-                      setState(
-                        () => _selectPaper(
-                          BackgroundDefinition(
-                            kind: kind,
-                            colors: pending.colors.length > 1
-                                ? pending.colors
-                                : [pending.colors.first, 0xffd8e9f3],
-                            opacity: pending.opacity,
-                          ),
-                        ),
-                      );
-                    },
-            ),
-            Text(
-              strings.paperOpacity(
-                context.formatNumber((pending.opacity * 100).round()),
-              ),
-            ),
-            Slider(
-              value: pending.opacity,
-              divisions: 100,
-              label: strings.percentValue(
-                context.formatNumber((pending.opacity * 100).round()),
-              ),
-              semanticFormatterCallback: (n) => strings.paperOpacitySemantics(
-                context.formatNumber((n * 100).round()),
-              ),
-              onChanged: busy
-                  ? null
-                  : (n) =>
-                        setState(() => pending = pending.copyWith(opacity: n)),
-            ),
-            const SizedBox(height: 12),
-            Semantics(
-              label: strings.paperPreview,
-              child: Align(
-                child: SizedBox(
-                  width: 240,
-                  child: AspectRatio(
-                    aspectRatio: 4 / 5,
-                    child: RepaintBoundary(
-                      key: const ValueKey('paper-preview-boundary'),
-                      child: CustomPaint(
-                        key: const ValueKey('paper-preview'),
-                        painter: _BackgroundPreview(pending, image),
-                        child: const SizedBox.expand(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (pending.kind != BackgroundKind.photo) ...[
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final (color, name) in colorNames)
-                    IconButton(
-                      tooltip: name,
-                      isSelected: pending.colors.first & 0xffffff == color,
-                      style: IconButton.styleFrom(
-                        backgroundColor: Color(0xff000000 | color),
-                      ),
-                      onPressed: busy
+  }
+
+  Widget _presets() {
+    final strings = context.strings;
+    final palettes = gradient
+        ? [
+            ([0xfff5d8b0, 0xffa4c9ce], strings.gradientDawn),
+            ([0xffcbb7ed, 0xfff4d7cb], strings.gradientTwilight),
+            ([0xffa7d8bb, 0xffefe3ae], strings.gradientOrchard),
+          ]
+        : [
+            ([0xfff7f5eb], strings.warmPaper),
+            ([0xffeef5f1], strings.mintPaper),
+            ([0xfff3eef9], strings.lilacPaper),
+            ([0xffffeeee], strings.rosePaper),
+          ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          strings.backgroundPresets,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 10),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns =
+                constraints.maxWidth > 440 &&
+                    MediaQuery.textScalerOf(context).scale(1) < 1.5
+                ? 4
+                : 2;
+            final width = (constraints.maxWidth - 10 * (columns - 1)) / columns;
+            return Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                for (final (colors, name) in palettes)
+                  SizedBox(
+                    width: width,
+                    child: _PaperPaletteTile(
+                      name: name,
+                      colors: colors,
+                      selected: gradient
+                          ? listEquals(pending.colors, colors)
+                          : pending.colors.first == colors.first,
+                      onTap: busy
                           ? null
-                          : () => setState(() {
-                              _selectPaper(
+                          : () => setState(
+                              () => _selectPaper(
                                 pending.copyWith(
-                                  colors: [
-                                    0xff000000 | color,
-                                    ...pending.colors.skip(1),
-                                  ],
-                                ),
-                              );
-                            }),
-                      icon: Icon(
-                        pending.colors.first & 0xffffff == color
-                            ? Icons.check
-                            : Icons.circle_outlined,
-                      ),
-                    ),
-                ],
-              ),
-              TextFormField(
-                key: const ValueKey('background-first-color'),
-                enabled: !busy,
-                controller: firstColor,
-                maxLength: 6,
-                decoration: InputDecoration(
-                  labelText: strings.customColor,
-                  errorText: validColor ? null : strings.customColor,
-                ),
-                onChanged: (text) => _color(text, false),
-              ),
-              if (pending.kind == BackgroundKind.linear ||
-                  pending.kind == BackgroundKind.radial)
-                TextFormField(
-                  key: const ValueKey('background-second-color'),
-                  enabled: !busy,
-                  controller: secondColor,
-                  maxLength: 6,
-                  decoration: InputDecoration(
-                    labelText: strings.secondColor,
-                    errorText: validSecond ? null : strings.secondColor,
-                  ),
-                  onChanged: (text) => _color(text, true),
-                ),
-              if (pending.kind == BackgroundKind.linear ||
-                  pending.kind == BackgroundKind.radial)
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    for (final (colors, name) in [
-                      ([0xfff5d8b0, 0xffa4c9ce], strings.gradientDawn),
-                      ([0xffcbb7ed, 0xfff4d7cb], strings.gradientTwilight),
-                      ([0xffa7d8bb, 0xffefe3ae], strings.gradientOrchard),
-                    ])
-                      IconButton(
-                        tooltip: name,
-                        isSelected:
-                            pending.colors.length == colors.length &&
-                            colors.asMap().entries.every(
-                              (entry) =>
-                                  pending.colors[entry.key] == entry.value,
-                            ),
-                        onPressed: busy
-                            ? null
-                            : () => setState(
-                                () => _selectPaper(
-                                  pending.copyWith(colors: colors),
+                                  colors: gradient
+                                      ? colors
+                                      : [
+                                          colors.first,
+                                          ...pending.colors.skip(1),
+                                        ],
                                 ),
                               ),
-                        icon: Icon(
-                          pending.colors.length == colors.length &&
-                                  colors.asMap().entries.every(
-                                    (entry) =>
-                                        pending.colors[entry.key] ==
-                                        entry.value,
-                                  )
-                              ? Icons.check
-                              : Icons.gradient,
-                        ),
-                      ),
-                  ],
-                ),
-            ],
-            if (pending.kind == BackgroundKind.photo) ...[
-              if (image == null) Text(strings.imageUnavailable),
-              Wrap(
-                children: [
-                  IconButton(
-                    tooltip: strings.rotatePhoto,
-                    onPressed: busy
-                        ? null
-                        : () => setState(
-                            () => pending = pending.copyWith(
-                              quarterTurns: (pending.quarterTurns + 1) % 4,
                             ),
-                          ),
-                    icon: const Icon(Icons.rotate_right),
-                  ),
-                  IconButton(
-                    tooltip: strings.mirrorPhoto,
-                    isSelected: pending.mirror,
-                    onPressed: busy
-                        ? null
-                        : () => setState(
-                            () => pending = pending.copyWith(
-                              mirror: !pending.mirror,
-                            ),
-                          ),
-                    icon: const Icon(Icons.flip),
-                  ),
-                  TextButton(
-                    onPressed: busy
-                        ? null
-                        : () => setState(
-                            () => pending = pending.copyWith(
-                              crop: const CropWindow(),
-                              quarterTurns: 0,
-                              mirror: false,
-                            ),
-                          ),
-                    child: Text(strings.resetCrop),
-                  ),
-                  TextButton(
-                    onPressed: busy
-                        ? null
-                        : () => setState(
-                            () => _selectPaper(
-                              BackgroundDefinition.solid(0xfff7f5eb),
-                            ),
-                          ),
-                    child: Text(strings.removePhoto),
-                  ),
-                ],
-              ),
-              cropSlider(
-                strings.cropLeft,
-                crop.left,
-                0,
-                .95,
-                (n) => setState(
-                  () => pending = pending.copyWith(
-                    crop: CropWindow(
-                      left: n,
-                      top: crop.top,
-                      width: math.min(crop.width, 1 - n),
-                      height: crop.height,
                     ),
                   ),
-                ),
-              ),
-              cropSlider(
-                strings.cropTop,
-                crop.top,
-                0,
-                .95,
-                (n) => setState(
-                  () => pending = pending.copyWith(
-                    crop: CropWindow(
-                      left: crop.left,
-                      top: n,
-                      width: crop.width,
-                      height: math.min(crop.height, 1 - n),
-                    ),
-                  ),
-                ),
-              ),
-              cropSlider(
-                strings.cropWidth,
-                crop.width,
-                .05,
-                1 - crop.left,
-                (n) => setState(
-                  () => pending = pending.copyWith(
-                    crop: CropWindow(
-                      left: crop.left,
-                      top: crop.top,
-                      width: n,
-                      height: crop.height,
-                    ),
-                  ),
-                ),
-              ),
-              cropSlider(
-                strings.cropHeight,
-                crop.height,
-                .05,
-                1 - crop.top,
-                (n) => setState(
-                  () => pending = pending.copyWith(
-                    crop: CropWindow(
-                      left: crop.left,
-                      top: crop.top,
-                      width: crop.width,
-                      height: n,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-            Wrap(
-              spacing: 8,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: busy ? null : () => _pick(false),
-                  icon: const Icon(Icons.photo_library_outlined),
-                  label: Text(
-                    pending.kind == BackgroundKind.photo
-                        ? strings.replacePhoto
-                        : strings.choosePhoto,
-                  ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: busy ? null : () => _pick(true),
-                  icon: const Icon(Icons.camera_alt_outlined),
-                  label: Text(strings.takePhoto),
-                ),
               ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _colorControls() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (gradient) ...[
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _BackgroundChoice(
+                key: const ValueKey('background-gradient-linear'),
+                label: context.strings.linearBackground,
+                icon: Icons.gradient_rounded,
+                selected: pending.kind == BackgroundKind.linear,
+                compact: true,
+                onTap: busy ? null : () => _changeKind(BackgroundKind.linear),
+              ),
             ),
-            if (busy) ...[
-              const LinearProgressIndicator(),
-              Text(strings.backgroundImportBusy),
-            ],
-            if (error != null)
-              Text(switch (error) {
-                'camera_unavailable' => strings.cameraUnavailable,
-                'permission_denied' => strings.photoPermissionDenied,
-                _ => strings.imageImportFailed,
-              }),
-            Text(strings.backgroundGradientTip),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _BackgroundChoice(
+                key: const ValueKey('background-gradient-radial'),
+                label: context.strings.radialBackground,
+                icon: Icons.blur_circular_rounded,
+                selected: pending.kind == BackgroundKind.radial,
+                compact: true,
+                onTap: busy ? null : () => _changeKind(BackgroundKind.radial),
+              ),
+            ),
           ],
         ),
+        const SizedBox(height: 20),
+      ],
+      _presets(),
+      const SizedBox(height: 24),
+      Text(
+        context.strings.backgroundCustomColors,
+        style: Theme.of(context).textTheme.titleSmall,
       ),
+      const SizedBox(height: 12),
+      TextFormField(
+        key: const ValueKey('background-first-color'),
+        enabled: !busy,
+        controller: firstColor,
+        maxLength: 6,
+        textCapitalization: TextCapitalization.characters,
+        textDirection: TextDirection.ltr,
+        autocorrect: false,
+        enableSuggestions: false,
+        decoration: InputDecoration(
+          labelText: context.strings.customColor,
+          prefixText: '# ',
+          counterText: '',
+          errorText: validColor ? null : context.strings.customColor,
+        ),
+        onChanged: (text) => _color(text, false),
+      ),
+      if (gradient) ...[
+        const SizedBox(height: 12),
+        TextFormField(
+          key: const ValueKey('background-second-color'),
+          enabled: !busy,
+          controller: secondColor,
+          maxLength: 6,
+          textCapitalization: TextCapitalization.characters,
+          textDirection: TextDirection.ltr,
+          autocorrect: false,
+          enableSuggestions: false,
+          decoration: InputDecoration(
+            labelText: context.strings.secondColor,
+            prefixText: '# ',
+            counterText: '',
+            errorText: validSecond ? null : context.strings.secondColor,
+          ),
+          onChanged: (text) => _color(text, true),
+        ),
+      ],
+    ],
+  );
+
+  Widget _cropSlider(
+    String label,
+    double value,
+    double minimum,
+    double maximum,
+    ValueChanged<double> change,
+  ) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: Theme.of(context).textTheme.labelLarge),
+      Slider(
+        value: value.clamp(minimum, maximum),
+        min: minimum,
+        max: maximum,
+        label: context.strings.percentValue(
+          context.formatNumber((value * 100).round()),
+        ),
+        onChanged: busy ? null : change,
+        semanticFormatterCallback: (n) =>
+            '$label ${context.strings.percentValue(context.formatNumber((n * 100).round()))}',
+      ),
+    ],
+  );
+
+  Widget _photoControls() {
+    final strings = context.strings, crop = pending.crop;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (image == null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(strings.imageUnavailable),
+          ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            IconButton.filledTonal(
+              tooltip: strings.rotatePhoto,
+              onPressed: busy
+                  ? null
+                  : () => setState(
+                      () => pending = pending.copyWith(
+                        quarterTurns: (pending.quarterTurns + 1) % 4,
+                      ),
+                    ),
+              icon: const Icon(Icons.rotate_right_rounded),
+            ),
+            IconButton.filledTonal(
+              tooltip: strings.mirrorPhoto,
+              isSelected: pending.mirror,
+              onPressed: busy
+                  ? null
+                  : () => setState(
+                      () => pending = pending.copyWith(mirror: !pending.mirror),
+                    ),
+              icon: const Icon(Icons.flip_rounded),
+            ),
+            TextButton.icon(
+              onPressed: busy
+                  ? null
+                  : () => setState(
+                      () => pending = pending.copyWith(
+                        crop: const CropWindow(),
+                        quarterTurns: 0,
+                        mirror: false,
+                      ),
+                    ),
+              icon: const Icon(Icons.restart_alt_rounded),
+              label: Text(strings.resetCrop),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _cropSlider(
+          strings.cropLeft,
+          crop.left,
+          0,
+          .95,
+          (n) => setState(
+            () => pending = pending.copyWith(
+              crop: CropWindow(
+                left: n,
+                top: crop.top,
+                width: math.min(crop.width, 1 - n),
+                height: crop.height,
+              ),
+            ),
+          ),
+        ),
+        _cropSlider(
+          strings.cropTop,
+          crop.top,
+          0,
+          .95,
+          (n) => setState(
+            () => pending = pending.copyWith(
+              crop: CropWindow(
+                left: crop.left,
+                top: n,
+                width: crop.width,
+                height: math.min(crop.height, 1 - n),
+              ),
+            ),
+          ),
+        ),
+        _cropSlider(
+          strings.cropWidth,
+          crop.width,
+          .05,
+          1 - crop.left,
+          (n) => setState(
+            () => pending = pending.copyWith(
+              crop: CropWindow(
+                left: crop.left,
+                top: crop.top,
+                width: n,
+                height: crop.height,
+              ),
+            ),
+          ),
+        ),
+        _cropSlider(
+          strings.cropHeight,
+          crop.height,
+          .05,
+          1 - crop.top,
+          (n) => setState(
+            () => pending = pending.copyWith(
+              crop: CropWindow(
+                left: crop.left,
+                top: crop.top,
+                width: crop.width,
+                height: n,
+              ),
+            ),
+          ),
+        ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton.icon(
+              onPressed: busy ? null : () => _pick(false),
+              icon: const Icon(Icons.photo_library_outlined),
+              label: Text(strings.replacePhoto),
+            ),
+            TextButton.icon(
+              onPressed: busy
+                  ? null
+                  : () => setState(
+                      () =>
+                          _selectPaper(BackgroundDefinition.solid(0xfff7f5eb)),
+                    ),
+              icon: const Icon(Icons.delete_outline_rounded),
+              label: Text(strings.removePhoto),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _opacity() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Text(
+        context.strings.paperOpacity(
+          context.formatNumber((pending.opacity * 100).round()),
+        ),
+        style: Theme.of(context).textTheme.labelLarge,
+      ),
+      Slider(
+        value: pending.opacity,
+        divisions: 100,
+        label: context.strings.percentValue(
+          context.formatNumber((pending.opacity * 100).round()),
+        ),
+        semanticFormatterCallback: (n) => context.strings.paperOpacitySemantics(
+          context.formatNumber((n * 100).round()),
+        ),
+        onChanged: busy
+            ? null
+            : (n) => setState(() => pending = pending.copyWith(opacity: n)),
+      ),
+    ],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+    return CreativePanel(
+      title: strings.backgroundPanelTitle,
       actions: [
         TextButton(
           onPressed: busy ? null : () => Navigator.pop(context),
@@ -546,6 +696,309 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
           child: Text(strings.apply),
         ),
       ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.5,
+              wide = constraints.maxWidth >= 520 && !largeText;
+          final preferredWidth = MediaQuery.sizeOf(context).height < 500
+              ? 160.0
+              : wide
+              ? 196.0
+              : 220.0;
+          final previewWidth = math.min(
+            preferredWidth,
+            previewWidthLimit ?? preferredWidth,
+          );
+          final controls = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (pending.kind == BackgroundKind.photo)
+                _photoControls()
+              else
+                _colorControls(),
+              const SizedBox(height: 20),
+              _opacity(),
+              if (busy) ...[
+                const LinearProgressIndicator(),
+                const SizedBox(height: 8),
+                Text(strings.backgroundImportBusy),
+              ],
+              if (error != null)
+                Text(
+                  switch (error) {
+                    'camera_unavailable' => strings.cameraUnavailable,
+                    'permission_denied' => strings.photoPermissionDenied,
+                    _ => strings.imageImportFailed,
+                  },
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              const SizedBox(height: 12),
+              Text(
+                strings.backgroundGradientTip,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 24),
+            ],
+          );
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LayoutBuilder(
+                builder: (context, choiceConstraints) {
+                  final columns = largeText && choiceConstraints.maxWidth < 400
+                          ? 2
+                          : 3,
+                      width =
+                          (choiceConstraints.maxWidth - 8 * (columns - 1)) /
+                          columns;
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      SizedBox(
+                        width: width,
+                        child: _BackgroundChoice(
+                          key: const ValueKey('background-mode-color'),
+                          label: strings.backgroundColorTab,
+                          icon: Icons.palette_outlined,
+                          selected: pending.kind == BackgroundKind.solid,
+                          onTap: busy
+                              ? null
+                              : () => _changeKind(BackgroundKind.solid),
+                        ),
+                      ),
+                      SizedBox(
+                        width: width,
+                        child: _BackgroundChoice(
+                          key: const ValueKey('background-mode-gradient'),
+                          label: strings.backgroundGradientTab,
+                          icon: Icons.gradient_rounded,
+                          selected: gradient,
+                          onTap: busy
+                              ? null
+                              : () => _changeKind(
+                                  gradient
+                                      ? pending.kind
+                                      : BackgroundKind.linear,
+                                ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: width,
+                        child: _BackgroundChoice(
+                          key: const ValueKey('background-mode-photo'),
+                          label: strings.photoBackground,
+                          icon: Icons.photo_outlined,
+                          selected: pending.kind == BackgroundKind.photo,
+                          onTap: busy ? null : _photoSource,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+              if (wide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: previewWidth,
+                      child: _preview(previewWidth),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(child: controls),
+                  ],
+                )
+              else ...[
+                Align(
+                  child: SizedBox(
+                    width: previewWidth,
+                    child: _preview(previewWidth),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                controls,
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _BackgroundChoice extends StatelessWidget {
+  const _BackgroundChoice({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    this.compact = false,
+  });
+  final String label;
+  final IconData icon;
+  final bool selected, compact;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      enabled: onTap != null,
+      selected: selected,
+      label: label,
+      onTap: onTap,
+      child: ExcludeSemantics(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(18),
+            child: AnimatedContainer(
+              duration: CreativeMotion.duration(
+                context,
+                CreativeMotion.selection,
+              ),
+              curve: CreativeMotion.curve,
+              constraints: BoxConstraints(minHeight: compact ? 76 : 96),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: selected
+                    ? scheme.primaryContainer
+                    : scheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: selected ? scheme.primary : scheme.outlineVariant,
+                  width: selected ? 2 : 1,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        icon,
+                        size: compact ? 20 : 24,
+                        color: selected
+                            ? scheme.onPrimaryContainer
+                            : scheme.onSurfaceVariant,
+                      ),
+                      const Spacer(),
+                      if (selected)
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 18,
+                          color: scheme.primary,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      label,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: selected
+                            ? scheme.onPrimaryContainer
+                            : scheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PaperPaletteTile extends StatelessWidget {
+  const _PaperPaletteTile({
+    required this.name,
+    required this.colors,
+    required this.selected,
+    required this.onTap,
+  });
+  final String name;
+  final List<int> colors;
+  final bool selected;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: name,
+      child: Semantics(
+        label: name,
+        button: true,
+        selected: selected,
+        onTap: onTap,
+        child: ExcludeSemantics(
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(18),
+            child: AnimatedContainer(
+              duration: CreativeMotion.duration(
+                context,
+                CreativeMotion.selection,
+              ),
+              curve: CreativeMotion.curve,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: scheme.surfaceContainerLow,
+                border: Border.all(
+                  color: selected ? scheme.primary : scheme.outlineVariant,
+                  width: selected ? 2 : 1,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    height: 48,
+                    alignment: AlignmentDirectional.topEnd,
+                    decoration: BoxDecoration(
+                      color: Color(colors.first),
+                      gradient: colors.length > 1
+                          ? LinearGradient(
+                              colors: [
+                                for (final color in colors) Color(color),
+                              ],
+                            )
+                          : null,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: selected
+                        ? Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: scheme.surface,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.check_circle_rounded,
+                                size: 22,
+                                color: scheme.primary,
+                              ),
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(name, style: Theme.of(context).textTheme.labelMedium),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -52,17 +52,24 @@ void main() {
   }
 
   Future<void> kind(WidgetTester tester, String label) async {
-    await tester.ensureVisible(
-      find.byType(DropdownButtonFormField<BackgroundKind>),
-    );
-    await tester.tap(find.byType(DropdownButtonFormField<BackgroundKind>));
+    final key = label == 'Solid color'
+        ? 'background-mode-color'
+        : label == 'Photo'
+        ? 'background-mode-photo'
+        : 'background-mode-gradient';
+    await tester.ensureVisible(find.byKey(ValueKey(key)));
+    await tester.tap(find.byKey(ValueKey(key)));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(label).last);
     if (label == 'Photo') {
-      // A busy native import must be allowed real filesystem/decoder work;
-      // settling an indeterminate spinner alone cannot complete that work.
+      await tester.tap(find.text('Choose photo').last);
       await tester.pump(const Duration(milliseconds: 300));
-    } else {
+    } else if (label == 'Radial gradient') {
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('background-gradient-radial')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('background-gradient-radial')),
+      );
       await tester.pumpAndSettle();
     }
   }
@@ -135,11 +142,17 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester
-            .widget<DropdownButtonFormField<BackgroundKind>>(
-              find.byType(DropdownButtonFormField<BackgroundKind>),
+            .widget<Semantics>(
+              find
+                  .descendant(
+                    of: find.byKey(const ValueKey('background-mode-gradient')),
+                    matching: find.byType(Semantics),
+                  )
+                  .first,
             )
-            .initialValue,
-        BackgroundKind.linear,
+            .properties
+            .selected,
+        isTrue,
       );
       expect(second, findsOneWidget);
       expect(tester.widget<TextField>(second).controller!.text, 'ZZZZZZ');

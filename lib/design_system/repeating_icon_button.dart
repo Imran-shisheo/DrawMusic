@@ -74,9 +74,11 @@ class _RepeatingIconButtonState extends State<RepeatingIconButton>
 
   @override
   Widget build(BuildContext context) => Semantics(
+    label: widget.tooltip,
     hint: widget.onStep == null ? null : context.strings.pressAndHoldToRepeat,
     child: Tooltip(
       message: widget.tooltip,
+      excludeFromSemantics: true,
       triggerMode: TooltipTriggerMode.manual,
       child: RawGestureDetector(
         gestures: <Type, GestureRecognizerFactory>{
@@ -96,7 +98,10 @@ class _RepeatingIconButtonState extends State<RepeatingIconButton>
         },
         child: Listener(
           onPointerCancel: (_) => _stop(),
-          child: IconButton(icon: Icon(widget.icon), onPressed: widget.onStep),
+          child: IconButton(
+            icon: Icon(widget.icon, semanticLabel: widget.tooltip),
+            onPressed: widget.onStep,
+          ),
         ),
       ),
     ),

@@ -25,7 +25,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings => '설정';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => '작은 선 하나.\n작은 음악 하나.';
@@ -432,7 +432,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments =>
-      '고유 악기마다 이름이 있습니다. 새 선은 선택한 음색을 쓰며 기존 선은 원래 음색을 유지합니다.';
+      '13개의 고유 음색을 사용할 수 있습니다. 새 선의 음색을 고르세요. 기존 선은 원래 음색을 유지합니다.';
 
   @override
   String get setThePace => '빠르기 정하기';
@@ -446,7 +446,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo =>
-      '조성과 음계를 선택하세요. 미리 듣기와 내보내기에 같은 악보를 사용합니다.';
+      '12개 으뜸음과 11개 음계에서 선택하세요. 미리 듣기와 내보내기는 같은 악보를 사용합니다.';
 
   @override
   String get warmPaper => '따뜻한 종이';
@@ -604,7 +604,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get creationGuide => '만들기 안내';
 
   @override
-  String get welcomeToScribbleSong => 'ScribbleSong에 오신 것을 환영합니다';
+  String get welcomeToScribbleSong => 'Doodimo에 오신 것을 환영합니다';
 
   @override
   String get howToCreateALoop => '반복 음악 만드는 법';
@@ -1088,4 +1088,125 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get erasureLimitRejected =>
       '그림의 한도를 초과하므로 지우기를 적용하지 않았습니다. 일부 획을 실행 취소하거나 이 그림을 저장하고 새 그림을 시작하세요.';
+
+  @override
+  String get exportIntentImage => '이미지';
+
+  @override
+  String get exportIntentSound => '소리';
+
+  @override
+  String get exportIntentVideo => '영상';
+
+  @override
+  String get exportIntentNotes => '음표';
+
+  @override
+  String get exportIntentImageDescription => '종이 또는 투명 배경의 그림.';
+
+  @override
+  String get exportIntentSoundDescription => '고유 음색을 듣기 위한 사본.';
+
+  @override
+  String get exportIntentVideoDescription => '그림과 음악이 함께 움직입니다.';
+
+  @override
+  String get exportIntentNotesDescription => '다른 음악 앱에서 편집할 수 있는 음표.';
+
+  @override
+  String get exportChooseFormat => '보관할 형식 선택';
+
+  @override
+  String get exportPreparing => '내보내기 준비 중';
+
+  @override
+  String get exportFinalizing => '라이브러리에 추가 중';
+
+  @override
+  String get exportReadyTitle => '보관할 준비 완료';
+
+  @override
+  String get exportTryAgain => '내보내기 다시 시도';
+
+  @override
+  String get exportAnotherFormat => '다른 형식 선택';
+
+  @override
+  String get libraryEditable => '편집 가능한 그림';
+
+  @override
+  String get libraryDrawingsSubtitle => '다음 음을 기다리는 내 스케치.';
+
+  @override
+  String get libraryExportsSubtitle => '완성된 파일은 이 기기에 보관됩니다.';
+
+  @override
+  String get libraryNewDrawing => '그림 시작';
+
+  @override
+  String get uiAppearance => '외관';
+
+  @override
+  String get uiSoundFeedback => '소리 및 피드백';
+
+  @override
+  String get uiAccessibilityMotion => '접근성 및 움직임';
+
+  @override
+  String get uiHelpInfo => '도움말 및 앱 정보';
+
+  @override
+  String get uiComfortPreferences => '나만의 공간으로 꾸며 보세요.';
+
+  @override
+  String get uiSoundDetails => '재생 및 피드백 안내';
+
+  @override
+  String get uiMotionDetails => '움직임 설정 안내';
+
+  @override
+  String get uiWelcomeSummary => '선을 그리세요. 음색을 주세요. 재생을 누르세요.';
+
+  @override
+  String get uiOpenSourceLicenses => '오픈 소스 라이선스';
+
+  @override
+  String get backgroundColorTab => '색상';
+
+  @override
+  String get backgroundGradientTab => '그라데이션';
+
+  @override
+  String get cropWorkspace => '이미지 자르기';
+
+  @override
+  String get cropMoveHint => '드래그로 사진을 옮기고 두 손가락으로 확대하세요. 정밀한 조정에는 조작부를 사용하세요.';
+
+  @override
+  String get backgroundPresets => '종이 팔레트';
+
+  @override
+  String get backgroundCustomColors => '사용자 색상';
+
+  @override
+  String get editorTools => '그림 도구';
+
+  @override
+  String get musicSettings => '음악 설정';
+
+  @override
+  String get voiceChooserHint => '다음 선의 음색을 선택하세요. 기존 선은 원래 음색을 유지합니다.';
+
+  @override
+  String welcomeToBrand(String name) {
+    return '$name에 오신 것을 환영합니다';
+  }
+
+  @override
+  String get backgroundPanelTitle => '종이와 사진';
+
+  @override
+  String exportFpsChoice(String fps) {
+    return '$fps FPS';
+  }
 }
