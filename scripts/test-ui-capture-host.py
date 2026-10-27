@@ -7,6 +7,7 @@ import tempfile
 import unittest
 import struct
 import zlib
+import traceback
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('capture_host', Path(__file__).with_name('capture-android-ui.py'))
@@ -21,6 +22,21 @@ class Process:
 
 
 class RecorderTests(unittest.TestCase):
+    def test_timeout_report_and_trace_never_expose_command_or_capability(self):
+        token='private-one-job-capability'
+        original=host.subprocess.TimeoutExpired(['private-command','--dart-define=UI_CAPTURE_TOKEN='+token],1200)
+        message=host.safe_capture_error(original,token)
+        try:
+            try: raise original
+            except host.subprocess.TimeoutExpired as error:
+                host.raise_capture_failure(error,token)
+        except RuntimeError as error:
+            trace=''.join(traceback.format_exception(error))
+        self.assertIn('exceeded 1200s',message)
+        for sensitive in (token,'private-command','--dart-define=UI_CAPTURE_TOKEN='):
+            self.assertNotIn(sensitive,message)
+            self.assertNotIn(sensitive,trace)
+
     def test_encoded_start_timeout_cleans_owned_native_and_adb_child(self):
         self.failed_start_cleanup(changed_identity=False)
 

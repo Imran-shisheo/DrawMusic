@@ -21,6 +21,19 @@ from ui_capture_mp4 import encoded_avc_readiness
 DEVICE = 'emulator-5554'
 PACKAGE = 'com.imranshisheo.scribblesong'
 OUTPUT = Path('work/ui-capture')
+PROFILE_PROCESS_TIMEOUT_SECONDS = 1200
+
+
+def safe_capture_error(error, token):
+    if isinstance(error, subprocess.TimeoutExpired):
+        # TimeoutExpired.__str__ includes the complete command, including the
+        # one-job loopback capability. Report the bound, never its command.
+        return f'Capture subprocess exceeded {round(float(error.timeout))}s; capture incomplete.'
+    return f'{type(error).__name__}: {str(error).replace(token, "[redacted]")}'[:2000]
+
+
+def raise_capture_failure(error, token):
+    raise RuntimeError(safe_capture_error(error, token)) from None
 
 
 def adb(*args, binary=False, required=True, timeout=35):
@@ -368,8 +381,9 @@ def main():
                 result = capture.event(body)
                 self.send_response(200)
             except Exception as error:
-                capture.report['hostError'] = str(error)
-                result = {'ok': False, 'error': str(error)}
+                message = safe_capture_error(error, capture.token)
+                capture.report['hostError'] = message
+                result = {'ok': False, 'error': message}
                 self.send_response(500)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
@@ -398,28 +412,30 @@ def main():
                f'--dart-define=UI_CAPTURE_TOKEN={capture.token}',
                f'--dart-define=UI_CAPTURE_PORT={port}',
                f'--dart-define=UI_CAPTURE_LABEL={provenance["label"]}']
+    capture.report['profileProcessBudgetSeconds'] = PROFILE_PROCESS_TIMEOUT_SECONDS
+    capture.report['profileProcessBudgetScope'] = 'Whole Flutter drive process, including cold profile compilation and runtime; all per-operation acceptance gates remain independent.'
     try:
         # Do not print this command: the one-job localhost capability is private.
         with (OUTPUT / 'flutter-drive.log').open('w') as log:
-            run = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, timeout=900, check=False)
+            run = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, timeout=PROFILE_PROCESS_TIMEOUT_SECONDS, check=False)
         if run.returncode or not capture.complete or capture.report.get('hostError'):
             raise RuntimeError(f'Profile UI capture failed (exit {run.returncode}); see flutter-drive.log')
         capture.report['passed'] = True
     except Exception as error:
-        capture.report['error'] = str(error)
+        capture.report['error'] = safe_capture_error(error, capture.token)
         log = OUTPUT / 'flutter-drive.log'
         if log.exists():
             print('Actual profile test failure log:', flush=True)
             for line in log.read_text(errors='replace').splitlines()[-150:]:
                 if 'UI_CAPTURE_TOKEN=' not in line:
-                    print(line, flush=True)
-        raise
+                    print(line.replace(capture.token, '[redacted]'), flush=True)
+        raise_capture_failure(error, capture.token)
     finally:
         if capture.recording:
             try:
                 capture.record_stop()
             except Exception as error:
-                capture.report['recordingCleanupError'] = str(error)
+                capture.report['recordingCleanupError'] = safe_capture_error(error, capture.token)
         (OUTPUT / 'android-logcat.txt').write_text(adb('logcat', '-d', '-s', 'AndroidRuntime', 'flutter', required=False).stdout)
         (OUTPUT / 'capture-report.json').write_text(json.dumps(capture.report, indent=2) + '\n')
         adb('reverse', '--remove', f'tcp:{port}', required=False)

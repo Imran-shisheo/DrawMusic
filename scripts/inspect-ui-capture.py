@@ -56,6 +56,7 @@ def inspect_ambient_recording(request, report):
         recordingStopAccepted=event is not None,
         durationCoversAuthored16SecondLoop=duration >= 16,
         recorderStart=start,
+        recordingStopEvidence={key:event.get(key) for key in ('wholeVideoDecode','stopClocks','bytes','sha256')} if event else None,
         ffprobeWarnings=probe.stderr[-1500:],
         scope='Actual silent Android recording diagnostics; not regenerated widgets, full-motion acceptance, smoothness, physical-device or iOS validation',
     )
@@ -119,6 +120,11 @@ def main():
         matching = [line for line in drive.read_text(errors='replace').splitlines() if 'UI_RECORDED_AURORA_CLOCK ' in line]
         for line in matching[:4]:
             print(line[line.index('UI_RECORDED_AURORA_CLOCK '):][:4000], flush=True)
+        timing = [line for line in drive.read_text(errors='replace').splitlines()
+                  if any(marker in line for marker in ("assembleProfile", 'Built build/app/outputs/flutter-apk/app-profile.apk', 'Installing build/app/outputs/flutter-apk/app-profile.apk'))]
+        for line in timing[:12]:
+            if 'UI_CAPTURE_TOKEN=' not in line:
+                print('UI_PROFILE_BUILD_TIMING ' + line[:2000], flush=True)
     for path in sorted((ROOT / 'performance').glob('*.json')):
         value = json.loads(path.read_text())
         value.pop('rawFrames', None)
@@ -134,11 +140,19 @@ def main():
     if not isinstance(screenshots, list) or len(screenshots) > 4:
         raise ValueError('Select at most four exact PNG names per read-only inspection')
     report = json.loads((ROOT / 'capture-report.json').read_text())
+    # Encoder/clock diagnosis is independent of PNG display/log-size limits.
+    inspect_ambient_recording(request, report)
     expected = {item['name'] + '.png': item['sha256'] for item in report.get('events', []) if item.get('operation') == 'snapshot'}
     failure = report.get('presentationFailure')
     if failure and failure.get('name') == '00-home-not-presented':
         expected[failure['name'] + '.png'] = failure['sha256']
     total = 0
+    sizes = []
+    for name in screenshots:
+        if not isinstance(name, str) or not re.fullmatch(r'[0-9]{2}-[a-z0-9-]{1,70}\.png', name):
+            raise ValueError('Screenshot name rejected')
+        sizes.append({'name': name, 'bytes': (ROOT / 'screenshots' / name).stat().st_size})
+    print('UI_CAPTURE_PNG_REQUEST_SIZES ' + json.dumps({'images': sizes, 'totalBytes': sum(item['bytes'] for item in sizes), 'maxBytes': 1_000_000}), flush=True)
     for name in screenshots:
         if not isinstance(name, str) or not re.fullmatch(r'[0-9]{2}-[a-z0-9-]{1,70}\.png', name):
             raise ValueError('Screenshot name rejected')
@@ -150,7 +164,6 @@ def main():
         if digest != expected.get(name):
             raise ValueError('Screenshot bytes do not match the actual capture report')
         emit_png(name, data)
-    inspect_ambient_recording(request, report)
 
 
 if __name__ == '__main__':

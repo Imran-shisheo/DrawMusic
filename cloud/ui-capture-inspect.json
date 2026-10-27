@@ -1,8 +1,10 @@
 {
-  "runId": 40513579162,
-  "artifactName": "drawmusic-ui-visuals-01bc8b6e73d95fd080792264d55f6e0f5c8e4b07",
+  "runId": 40531294907,
+  "artifactName": "drawmusic-ui-visuals-d0c7997eba1d369521e17a3c8628ab98cfe155d4",
   "screenshots": [
-    "01-home.png"
+    "01-home.png",
+    "05-editor-drawn.png",
+    "10-export-selection.png"
   ],
   "ambientMotionDiagnostic": true
 }
