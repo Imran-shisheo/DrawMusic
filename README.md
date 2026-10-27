@@ -12,7 +12,11 @@ An original Flutter drawing-to-music application. Doodimo is the owner-selected 
 
 ## Current state
 
-**Doodimo UI redesign in progress (2.1.0+24):** [stacked draft PR #23](https://github.com/Imran-shisheo/DrawMusic/pull/23), [actual work-in-progress renders](docs/ui/progress/README.md), [implementation and acceptance ledger](docs/UI-UX-REDESIGN.md). This preserves the verified review fixes below. New-source full acceptance is pending; both PRs remain unmerged.
+**Doodimo immersive UI redesign in progress (2.1.0+24):** [stacked draft PR #23](https://github.com/Imran-shisheo/DrawMusic/pull/23), [actual native Home/editor/export](docs/ui/public-native-checkpoint/README.md), [320 dp at 200% text](docs/ui/public-native-checkpoint/compact/README.md), and [actual tablet layouts](docs/ui/public-native-checkpoint/tablet/README.md). Home, retained navigation, canvas/transport, libraries, export, background/crop, Settings and help share original ribbon branding, duotone icons and bundled fonts. Both PRs remain draft/unmerged.
+
+Current static-lighting candidate `2bd12e0` passes the complete local Android gate: 373 Flutter tests, analyzer/formatter, unchanged visual references, JVM/lint, normal APK/v2 signing and interrupted-save recovery. Runtime performance is still being measured; the preceding software-emulator Home raster p95 exceeds the 16.67 ms target. Compact and tablet subset captures passed; they are not a single full capture or physical-device acceptance. See the [implementation ledger](docs/UI-UX-REDESIGN.md) and [exact source/check status](docs/DEVELOPMENT-STATUS.md).
+
+The [contrast-fix checkpoint APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40599305866/artifacts/12778736866) passed the complete hosted product/native gate40599305866, including independent real-file decoding and portable Swift checks. It predates the static-lighting candidate. The preceding accepted immersive app `f9fc4ba` was tested by [40555672797](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40555672797): [normal debug APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40555672797/artifacts/12758462920) and [runtime reports/real exports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40555672797/artifacts/12762965938). Each download retains its own source and acceptance scope.
 
 The merged creative expansion (PR #21, main a7c3670, 2.0.0+22) provides 13 original instruments, 12 keys/11 scales, accompaniment, 20 original templates, photo/camera/gradient backgrounds, PNG/MIDI/WAV/MP4, 12 locales and expressive/stylus/dark/tablet features. All creative tools remain free; no reference media ships.
 
@@ -29,7 +33,7 @@ source cloud/env.sh
 bash scripts/check-android.sh
 ```
 
-Use the [accepted 2.0.1+23 debug APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40482959273/artifacts/12725075870) and [runtime reports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40482959273/artifacts/12725956006). Sign into GitHub, download the artifact ZIP and unzip app-debug.apk. This is a development build; the exact source above passed the complete current Android gate. Physical-device and Apple-native validation remain separate.
+Use the source-labelled APK links above. Download the Actions artifact ZIP and unzip `app-debug.apk`; the capture profile APK is not the installable product offered here. These are development builds. Physical-device and Apple-native validation remain separate. The public repository uses bounded free standard `ubuntu-24.04` runners; no paid runner or billing change is authorized.
 
 The product script also runs the [Linux process-recovery probe](docs/PROCESS-RECOVERY.md). Hosted runtime evidence includes the [Android force-stop and ten-minute soak reports](docs/ANDROID-CLOUD-RECOVERY.md). [Compact layout coverage](docs/COMPACT-LAYOUT.md) describes the new accessibility scenarios. [Display-style policy](docs/DISPLAY-STYLES.md) and [Localization coverage](docs/LOCALIZATION.md) document the current behavior.
 

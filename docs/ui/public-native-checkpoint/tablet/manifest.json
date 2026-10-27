@@ -1,0 +1,20 @@
+{
+  "captureRun": 40600807250,
+  "artifactId": 12779143072,
+  "readerRun": 40602389652,
+  "product": "9af0d6f329ba17b4e8dac55fca4a5cb529b4753f",
+  "harness": "a0b0e4bab62b00b85d86e2338c897b14f2afc102",
+  "scope": "Actual tablet two-shot subset only; no complete23 or performance acceptance",
+  "images": [
+    {
+      "name": "18-home-tablet.png",
+      "sha": "4fb33d803abe768a93472c69d76de29fd523514a257acc34fb913c5d19b0e531",
+      "bytes": 325007
+    },
+    {
+      "name": "19-editor-tablet.png",
+      "sha": "3888fbae4b530d492a081b7a3a19d8c06b7c262003a03d8b8b6944386d209855",
+      "bytes": 150843
+    }
+  ]
+}
