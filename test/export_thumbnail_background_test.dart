@@ -18,6 +18,14 @@ import 'package:scribblesong/l10n/generated/app_localizations.dart';
 
 const _captureKey = ValueKey('library-capture');
 
+class _RecordingOpenActions implements ExportFileActions {
+  final opened = <ExportArtifact>[];
+  @override
+  Future<void> open(ExportArtifact artifact) async => opened.add(artifact);
+  @override
+  Future<PublicExportCopy?> save(ExportArtifact artifact) async => null;
+}
+
 LibraryExport _entry(
   ProjectDocument saved, {
   String id = 'saved.mp4',
@@ -40,11 +48,14 @@ LibraryExport _entry(
 
 Future<void> _pumpLibrary(
   WidgetTester tester,
-  List<LibraryExport> entries,
-) async {
+  List<LibraryExport> entries, {
+  ExportFileActions? actions,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        if (actions != null)
+          exportFileActionsProvider.overrideWithValue(actions),
         exportListingProvider.overrideWith(
           (ref) async => ExportListing(entries),
         ),
@@ -311,7 +322,8 @@ void main() {
             ),
           ],
         );
-        await _pumpLibrary(tester, [_entry(saved)]);
+        final actions = _RecordingOpenActions();
+        await _pumpLibrary(tester, [_entry(saved)], actions: actions);
         for (
           var i = 0;
           i < 50 && find.byIcon(Icons.broken_image_outlined).evaluate().isEmpty;
@@ -328,6 +340,12 @@ void main() {
           findsOneWidget,
         );
         expect(await _pixel(tester), [121, 97, 198, 255]);
+        // The status overlay must not swallow the library file-open action.
+        await tester.tapAt(
+          tester.getCenter(find.byIcon(Icons.broken_image_outlined)),
+        );
+        await tester.pumpAndSettle();
+        expect(actions.opened.single.name, 'saved.mp4');
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       } finally {
