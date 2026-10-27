@@ -10,8 +10,9 @@ import 'package:scribblesong/design_system/brand_colors.dart';
 
 import '../integration_test/support/ui_static_backdrop_probe.dart';
 
-// Explicit historical fixture for the f9fc4ba diagnostic transaction. The real
-// SceneBackdrop now has a Stack root and must not pass that old native guard.
+// Explicit historical fixture for the f9fc4ba diagnostic transaction. Keep its
+// original render target independent of later production composition changes.
+// The experimental Stack root was separately rejected before its rollback.
 class _PinnedF9SceneBackdrop extends StatelessWidget {
   const _PinnedF9SceneBackdrop({super.key, required this.child});
   final Widget child;

@@ -66,91 +66,23 @@ class SceneBackdrop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final decoration = BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
-      gradient: luminous
-          ? RadialGradient(
-              center: const Alignment(.7, -.9),
-              radius: 1.1,
-              colors: dark
-                  ? [const Color(0xff21204a), DoodimoColors.ink]
-                  : [const Color(0xffdfe3ff), const Color(0xfff4f7ff)],
-              stops: const [0, 1],
-            )
-          : null,
-    );
-    return Stack(
-      fit: StackFit.passthrough,
-      clipBehavior: Clip.none,
-      children: [
-        Positioned.fill(
-          child: ExcludeSemantics(
-            child: IgnorePointer(
-              child: RepaintBoundary(
-                child: _SceneLighting(decoration: decoration),
-              ),
-            ),
-          ),
-        ),
-        child,
-      ],
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        gradient: luminous
+            ? RadialGradient(
+                center: const Alignment(.7, -.9),
+                radius: 1.1,
+                colors: dark
+                    ? [const Color(0xff21204a), DoodimoColors.ink]
+                    : [const Color(0xffdfe3ff), const Color(0xfff4f7ff)],
+                stops: const [0, 1],
+              )
+            : null,
+      ),
+      child: child,
     );
   }
-}
-
-/// Owns only the static scene paint; descendants never enter this display list.
-class _SceneLighting extends StatefulWidget {
-  const _SceneLighting({required this.decoration});
-  final BoxDecoration decoration;
-  @override
-  State<_SceneLighting> createState() => _SceneLightingState();
-}
-
-class _SceneLightingState extends State<_SceneLighting> {
-  late BoxPainter _painter = widget.decoration.createBoxPainter();
-  @override
-  void didUpdateWidget(_SceneLighting oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.decoration != widget.decoration) {
-      _painter.dispose();
-      _painter = widget.decoration.createBoxPainter();
-    }
-  }
-
-  @override
-  void dispose() {
-    _painter.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => CustomPaint(
-    painter: _SceneLightingPainter(
-      widget.decoration,
-      _painter,
-      createLocalImageConfiguration(context),
-    ),
-    isComplex: true,
-    willChange: false,
-  );
-}
-
-class _SceneLightingPainter extends CustomPainter {
-  const _SceneLightingPainter(
-    this.decoration,
-    this.boxPainter,
-    this.configuration,
-  );
-  final BoxDecoration decoration;
-  final BoxPainter boxPainter;
-  final ImageConfiguration configuration;
-  @override
-  void paint(Canvas canvas, Size size) =>
-      boxPainter.paint(canvas, Offset.zero, configuration.copyWith(size: size));
-  @override
-  bool shouldRepaint(_SceneLightingPainter oldDelegate) =>
-      oldDelegate.decoration != decoration ||
-      oldDelegate.configuration != configuration;
 }
 
 class PrismAction extends StatefulWidget {

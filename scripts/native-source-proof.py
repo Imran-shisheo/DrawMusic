@@ -13,8 +13,8 @@ import subprocess
 import urllib.request
 
 REPOSITORY = 'Imran-shisheo/DrawMusic'
-ACCEPTED_SOURCE = 'efcac5879ea3a7320e17c5fed6295e06dcf7e63d'
-ACCEPTED_RUN = 40555672797
+ACCEPTED_SOURCE = 'b5d5379d8d46a37d22a623256e1236af94b9d086'
+ACCEPTED_RUN = 40599305866
 REVIEWED_ANDROID_WORKFLOW_SHA256 = '89a83cb9e1d9f04a907075a6c38aa761e7bf70fa74d9ca9a62732260f655b278'
 WORKFLOW = '.github/workflows/android.yml'
 # Auditable exact capture/inspection-only exclusions. There is no scripts/**,
