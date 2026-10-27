@@ -1,6 +1,6 @@
 # Doodimo implemented screen review
 
-27 October 2026. These are actual Flutter widget renders with bundled fonts and
+27 October 2026. Product source `73bb548a221a4b1626e2516f5958d0141043c4ae`. These are actual Flutter widget renders with bundled fonts and
 original assets, selected from a clean 76-state matrix. They use declared
 repository/audio fixtures and reduced motion for deterministic pixels. They are
 not mockups, native audio demonstrations or proof of runtime smoothness.

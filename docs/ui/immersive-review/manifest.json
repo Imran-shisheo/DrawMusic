@@ -988,5 +988,7 @@
       "simulatedKeyboardInset": 0.0,
       "renderExceptions": []
     }
-  ]
+  ],
+  "productSourceSha": "73bb548a221a4b1626e2516f5958d0141043c4ae",
+  "scopeOfSourcePin": "Exact product source; this metadata-only commit does not change app/native/tests/assets."
 }
