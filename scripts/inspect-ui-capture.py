@@ -15,6 +15,52 @@ import subprocess
 ROOT = Path('work/ui-capture-inspect')
 
 
+def load_capture_report(request):
+    """Use only the original host's bounded manifest; never infer lost events."""
+    final = ROOT / 'capture-report.json'
+    partial = not final.exists() and not final.is_symlink()
+    if partial and request.get('ambientMotionDiagnostic') is not True:
+        raise ValueError('Missing final report; original progress requires explicit diagnostic mode')
+    path = ROOT / ('capture-progress.json' if partial else 'capture-report.json')
+    if path.is_symlink() or not path.is_file() or not 0 < path.stat().st_size <= 1_048_576:
+        raise ValueError('Original bounded capture manifest missing or unsafe: ' + path.name)
+    report = json.loads(path.read_text())
+    if not isinstance(report, dict) or type(report.get('passed')) is not bool:
+        raise ValueError('Capture manifest must contain an original boolean passed state')
+    events = report.get('events')
+    if not isinstance(events, list) or len(events) > 4096:
+        raise ValueError('Capture manifest events missing or excessive')
+    for event in events:
+        if not isinstance(event, dict) or not isinstance(event.get('operation'), str) or not isinstance(event.get('name'), str):
+            raise ValueError('Malformed original capture event')
+        if event['operation'] in ('snapshot', 'record_stop'):
+            if type(event.get('bytes')) is not int or event['bytes'] <= 0:
+                raise ValueError('Original media event byte count missing')
+            if not isinstance(event.get('sha256'), str) or not re.fullmatch(r'[0-9a-f]{64}', event['sha256']):
+                raise ValueError('Original media event SHA missing')
+    if partial and report['passed'] is not False:
+        raise ValueError('Progress manifest cannot claim a completed capture pass')
+    report['reportSource'] = path.name
+    if partial:
+        report['inspectionStatus'] = 'UNACCEPTED_DIAGNOSTIC_ONLY'
+    return report
+
+
+def verified_png(name, expected, remaining_bytes):
+    if not isinstance(name, str) or not re.fullmatch(r'[0-9]{2}-[a-z0-9-]{1,70}\.png', name):
+        raise ValueError('Screenshot name rejected')
+    path = ROOT / 'screenshots' / name
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > remaining_bytes:
+        raise ValueError('Screenshot missing, unsafe or inspection batch size rejected')
+    data = path.read_bytes()
+    if not data.startswith(b'\x89PNG\r\n\x1a\n'):
+        raise ValueError('PNG signature rejected')
+    original = expected.get(name, {})
+    if len(data) != original.get('bytes') or hashlib.sha256(data).hexdigest() != original.get('sha256'):
+        raise ValueError('Screenshot bytes do not match the original host manifest')
+    return data
+
+
 def emit_png(name, data, *, motion=False):
     prefix = 'UI_MOTION_CONTACT_PNG' if motion else 'UI_CAPTURE_PNG'
     digest = hashlib.sha256(data).hexdigest()
@@ -139,13 +185,14 @@ def main():
     screenshots = request.get('screenshots', [])
     if not isinstance(screenshots, list) or len(screenshots) > 5:
         raise ValueError('Select at most five exact acceptance PNG names per read-only inspection')
-    report = json.loads((ROOT / 'capture-report.json').read_text())
+    report = load_capture_report(request)
+    print('UI_CAPTURE_REPORT_SOURCE ' + json.dumps({key: report.get(key) for key in ('reportSource', 'passed', 'inspectionStatus')}), flush=True)
     # Encoder/clock diagnosis is independent of PNG display/log-size limits.
     inspect_ambient_recording(request, report)
-    expected = {item['name'] + '.png': item['sha256'] for item in report.get('events', []) if item.get('operation') == 'snapshot'}
+    expected = {item['name'] + '.png': item for item in report.get('events', []) if item.get('operation') == 'snapshot'}
     failure = report.get('presentationFailure')
     if failure and failure.get('name') == '00-home-not-presented':
-        expected[failure['name'] + '.png'] = failure['sha256']
+        expected[failure['name'] + '.png'] = failure
     total = 0
     sizes = []
     for name in screenshots:
@@ -156,13 +203,8 @@ def main():
     for name in screenshots:
         if not isinstance(name, str) or not re.fullmatch(r'[0-9]{2}-[a-z0-9-]{1,70}\.png', name):
             raise ValueError('Screenshot name rejected')
-        data = (ROOT / 'screenshots' / name).read_bytes()
+        data = verified_png(name, expected, 1_500_000 - total)
         total += len(data)
-        if not data.startswith(b'\x89PNG\r\n\x1a\n') or total > 1_500_000:
-            raise ValueError('PNG signature/inspection batch size rejected')
-        digest = hashlib.sha256(data).hexdigest()
-        if digest != expected.get(name):
-            raise ValueError('Screenshot bytes do not match the actual capture report')
         emit_png(name, data)
 
 
