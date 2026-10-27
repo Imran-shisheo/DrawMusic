@@ -3,6 +3,7 @@ import 'package:scribblesong/features/backgrounds/domain/background.dart';
 import 'package:scribblesong/app/providers.dart';
 
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,7 +45,7 @@ void main() {
         expect(target.hitTestable(), findsOneWidget);
       }
 
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
       if (find.text('Start creating').evaluate().isNotEmpty) {
         await tester.tap(find.text('Start creating'));
@@ -256,7 +257,7 @@ void main() {
       expect(reopened.strokes.length, 2);
       await tester.pumpWidget(const SizedBox());
       await tester.pumpAndSettle();
-      app.main();
+      await app.main();
       await until(() async => find.text('Home').evaluate().isNotEmpty);
       expect(find.text('Start creating'), findsNothing);
       await tester.tap(find.text('Settings'));
@@ -354,6 +355,80 @@ void main() {
         () async => find.text('Saved on this device').evaluate().isNotEmpty,
       );
       await tester.tap(find.byTooltip('Export loop'));
+      await tester.pumpAndSettle();
+      // A host driver presses actual HOME only after native HD60 progress.
+      // This tests OS delivery and real cancellation, not a mocked lifecycle.
+      final lifecycleMarker = File('${cache.path}/qa-hd-background.json');
+      if (await lifecycleMarker.exists()) await lifecycleMarker.delete();
+      final lifecycleNonce = newId();
+      expect(
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const ValueKey('video-output-width')),
+            )
+            .value,
+        1080,
+      );
+      final fpsSelector = find.byKey(const ValueKey('video-output-fps'));
+      await reveal(fpsSelector);
+      await tester.tap(fpsSelector);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('60 FPS — smoother, slower export').last);
+      await tester.pumpAndSettle();
+      final ownedExports = Directory(
+        '${(await getApplicationDocumentsDirectory()).path}/exports',
+      );
+      final beforeCancellation = await ownedExports
+          .list()
+          .map((f) => f.path)
+          .toSet();
+      await reveal(find.text('Export MP4'));
+      await tester.tap(find.text('Export MP4'));
+      await tester.pump();
+      await until(
+        () async => tester
+            .widgetList<LinearProgressIndicator>(
+              find.byType(LinearProgressIndicator),
+            )
+            .any((indicator) => (indicator.value ?? 0) > .05),
+      );
+      await lifecycleMarker.writeAsString(
+        jsonEncode({
+          'phase': 'ready',
+          'nonce': lifecycleNonce,
+          'width': 1080,
+          'fps': 60,
+        }),
+        flush: true,
+      );
+      await until(
+        () async => find
+            .text('Export canceled. Your drawing is safe.')
+            .evaluate()
+            .isNotEmpty,
+      );
+      expect(
+        await ownedExports.list().map((f) => f.path).toSet(),
+        beforeCancellation,
+      );
+      expect(expandedDoc().encode(), expanded.encode());
+      expect(find.text('Export ready on this device.'), findsNothing);
+      await lifecycleMarker.writeAsString(
+        jsonEncode({
+          'phase': 'verified',
+          'nonce': lifecycleNonce,
+          'width': 1080,
+          'fps': 60,
+          'noPublishedArtifact': true,
+          'noTemporaryFiles': true,
+          'documentUnchanged': true,
+        }),
+        flush: true,
+      );
+      await reveal(fpsSelector);
+      await tester.tap(fpsSelector);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('30 FPS — standard').last);
       await tester.pumpAndSettle();
       final expandedWidth = find.byKey(const ValueKey('video-output-width'));
       await reveal(expandedWidth);
