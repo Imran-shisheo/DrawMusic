@@ -118,11 +118,22 @@ INITIAL_DISPLAYS = {
 
 
 
+HOME_PROFILE_EVENTS = (
+    ('metadata', 'session'), ('snapshot', '01-home'),
+    ('perf_start', 'home-ambient-visible'), ('diagnostic', 'home-motion-clock'),
+    ('perf_finish', 'home-ambient-visible'), ('record_start', '00-home-ambient'),
+    ('record_stop', '00-home-ambient'), ('home_profile_complete', 'home-profile'),
+)
+
+
 class Capture:
-    def __init__(self, *, static_backdrop_probe=False, responsive_preset=None):
+    def __init__(self, *, static_backdrop_probe=False, responsive_preset=None, home_profile_only=False):
+        if type(home_profile_only) is not bool or (home_profile_only and (static_backdrop_probe or responsive_preset is not None)):
+            raise ValueError('Unknown or conflicting Home profile subset mode')
         if responsive_preset not in (None, *RESPONSIVE_SHOTS) or (static_backdrop_probe and responsive_preset is not None):
             raise ValueError('Unknown or conflicting responsive/probe mode')
         self.responsive_preset = responsive_preset
+        self.home_profile_only = home_profile_only
         self.responsive_snapshots = []
         self.token = secrets.token_hex(16)
         self.sequence = 0
@@ -135,6 +146,9 @@ class Capture:
         self.probe_restored = False
         self.probe_cache_size = None
         self.report = {'passed': False, 'scope': 'Owned API35 QEMU profile-build screenshots, silent interaction recordings and real engine timings; not phone/iOS acceptance', 'events': [], 'recordingsHaveAudio': False}
+        if home_profile_only:
+            self.report.update(scope='Normal unchanged Home screenshot, unrecorded engine profile and actual ambient video subset; not full23 capture, smoothness or physical/iOS acceptance',
+                               homeProfileOnly=True, homeProfileSubsetPassed=False, normalFullCapturePassed=False)
 
         if responsive_preset is not None:
             self.report.update(scope='Actual responsive screenshot subset only; not full23 capture, performance, audio, physical-device or iOS acceptance',
@@ -318,6 +332,10 @@ class Capture:
             self.sequence += 1
             operation, name = body.get('operation'), slug(body.get('name'))
             item = {'sequence': self.sequence, 'operation': operation, 'name': name, 'hostMonotonicSeconds': time.monotonic()}
+            if self.home_profile_only:
+                index = len(self.report['events'])
+                if index >= len(HOME_PROFILE_EVENTS) or (operation, name) != HOME_PROFILE_EVENTS[index]:
+                    raise ValueError('Home profile subset requires exactly its ordered original operations')
             if self.responsive_preset is not None:
                 if operation not in ('metadata', 'snapshot', 'responsive_complete'):
                     raise ValueError('Responsive subset rejects recording profiling live display and full completion')
@@ -368,6 +386,8 @@ class Capture:
                     # Retain the ORIGINAL frame-associated scaler/geometry
                     # witness: Android log lines may truncate long JSON.
                     item['screenshotReadiness'] = readiness
+                if self.home_profile_only and readiness is None:
+                    raise ValueError('Home profile snapshot requires original exact-frame readiness')
                 if self.responsive_preset is not None:
                     if readiness is None:
                         raise ValueError('Responsive snapshot requires original exact-frame readiness')
@@ -391,6 +411,21 @@ class Capture:
                     raise ValueError('Missing real performance result')
                 self.perf = None
                 result = body['result']
+                if self.home_profile_only:
+                    scope = result.get('visibleScope', {})
+                    samples = scope.get('clockSamples', [])
+                    if (result.get('diagnosticOnly') is True or scope.get('diagnosticOnly') is True or
+                            scope.get('solidMode') is True or scope.get('route') != '/home' or
+                            scope.get('homeCreateHitTestableAtStart') is not True or
+                            scope.get('animationsDisabledAtStart') is not False or
+                            scope.get('screenRecordingActive') is not False or
+                            scope.get('nominalObservationMilliseconds') != 17000 or
+                            result.get('observationElapsedUs', 0) < 17_000_000 or len(samples) != 34 or
+                            any(sample.get('auroraIsAnimating') is not True or
+                                sample.get('auroraTickerModeEnabled') is not True or
+                                sample.get('appLifecycle') != 'resumed' or sample.get('reducedMotion') is not False or
+                                sample.get('timeDilation') != 1 for sample in samples)):
+                        raise ValueError('Missing normal visible Home profile/clock evidence')
                 if self.static_backdrop_probe:
                     scope = result.get('visibleScope', {})
                     samples = scope.get('clockSamples', [])
@@ -426,6 +461,8 @@ class Capture:
                 samples = observations.get('clockSamples') if isinstance(observations, dict) else None
                 if name != 'home-motion-clock' or self.recording or body.get('recordingDuringMeasurement') is not False or not isinstance(samples, list) or not 1 <= len(samples) <= 40:
                     raise ValueError('Invalid bounded unrecorded Home clock observation')
+                if self.home_profile_only and len(samples) != 34:
+                    raise ValueError('Home profile subset requires original34 clock observations')
                 (OUTPUT / 'performance' / f'{name}.json').write_text(json.dumps({
                     'scope': 'Actual unrecorded controller/lifecycle/framework-clock observations; not physical performance or proof of encoder causality by itself',
                     'observationElapsedUs': body.get('observationElapsedUs'),
@@ -440,6 +477,17 @@ class Capture:
                 adb('shell', 'wm', 'density', density)
                 adb('shell', 'settings', 'put', 'system', 'font_scale', scale)
                 item.update(physicalSize=size, densityDpi=density, systemFontScale=scale)
+            elif operation == 'home_profile_complete':
+                if (not self.home_profile_only or self.recording or self.perf or
+                        body.get('passed') is not True or body.get('subsetOnly') is not True or
+                        body.get('normalFullCapturePassed') is not False or
+                        self.report.get('appMetadata', {}).get('captureMode') != 'home-profile-only'):
+                    raise ValueError('Incomplete or mismatched normal Home profile subset')
+                stop = self.report['events'][-1]
+                if stop.get('wholeVideoDecode', {}).get('passed') is not True:
+                    raise ValueError('Home profile subset requires actual whole-video decode')
+                self.complete = True
+                self.report['homeProfileSubsetPassed'] = True
             elif operation == 'responsive_complete':
                 if (self.responsive_preset is None or name != self.responsive_preset or self.recording or self.perf or
                         body.get('passed') is not True or body.get('subsetOnly') is not True or
@@ -473,6 +521,8 @@ class Capture:
                 self.report['diagnosticPassed'] = True
             elif operation == 'metadata':
                 mode = body.get('captureMode')
+                if (self.home_profile_only and (mode != 'home-profile-only' or body.get('label') != 'after')) or (not self.home_profile_only and mode == 'home-profile-only'):
+                    raise ValueError('Host/app Home profile mode or after-label mismatch')
                 if ((self.responsive_preset is not None and mode != 'responsive-' + self.responsive_preset) or
                         (self.responsive_preset is None and isinstance(mode, str) and mode.startswith('responsive-'))):
                     raise ValueError('Host/app responsive mode mismatch')
@@ -562,7 +612,10 @@ def main():
     if diagnostic not in (None, 'static-backdrop'):
         raise RuntimeError('Unknown capture diagnostic mode')
     responsive = provenance.get('responsivePreset')
-    capture = Capture(static_backdrop_probe=diagnostic == 'static-backdrop', responsive_preset=responsive)
+    home_only = provenance.get('homeProfileOnly', False)
+    if home_only is True and provenance.get('label') != 'after':
+        raise RuntimeError('Home profile subset requires after-source provenance')
+    capture = Capture(static_backdrop_probe=diagnostic == 'static-backdrop', responsive_preset=responsive, home_profile_only=home_only)
     capture.report['source'] = provenance
     capture.report['hostCpuContext'] = host_cpu_context()
     capture.report['nativeImeWithHardwareKeyboard'] = True
@@ -618,6 +671,8 @@ def main():
         command.append('--dart-define=UI_STATIC_BACKDROP_PROBE=true')
     if responsive is not None:
         command.append('--dart-define=UI_RESPONSIVE_PRESET=' + responsive)
+    if capture.home_profile_only:
+        command.append('--dart-define=UI_HOME_PROFILE_ONLY=true')
     capture.report['profileProcessBudgetSeconds'] = PROFILE_PROCESS_TIMEOUT_SECONDS
     capture.report['profileProcessBudgetScope'] = 'Whole Flutter drive process, including cold profile compilation and runtime; all per-operation acceptance gates remain independent.'
     try:

@@ -35,6 +35,7 @@ import 'support/ui_presentation_fence.dart';
 
 const _staticBackdropProbe = bool.fromEnvironment('UI_STATIC_BACKDROP_PROBE');
 const _responsivePreset = String.fromEnvironment('UI_RESPONSIVE_PRESET');
+const _homeProfileOnly = bool.fromEnvironment('UI_HOME_PROFILE_ONLY');
 const _responsiveShots = {
   'compact': ['16-home-compact-large-text', '17-editor-compact-large-text'],
   'tablet': ['18-home-tablet', '19-editor-tablet'],
@@ -232,6 +233,13 @@ void main() {
       isTrue,
     );
     expect(!(_staticBackdropProbe && _responsivePreset.isNotEmpty), isTrue);
+    expect(
+      !_homeProfileOnly ||
+          (_label == 'after' &&
+              !_staticBackdropProbe &&
+              _responsivePreset.isEmpty),
+      isTrue,
+    );
     final host = _CaptureHost();
     addTearDown(host.close);
     await _seedFixtures();
@@ -664,7 +672,7 @@ void main() {
     }
 
     Map<String, Object?>? subsetHomeReadiness;
-    if (_responsivePreset.isNotEmpty) {
+    if (_responsivePreset.isNotEmpty || _homeProfileOnly) {
       await until(() {
         final home = find.byWidgetPredicate(
           (widget) => widget.runtimeType.toString() == 'HomePage',
@@ -721,7 +729,9 @@ void main() {
           ? 'responsive-$_responsivePreset'
           : (_staticBackdropProbe
                 ? 'diagnostic-static-backdrop-only'
-                : 'normal-product-ui-capture'),
+                : (_homeProfileOnly
+                      ? 'home-profile-only'
+                      : 'normal-product-ui-capture')),
       'physicalSize': [
         tester.view.physicalSize.width,
         tester.view.physicalSize.height,
@@ -1051,6 +1061,19 @@ void main() {
         expect(advanced, isNotNull);
         expect(advanced!, greaterThanOrEqualTo(period!));
       });
+    }
+    if (_homeProfileOnly) {
+      await host.event('home_profile_complete', 'home-profile', {
+        'passed': true,
+        'subsetOnly': true,
+        'normalFullCapturePassed': false,
+      });
+      binding.reportData = {
+        'homeProfileSubsetPassed': true,
+        'normalFullCapturePassed': false,
+      };
+      expect(tester.takeException(), isNull);
+      return;
     }
     await clip('01-root-navigation', () async {
       await tab('Library');

@@ -5,9 +5,35 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:scribblesong/design_system/immersive_surface.dart';
+
+import 'package:scribblesong/design_system/brand_colors.dart';
 
 import '../integration_test/support/ui_static_backdrop_probe.dart';
+
+// Explicit historical fixture for the f9fc4ba diagnostic transaction. The real
+// SceneBackdrop now has a Stack root and must not pass that old native guard.
+class _PinnedF9SceneBackdrop extends StatelessWidget {
+  const _PinnedF9SceneBackdrop({super.key, required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        gradient: RadialGradient(
+          center: const Alignment(.7, -.9),
+          radius: 1.1,
+          colors: dark
+              ? [const Color(0xff21204a), DoodimoColors.ink]
+              : [const Color(0xffdfe3ff), const Color(0xfff4f7ff)],
+          stops: const [0, 1],
+        ),
+      ),
+      child: child,
+    );
+  }
+}
 
 Widget _host(
   GlobalKey backdrop,
@@ -15,7 +41,7 @@ Widget _host(
   GlobalKey? capture,
   Widget body = const SizedBox.expand(),
 }) {
-  Widget scene = SceneBackdrop(
+  Widget scene = _PinnedF9SceneBackdrop(
     key: backdrop,
     child: Scaffold(
       key: scaffold,

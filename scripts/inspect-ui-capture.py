@@ -14,6 +14,33 @@ import re
 import subprocess
 
 ROOT = Path('work/ui-capture-inspect')
+RESOURCE_PHASES = ('home-ambient-visible', 'diagnostic-static-backdrop-normal', 'diagnostic-static-backdrop-solid')
+
+
+def inspect_native_profile_resources():
+    """Small exact-file summaries, not arbitrary dumpsys/runner-file access."""
+    folder = ROOT / 'performance'
+    if folder.is_symlink():
+        raise ValueError('Native profile resource directory symlink rejected')
+    graphics_pattern = re.compile(r'\s*(?:Total frames rendered:\s*\d+|Janky frames(?: \(legacy\))?:\s*\d+\s*\([0-9.]+%\)|(?:50th|90th|95th|99th) percentile:\s*\d+ms)\s*')
+    memory_pattern = re.compile(r'\s*(?:(?:Native Heap|Dalvik Heap|TOTAL)\s+\d+(?:\s+\d+)+|(?:Java Heap|Native Heap|Graphics):\s*\d+(?:\s+\d+)*|TOTAL PSS:\s*\d+(?:\s+TOTAL RSS:\s*\d+)?(?:\s+TOTAL SWAP PSS:\s*\d+)?)\s*')
+    for phase in RESOURCE_PHASES:
+        for suffix in ('android-framestats', 'memory-before', 'memory-after'):
+            name = phase + '-' + suffix + '.txt'
+            path = folder / name
+            result = {'file': name, 'available': False,
+                      'scope': 'Android HWUI/window gfxinfo summary is not Flutter Surface presentation/drop measurement. Memory is process PSS/heap/Graphics before or after this phase, not peak or physical-device evidence.'}
+            if not path.exists() and not path.is_symlink():
+                result['reason'] = 'missing'
+            else:
+                if path.is_symlink() or not path.is_file() or path.stat().st_size > 65_536:
+                    raise ValueError('Native profile resource file unsafe or exceeds64KiB: ' + name)
+                data = path.read_bytes()
+                pattern = graphics_pattern if suffix == 'android-framestats' else memory_pattern
+                lines = [line.strip() for line in data.decode(errors='replace').splitlines() if pattern.fullmatch(line)]
+                result.update(available=True, bytes=len(data), sha256=hashlib.sha256(data).hexdigest(),
+                              summaryLines=lines, summaryStatus='observed_exact_lines' if lines else 'unavailable_no_matching_summary')
+            print('UI_NATIVE_PROFILE_RESOURCES ' + json.dumps(result), flush=True)
 INTERACTION_RECORDINGS = (
     '01-root-navigation', '02-home-editor-back', '03-paper-sheet',
     '04-instrument-and-playback', '05-export-ready', '06-reduced-motion',
@@ -294,6 +321,7 @@ def main():
         value = json.loads(path.read_text())
         value.pop('rawFrames', None)
         print(f'UI_PERFORMANCE_SUMMARY {path.name} {json.dumps(value)}', flush=True)
+    inspect_native_profile_resources()
     for path in sorted((ROOT / 'recordings').glob('*.log'))[:8]:
         if not re.fullmatch(r'[0-9]{2}-[a-z0-9-]{1,70}\.log', path.name):
             raise ValueError('Recording diagnostic name rejected')

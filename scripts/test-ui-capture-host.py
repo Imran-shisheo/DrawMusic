@@ -387,4 +387,107 @@ class ResponsiveSubsetProtocol(unittest.TestCase):
                       subsetOnly=True, responsivePreset='compact', normalFullCapturePassed=False)
 
 
+class HomeProfileSubsetProtocol(unittest.TestCase):
+    """Protocol fixtures only, never actual Flutter/Android performance proof."""
+    def emit(self, capture, operation, name, **extra):
+        return capture.event({'token': capture.token, 'sequence': capture.sequence + 1,
+                              'operation': operation, 'name': name, **extra})
+
+    def result(self):
+        sample = {'auroraIsAnimating': True, 'auroraTickerModeEnabled': True,
+                  'appLifecycle': 'resumed', 'reducedMotion': False, 'timeDilation': 1}
+        return {'rawFrames': [{'frameNumber': 1}], 'observationElapsedUs': 17_500_000,
+                'visibleScope': {'route': '/home', 'homeCreateHitTestableAtStart': True,
+                    'animationsDisabledAtStart': False, 'screenRecordingActive': False,
+                    'nominalObservationMilliseconds': 17000,
+                    'clockSamples': [copy.deepcopy(sample) for _ in range(34)]}}
+
+    def prefix(self, capture):
+        self.emit(capture, 'metadata', 'session', buildMode='profile', animationsDisabled=False,
+                  captureMode='home-profile-only', label='after')
+        self.emit(capture, 'snapshot', '01-home', screenshotReadiness={
+            'expectedScene': '01-home', 'matchedEngineFrameNumber': 5, 'rasterFrameNumber': 5})
+        self.emit(capture, 'perf_start', 'home-ambient-visible')
+        self.emit(capture, 'diagnostic', 'home-motion-clock',
+                  observations=self.result()['visibleScope'], observationElapsedUs=17_500_000,
+                  recordingDuringMeasurement=False)
+
+    def complete(self, capture):
+        return self.emit(capture, 'home_profile_complete', 'home-profile', passed=True,
+                         subsetOnly=True, normalFullCapturePassed=False)
+
+    def test_exact_normal_subset_preserves_order_and_requires_original_decode(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(host, 'OUTPUT', Path(tmp)):
+            (Path(tmp)/'screenshots').mkdir(); (Path(tmp)/'performance').mkdir()
+            def adb(*args, **kwargs):
+                return SimpleNamespace(stdout=b'\x89PNG\r\n\x1a\nfixture' if kwargs.get('binary') else '')
+            with patch.object(host, 'adb', adb):
+                capture = host.Capture(home_profile_only=True)
+                self.prefix(capture)
+                self.emit(capture, 'perf_finish', 'home-ambient-visible', result=self.result())
+                with patch.object(capture, 'record_start', return_value={}):
+                    self.emit(capture, 'record_start', '00-home-ambient')
+                capture.recording = ('00-home-ambient',)
+                with patch.object(capture, 'record_stop', return_value={'wholeVideoDecode': {'passed': True}}):
+                    self.emit(capture, 'record_stop', '00-home-ambient')
+                capture.recording = None
+                self.complete(capture)
+                self.assertTrue(capture.complete)
+                self.assertTrue(capture.report['homeProfileSubsetPassed'])
+                self.assertFalse(capture.report['normalFullCapturePassed'])
+                self.assertEqual([(event['operation'], event['name']) for event in capture.report['events']], list(host.HOME_PROFILE_EVENTS))
+
+    def test_rejects_foreign_duplicate_out_of_order_and_full_completion(self):
+        for operation, name in (('complete', 'capture'), ('display', 'compact'),
+                ('record_start', '01-root-navigation'), ('snapshot', '02-drafts'),
+                ('perf_start', 'home-ambient-visible'), ('home_profile_complete', 'home-profile')):
+            capture = host.Capture(home_profile_only=True)
+            with self.assertRaisesRegex(ValueError, 'ordered original'):
+                self.emit(capture, operation, name)
+            self.assertFalse(capture.complete)
+
+    def test_mode_strict_exclusive_after_only(self):
+        for kwargs in ({'home_profile_only': 1}, {'home_profile_only': True, 'responsive_preset': 'compact'},
+                       {'home_profile_only': True, 'static_backdrop_probe': True}):
+            with self.assertRaises(ValueError): host.Capture(**kwargs)
+        for label, mode in (('before', 'home-profile-only'), ('after', 'normal-product-ui-capture')):
+            with self.assertRaises(ValueError):
+                self.emit(host.Capture(home_profile_only=True), 'metadata', 'session',
+                          buildMode='profile', animationsDisabled=False, label=label, captureMode=mode)
+
+    def test_missing_original_screenshot_witness_never_accepts_home(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(host, 'OUTPUT', Path(tmp)):
+            (Path(tmp)/'screenshots').mkdir()
+            capture = host.Capture(home_profile_only=True)
+            self.emit(capture, 'metadata', 'session', buildMode='profile', animationsDisabled=False,
+                      captureMode='home-profile-only', label='after')
+            with patch.object(host, 'adb', return_value=SimpleNamespace(stdout=b'\x89PNG\r\n\x1a\nfixture')):
+                with self.assertRaisesRegex(ValueError, 'original exact-frame'):
+                    self.emit(capture, 'snapshot', '01-home')
+            self.assertFalse(capture.complete)
+
+    def test_missing_or_failed_decode_never_completes(self):
+        for decode in ({}, {'passed': False}):
+            capture = host.Capture(home_profile_only=True)
+            capture.report['appMetadata'] = {'captureMode': 'home-profile-only'}
+            capture.report['events'] = [{'operation': op, 'name': name} for op, name in host.HOME_PROFILE_EVENTS[:-1]]
+            capture.report['events'][-1]['wholeVideoDecode'] = decode
+            with self.assertRaisesRegex(ValueError, 'whole-video'): self.complete(capture)
+            self.assertFalse(capture.complete)
+
+    def test_normal_profile_rejects_short_mutated_or_missing_live_clock_evidence(self):
+        for change in ('short', 'solid', 'missing', 'paused'):
+            capture = host.Capture(home_profile_only=True)
+            capture.report['events'] = [{'operation': op, 'name': name} for op, name in host.HOME_PROFILE_EVENTS[:4]]
+            capture.perf = 'home-ambient-visible'
+            result = self.result()
+            if change == 'short': result['observationElapsedUs'] = 1
+            if change == 'solid': result['visibleScope']['solidMode'] = True
+            if change == 'missing': result['visibleScope']['clockSamples'].pop()
+            if change == 'paused': result['visibleScope']['clockSamples'][-1]['auroraIsAnimating'] = False
+            with self.assertRaisesRegex(ValueError, 'normal visible Home'):
+                self.emit(capture, 'perf_finish', 'home-ambient-visible', result=result)
+            self.assertFalse(capture.complete)
+
+
 if __name__ == '__main__': unittest.main()

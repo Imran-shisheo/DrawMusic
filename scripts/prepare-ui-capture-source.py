@@ -32,10 +32,13 @@ def main():
     responsive = request.get('responsivePreset')
     if responsive not in (None, 'compact', 'tablet', 'light') or (responsive is not None and (diagnostic is not None or label != 'after')):
         raise ValueError('Expected one exclusive compact/tablet/light responsive preset')
+    home_only = request.get('homeProfileOnly', False)
+    if type(home_only) is not bool or (home_only and (label != 'after' or diagnostic is not None or responsive is not None)):
+        raise ValueError('Expected exclusive after-source boolean homeProfileOnly')
     output = os.environ.get('GITHUB_OUTPUT')
     if output:
         with open(output, 'a') as stream:
-            stream.write('product_apk_required=' + str(diagnostic is None and responsive in (None, 'light')).lower() + '\n')
+            stream.write('product_apk_required=' + str(not home_only and diagnostic is None and responsive in (None, 'light')).lower() + '\n')
     harness = git('rev-parse', 'HEAD')
     if git('cat-file', '-t', source) != 'commit':
         raise ValueError('Requested source is not an available repository commit')
@@ -57,6 +60,7 @@ def main():
         'label': label, 'productSourceSha': source, 'productTreeSha': tree,
         'captureHarnessSourceSha': harness, 'instrumentationFiles': FILES,
         'diagnosticOnly': diagnostic, 'responsivePreset': responsive,
+        'homeProfileOnly': home_only,
         'scope': 'Actual pinned production widget/native source plus separately identified diagnostic target. Not a substitute for full functional acceptance.'
     }, indent=2) + '\n')
     print(f'Capture product source {source}; diagnostic harness {harness}; label {label}', flush=True)

@@ -307,5 +307,60 @@ class OriginalInteractionInspection(unittest.TestCase):
             contact.assert_not_called()
 
 
+class NativeProfileResourceInspection(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.folder = self.root / 'performance'
+        self.folder.mkdir()
+        self.patcher = patch.object(ui, 'ROOT', self.root)
+        self.patcher.start()
+        self.addCleanup(self.patcher.stop)
+
+    def inspect(self):
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            ui.inspect_native_profile_resources()
+        return [json.loads(line.split(' ', 1)[1]) for line in output.getvalue().splitlines()]
+
+    def test_exact_whitelist_preserves_zero_counts_hashes_and_memory_scope(self):
+        graphics = b'Total frames rendered: 0\nJanky frames: 0 (0.00%)\n95th percentile: 0ms\nFrameCompleted 123456\nPRIVATE_DEVICE_IDENTIFIER\n'
+        memory = b' Native Heap 100 20 30 40 50 60 70\n Graphics: 88 99\n TOTAL PSS: 1234 TOTAL RSS: 4567 TOTAL SWAP PSS: 0\npid: PRIVATE_DEVICE_IDENTIFIER\n'
+        (self.folder / 'home-ambient-visible-android-framestats.txt').write_bytes(graphics)
+        (self.folder / 'home-ambient-visible-memory-before.txt').write_bytes(memory)
+        values = self.inspect()
+        self.assertEqual(len(values), 9)
+        self.assertEqual(values[0]['summaryLines'], ['Total frames rendered: 0', 'Janky frames: 0 (0.00%)', '95th percentile: 0ms'])
+        self.assertEqual(values[0]['sha256'], hashlib.sha256(graphics).hexdigest())
+        self.assertEqual(values[0]['bytes'], len(graphics))
+        self.assertIn('Graphics: 88 99', values[1]['summaryLines'])
+        self.assertIn('not peak', values[1]['scope'])
+        self.assertIn('not Flutter Surface', values[0]['scope'])
+        self.assertNotIn('PRIVATE_DEVICE_IDENTIFIER', json.dumps(values))
+
+    def test_missing_and_unavailable_are_explicit_never_inferred_zero(self):
+        (self.folder / 'home-ambient-visible-memory-after.txt').write_text('Process unavailable\n')
+        values = self.inspect()
+        self.assertFalse(values[0]['available'])
+        self.assertEqual(values[0]['reason'], 'missing')
+        self.assertEqual(values[2]['summaryLines'], [])
+        self.assertEqual(values[2]['summaryStatus'], 'unavailable_no_matching_summary')
+
+    def test_oversized_symlink_and_directory_are_rejected(self):
+        path = self.folder / 'home-ambient-visible-android-framestats.txt'
+        path.write_bytes(b'x' * 65_537)
+        with self.assertRaises(ValueError): self.inspect()
+        path.unlink()
+        path.symlink_to(self.root / 'private')
+        with self.assertRaises(ValueError): self.inspect()
+        path.unlink()
+        path.mkdir()
+        with self.assertRaises(ValueError): self.inspect()
+
+    def test_unlisted_files_are_never_opened(self):
+        (self.folder / 'private-memory.txt').symlink_to(self.root / 'private')
+        self.assertTrue(all(not result['available'] for result in self.inspect()))
+
+
 if __name__ == '__main__':
     unittest.main()
