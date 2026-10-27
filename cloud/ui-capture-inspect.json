@@ -1,10 +1,6 @@
 {
-  "runId": 40531294907,
-  "artifactName": "drawmusic-ui-visuals-d0c7997eba1d369521e17a3c8628ab98cfe155d4",
-  "screenshots": [
-    "01-home.png",
-    "05-editor-drawn.png",
-    "10-export-selection.png"
-  ],
-  "ambientMotionDiagnostic": true
+  "mode": "runtime",
+  "runId": 40525650391,
+  "artifactId": 12748102114,
+  "artifactName": "drawmusic-runtime-evidence-962aa8d71a0568bafb44ff0b0b450ee3aa856148"
 }

@@ -6,6 +6,8 @@ on:
       - .github/workflows/ui-capture-inspect.yml
       - cloud/ui-capture-inspect.json
       - scripts/inspect-ui-capture.py
+      - scripts/inspect-runtime-artifact.py
+      - scripts/test-runtime-artifact-inspect.py
 permissions:
   contents: read
   actions: read
@@ -17,9 +19,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Prepare required video inspectors
-        timeout-minutes: 8
-        run: bash scripts/prepare-runtime-inspectors.sh --video-only
       - id: request
         name: Read bounded diagnostic artifact request
         run: |
@@ -28,9 +27,22 @@ jobs:
           from pathlib import Path
           request=json.loads(Path('cloud/ui-capture-inspect.json').read_text())
           assert type(request['runId']) is int and request['runId']>0
-          assert isinstance(request['artifactName'],str) and re.fullmatch(r'drawmusic-ui-visuals-[0-9a-f]{40}',request['artifactName'])
+          mode=request.get('mode','ui')
+          assert mode in ('ui','runtime')
+          artifact_id=''
+          name=request['artifactName']
+          if mode=='runtime':
+              import importlib.util
+              spec=importlib.util.spec_from_file_location('runtime_inspect','scripts/inspect-runtime-artifact.py')
+              helper=importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(helper)
+              helper.validate_request(request)
+              artifact_id=str(request['artifactId'])
+              name=''
+          else:
+              assert isinstance(name,str) and re.fullmatch(r'drawmusic-ui-visuals-[0-9a-f]{40}',name)
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
-              out.write(f"run={request['runId']}\nname={request['artifactName']}\n")
+              out.write(f"run={request['runId']}\nname={name}\nartifact_id={artifact_id}\nmode={mode}\n")
           PY
       - uses: actions/download-artifact@v5
         with:
@@ -38,6 +50,18 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ steps.request.outputs.run }}
           name: ${{ steps.request.outputs.name }}
+          artifact-ids: ${{ steps.request.outputs.artifact_id }}
+          merge-multiple: true
           path: work/ui-capture-inspect
+      - name: Prepare required video inspectors
+        if: steps.request.outputs.mode == 'ui'
+        timeout-minutes: 8
+        run: bash scripts/prepare-runtime-inspectors.sh --video-only
+      - name: Verify bounded runtime reader regressions
+        run: python3 scripts/test-runtime-artifact-inspect.py
+      - name: Inspect bounded native runtime logs (not a product test)
+        if: steps.request.outputs.mode == 'runtime'
+        run: python3 scripts/inspect-runtime-artifact.py
       - name: Inspect actual diagnostic logs and requested exact PNGs (not a product test)
+        if: steps.request.outputs.mode == 'ui'
         run: python3 scripts/inspect-ui-capture.py
