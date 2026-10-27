@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
@@ -9,8 +10,13 @@ import 'motion.dart';
 /// Original decorative ribbon sculpture. Not a waveform, meter or music clock.
 /// It has no document/provider dependency and never enters artwork renderers.
 class AuroraScene extends StatefulWidget {
-  const AuroraScene({super.key, this.animated = true});
+  const AuroraScene({super.key, this.animated = true, this.rasterizeStatic});
   final bool animated;
+
+  /// Deterministic completion control for resource-lifetime tests only. Normal
+  /// product and profile paths always use the engine's Picture.toImage.
+  @visibleForTesting
+  final Future<ui.Image> Function(ui.Picture, int, int)? rasterizeStatic;
   @override
   State<AuroraScene> createState() => _AuroraSceneState();
 }
@@ -21,6 +27,86 @@ class _AuroraSceneState extends State<AuroraScene>
     vsync: this,
     duration: CreativeMotion.ambient,
   );
+  // One resident static texture plus at most one in-flight replacement. Each
+  // allocation is <=1,048,576 pixels (~4MiB RGBA), capped at2048 per dimension.
+  // Vector geometry and original paint remain the exact first-frame/failure
+  // fallback. No decorative frame cadence or animation clock is changed.
+  _AuroraRasterKey? _wantedRaster, _readyRaster, _failedRaster;
+  ui.Image? _staticRaster;
+  bool _rasterScheduled = false, _rasterBusy = false, _rasterAllowed = false;
+
+  void _requestRaster(_AuroraRasterKey key) {
+    _wantedRaster = key;
+    if (!_rasterAllowed) return;
+    if (_readyRaster == key ||
+        _failedRaster == key ||
+        _rasterBusy ||
+        _rasterScheduled) {
+      return;
+    }
+    _rasterScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _rasterScheduled = false;
+      if (!mounted || !_rasterAllowed) return;
+      final wanted = _wantedRaster;
+      if (wanted == null ||
+          wanted == _readyRaster ||
+          wanted == _failedRaster ||
+          _rasterBusy) {
+        return;
+      }
+      unawaited(_rasterize(wanted));
+    });
+  }
+
+  Future<void> _rasterize(_AuroraRasterKey key) async {
+    _rasterBusy = true;
+    ui.Picture? picture;
+    try {
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      canvas.scale(
+        key.pixelWidth / key.extent.width,
+        key.pixelHeight / key.extent.height,
+      );
+      canvas.translate(key.overscan.dx, key.overscan.dy);
+      _AuroraPainter(
+        _cycle,
+        key.dark,
+        staticLayer: true,
+      ).paint(canvas, key.size);
+      picture = recorder.endRecording();
+      final rasterize = widget.rasterizeStatic;
+      final image = rasterize == null
+          ? await picture.toImage(key.pixelWidth, key.pixelHeight)
+          : await rasterize(picture, key.pixelWidth, key.pixelHeight);
+      if (!mounted || _wantedRaster != key) {
+        image.dispose();
+      } else {
+        final previous = _staticRaster;
+        setState(() {
+          _staticRaster = image;
+          _readyRaster = key;
+          _failedRaster = null;
+        });
+        // RawImage retains its own clone while its existing render object is
+        // being replaced, so disposing this owner cannot invalidate a frame.
+        previous?.dispose();
+      }
+    } catch (_) {
+      // Preserve the original luminous vector scene on unavailable allocation.
+      // Retry only for a different size/theme/raster scale, never every tick.
+      if (mounted && _wantedRaster == key) _failedRaster = key;
+    } finally {
+      picture?.dispose();
+      _rasterBusy = false;
+      if (mounted) {
+        final wanted = _wantedRaster;
+        if (wanted != null) _requestRaster(wanted);
+      }
+    }
+  }
+
   bool _foreground = true;
   @override
   void initState() {
@@ -46,6 +132,8 @@ class _AuroraSceneState extends State<AuroraScene>
         _foreground &&
         TickerMode.valuesOf(context).enabled &&
         !MediaQuery.disableAnimationsOf(context);
+    _rasterAllowed = active;
+    if (active && _wantedRaster != null) _requestRaster(_wantedRaster!);
     if (active && !_cycle.isAnimating) {
       _cycle.repeat();
     }
@@ -64,6 +152,8 @@ class _AuroraSceneState extends State<AuroraScene>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _cycle.dispose();
+    _staticRaster?.dispose();
+    _staticRaster = null;
     super.dispose();
   }
 
@@ -73,46 +163,112 @@ class _AuroraSceneState extends State<AuroraScene>
       child: RepaintBoundary(
         child: ClipRect(
           child: LayoutBuilder(
-            builder: (context, bounds) => AnimatedBuilder(
-              animation: _cycle,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // The broad gradients and ribbon never repaint on a tick.
-                  RepaintBoundary(
-                    child: CustomPaint(
-                      isComplex: true,
-                      painter: _AuroraPainter(
-                        _cycle,
-                        Theme.of(context).brightness == Brightness.dark,
-                        staticLayer: true,
+            builder: (context, bounds) {
+              final size = Size(bounds.maxWidth, bounds.maxHeight);
+              if (size.isEmpty || !size.isFinite) {
+                return const SizedBox.shrink();
+              }
+              final dark = Theme.of(context).brightness == Brightness.dark;
+              final rasterKey = _AuroraRasterKey(
+                size,
+                dark,
+                MediaQuery.devicePixelRatioOf(context),
+              );
+              _requestRaster(rasterKey);
+              final image = _readyRaster == rasterKey ? _staticRaster : null;
+              return AnimatedBuilder(
+                animation: _cycle,
+                child: RepaintBoundary(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    clipBehavior: Clip.none,
+                    children: [
+                      if (image == null)
+                        RepaintBoundary(
+                          child: CustomPaint(
+                            isComplex: true,
+                            painter: _AuroraPainter(
+                              _cycle,
+                              dark,
+                              staticLayer: true,
+                            ),
+                          ),
+                        )
+                      else
+                        Positioned(
+                          left: -rasterKey.overscan.dx,
+                          top: -rasterKey.overscan.dy,
+                          width: rasterKey.extent.width,
+                          height: rasterKey.extent.height,
+                          child: RawImage(
+                            image: image,
+                            fit: BoxFit.fill,
+                            filterQuality: FilterQuality.low,
+                          ),
+                        ),
+                      // The small changing highlight/orbits get their own
+                      // repaint boundary: no static/home display-list rebuild.
+                      RepaintBoundary(
+                        child: CustomPaint(
+                          willChange: true,
+                          painter: _AuroraPainter(_cycle, dark),
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+                builder: (context, child) {
+                  final phase = _cycle.value * math.pi * 2;
+                  return Transform.translate(
+                    offset: Offset(
+                      math.sin(phase) * size.width * .014,
+                      math.cos(phase) * size.height * .016,
                     ),
-                  ),
-                  CustomPaint(
-                    painter: _AuroraPainter(
-                      _cycle,
-                      Theme.of(context).brightness == Brightness.dark,
-                    ),
-                  ),
-                ],
-              ),
-              builder: (context, child) {
-                final phase = _cycle.value * math.pi * 2;
-                return Transform.translate(
-                  offset: Offset(
-                    math.sin(phase) * bounds.maxWidth * .014,
-                    math.cos(phase) * bounds.maxHeight * .016,
-                  ),
-                  child: child,
-                );
-              },
-            ),
+                    child: child,
+                  );
+                },
+              );
+            },
           ),
         ),
       ),
     ),
   );
+}
+
+class _AuroraRasterKey {
+  _AuroraRasterKey(this.size, this.dark, double devicePixelRatio) {
+    // Preserve the tiny whole-sculpture translation without clipping the
+    // original ribbon's off-canvas strokes into the texture's edge.
+    overscan = Offset(
+      (size.width * .014).ceilToDouble() + 2,
+      (size.height * .016).ceilToDouble() + 2,
+    );
+    extent = Size(size.width + overscan.dx * 2, size.height + overscan.dy * 2);
+    final scale = math.min(
+      devicePixelRatio.clamp(1.0, 2.0),
+      math.min(
+        math.sqrt(1048576 / (extent.width * extent.height)),
+        2048 / math.max(extent.width, extent.height),
+      ),
+    );
+    pixelWidth = math.max(1, (extent.width * scale).floor());
+    pixelHeight = math.max(1, (extent.height * scale).floor());
+  }
+  final Size size;
+  final bool dark;
+  late final Offset overscan;
+  late final Size extent;
+  late final int pixelWidth, pixelHeight;
+  @override
+  bool operator ==(Object other) =>
+      other is _AuroraRasterKey &&
+      other.size == size &&
+      other.dark == dark &&
+      other.pixelWidth == pixelWidth &&
+      other.pixelHeight == pixelHeight;
+  @override
+  int get hashCode => Object.hash(size, dark, pixelWidth, pixelHeight);
 }
 
 class _AuroraPainter extends CustomPainter {

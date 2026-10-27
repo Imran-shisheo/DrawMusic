@@ -366,11 +366,15 @@ def main():
         raise RuntimeError('Only the disposable GitHub Actions emulator is authorized')
     if adb('shell', 'getprop', 'ro.kernel.qemu').stdout.strip() != '1':
         raise RuntimeError('QEMU identity check rejected device operation')
+    adb('shell', 'settings', 'put', 'secure', 'show_ime_with_hard_keyboard', '1')
+    if adb('shell', 'settings', 'get', 'secure', 'show_ime_with_hard_keyboard').stdout.strip() != '1':
+        raise RuntimeError('Owned emulator native IME configuration did not apply')
     for folder in ('screenshots', 'recordings', 'performance'):
         (OUTPUT / folder).mkdir(parents=True, exist_ok=True)
     provenance = json.loads((OUTPUT / 'source-provenance.json').read_text())
     capture = Capture()
     capture.report['source'] = provenance
+    capture.report['nativeImeWithHardwareKeyboard'] = True
 
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self):

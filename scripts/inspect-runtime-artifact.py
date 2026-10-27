@@ -18,6 +18,9 @@ JUNIT_ROOT = Path('build/app/outputs/androidTest-results')
 FIXED = {
     Path('work/runtime-output/android.log'): 8 * 1024 * 1024,
     Path('work/runtime-output/hd-background-host.json'): 128 * 1024,
+    Path('work/runtime-output/runtime-transport-before.json'): 128 * 1024,
+    Path('work/runtime-output/runtime-transport-failure.json'): 128 * 1024,
+    Path('work/runtime-output/runtime-transport-final.json'): 128 * 1024,
 }
 SIGNALS = re.compile(r'fatal|exception|signal [0-9]+|outofmemory|low.?memory|killed|SIGABRT|SIGSEGV|DartVM|flutter|VM.?service|crash', re.I)
 

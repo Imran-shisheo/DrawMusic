@@ -1,6 +1,10 @@
 {
-  "mode": "runtime",
-  "runId": 40525650391,
-  "artifactId": 12748102114,
-  "artifactName": "drawmusic-runtime-evidence-962aa8d71a0568bafb44ff0b0b450ee3aa856148"
+  "runId": 40535931842,
+  "artifactName": "drawmusic-ui-visuals-d4562449eabfbe64d1329e00a6b5e5ac3f923082",
+  "screenshots": [
+    "10-export-selection.png",
+    "16-home-compact-large-text.png",
+    "19-editor-tablet.png"
+  ],
+  "ambientMotionContact": true
 }

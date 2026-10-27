@@ -28,6 +28,7 @@ import 'package:scribblesong/main.dart' as app;
 
 import 'support/ui_capture_metrics.dart';
 import 'support/ui_frame_clock.dart';
+import 'support/ui_presentation_fence.dart';
 
 const _token = String.fromEnvironment('UI_CAPTURE_TOKEN');
 const _port = int.fromEnvironment('UI_CAPTURE_PORT', defaultValue: 8765);
@@ -255,9 +256,187 @@ void main() {
       await wait(1100);
     }
 
+    bool renderedAnchor(Finder finder) {
+      if (finder.evaluate().isEmpty) return false;
+      final context = tester.element(finder.first);
+      final route = ModalRoute.of(context);
+      if (route != null &&
+          (!route.isCurrent ||
+              (route.animation != null && route.animation!.value < 1))) {
+        return false;
+      }
+      final box = context.findRenderObject();
+      return box is RenderBox &&
+          box.attached &&
+          box.hasSize &&
+          !box.size.isEmpty;
+    }
+
+    bool expectedShot(String name) {
+      if (find.byType(Scaffold).evaluate().isEmpty) return false;
+      final uri = router().routeInformationProvider.value.uri.path;
+      final canvas = key('drawing-canvas');
+      final home = find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString() == 'HomePage',
+      );
+      final settings = find.byWidgetPredicate(
+        (widget) => widget.runtimeType.toString() == 'SettingsPage',
+      );
+      final hasPanel =
+          find.byType(BottomSheet).evaluate().isNotEmpty ||
+          find.byType(Dialog).evaluate().isNotEmpty;
+      final context = tester.element(find.byType(Scaffold).first);
+      final width = MediaQuery.sizeOf(context).width;
+      bool editor(String title) =>
+          uri.startsWith('/editor/') &&
+          !hasPanel &&
+          find.text(title).evaluate().isNotEmpty &&
+          renderedAnchor(canvas);
+      return switch (name) {
+        '01-home' => uri == '/home' && !hasPanel && renderedAnchor(home),
+        '02-drafts' =>
+          uri == '/drafts' &&
+              !hasPanel &&
+              renderedAnchor(
+                find.byWidgetPredicate(
+                  (widget) => widget.runtimeType.toString() == 'DraftsPage',
+                ),
+              ),
+        '03-exports' =>
+          uri == '/exports' &&
+              !hasPanel &&
+              renderedAnchor(
+                find.byWidgetPredicate(
+                  (widget) => widget.runtimeType.toString() == 'ExportsPage',
+                ),
+              ),
+        '04-settings' =>
+          uri == '/settings' && !hasPanel && renderedAnchor(settings),
+        '05-editor-drawn' => editor('Paper hills'),
+        '06-photo-editor' => editor('Amber window'),
+        '07-photo-crop-panel' => renderedAnchor(
+          key('background-crop-workspace').evaluate().isNotEmpty
+              ? key('background-crop-workspace')
+              : find.byType(BottomSheet),
+        ),
+        '08-instruments' =>
+          key('voice-bell').evaluate().isNotEmpty
+              ? renderedAnchor(key('voice-bell'))
+              : editor('Amber window') &&
+                    find
+                        .widgetWithText(ChoiceChip, 'Glass stars')
+                        .evaluate()
+                        .isNotEmpty,
+        '09-editor-playing' =>
+          editor('Amber window') &&
+              find.byTooltip('Pause').evaluate().isNotEmpty,
+        '10-export-selection' => renderedAnchor(
+          key('export-selection').evaluate().isNotEmpty
+              ? key('export-selection')
+              : find.text('Export PNG'),
+        ),
+        '11-export-ready' => renderedAnchor(
+          key('export-ready').evaluate().isNotEmpty
+              ? key('export-ready')
+              : find.textContaining('Export ready'),
+        ),
+        '12-stress-editor' => editor('Ten thousand points'),
+        '13-home-dark' =>
+          uri == '/home' &&
+              !hasPanel &&
+              renderedAnchor(home) &&
+              Theme.of(context).brightness == Brightness.dark,
+        '14-settings-dark' =>
+          uri == '/settings' &&
+              !hasPanel &&
+              renderedAnchor(settings) &&
+              Theme.of(context).brightness == Brightness.dark,
+        '15-home-reduced-motion' =>
+          uri == '/home' &&
+              !hasPanel &&
+              renderedAnchor(home) &&
+              MediaQuery.disableAnimationsOf(context),
+        '16-home-compact-large-text' =>
+          uri == '/home' &&
+              !hasPanel &&
+              renderedAnchor(home) &&
+              width <= 321 &&
+              MediaQuery.textScalerOf(context).scale(10) >= 19,
+        '17-editor-compact-large-text' =>
+          editor('Morning tide') &&
+              width <= 321 &&
+              MediaQuery.textScalerOf(context).scale(10) >= 19,
+        '18-home-tablet' =>
+          uri == '/home' && !hasPanel && renderedAnchor(home) && width >= 800,
+        '19-editor-tablet' => editor('Morning tide') && width >= 800,
+        '20-rename-native-ime' =>
+          uri == '/drafts' &&
+              renderedAnchor(find.byType(TextField)) &&
+              tester.view.viewInsets.bottom > 100 &&
+              !binding.testTextInput.isRegistered,
+        '21-rename-focus-restored' =>
+          uri == '/drafts' &&
+              !hasPanel &&
+              tester.view.viewInsets.bottom == 0 &&
+              find
+                  .byType(EditableText)
+                  .evaluate()
+                  .every(
+                    (element) =>
+                        !(element.widget as EditableText).focusNode.hasFocus,
+                  ),
+        '22-home-light' =>
+          uri == '/home' &&
+              !hasPanel &&
+              renderedAnchor(home) &&
+              width >= 410 &&
+              width <= 412 &&
+              MediaQuery.textScalerOf(context).scale(10) == 10 &&
+              Theme.of(context).brightness == Brightness.light &&
+              !MediaQuery.disableAnimationsOf(context),
+        '23-editor-light' =>
+          editor('Morning tide') &&
+              width >= 410 &&
+              width <= 412 &&
+              MediaQuery.textScalerOf(context).scale(10) == 10 &&
+              Theme.of(context).brightness == Brightness.light &&
+              !MediaQuery.disableAnimationsOf(context),
+        _ => false,
+      };
+    }
+
     Future<void> shot(String name) async {
-      await wait(250);
-      await host.event('snapshot', name);
+      await until(() => expectedShot(name));
+      final fence = UiPresentationFence(
+        binding,
+        isExpected: () => expectedShot(name),
+      )..start();
+      Map<String, Object> evidence;
+      try {
+        evidence = await fence.waitForRaster();
+      } finally {
+        fence.stop();
+      }
+      final refreshHz = tester.view.display.refreshRate;
+      if (!refreshHz.isFinite || refreshHz <= 0) {
+        fail('Screenshot compositor grace requires observed refresh rate');
+      }
+      final graceUs = (2000000 / refreshHz).ceil().clamp(1000, 100000);
+      await Future<void>.delayed(Duration(microseconds: graceUs));
+      expect(expectedShot(name), isTrue);
+      final screenshotReadiness = {
+        ...evidence,
+        'expectedScene': name,
+        'observedDisplayRefreshHz': refreshHz,
+        'compositorGraceUs': graceUs,
+        'compositorScope': 'Two observed display intervals, bounded to100ms, after matched raster; actual ADB pixels still need review. One real screenshot-only frame requested outside measured phases; no video padding/retiming.',
+      };
+      debugPrint(
+        'UI_SCREENSHOT_RASTER_FENCE ${jsonEncode(screenshotReadiness)}',
+      );
+      await host.event('snapshot', name, {
+        'screenshotReadiness': screenshotReadiness,
+      });
     }
 
     Future<void> clip(String name, Future<void> Function() action) async {
@@ -501,6 +680,55 @@ void main() {
     await clip('01-root-navigation', () async {
       await tab('Library');
       await shot('02-drafts');
+      if (_label == 'after') {
+        expect(binding.testTextInput.isRegistered, isFalse);
+        final initialInset = tester.view.viewInsets.bottom;
+        expect(initialInset, 0);
+        final actions = find.byTooltip('Manage Morning tide');
+        await tester.scrollUntilVisible(
+          actions,
+          180,
+          scrollable: find
+              .descendant(
+                of: find.byKey(const PageStorageKey<String>('drafts-scroll')),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await tap(actions);
+        await tap(find.text('Rename'));
+        await tap(find.byType(TextField));
+        await until(
+          () =>
+              tester.view.viewInsets.bottom > initialInset + 100 &&
+              find
+                  .byType(EditableText)
+                  .evaluate()
+                  .any(
+                    (element) =>
+                        (element.widget as EditableText).focusNode.hasFocus,
+                  ),
+        );
+        final keyboardInset = tester.view.viewInsets.bottom;
+        final visibleBottom =
+            (tester.view.physicalSize.height - keyboardInset) /
+            tester.view.devicePixelRatio;
+        final fieldBounds = tester.getRect(find.byType(TextField));
+        final cancel = find.widgetWithText(TextButton, 'Cancel');
+        final cancelBounds = tester.getRect(cancel);
+        expect(fieldBounds.bottom, lessThanOrEqualTo(visibleBottom));
+        expect(cancelBounds.bottom, lessThanOrEqualTo(visibleBottom));
+        expect(cancel.hitTestable(), findsOneWidget);
+        await shot('20-rename-native-ime');
+        await tap(cancel);
+        await until(() => expectedShot('21-rename-focus-restored'));
+        expect(find.text('Morning tide'), findsWidgets);
+        expect(actions.hitTestable(), findsOneWidget);
+        await shot('21-rename-focus-restored');
+        debugPrint(
+          'UI_NATIVE_IME_CHECK ${jsonEncode({'mockTextInputRegistered': binding.testTextInput.isRegistered, 'initialPhysicalInset': initialInset, 'visiblePhysicalInset': keyboardInset, 'finalPhysicalInset': tester.view.viewInsets.bottom, 'visibleLogicalBottom': visibleBottom, 'fieldLogicalBottom': fieldBounds.bottom, 'cancelLogicalBottom': cancelBounds.bottom, 'scope': 'Actual platform IME insets and focused editable; reachable Cancel closes panel and keyboard without editing the document. No simulated insets or mock input.'})}',
+        );
+      }
       await tap(find.text('Exports'));
       await shot('03-exports');
       await tab('Settings');
@@ -632,6 +860,13 @@ void main() {
     await shot('19-editor-tablet');
     await host.event('display', 'phone');
     await wait(1200);
+    if (_label == 'after') {
+      await route('/home');
+      await preference(dark: false, reduce: false);
+      await shot('22-home-light');
+      await route('/editor/capture-morning');
+      await shot('23-editor-light');
+    }
     await host.event('complete', 'capture', {
       'passed': true,
       'performanceScope': 'Real profile build and engine frame timings, owned SwiftShader emulator; no physical smoothness/audio/iOS claim',

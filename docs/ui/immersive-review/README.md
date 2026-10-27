@@ -5,6 +5,12 @@ original assets, selected from a clean 76-state matrix. They use declared
 repository/audio fixtures and reduced motion for deterministic pixels. They are
 not mockups, native audio demonstrations or proof of runtime smoothness.
 
+The subsequent bounded static-art cache preserves this composition. Its complete
+local gate passed338Flutter tests and rerendered76states against the same eight
+strict references, without regenerating them. Enabled-motion cache continuity
+and resource lifetime have separate tests; native performance and IME evidence
+remain tied to their exact cloud capture source, as recorded in DEVELOPMENT-STATUS.
+
 | Home | Editor | Export |
 |---|---|---|
 | ![Doodimo Home](home.png) | ![Doodimo editor](editor.png) | ![Doodimo export](export.png) |

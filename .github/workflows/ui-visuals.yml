@@ -8,6 +8,8 @@ on:
       - integration_test/support/ui_capture_metrics.dart
       - integration_test/support/ui_frame_clock.dart
       - test/ui_frame_clock_test.dart
+      - integration_test/support/ui_presentation_fence.dart
+      - test/ui_presentation_fence_test.dart
       - test_driver/ui_visual_capture_driver.dart
       - scripts/capture-android-ui.py
       - scripts/prepare-ui-capture-source.py
@@ -54,9 +56,9 @@ jobs:
           source cloud/env.sh
           export DASH__SUPPRESS_ANALYTICS=true
           flutter pub get
-          dart format --output=none --set-exit-if-changed integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart test/ui_frame_clock_test.dart test_driver/ui_visual_capture_driver.dart
-          flutter analyze --no-pub integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart test/ui_frame_clock_test.dart test_driver/ui_visual_capture_driver.dart
-          flutter test --no-pub test/ui_frame_clock_test.dart
+          dart format --output=none --set-exit-if-changed integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart test/ui_frame_clock_test.dart integration_test/support/ui_presentation_fence.dart test/ui_presentation_fence_test.dart test_driver/ui_visual_capture_driver.dart
+          flutter analyze --no-pub integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart test/ui_frame_clock_test.dart integration_test/support/ui_presentation_fence.dart test/ui_presentation_fence_test.dart test_driver/ui_visual_capture_driver.dart
+          flutter test --no-pub test/ui_frame_clock_test.dart test/ui_presentation_fence_test.dart
           python3 -m py_compile scripts/capture-android-ui.py scripts/ui_capture_mp4.py scripts/test-ui-capture-mp4.py
       - name: Enable disposable emulator acceleration
         run: |

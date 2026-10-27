@@ -14,7 +14,7 @@ REQUEST = {'mode': 'runtime', 'runId': 40525650391, 'artifactId': 12748102114, '
 class RuntimeInspectionTest(unittest.TestCase):
     def test_exact_attempt_request_rejects_arbitrary_paths_and_ui_name(self):
         module.validate_request(REQUEST)
-        for change in ({'artifactId': True}, {'artifactName': 'drawmusic-ui-visuals-' + 'a' * 40}, {'path': '/etc/passwd'}, {'runId': -1}):
+        for change in ({'artifactId': True}, {'artifactName': 'drawmusic-ui-visuals-' + 'a' * 40}, {'path': '/etc/passwd'}, {'transportPath': 'work/runtime-output/arbitrary.json'}, {'runId': -1}):
             with self.assertRaises(ValueError):
                 module.validate_request(REQUEST | change)
 
@@ -25,6 +25,7 @@ class RuntimeInspectionTest(unittest.TestCase):
             log.parent.mkdir(parents=True)
             log.write_text('native start\nFATAL EXCEPTION: main\nService connection disposed\n')
             (log.parent / 'hd-background-host.json').write_text(json.dumps({'passed': False}))
+            (log.parent / 'runtime-transport-failure.json').write_text(json.dumps({'qemuVerified': False, 'host': {'memory': {'MemAvailable': '128kB'}}}))
             junit = root / module.JUNIT_ROOT / 'connected/debug/TEST-Pixel.xml'
             junit.parent.mkdir(parents=True)
             junit.write_text('<testsuite tests="1" failures="0"><testcase name="actualCodec" classname="NativeTest" time="2.1"/></testsuite>')
@@ -35,6 +36,8 @@ class RuntimeInspectionTest(unittest.TestCase):
             text = '\n'.join(emitted)
             self.assertIn('FATAL EXCEPTION: main', text)
             self.assertIn('actualCodec', text)
+            self.assertIn('MemAvailable', text)
+            self.assertIn('runtime-transport-failure.json', text)
             self.assertIn('"passed": false', text)
             self.assertNotIn('NEVER PRINT THIS', text)
 
@@ -47,6 +50,12 @@ class RuntimeInspectionTest(unittest.TestCase):
             log.parent.mkdir(parents=True)
             with log.open('wb') as file:
                 file.truncate(8 * 1024 * 1024 + 1)
+            with self.assertRaises(ValueError):
+                module.inspect(root, REQUEST, lambda _: None)
+            log.unlink()
+            transport = log.parent / 'runtime-transport-failure.json'
+            with transport.open('wb') as file:
+                file.truncate(128 * 1024 + 1)
             with self.assertRaises(ValueError):
                 module.inspect(root, REQUEST, lambda _: None)
 
