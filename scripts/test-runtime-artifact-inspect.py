@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import importlib.util
+import contextlib
+import io
+import subprocess
 import hashlib
 import json
 from pathlib import Path
@@ -157,6 +160,113 @@ class UiPartialInspectionTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     ui.inspect_ambient_recording({'ambientMotionDiagnostic': True}, {'events': events, 'passed': False})
                 process.assert_not_called()
+
+
+class OriginalInteractionInspection(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.folder = self.root / 'recordings'
+        self.folder.mkdir()
+        self.patch = patch.object(ui, 'ROOT', self.root)
+        self.patch.start()
+        self.addCleanup(self.patch.stop)
+        self.report = {'passed': False, 'reportSource': 'capture-progress.json', 'events': []}
+        for i, name in enumerate(ui.INTERACTION_RECORDINGS):
+            data = (name.encode() + b'owned-fixture') * 100
+            (self.folder / (name + '.mp4')).write_bytes(data)
+            self.report['events'] += [
+                {'operation': 'record_start', 'name': name, 'sequence': i * 2 + 1},
+                {'operation': 'record_stop', 'name': name, 'sequence': i * 2 + 2,
+                 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()},
+            ]
+        self.metadata = {'format': {'duration': '0.5'}, 'streams': [{'codec_name': 'h264', 'width': 720, 'height': 1600, 'nb_read_frames': '2'}]}
+        self.packets = {'packets': [{'pts_time': '0.0', 'dts_time': '0.0'}, {'pts_time': '0.25', 'dts_time': '0.25'}]}
+
+    def result(self, value):
+        return subprocess.CompletedProcess([], 0, json.dumps(value), '')
+
+    def invoke(self, runner):
+        output = io.StringIO()
+        with patch.object(ui.subprocess, 'run', side_effect=runner), contextlib.redirect_stdout(output):
+            ui.inspect_interaction_recordings({'interactionMotionDiagnostic': True}, self.report)
+        return output.getvalue()
+
+    def test_explicit_boolean_only_and_default_does_no_subprocess_work(self):
+        with patch.object(ui.subprocess, 'run') as run:
+            ui.inspect_interaction_recordings({}, self.report)
+            with self.assertRaises(ValueError): ui.inspect_interaction_recordings({'interactionMotionDiagnostic': 1}, self.report)
+            run.assert_not_called()
+
+    def test_all_six_original_clips_keep_diagnostic_status_and_decode_whole_stream(self):
+        calls = []
+        def run(command, **kwargs):
+            calls.append((command, kwargs))
+            if command[0] == 'ffmpeg': return self.result({})
+            return self.result(self.packets if '-show_packets' in command else self.metadata)
+        text = self.invoke(run)
+        self.assertEqual(text.count('UI_INTERACTION_RECORDING_METADATA '), 6)
+        self.assertEqual(text.count('"wholeVideoDecodePassed": true'), 6)
+        self.assertNotIn('"captureReportPassed": true', text)
+        decodes = [command for command, _ in calls if command[0] == 'ffmpeg']
+        self.assertEqual(len(decodes), 6)
+        for command in decodes:
+            self.assertIn('-xerror', command)
+            self.assertIn('explode', command)
+            self.assertNotIn('-t', command)
+            self.assertNotIn('-ss', command)
+        self.assertTrue(all(kwargs['timeout'] == 30 for _, kwargs in calls))
+
+    def test_original_start_stop_order_hash_bytes_and_exact_path_required(self):
+        stop = self.report['events'][1]
+        for change in ({'sha256': '0' * 64}, {'bytes': stop['bytes'] + 1}, {'sequence': 0}):
+            original = stop.copy()
+            stop.update(change)
+            with patch.object(ui.subprocess, 'run') as run:
+                with self.assertRaises(ValueError): ui.inspect_interaction_recordings({'interactionMotionDiagnostic': True}, self.report)
+                run.assert_not_called()
+            stop.update(original)
+        self.report['events'].pop(0)
+        with self.assertRaises(ValueError): self.invoke(lambda *_a, **_k: self.fail('unowned subprocess'))
+
+    def test_symlink_and_duplicate_start_fail_before_decode(self):
+        path = self.folder / (ui.INTERACTION_RECORDINGS[0] + '.mp4')
+        path.rename(self.root / 'unrelated')
+        path.symlink_to(self.root / 'unrelated')
+        with self.assertRaises(ValueError): self.invoke(lambda *_a, **_k: self.fail('symlink subprocess'))
+        path.unlink()
+        (self.root / 'unrelated').rename(path)
+        self.report['events'].append(self.report['events'][0].copy())
+        with self.assertRaises(ValueError): self.invoke(lambda *_a, **_k: self.fail('duplicate subprocess'))
+
+    def test_nonfinite_pts_and_reversed_dts_rejected_before_decoder(self):
+        for packets in ([{'pts_time': 'nan', 'dts_time': '0'}], [{'pts_time': '1', 'dts_time': '1'}, {'pts_time': '0', 'dts_time': '0'}], []):
+            def run(command, **kwargs):
+                self.assertNotEqual(command[0], 'ffmpeg')
+                return self.result({'packets': packets} if '-show_packets' in command else self.metadata)
+            with self.assertRaises(ValueError): self.invoke(run)
+
+    def test_valid_b_frame_presentation_reordering_is_reported_not_rejected(self):
+        self.packets = {'packets': [
+            {'pts_time': '0.0', 'dts_time': '-0.25'},
+            {'pts_time': '0.375', 'dts_time': '-0.125'},
+            {'pts_time': '0.125', 'dts_time': '0.0'},
+            {'pts_time': '0.25', 'dts_time': '0.125'},
+        ]}
+        def run(command, **kwargs):
+            return self.result({} if command[0] == 'ffmpeg' else self.packets if '-show_packets' in command else self.metadata)
+        self.assertEqual(self.invoke(run).count('"wholeVideoDecodePassed": true'), 6)
+
+    def test_decode_failure_and_timeout_remain_explicit_not_success(self):
+        for error in (subprocess.CalledProcessError(1, ['ffmpeg'], stderr='broken AVC'), subprocess.TimeoutExpired(['ffmpeg'], 30)):
+            def run(command, **kwargs):
+                if command[0] == 'ffmpeg': raise error
+                return self.result(self.packets if '-show_packets' in command else self.metadata)
+            text = self.invoke(run)
+            self.assertEqual(text.count('"wholeVideoDecodePassed": false'), 6)
+            self.assertNotIn('"wholeVideoDecodePassed": true', text)
+            self.assertIn('UNACCEPTED_DIAGNOSTIC_ONLY', text)
 
 
 if __name__ == '__main__':

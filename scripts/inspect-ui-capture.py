@@ -8,11 +8,84 @@ this does not read an owner's phone or arbitrary files from the runner.
 import base64
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import subprocess
 
 ROOT = Path('work/ui-capture-inspect')
+INTERACTION_RECORDINGS = (
+    '01-root-navigation', '02-home-editor-back', '03-paper-sheet',
+    '04-instrument-and-playback', '05-export-ready', '06-reduced-motion',
+)
+
+
+def inspect_interaction_recordings(request, report):
+    diagnostic = request.get('interactionMotionDiagnostic', False)
+    if type(diagnostic) is not bool:
+        raise ValueError('Expected boolean interactionMotionDiagnostic')
+    if not diagnostic:
+        return
+    folder = ROOT / 'recordings'
+    if folder.is_symlink() or not folder.is_dir():
+        raise ValueError('Original recordings directory missing or unsafe')
+    for name in INTERACTION_RECORDINGS:
+        starts = [item for item in report['events'] if item.get('operation') == 'record_start' and item.get('name') == name]
+        stops = [item for item in report['events'] if item.get('operation') == 'record_stop' and item.get('name') == name]
+        if len(starts) != 1 or len(stops) != 1:
+            raise ValueError('Unique original recording start/stop missing: ' + name)
+        start, stop = starts[0], stops[0]
+        if type(start.get('sequence')) is not int or type(stop.get('sequence')) is not int or not 0 < start['sequence'] < stop['sequence']:
+            raise ValueError('Original recording event order invalid: ' + name)
+        clip = folder / (name + '.mp4')
+        if clip.is_symlink() or not clip.is_file() or not 1000 <= clip.stat().st_size <= 64_000_000:
+            raise ValueError('Bounded exact original recording missing: ' + name)
+        digest = hashlib.sha256(clip.read_bytes()).hexdigest()
+        if clip.stat().st_size != stop.get('bytes') or digest != stop.get('sha256'):
+            raise ValueError('Recording bytes/SHA differ from original host manifest: ' + name)
+        probe = subprocess.run([
+            'ffprobe', '-v', 'error', '-select_streams', 'v:0', '-count_frames', '-count_packets',
+            '-show_entries', 'stream=codec_name,width,height,start_time,duration,duration_ts,time_base,r_frame_rate,avg_frame_rate,nb_frames,nb_read_frames,nb_read_packets:format=start_time,duration',
+            '-of', 'json', str(clip),
+        ], check=True, capture_output=True, text=True, timeout=30)
+        metadata = json.loads(probe.stdout)
+        duration = float(metadata['format']['duration'])
+        if not math.isfinite(duration) or not 0 < duration <= 181 or len(metadata.get('streams', [])) != 1:
+            raise ValueError('Original recording metadata outside diagnostic bounds: ' + name)
+        stream = metadata['streams'][0]
+        if stream.get('codec_name') != 'h264' or not 0 < int(stream['width']) <= 1080 or not 0 < int(stream['height']) <= 2400:
+            raise ValueError('Original recording video geometry/codec rejected: ' + name)
+        packets = subprocess.run([
+            'ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_packets',
+            '-show_entries', 'packet=pts_time,dts_time,duration_time,flags', '-of', 'json', str(clip),
+        ], check=True, capture_output=True, text=True, timeout=30)
+        values = json.loads(packets.stdout).get('packets', [])
+        if not isinstance(values, list) or not 0 < len(values) <= 20000:
+            raise ValueError('Original recording packet count outside bound: ' + name)
+        timestamps = [float(item['pts_time']) for item in values]
+        decode_timestamps = [float(item['dts_time']) for item in values]
+        if not all(math.isfinite(value) for value in timestamps + decode_timestamps) or any(b < a for a, b in zip(decode_timestamps, decode_timestamps[1:])):
+            raise ValueError('Original recording PTS/DTS missing/nonfinite or DTS out of order: ' + name)
+        evidence = {'name': name, 'status': 'UNACCEPTED_DIAGNOSTIC_ONLY',
+                    'captureReportPassed': report.get('passed') is True, 'reportSource': report.get('reportSource'),
+                    'bytes': clip.stat().st_size, 'sha256': digest, 'metadata': metadata,
+                    'packetCount': len(values), 'firstPackets': values[:3], 'lastPackets': values[-3:],
+                    'minPtsSeconds': min(timestamps), 'maxPtsSeconds': max(timestamps),
+                    'recorderStart': start, 'recordingStop': stop,
+                    'scope': 'Exact original owned interaction video; no padding/retiming, presentation/smoothness or physical/iOS acceptance'}
+        print('UI_INTERACTION_RECORDING_METADATA ' + json.dumps(evidence), flush=True)
+        try:
+            subprocess.run([
+                'ffmpeg', '-nostdin', '-v', 'error', '-xerror', '-err_detect', 'explode',
+                '-i', str(clip), '-map', '0:v:0', '-an', '-sn', '-dn', '-f', 'null', '-',
+            ], check=True, capture_output=True, text=True, timeout=30)
+            verdict = {'wholeVideoDecodePassed': True}
+        except subprocess.CalledProcessError as error:
+            verdict = {'wholeVideoDecodePassed': False, 'error': error.stderr[-1500:]}
+        except subprocess.TimeoutExpired:
+            verdict = {'wholeVideoDecodePassed': False, 'error': 'Whole-video diagnostic decode timed out after30s'}
+        verdict.update(name=name, status='UNACCEPTED_DIAGNOSTIC_ONLY', scope='Complete original video-track decode; not full visual-suite acceptance')
+        print('UI_INTERACTION_DIAGNOSTIC_DECODE ' + json.dumps(verdict), flush=True)
 
 
 def load_capture_report(request):
@@ -189,6 +262,7 @@ def main():
     print('UI_CAPTURE_REPORT_SOURCE ' + json.dumps({key: report.get(key) for key in ('reportSource', 'passed', 'inspectionStatus')}), flush=True)
     # Encoder/clock diagnosis is independent of PNG display/log-size limits.
     inspect_ambient_recording(request, report)
+    inspect_interaction_recordings(request, report)
     expected = {item['name'] + '.png': item for item in report.get('events', []) if item.get('operation') == 'snapshot'}
     failure = report.get('presentationFailure')
     if failure and failure.get('name') == '00-home-not-presented':

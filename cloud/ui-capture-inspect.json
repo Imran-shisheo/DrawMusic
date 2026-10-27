@@ -1,12 +1,7 @@
 {
   "runId": 40560035660,
   "artifactName": "drawmusic-ui-visuals-5c4a7be7a643dd7a88ffc9c10d7679443367a32f",
-  "screenshots": [
-    "01-home.png",
-    "05-editor-drawn.png",
-    "10-export-selection.png",
-    "20-rename-native-ime.png",
-    "21-rename-focus-restored.png"
-  ],
-  "ambientMotionDiagnostic": true
+  "screenshots": [],
+  "ambientMotionDiagnostic": true,
+  "interactionMotionDiagnostic": true
 }
