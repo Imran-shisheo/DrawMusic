@@ -1,4 +1,6 @@
-# Doodimo redesign — work-in-progress preview
+# Rejected first UI iteration — retained for comparison
+
+The owner rejected this iteration as too basic. These images are historical iteration evidence, not the current design direction or accepted redesign. A materially revised editorial creative-instrument composition is in progress.
 
 27 October 2026. Actual Flutter product widgets rendered with bundled fonts and declared fixture storage/audio. These are implementation previews, not mockups, emulator screenshots, native-audio proof or final acceptance. Motion is frozen using the real reduced-motion preference for deterministic stills. All final-source functional, full visual and runtime/profile checks remain required; compact French layout and other refinements are still being checked.
 

@@ -1,6 +1,6 @@
-# DrawMusic / ScribbleSong
+# Doodimo — DrawMusic repository
 
-An original Flutter drawing-to-music application. DrawMusic is the repository name; ScribbleSong is the PRD's provisional original brand. Android development runs in Codex Cloud. The owner will build and test iOS on a local Mac.
+An original Flutter drawing-to-music application. Doodimo is the owner-selected display name; DrawMusic remains the repository name. The historical PRD uses the provisional ScribbleSong name, and the package ID remains com.imranshisheo.scribblesong. Android development runs in Codex Cloud. The owner will build and test iOS on a local Mac.
 
 ## Start here
 
@@ -11,6 +11,8 @@ An original Flutter drawing-to-music application. DrawMusic is the repository na
 - [Agent instructions](AGENTS.md)
 
 ## Current state
+
+**Doodimo UI redesign in progress (2.1.0+24):** [stacked draft PR #23](https://github.com/Imran-shisheo/DrawMusic/pull/23), [actual work-in-progress renders](docs/ui/progress/README.md), [implementation and acceptance ledger](docs/UI-UX-REDESIGN.md). This preserves the verified review fixes below. New-source full acceptance is pending; both PRs remain unmerged.
 
 The merged creative expansion (PR #21, main a7c3670, 2.0.0+22) provides 13 original instruments, 12 keys/11 scales, accompaniment, 20 original templates, photo/camera/gradient backgrounds, PNG/MIDI/WAV/MP4, 12 locales and expressive/stylus/dark/tablet features. All creative tools remain free; no reference media ships.
 

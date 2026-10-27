@@ -8,7 +8,7 @@ Branch `codex/ui-redesign-2026-10-27` starts at `cddebbd56bf5b4d53b7774fcdf7718e
 
 ## Direction and review findings
 
-Create a calm musical sketchbook: warm ivory, forest text, restrained teal actions and small sage/lavender/coral accents. Use an original continuous line becoming a wave, never competitor media. Keep artwork colors, rendering, geometry and audio unchanged. Final naming is pending; maintain one provisional brand definition rather than propagating candidates.
+Create a calm musical sketchbook: warm ivory, forest text, restrained teal actions and small sage/lavender/coral accents. Use an original continuous line becoming a wave, never competitor media. Keep artwork colors, rendering, geometry and audio unchanged. The owner selected Doodimo after considering alternatives. Use one centralized brand definition, original line-to-wave assets and the planned store title Doodimo: Draw Music; no store publication or legal/name-reservation claim.
 
 Current source exposes a long Home introduction before the creation action, simultaneous editor settings in two scroll regions, thirteen instrument chips, and a long export sheet containing every format. Navigation retains four branch navigators but lacks a deliberate content transition. These findings guide the redesign; actual pre-change widget captures and emulator evidence must be inspected separately before visual acceptance.
 
@@ -35,3 +35,9 @@ Retain every branch navigator and scroll/section state; animation must not dispo
 Before/after captures must cover Home; editor empty/drawn/playing and music/voice controls; paper/crop; Drafts/Exports; export selection/progress/ready/error; Settings/language/help; and representative dark/compact/large-text/tablet cases. Record actual cloud emulator navigation, tabs, voice/playback, sheet, export and reduced-motion flows. Collect profile UI/raster frame timings under transitions and drawing load, including actual sample counts and over-budget frames. Widget snapshots do not prove native performance. Mac compilation, physical sound/routes, screen readers and receiving applications remain separate acceptance work.
 
 Run formatter, analyzer, meaningful existing/new tests, `bash scripts/check-android.sh`, signature verification and relevant actual runtime checks. Preserve functionality tests; update changed presentation expectations rather than deleting coverage. Report new source independently of the accepted pre-redesign gate.
+
+## Corrective art direction — first iteration rejected
+
+The owner rejected the initial pale-card preview as too basic. It is retained under `docs/ui/progress` as rejected comparison evidence; its passing technical checks and golden pixels do not constitute design approval.
+
+The active direction is **Doodimo as a pocket creative instrument / editorial mixtape**: open Home composition around real saved/template artwork, paper sleeves with titles outside; one compact deep-ink four-key dock with an animated selected marker; original 24-unit control glyphs; Space Grotesk display typography over legible Nunito/Noto UI text; a tactile joined editor tool rail and transport console; connected format selection and a real-artifact export ticket. Warm paper, deep ink, lavender and one controlled lime accent establish hierarchy without universal outlined containers, blur or false audio visualizers. Preserve every functional, accessibility, gesture, audio and recovery fix already verified. New renders must materially differ before exhaustive acceptance resumes.
