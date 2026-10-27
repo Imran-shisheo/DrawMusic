@@ -16,7 +16,86 @@ FrameTiming raster(int number) => FrameTiming(
   frameNumber: number,
 );
 
+class _DiagnosticNonlinearScaler extends TextScaler {
+  const _DiagnosticNonlinearScaler();
+  @override
+  double get textScaleFactor => 2;
+  @override
+  double scale(double fontSize) => fontSize + 4;
+}
+
 void main() {
+  UiImeOcclusionWitness ime({
+    double fieldBottom = 500,
+    double cancelBottom = 550,
+    bool hit = true,
+    bool mock = false,
+  }) => UiImeOcclusionWitness(
+    physicalHeight: 2400,
+    physicalInset: 900,
+    dpr: 2.5,
+    field: Rect.fromLTRB(20, 300, 380, fieldBottom),
+    cancel: Rect.fromLTRB(20, 510, 120, cancelBottom),
+    focused: true,
+    cancelHitTestable: hit,
+    mockInputRegistered: mock,
+  );
+  test('native inset alone is insufficient until actual field and Cancel layout fit', () {
+    expect(ime(fieldBottom: 802).ready, isFalse);
+    expect(ime(cancelBottom: 700).ready, isFalse);
+    expect(ime(hit: false).ready, isFalse);
+    expect(ime().ready, isTrue);
+    expect(ime().visibleBottom, 600);
+  });
+  test(
+    'diagnostic geometry preserves occlusion and never accepts mock keyboard',
+    () {
+      expect(ime(mock: true).ready, isFalse);
+      final diagnostic = ime(fieldBottom: 802).toJson();
+      expect(diagnostic['ready'], isFalse);
+      expect(diagnostic['physicalInset'], 900);
+      expect(diagnostic['fieldBounds'], [20, 300, 360, 502]);
+    },
+  );
+  test(
+    'native nominal200 accepts nonlinear font sizes without linear assumptions',
+    () {
+      final witness = UiTextScaleWitness(
+        scaler: const _DiagnosticNonlinearScaler(),
+        platformNominal: 2,
+      );
+      expect(witness.matches(2), isTrue);
+      expect(witness.scaledFonts['10'], 14);
+      expect(witness.scaledFonts['42'], 46);
+      expect(witness.toJson()['mediaQuerySnapshotNominalTextScaleFactor'], 2);
+    },
+  );
+  test(
+    'stale platform or widget snapshot cannot qualify requested native scale',
+    () {
+      expect(
+        UiTextScaleWitness(
+          scaler: TextScaler.noScaling,
+          platformNominal: 2,
+        ).matches(2),
+        isFalse,
+      );
+      expect(
+        UiTextScaleWitness(
+          scaler: const _DiagnosticNonlinearScaler(),
+          platformNominal: 1,
+        ).matches(2),
+        isFalse,
+      );
+      expect(
+        UiTextScaleWitness(
+          scaler: TextScaler.noScaling,
+          platformNominal: 1,
+        ).matches(1),
+        isTrue,
+      );
+    },
+  );
   test('stale queued raster cannot qualify the new expected sheet', () {
     final ledger = UiRasterEvidenceLedger();
     ledger.rasterFrames([raster(1)]);
@@ -77,6 +156,7 @@ void main() {
         isExpected: () =>
             find.byKey(const ValueKey('target')).evaluate().isNotEmpty,
         frameNumberForTests: () => number++,
+        screenshotSnapshot: () => {'nominal': 2, 'frameWitness': number - 1},
       )..start();
       // Exactly one deliberate screenshot-only frame; no artificial idle loop.
       expect(tester.binding.hasScheduledFrame, isTrue);
@@ -87,6 +167,10 @@ void main() {
       fence.ledger.rasterFrames([raster(1)]);
       final result = await fence.waitForRaster();
       expect(result['matchedEngineFrameNumber'], 1);
+      expect(result['matchedFrameworkSnapshot'], {
+        'nominal': 2,
+        'frameWitness': 1,
+      });
       fence.stop();
       expect(tester.binding.hasScheduledFrame, isFalse);
       await expectLater(

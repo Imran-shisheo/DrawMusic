@@ -1,6 +1,7 @@
 import 'support/functional_motion.dart';
 import '../test/support/editor_controls.dart';
 import '../test/support/export_gallery_navigation.dart';
+import '../test/support/settings_navigation.dart';
 
 import 'package:scribblesong/creative_document/document.dart';
 import 'package:scribblesong/features/backgrounds/domain/background.dart';
@@ -535,8 +536,7 @@ void main() {
       );
       await tester.tap(find.text('Settings'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Language'));
-      await tester.pumpAndSettle();
+      await openSettingsLanguage(tester);
       await tester.scrollUntilVisible(find.text('日本語'), 200);
       await reveal(find.text('日本語'));
       await tester.tap(find.text('日本語').hitTestable());
@@ -553,6 +553,7 @@ void main() {
             container.read(settingsProvider).preferences.languageCode == 'ja',
       );
       await tester.pumpAndSettle();
+      await revealSettingsLanguage(tester);
       expect(find.text('日本語'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     },

@@ -272,6 +272,32 @@ void main() {
           !box.size.isEmpty;
     }
 
+    UiTextScaleWitness textScaleWitness(BuildContext context) =>
+        UiTextScaleWitness(
+          scaler: MediaQuery.textScalerOf(context),
+          platformNominal: binding.platformDispatcher.textScaleFactor,
+        );
+
+    UiImeOcclusionWitness imeWitness() => UiImeOcclusionWitness(
+      physicalHeight: tester.view.physicalSize.height,
+      physicalInset: tester.view.viewInsets.bottom,
+      dpr: tester.view.devicePixelRatio,
+      field: tester.getRect(find.byType(TextField)),
+      cancel: tester.getRect(find.widgetWithText(TextButton, 'Cancel')),
+      focused: find
+          .byType(EditableText)
+          .evaluate()
+          .any(
+            (element) => (element.widget as EditableText).focusNode.hasFocus,
+          ),
+      cancelHitTestable: find
+          .widgetWithText(TextButton, 'Cancel')
+          .hitTestable()
+          .evaluate()
+          .isNotEmpty,
+      mockInputRegistered: binding.testTextInput.isRegistered,
+    );
+
     bool expectedShot(String name) {
       if (find.byType(Scaffold).evaluate().isEmpty) return false;
       final uri = router().routeInformationProvider.value.uri.path;
@@ -361,11 +387,11 @@ void main() {
               !hasPanel &&
               renderedAnchor(home) &&
               width <= 321 &&
-              MediaQuery.textScalerOf(context).scale(10) >= 19,
+              textScaleWitness(context).matches(2),
         '17-editor-compact-large-text' =>
           editor('Morning tide') &&
               width <= 321 &&
-              MediaQuery.textScalerOf(context).scale(10) >= 19,
+              textScaleWitness(context).matches(2),
         '18-home-tablet' =>
           uri == '/home' && !hasPanel && renderedAnchor(home) && width >= 800,
         '19-editor-tablet' => editor('Morning tide') && width >= 800,
@@ -373,7 +399,8 @@ void main() {
           uri == '/drafts' &&
               renderedAnchor(find.byType(TextField)) &&
               tester.view.viewInsets.bottom > 100 &&
-              !binding.testTextInput.isRegistered,
+              !binding.testTextInput.isRegistered &&
+              imeWitness().ready,
         '21-rename-focus-restored' =>
           uri == '/drafts' &&
               !hasPanel &&
@@ -391,14 +418,14 @@ void main() {
               renderedAnchor(home) &&
               width >= 410 &&
               width <= 412 &&
-              MediaQuery.textScalerOf(context).scale(10) == 10 &&
+              textScaleWitness(context).matches(1) &&
               Theme.of(context).brightness == Brightness.light &&
               !MediaQuery.disableAnimationsOf(context),
         '23-editor-light' =>
           editor('Morning tide') &&
               width >= 410 &&
               width <= 412 &&
-              MediaQuery.textScalerOf(context).scale(10) == 10 &&
+              textScaleWitness(context).matches(1) &&
               Theme.of(context).brightness == Brightness.light &&
               !MediaQuery.disableAnimationsOf(context),
         _ => false,
@@ -410,6 +437,24 @@ void main() {
       final fence = UiPresentationFence(
         binding,
         isExpected: () => expectedShot(name),
+        screenshotSnapshot: () {
+          final context = tester.element(find.byType(Scaffold).first);
+          return {
+            ...textScaleWitness(context).toJson(),
+            if (name == '20-rename-native-ime')
+              'nativeImeGeometry': imeWitness().toJson(),
+            'devicePixelRatio': tester.view.devicePixelRatio,
+            'logicalViewportWidth': MediaQuery.sizeOf(context).width,
+            'bodyMediumFontSize': Theme.of(context)
+                .textTheme
+                .bodyMedium!
+                .fontSize!,
+            'headlineLargeFontSize': Theme.of(context)
+                .textTheme
+                .headlineLarge!
+                .fontSize!,
+          };
+        },
       )..start();
       Map<String, Object> evidence;
       try {
@@ -575,6 +620,20 @@ void main() {
                   Offset.zero &
                   (tester.view.physicalSize / tester.view.devicePixelRatio);
               clockSamples.add({
+                'staticCacheRawImages': tester
+                    .widgetList<RawImage>(
+                      find.descendant(
+                        of: aurora,
+                        matching: find.byType(RawImage),
+                      ),
+                    )
+                    .map(
+                      (widget) => {
+                        'width': widget.image?.width,
+                        'height': widget.image?.height,
+                      },
+                    )
+                    .toList(),
                 'sample': index,
                 'stopwatchElapsedUs': stopwatch.elapsedMicroseconds,
                 'dateTimeWallUs': DateTime.now().microsecondsSinceEpoch,
@@ -709,17 +768,42 @@ void main() {
                         (element.widget as EditableText).focusNode.hasFocus,
                   ),
         );
+        final imeWatch = Stopwatch()..start();
+        while (!imeWitness().ready &&
+            imeWatch.elapsed < const Duration(seconds: 20)) {
+          // benchmarkLive pump only yields real wall time; no synthetic frame,
+          // inset or animation clock is injected into the product.
+          await wait(100);
+        }
+        Future<void> retainImeDiagnostic(String stage) async {
+          debugPrint(
+            'UI_NATIVE_IME_UNACCEPTED ${jsonEncode({...imeWitness().toJson(), 'status': 'UNACCEPTED_DIAGNOSTIC_ONLY', 'stage': stage, 'layoutWaitUs': imeWatch.elapsedMicroseconds, 'engineFrameNumber': binding.platformDispatcher.frameData.frameNumber})}',
+          );
+          await host.event('snapshot', '20-rename-native-ime-unaccepted');
+        }
+
+        if (!imeWitness().ready) {
+          await retainImeDiagnostic('native-layout-deadline');
+          fail(
+            'Real native IME panel did not make field and Cancel reachable within20s; unaccepted native PNG and geometry retained.',
+          );
+        }
+        try {
+          await shot('20-rename-native-ime');
+        } catch (_) {
+          await retainImeDiagnostic('expected-state-raster-deadline');
+          rethrow;
+        }
+        // Preserve strict geometry assertions AFTER the exact-state raster
+        // fence, using current real occlusion rather than first-arriving metrics.
         final keyboardInset = tester.view.viewInsets.bottom;
-        final visibleBottom =
-            (tester.view.physicalSize.height - keyboardInset) /
-            tester.view.devicePixelRatio;
+        final visibleBottom = imeWitness().visibleBottom;
         final fieldBounds = tester.getRect(find.byType(TextField));
         final cancel = find.widgetWithText(TextButton, 'Cancel');
         final cancelBounds = tester.getRect(cancel);
         expect(fieldBounds.bottom, lessThanOrEqualTo(visibleBottom));
         expect(cancelBounds.bottom, lessThanOrEqualTo(visibleBottom));
         expect(cancel.hitTestable(), findsOneWidget);
-        await shot('20-rename-native-ime');
         await tap(cancel);
         await until(() => expectedShot('21-rename-focus-restored'));
         expect(find.text('Morning tide'), findsWidgets);

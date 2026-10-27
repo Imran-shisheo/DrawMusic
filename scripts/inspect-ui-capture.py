@@ -137,8 +137,8 @@ def main():
             print(re.sub(r'DrawMusicCapture-[0-9a-f]{32}-', 'DrawMusicCapture-[redacted]-', line[:1000]), flush=True)
         print(f'UI_RECORDING_LOG_END {path.name}', flush=True)
     screenshots = request.get('screenshots', [])
-    if not isinstance(screenshots, list) or len(screenshots) > 4:
-        raise ValueError('Select at most four exact PNG names per read-only inspection')
+    if not isinstance(screenshots, list) or len(screenshots) > 5:
+        raise ValueError('Select at most five exact acceptance PNG names per read-only inspection')
     report = json.loads((ROOT / 'capture-report.json').read_text())
     # Encoder/clock diagnosis is independent of PNG display/log-size limits.
     inspect_ambient_recording(request, report)
@@ -152,13 +152,13 @@ def main():
         if not isinstance(name, str) or not re.fullmatch(r'[0-9]{2}-[a-z0-9-]{1,70}\.png', name):
             raise ValueError('Screenshot name rejected')
         sizes.append({'name': name, 'bytes': (ROOT / 'screenshots' / name).stat().st_size})
-    print('UI_CAPTURE_PNG_REQUEST_SIZES ' + json.dumps({'images': sizes, 'totalBytes': sum(item['bytes'] for item in sizes), 'maxBytes': 1_000_000}), flush=True)
+    print('UI_CAPTURE_PNG_REQUEST_SIZES ' + json.dumps({'images': sizes, 'totalBytes': sum(item['bytes'] for item in sizes), 'maxBytes': 1_500_000}), flush=True)
     for name in screenshots:
         if not isinstance(name, str) or not re.fullmatch(r'[0-9]{2}-[a-z0-9-]{1,70}\.png', name):
             raise ValueError('Screenshot name rejected')
         data = (ROOT / 'screenshots' / name).read_bytes()
         total += len(data)
-        if not data.startswith(b'\x89PNG\r\n\x1a\n') or total > 1_000_000:
+        if not data.startswith(b'\x89PNG\r\n\x1a\n') or total > 1_500_000:
             raise ValueError('PNG signature/inspection batch size rejected')
         digest = hashlib.sha256(data).hexdigest()
         if digest != expected.get(name):

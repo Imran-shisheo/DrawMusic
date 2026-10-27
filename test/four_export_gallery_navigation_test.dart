@@ -4,10 +4,12 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scribblesong/features/export_library/presentation/exports_page.dart';
+import 'package:scribblesong/features/library/presentation/library_document_card.dart';
 import 'package:scribblesong/app/app.dart';
 import 'package:scribblesong/app/providers.dart';
 import 'package:scribblesong/creative_document/document.dart';
@@ -58,6 +60,23 @@ void main() {
   testWidgets(
     'four export names remain reachable and WAV action targets WAV after scrolling to oldest MP4',
     (tester) async {
+      // Match shipped type metrics instead of the widget runner's Ahem font.
+      // Real I/O runs outside FakeAsync, as in the product capture harness.
+      await tester.runAsync(() async {
+        for (final family in ['NunitoSans', 'SpaceGrotesk']) {
+          final loader = FontLoader(family);
+          for (final file
+              in Directory(
+                'assets/fonts/$family',
+              ).listSync().whereType<File>().where(
+                (file) =>
+                    file.path.endsWith('.ttf') || file.path.endsWith('.ttc'),
+              )) {
+            loader.addFont(file.readAsBytes().then(ByteData.sublistView));
+          }
+          await loader.load();
+        }
+      });
       tester.view.physicalSize = const Size(411, 891);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -144,17 +163,41 @@ void main() {
       await tester.pumpAndSettle();
       expect(entries, hasLength(4));
       expect(find.text('Paper hills.wav'), findsOneWidget);
-      expect(
-        find.text('Paper hills.mp4'),
-        findsNothing,
-        reason: 'The oldest real catalog entry is lazy, reproducing the hosted failure.',
-      );
+      void expectOldestRowClipped() {
+        final viewport = tester.getRect(
+          find.byKey(const PageStorageKey('exports-scroll')),
+        );
+        final oldest = find.ancestor(
+          of: find.text('Paper hills.mp4'),
+          matching: find.byType(LibraryDocumentCard),
+        );
+        expect(oldest, findsOneWidget);
+        expect(
+          tester.getRect(oldest).bottom,
+          greaterThan(viewport.bottom),
+          reason: 'With real product fonts the cached oldest row still extends outside the visible gallery.',
+        );
+      }
+
+      expectOldestRowClipped();
       for (final extension in ['wav', 'png', 'mid', 'mp4']) {
         await revealExportGalleryItem(
           tester,
           find.text('Paper hills.$extension'),
         );
-        expect(find.text('Paper hills.$extension'), findsOneWidget);
+        final filename = find.text('Paper hills.$extension');
+        expect(filename, findsOneWidget);
+        final viewport = tester.getRect(
+          find.byKey(const PageStorageKey('exports-scroll')),
+        );
+        expect(
+          tester.getRect(filename).top,
+          greaterThanOrEqualTo(viewport.top),
+        );
+        expect(
+          tester.getRect(filename).bottom,
+          lessThanOrEqualTo(viewport.bottom),
+        );
       }
       final wavActions = find.byTooltip('Actions for Paper hills.wav');
       await revealExportGalleryItem(tester, wavActions);
@@ -197,18 +240,27 @@ void main() {
           'Paper hills.mid',
         ]),
       );
-      expect(
-        find.text('Paper hills.mp4'),
-        findsNothing,
-        reason:
-            'Fresh route has no retained scroll/cache from the first visit.',
-      );
+      // Fresh scope/router restores initial gallery geometry, rather than
+      // retaining the revealed MP4 row from the first visit.
+      expectOldestRowClipped();
       for (final extension in ['mp4', 'wav', 'png', 'mid']) {
         await revealExportGalleryItem(
           tester,
           find.text('Paper hills.$extension'),
         );
-        expect(find.text('Paper hills.$extension'), findsOneWidget);
+        final filename = find.text('Paper hills.$extension');
+        expect(filename, findsOneWidget);
+        final viewport = tester.getRect(
+          find.byKey(const PageStorageKey('exports-scroll')),
+        );
+        expect(
+          tester.getRect(filename).top,
+          greaterThanOrEqualTo(viewport.top),
+        );
+        expect(
+          tester.getRect(filename).bottom,
+          lessThanOrEqualTo(viewport.bottom),
+        );
       }
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());

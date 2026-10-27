@@ -1,5 +1,6 @@
 import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,6 +10,7 @@ import '../features/settings/presentation/language_page.dart';
 import '../features/onboarding/presentation/tutorial.dart';
 
 import '../design_system/theme.dart';
+import '../design_system/system_chrome.dart';
 import '../design_system/brand.dart';
 import '../design_system/brand_colors.dart';
 import '../design_system/creative_dock.dart';
@@ -96,7 +98,7 @@ class _RootTabsState extends State<_RootTabs> {
     final sideRail =
         MediaQuery.sizeOf(context).height < 440 &&
         MediaQuery.sizeOf(context).width >= 520 &&
-        MediaQuery.textScalerOf(context).scale(14) > 21;
+        prefersExpandedTextLayout(context);
     var railWidth = 178.0;
     if (sideRail) {
       final style = Theme.of(context).textTheme.labelMedium
@@ -210,11 +212,14 @@ class _ScribbleSongAppState extends ConsumerState<ScribbleSongApp> {
             settingsProvider.select((state) => state.preferences.reduceMotion),
           ) ||
           MediaQuery.disableAnimationsOf(context);
-      return MediaQuery(
-        data: MediaQuery.of(context).copyWith(disableAnimations: reduce),
-        child: TutorialGate(
-          enabled: widget.showWelcome,
-          child: child ?? const SizedBox(),
+      return AnnotatedRegion<SystemUiOverlayStyle>(
+        value: systemChromeFor(Theme.of(context).brightness),
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: reduce),
+          child: TutorialGate(
+            enabled: widget.showWelcome,
+            child: child ?? const SizedBox(),
+          ),
         ),
       );
     },
@@ -323,6 +328,7 @@ class _HomePageState extends ConsumerState<HomePage>
     with SingleTickerProviderStateMixin {
   bool _heroVisible = true, _entered = false;
   final _heroKey = GlobalKey();
+  final _auroraKey = GlobalKey(debugLabel: 'home-aurora');
   late final AnimationController _entry = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 720),
@@ -349,15 +355,30 @@ class _HomePageState extends ConsumerState<HomePage>
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final type = Theme.of(context).textTheme;
-    final large = MediaQuery.textScalerOf(context).scale(14) > 21;
+    final large = prefersExpandedTextLayout(context);
     final recent = ref.watch(libraryProvider).asData?.value.projects;
     final saved = recent != null && recent.isNotEmpty;
     final template = originalTemplates[2];
     final artwork = saved ? recent.first : template.create();
     final destination = saved ? artwork.id : template.id;
-    final headerHeight = large
-        ? 16 + MediaQuery.textScalerOf(context).scale(22) * 2.5
-        : 68.0;
+    final headerText =
+        TextPainter(
+          text: TextSpan(
+            text: AppBrand.displayName,
+            style: type.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 2,
+        )..layout(
+          maxWidth: (MediaQuery.sizeOf(context).width - 142)
+              .clamp(1, double.infinity)
+              .toDouble(),
+        );
+    final headerHeight = (headerText.height + 24)
+        .clamp(68.0, double.infinity)
+        .toDouble();
+    headerText.dispose();
     void openArtwork() => context.push('/editor/$destination');
     final create = PrismAction(
       key: const ValueKey('home-start'),
@@ -366,6 +387,7 @@ class _HomePageState extends ConsumerState<HomePage>
       onPressed: () => context.push('/editor/new'),
     );
     final preview = Semantics(
+      key: const ValueKey('home-artwork'),
       button: true,
       label: artwork.title,
       onTap: openArtwork,
@@ -395,7 +417,8 @@ class _HomePageState extends ConsumerState<HomePage>
         ),
       ),
     );
-    final caption = Semantics(
+    Widget caption(bool flowing) => Semantics(
+      key: const ValueKey('home-continue'),
       button: true,
       label: artwork.title,
       onTap: openArtwork,
@@ -415,8 +438,8 @@ class _HomePageState extends ConsumerState<HomePage>
                   saved
                       ? context.strings.keepDrawing
                       : context.strings.tryAStartingPoint,
-                  maxLines: large ? null : 1,
-                  overflow: large ? null : TextOverflow.ellipsis,
+                  maxLines: flowing ? null : 1,
+                  overflow: flowing ? null : TextOverflow.ellipsis,
                   style: type.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
@@ -424,8 +447,8 @@ class _HomePageState extends ConsumerState<HomePage>
                 const SizedBox(height: 6),
                 Text(
                   artwork.title,
-                  maxLines: large ? null : 2,
-                  overflow: large ? null : TextOverflow.ellipsis,
+                  maxLines: flowing ? null : 2,
+                  overflow: flowing ? null : TextOverflow.ellipsis,
                   style: type.titleMedium?.copyWith(
                     color: colors.onSurface,
                     fontWeight: FontWeight.w700,
@@ -443,139 +466,170 @@ class _HomePageState extends ConsumerState<HomePage>
         ),
       ),
     );
-    final scene = ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: Theme.of(context).brightness == Brightness.dark
-                ? const [Color(0xff171a38), Color(0xff0c1126)]
-                : const [Color(0xffe3e5ff), Color(0xffe7f8ff)],
-          ),
-          border: Border.all(color: colors.primary.withValues(alpha: .22)),
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: large
-            ? Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    create,
-                    const SizedBox(height: 20),
-                    Text(
-                      context.strings.drawYourMelody,
-                      style: type.titleLarge,
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 230,
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: TickerMode(
-                              enabled: _heroVisible,
-                              child: const AuroraScene(),
-                            ),
-                          ),
-                          PositionedDirectional(
-                            end: 12,
-                            top: 12,
-                            child: SizedBox(width: 132, child: preview),
-                          ),
-                        ],
-                      ),
-                    ),
-                    caption,
-                  ],
-                ),
-              )
-            : SizedBox(
-                height: 390,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: TickerMode(
-                        enabled: _heroVisible,
-                        child: const AuroraScene(),
-                      ),
-                    ),
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                colors.surface.withValues(alpha: .94),
-                                colors.surface.withValues(alpha: .82),
-                                colors.surface.withValues(alpha: 0),
-                              ],
-                              stops: const [0, .26, .55],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    PositionedDirectional(
-                      start: 22,
-                      end: 22,
-                      top: 24,
-                      child: FadeTransition(
-                        opacity: _entry.drive(
-                          CurveTween(
-                            curve: const Interval(
-                              0,
-                              .65,
-                              curve: Curves.easeOut,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          context.strings.aLittleLineALittleMusic,
-                          style: type.headlineMedium?.copyWith(
-                            color: colors.onSurface,
-                          ),
-                        ),
-                      ),
-                    ),
-                    PositionedDirectional(
-                      end: 22,
-                      top: 108,
-                      child: SizedBox(
-                        width: 154,
-                        child: AnimatedBuilder(
-                          animation: _entry,
-                          child: preview,
-                          builder: (context, child) => Transform.translate(
-                            offset: Offset(
-                              0,
-                              (1 - Curves.easeOut.transform(_entry.value)) * 10,
-                            ),
-                            child: child,
-                          ),
-                        ),
-                      ),
-                    ),
-                    PositionedDirectional(
-                      start: 22,
-                      end: 176,
-                      top: 190,
-                      child: caption,
-                    ),
-                    PositionedDirectional(
-                      start: 20,
-                      end: 20,
-                      bottom: 20,
-                      child: create,
-                    ),
-                  ],
-                ),
+    final scene = LayoutBuilder(
+      builder: (context, constraints) {
+        final headline =
+            TextPainter(
+              text: TextSpan(
+                text: context.strings.aLittleLineALittleMusic,
+                style: type.headlineMedium,
               ),
-      ),
+              textDirection: Directionality.of(context),
+              textScaler: MediaQuery.textScalerOf(context),
+            )..layout(
+              maxWidth: (constraints.maxWidth - 44)
+                  .clamp(1, double.infinity)
+                  .toDouble(),
+            );
+        // Preserve the floating composition while there is an actual safe gap.
+        // A 16dp decorative margin unnecessarily rejected the normal phone
+        // heading even though its foreground bounds were disjoint.
+        final foregroundWouldOverlap = 24 + headline.height + 4 > 108;
+        headline.dispose();
+        final flowing =
+            large || constraints.maxWidth < 340 || foregroundWouldOverlap;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: Theme.of(context).brightness == Brightness.dark
+                    ? const [Color(0xff171a38), Color(0xff0c1126)]
+                    : const [Color(0xffe3e5ff), Color(0xffe7f8ff)],
+              ),
+              border: Border.all(color: colors.primary.withValues(alpha: .22)),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: flowing
+                ? Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        create,
+                        const SizedBox(height: 20),
+                        Text(
+                          context.strings.drawYourMelody,
+                          key: const ValueKey('home-headline'),
+                          style: type.titleLarge,
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 230,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: TickerMode(
+                                  enabled: _heroVisible,
+                                  child: AuroraScene(key: _auroraKey),
+                                ),
+                              ),
+                              Align(
+                                alignment: AlignmentDirectional.centerEnd,
+                                child: Padding(
+                                  padding: const EdgeInsetsDirectional.only(
+                                    end: 12,
+                                  ),
+                                  child: SizedBox(width: 132, child: preview),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        caption(true),
+                      ],
+                    ),
+                  )
+                : SizedBox(
+                    height: 390,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: TickerMode(
+                            enabled: _heroVisible,
+                            child: AuroraScene(key: _auroraKey),
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    colors.surface.withValues(alpha: .94),
+                                    colors.surface.withValues(alpha: .82),
+                                    colors.surface.withValues(alpha: 0),
+                                  ],
+                                  stops: const [0, .26, .55],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        PositionedDirectional(
+                          start: 22,
+                          end: 22,
+                          top: 24,
+                          child: FadeTransition(
+                            opacity: _entry.drive(
+                              CurveTween(
+                                curve: const Interval(
+                                  0,
+                                  .65,
+                                  curve: Curves.easeOut,
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              context.strings.aLittleLineALittleMusic,
+                              key: const ValueKey('home-headline'),
+                              style: type.headlineMedium?.copyWith(
+                                color: colors.onSurface,
+                              ),
+                            ),
+                          ),
+                        ),
+                        PositionedDirectional(
+                          end: 22,
+                          top: 108,
+                          child: SizedBox(
+                            width: 154,
+                            child: AnimatedBuilder(
+                              animation: _entry,
+                              child: preview,
+                              builder: (context, child) => Transform.translate(
+                                offset: Offset(
+                                  0,
+                                  (1 - Curves.easeOut.transform(_entry.value)) *
+                                      10,
+                                ),
+                                child: child,
+                              ),
+                            ),
+                          ),
+                        ),
+                        PositionedDirectional(
+                          start: 22,
+                          end: 176,
+                          top: 190,
+                          child: caption(false),
+                        ),
+                        PositionedDirectional(
+                          start: 20,
+                          end: 20,
+                          bottom: 20,
+                          child: create,
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        );
+      },
     );
     return SceneBackdrop(
       child: Scaffold(

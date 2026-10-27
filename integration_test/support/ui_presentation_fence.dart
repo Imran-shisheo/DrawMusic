@@ -2,6 +2,92 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/painting.dart';
+
+/// Real platform insets and current laid-out controls must agree. Native IME
+/// metrics can arrive before the framework has laid out the resized panel.
+class UiImeOcclusionWitness {
+  const UiImeOcclusionWitness({
+    required this.physicalHeight,
+    required this.physicalInset,
+    required this.dpr,
+    required this.field,
+    required this.cancel,
+    required this.focused,
+    required this.cancelHitTestable,
+    required this.mockInputRegistered,
+  });
+  final double physicalHeight, physicalInset, dpr;
+  final Rect field, cancel;
+  final bool focused, cancelHitTestable, mockInputRegistered;
+  double get visibleBottom => (physicalHeight - physicalInset) / dpr;
+  bool get ready =>
+      dpr.isFinite &&
+      dpr > 0 &&
+      physicalInset > 100 &&
+      visibleBottom.isFinite &&
+      visibleBottom > 0 &&
+      focused &&
+      !mockInputRegistered &&
+      cancelHitTestable &&
+      [field, cancel].every(
+        (rect) =>
+            rect.isFinite &&
+            !rect.isEmpty &&
+            rect.top >= 0 &&
+            rect.bottom <= visibleBottom,
+      );
+  Map<String, Object> toJson() => {
+    'physicalHeight': physicalHeight,
+    'physicalInset': physicalInset,
+    'devicePixelRatio': dpr,
+    'visibleLogicalBottom': visibleBottom,
+    'fieldBounds': [field.left, field.top, field.width, field.height],
+    'cancelBounds': [cancel.left, cancel.top, cancel.width, cancel.height],
+    'focused': focused,
+    'cancelHitTestable': cancelHitTestable,
+    'mockInputRegistered': mockInputRegistered,
+    'ready': ready,
+  };
+}
+
+/// Diagnostic configuration identity, never a linear font-size assumption.
+/// Android's nominal preference and the widget snapshot must both arrive.
+class UiTextScaleWitness {
+  UiTextScaleWitness({
+    required TextScaler scaler,
+    required this.platformNominal,
+  }) : scalerType = scaler.runtimeType.toString(),
+       scalerDescription = scaler.toString(),
+       // SystemTextScaler snapshots this nominal value. The deprecated API is
+       // required ONLY for diagnostic configuration matching, never arithmetic
+       // or product layout. scale(fontSize) remains the actual font evidence.
+       // ignore: deprecated_member_use
+       snapshotNominal = scaler.textScaleFactor,
+       scaledFonts = {
+         for (final font in [10, 12, 14, 16, 20, 24, 32, 42])
+           '$font': scaler.scale(font.toDouble()),
+       };
+
+  final double platformNominal, snapshotNominal;
+  final String scalerType, scalerDescription;
+  final Map<String, double> scaledFonts;
+
+  bool matches(double requestedNominal) =>
+      platformNominal.isFinite &&
+      snapshotNominal.isFinite &&
+      (platformNominal - requestedNominal).abs() < 0.01 &&
+      (snapshotNominal - requestedNominal).abs() < 0.01;
+
+  Map<String, Object> toJson() => {
+    'platformNominalTextScaleFactor': platformNominal,
+    'mediaQuerySnapshotNominalTextScaleFactor': snapshotNominal,
+    'textScalerRuntimeType': scalerType,
+    'textScalerDescription': scalerDescription,
+    'actualScaledFonts': scaledFonts,
+    'scope': 'Nominal platform preference and MediaQuery snapshot identity; actual font-size samples may be nonlinear. No scaler override.',
+  };
+}
 
 /// Joins an expected-state framework witness to the EXACT engine frame's
 /// raster completion. Old/in-flight frames and changed routes cannot qualify.
@@ -79,6 +165,7 @@ class UiPresentationFence {
   UiPresentationFence(
     this.binding, {
     required this.isExpected,
+    this.screenshotSnapshot,
     int Function()? frameNumberForTests,
   }) : _frameNumber =
            frameNumberForTests ??
@@ -86,6 +173,8 @@ class UiPresentationFence {
 
   final SchedulerBinding binding;
   final bool Function() isExpected;
+  final Map<String, Object> Function()? screenshotSnapshot;
+  final Map<int, Map<String, Object>> _snapshots = {};
   final int Function() _frameNumber;
   final ledger = UiRasterEvidenceLedger();
   var _active = false;
@@ -98,6 +187,7 @@ class UiPresentationFence {
     _active = true;
     final generation = ++_generation;
     ledger.reset();
+    _snapshots.clear();
     frameworkWitnessCount = 0;
     _timings = (frames) {
       if (_active && generation == _generation) ledger.rasterFrames(frames);
@@ -107,11 +197,18 @@ class UiPresentationFence {
       if (!_active || generation != _generation) return;
       // Pinned engine hooks update FrameData after beginFrame and before
       // drawFrame; FrameTiming.frameNumber is the same recorder identity.
+      final frameNumber = _frameNumber();
       ledger.frameworkFrame(
-        number: _frameNumber(),
+        number: frameNumber,
         expected: isExpected(),
         systemTimestampUs: binding.currentSystemFrameTimeStamp.inMicroseconds,
       );
+      if (screenshotSnapshot != null && frameNumber >= 0) {
+        _snapshots[frameNumber] = screenshotSnapshot!();
+        while (_snapshots.length > 64) {
+          _snapshots.remove(_snapshots.keys.first);
+        }
+      }
       frameworkWitnessCount++;
       binding.addPostFrameCallback(witness);
     }
@@ -129,6 +226,8 @@ class UiPresentationFence {
       if (result != null && isExpected()) {
         return {
           ...result,
+          'matchedFrameworkSnapshot':
+              ?_snapshots[result['matchedEngineFrameNumber']],
           'screenshotOnlyEngineFrameRequests': 1,
           'frameworkWitnessCount': frameworkWitnessCount,
           'fenceWaitUs': watch.elapsedMicroseconds,

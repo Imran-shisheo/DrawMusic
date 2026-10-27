@@ -4,6 +4,7 @@ import 'motion.dart';
 import 'layout.dart';
 import 'typography.dart';
 import 'brand_colors.dart';
+import 'system_chrome.dart';
 
 // Document paper/instrument colors are defined by the document, not this theme.
 const ink = DoodimoColors.ink;
@@ -109,6 +110,7 @@ ThemeData buildTheme({Brightness brightness = Brightness.light}) {
       },
     ),
     appBarTheme: AppBarTheme(
+      systemOverlayStyle: systemChromeFor(brightness),
       backgroundColor: scheme.surface,
       foregroundColor: scheme.onSurface,
       surfaceTintColor: Colors.transparent,

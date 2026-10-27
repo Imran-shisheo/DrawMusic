@@ -6,6 +6,17 @@ import 'brand_colors.dart';
 import 'doodimo_icon.dart';
 import 'motion.dart';
 
+/// Structural accessibility hint, never a replacement for measuring content.
+/// System scaling can be nonlinear; its preference is compared only, while
+/// rendered text below always retains the original TextScaler.
+bool prefersExpandedTextLayout(BuildContext context) {
+  final scaler = MediaQuery.textScalerOf(context);
+  return switch (scaler) {
+    SystemTextScaler(:final textScaleFactor) => textScaleFactor >= 1.5,
+    _ => scaler.scale(10) >= 15 || scaler.scale(14) >= 21,
+  };
+}
+
 /// A layered navigation instrument. Branch navigators belong to the router.
 class CreativeDock extends StatelessWidget {
   const CreativeDock({
@@ -33,9 +44,7 @@ class CreativeDock extends StatelessWidget {
       final dark = Theme.of(context).brightness == Brightness.dark;
       final style = Theme.of(context).textTheme.labelMedium!
           .copyWith(fontWeight: FontWeight.w700, height: 1.2);
-      final large =
-          MediaQuery.textScalerOf(context).scale(12) > 18 &&
-          constraints.maxWidth < 520;
+      final expandedText = prefersExpandedTextLayout(context);
       const order = [
         0,
         1,
@@ -98,7 +107,8 @@ class CreativeDock extends StatelessWidget {
         );
       }
 
-      final cellWidth = (constraints.maxWidth - 20) / 2;
+      // Subtract the actual decorative shell padding before measuring keys.
+      final contentWidth = math.max(1.0, constraints.maxWidth - 12);
       var longest = 0.0;
       for (final label in allLabels) {
         for (final word in label.split(RegExp(r'\s+'))) {
@@ -111,21 +121,33 @@ class CreativeDock extends StatelessWidget {
           text.dispose();
         }
       }
-      final fullRows = large && longest > cellWidth - 8;
-      final columns = fullRows
-          ? 1
-          : large
+      final fitsFour = longest <= contentWidth / 4 - 8;
+      final fitsTwo = longest <= contentWidth / 2 - 8;
+      // A narrow accessibility layout uses full-width horizontal keys. Normal
+      // compact phones still use two columns when their words fit. This does
+      // not rely on a single sampled font size crossing a strict threshold.
+      final columns = !expandedText && contentWidth >= 320 && fitsFour
+          ? 4
+          : fitsTwo && !(expandedText && contentWidth < 320)
           ? 2
-          : 4;
-      final slot = (constraints.maxWidth - 12) / columns;
-      var keyHeight = large ? 64.0 : 78.0;
-      for (final label in allLabels) {
+          : 1;
+      final fullRows = columns == 1;
+      final adaptive = columns != 4;
+      final slot = contentWidth / columns;
+      var keyHeight = fullRows ? 54.0 : 78.0;
+      for (var role = 0; role < allLabels.length; role++) {
+        final reserved = fullRows
+            ? 24.0 +
+                  (role == 3 ? 42 : 32) +
+                  14 +
+                  (role == selectedIndex ? 18 : 0)
+            : 8.0;
         final text = TextPainter(
-          text: TextSpan(text: label, style: style),
+          text: TextSpan(text: allLabels[role], style: style),
           textDirection: Directionality.of(context),
           textScaler: MediaQuery.textScalerOf(context),
-        )..layout(maxWidth: math.max(1, slot - (fullRows ? 64 : 8)));
-        keyHeight = math.max(keyHeight, text.height + (fullRows ? 16 : 60));
+        )..layout(maxWidth: math.max(1, slot - reserved));
+        keyHeight = math.max(keyHeight, text.height + (fullRows ? 12 : 60));
         text.dispose();
       }
       Widget tile(int role) => _DockKey(
@@ -142,12 +164,12 @@ class CreativeDock extends StatelessWidget {
         selected: role == selectedIndex,
         create: role == 3,
         horizontal: fullRows,
-        raised: !large && role == 3,
+        raised: !adaptive && role == 3,
         style: style,
         onTap: role == 3 ? onCreate : () => onDestinationSelected(role),
       );
       final activeSlot = selectedIndex == 2 ? 3 : selectedIndex;
-      final keys = large
+      final keys = adaptive
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
