@@ -12,11 +12,14 @@ permissions:
 jobs:
   inspect:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Prepare required video inspectors
+        timeout-minutes: 8
+        run: bash scripts/prepare-runtime-inspectors.sh --video-only
       - id: request
         name: Read bounded diagnostic artifact request
         run: |

@@ -1,6 +1,7 @@
 import 'package:scribblesong/l10n/strings.dart';
 
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
@@ -766,6 +767,55 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     final type = Theme.of(context).textTheme;
     final textScale = MediaQuery.textScalerOf(context);
     final largeText = textScale.scale(14) > 21;
+    final media = MediaQuery.of(context);
+    final viewport = media.size;
+    final bodyWidth =
+        viewport.width -
+        math.max(media.padding.left, media.viewPadding.left) -
+        math.max(media.padding.right, media.viewPadding.right) -
+        32;
+    final bodyHeight =
+        viewport.height -
+        media.viewPadding.vertical -
+        (largeText ? 160 : 64) -
+        10;
+    final rail = bodyWidth >= 900 || (bodyWidth >= 520 && bodyHeight < 440);
+    final paletteWidth = rail
+        ? (bodyHeight < 440 ? 330.0 : 304.0) - 4
+        : bodyWidth;
+    final modeStyle = type.labelLarge?.copyWith(fontWeight: FontWeight.w600);
+    final drawMetrics = _labelWordMetrics(
+      context,
+      context.strings.draw,
+      modeStyle,
+    );
+    final eraseMetrics = _labelWordMetrics(
+      context,
+      context.strings.erase,
+      modeStyle,
+    );
+    final twoColumnTextWidth =
+        (paletteWidth - (largeText ? 0 : 104) - 20) / 2 -
+        20 -
+        (!largeText && viewport.width >= 380 ? 24 : 0);
+    final stackModes =
+        math.max(drawMetrics.width, eraseMetrics.width) > twoColumnTextWidth;
+    final stackedToolbarHeight = stackModes
+        ? 2.0 *
+                  math.max(
+                    48.0,
+                    math.max(drawMetrics.height, eraseMetrics.height) + 20,
+                  ) +
+              20
+        : 0.0;
+    final fullWidthTools =
+        _labelWordMetrics(
+              context,
+              context.strings.editorToolsShort,
+              type.labelLarge,
+            ).width +
+            50 >
+        paletteWidth - 96;
     final saveStatus = state.saving
         ? context.strings.saving
         : state.dirty
@@ -793,9 +843,14 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
               borderRadius: BorderRadius.circular(24),
               child: Padding(
                 padding: const EdgeInsets.all(4),
-                child: Row(
+                child: Flex(
+                  direction: stackModes ? Axis.vertical : Axis.horizontal,
+                  crossAxisAlignment: stackModes
+                      ? CrossAxisAlignment.stretch
+                      : CrossAxisAlignment.center,
                   children: [
-                    Expanded(
+                    _ModeSlot(
+                      stacked: stackModes,
                       child: _EditorModeButton(
                         label: context.strings.draw,
                         glyph: DoodimoGlyph.draw,
@@ -807,8 +862,12 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                         },
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Expanded(
+                    SizedBox(
+                      width: stackModes ? 0 : 4,
+                      height: stackModes ? 4 : 0,
+                    ),
+                    _ModeSlot(
+                      stacked: stackModes,
                       child: _EditorModeButton(
                         label: context.strings.erase,
                         glyph: DoodimoGlyph.erase,
@@ -1108,7 +1167,6 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       ],
       replay,
     ];
-    final viewport = MediaQuery.sizeOf(context);
     final compactDeck =
         largeText || viewport.width < 380 || viewport.width >= 900;
     final transport = ImmersiveSurface(
@@ -1134,11 +1192,12 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                         crossAxisAlignment: WrapCrossAlignment.center,
                         spacing: 4,
                         runSpacing: 4,
-                        children: [...history, tools],
+                        children: [...history, if (!fullWidthTools) tools],
                       ),
                     ),
                   ],
                 ),
+                if (fullWidthTools) ...[const SizedBox(height: 4), tools],
                 const SizedBox(height: 4),
                 summary,
               ],
@@ -1330,6 +1389,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
               child: ResponsiveEditorLayout(
                 toolbar: toolbar,
+                toolbarNaturalHeight: stackedToolbarHeight,
                 summary: const SizedBox.shrink(),
                 transport: transport,
                 canvas: canvas,
@@ -1341,6 +1401,32 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       ),
     );
   }
+}
+
+Size _labelWordMetrics(BuildContext context, String label, TextStyle? style) {
+  var width = 0.0, height = 0.0;
+  for (final word
+      in label.split(RegExp(r'\s+')).where((word) => word.isNotEmpty)) {
+    final painter = TextPainter(
+      text: TextSpan(text: word, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      locale: Localizations.maybeLocaleOf(context),
+    )..layout();
+    width = math.max(width, painter.width);
+    height = math.max(height, painter.height);
+    painter.dispose();
+  }
+  return Size(width, height);
+}
+
+class _ModeSlot extends StatelessWidget {
+  const _ModeSlot({required this.stacked, required this.child});
+  final bool stacked;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) =>
+      stacked ? child : Expanded(child: child);
 }
 
 class _EditorModeButton extends StatelessWidget {

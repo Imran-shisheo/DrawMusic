@@ -1,3 +1,4 @@
+import '../../../design_system/brand_colors.dart';
 import '../../../design_system/doodimo_icon.dart';
 import '../../../design_system/immersive_surface.dart';
 
@@ -171,7 +172,9 @@ class _TipOverlayState extends State<_TipOverlay> with WidgetsBindingObserver {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
                     maxWidth: 480,
-                    maxHeight: landscape ? available : available * .58,
+                    maxHeight: landscape || media.textScaler.scale(16) >= 24
+                        ? available
+                        : available * .58,
                   ),
                   child: FocusTraversalGroup(
                     child: ImmersiveSurface(
@@ -310,7 +313,7 @@ class _Spotlight extends CustomPainter {
           );
         canvas.drawPath(
           Path.combine(PathOperation.difference, full, hole),
-          Paint()..color = const Color(0xb322302c),
+          Paint()..color = DoodimoColors.ink.withValues(alpha: .70),
         );
         canvas.drawRRect(
           RRect.fromRectAndRadius(clipped, const Radius.circular(12)),
@@ -322,7 +325,10 @@ class _Spotlight extends CustomPainter {
         return;
       }
     }
-    canvas.drawPath(full, Paint()..color = const Color(0xb322302c));
+    canvas.drawPath(
+      full,
+      Paint()..color = DoodimoColors.ink.withValues(alpha: .70),
+    );
   }
 
   @override

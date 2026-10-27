@@ -14,6 +14,9 @@ import 'package:scribblesong/app/app.dart';
 import 'package:scribblesong/app/providers.dart';
 import 'package:scribblesong/creative_document/document.dart';
 import 'package:scribblesong/design_system/theme.dart';
+import 'package:scribblesong/features/editor/presentation/instrument_glyph.dart';
+import 'package:scribblesong/features/editor/presentation/canvas.dart'
+    show instrumentName;
 import 'package:scribblesong/features/editor/presentation/editor.dart';
 import 'package:scribblesong/features/export/domain/export_port.dart';
 import 'package:scribblesong/features/export_library/data/export_actions.dart';
@@ -156,9 +159,9 @@ void main() {
   testWidgets(
     'capture actual product screens with real fonts and declared fixtures',
     (tester) async {
-      if (_verify && _immersive) {
+      if (_verify && !_immersive) {
         fail(
-          'Immersive visual references are not established. Capture and inspect the new scene plus real motion evidence before authorizing new golden comparisons.',
+          'Visual verification must use the immersive fixtures; rejected references are historical only.',
         );
       }
       final directory = Directory(_output);
@@ -169,11 +172,16 @@ void main() {
       await tester.runAsync(() => directory.create(recursive: true));
       final manifest = <Map<String, dynamic>>[];
       var currentDark = false;
+      var currentKeyboardInset = 0.0;
       debugDisableShadows = false;
+      final priorFatalTaps = WidgetController.hitTestWarningShouldBeFatal;
+      WidgetController.hitTestWarningShouldBeFatal = true;
       addTearDown(() {
         debugDisableShadows = true;
+        WidgetController.hitTestWarningShouldBeFatal = priorFatalTaps;
         tester.view.resetPhysicalSize();
         tester.view.resetDevicePixelRatio();
+        tester.view.resetViewInsets();
         tester.platformDispatcher.clearTextScaleFactorTestValue();
       });
       Future<void> settle() async {
@@ -185,7 +193,21 @@ void main() {
         }
       }
 
+      Future<void> tapVisible(Finder finder) async {
+        await tester.ensureVisible(finder);
+        await tester.pump();
+        expect(
+          finder.hitTestable(),
+          findsOneWidget,
+          reason: 'Capture actions must hit a visible product control.',
+        );
+        await tester.tap(finder.hitTestable());
+      }
+
       Future<void> save(String name, {bool wait = true}) async {
+        if (_immersive && currentDark && name.endsWith('-light-phone')) {
+          name = name.replaceFirst('-light-phone', '-dark-phone');
+        }
         if (wait) await settle();
         final rendered = tester.renderObject<RenderRepaintBoundary>(
           find.byKey(_boundary),
@@ -208,9 +230,14 @@ void main() {
         });
         if (_verify &&
             const [
-              '01-home-light-phone',
-              '06-editor-drawn-phone',
-              '09-export-panel-phone',
+              '01-home-immersive-dark-phone',
+              '06-editor-immersive-dark-phone',
+              '09-export-immersive-dark-phone',
+              '10b-home-cool-light-phone',
+              '13-editor-compact-fr-large',
+              '21-editor-landscape',
+              '04b-settings-cool-light-phone',
+              '17c-language-compact-rtl-dark-large',
             ].contains(name)) {
           final baseline = File('test/goldens/$name.png');
           if (!autoUpdateGoldenFiles && !baseline.existsSync()) {
@@ -236,6 +263,7 @@ void main() {
           ],
           'textScale': tester.platformDispatcher.textScaleFactor,
           'brightness': currentDark ? 'dark' : 'light',
+          'simulatedKeyboardInset': currentKeyboardInset,
           'renderExceptions': errors,
         });
       }
@@ -249,14 +277,17 @@ void main() {
         double scale = 1,
         bool rtl = false,
         bool failPreferenceWrites = false,
+        double keyboardInset = 0,
         ProjectDocument? document,
       }) async {
         await tester.pumpWidget(const SizedBox());
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1;
+        tester.view.viewInsets = FakeViewPadding(bottom: keyboardInset);
         tester.platformDispatcher.textScaleFactorTestValue = scale;
         final useDark = dark ?? _immersive;
         currentDark = useDark;
+        currentKeyboardInset = keyboardInset;
         final doc = document ?? _drawing();
         final repo = MemoryRepository();
         repo.documents[doc.id] = doc;
@@ -347,11 +378,11 @@ void main() {
       );
       if (!_homeOnly) {
         if (!_previewOnly) {
-          await tester.tap(find.text('Library'));
+          await tapVisible(find.text('Library'));
           await save('02-drafts-light-phone');
-          await tester.tap(find.text('Exports'));
+          await tapVisible(find.text('Exports'));
           await save('03-exports-light-phone');
-          await tester.tap(find.text('Settings'));
+          await tapVisible(find.text('Settings'));
           await save('04-settings-light-phone');
           await mount(document: _drawing(empty: true));
           await save('05-editor-empty-phone');
@@ -363,18 +394,18 @@ void main() {
               : '06-editor-drawn-phone',
         );
         if (!_previewOnly) {
-          await tester.tap(find.byTooltip('Play'));
+          await tapVisible(find.byTooltip('Play'));
           await settle();
           await save('07-editor-playing-fixture-phone');
-          await tester.tap(find.byTooltip('Pause'));
+          await tapVisible(find.byTooltip('Pause'));
           await settle();
-          await tester.tap(find.byKey(const ValueKey('editor-tools')));
+          await tapVisible(find.byKey(const ValueKey('editor-tools')));
           await settle();
-          await tester.tap(find.byKey(const ValueKey('editor-tool-paper')));
+          await tapVisible(find.byKey(const ValueKey('editor-tool-paper')));
           await save('08-background-panel-phone');
         }
         await mount();
-        await tester.tap(find.byTooltip('Export loop'));
+        await tapVisible(find.byTooltip('Export loop'));
         await save(
           _immersive
               ? '09-export-immersive-dark-phone'
@@ -409,13 +440,13 @@ void main() {
           await mount(page: const LanguagePage());
           await save('17-language-phone');
           await mount();
-          await tester.tap(find.byKey(const ValueKey('current-voice')));
+          await tapVisible(find.byKey(const ValueKey('current-voice')));
           await save('18-instrument-chooser-phone');
           await mount();
-          await tester.tap(find.byKey(const ValueKey('music-settings')));
+          await tapVisible(find.byKey(const ValueKey('music-settings')));
           await save('19-music-panel-phone');
           await mount();
-          await tester.tap(find.byKey(const ValueKey('editor-tools')));
+          await tapVisible(find.byKey(const ValueKey('editor-tools')));
           await save('20-sketch-tools-phone');
           await mount(size: const Size(640, 360));
           await save('21-editor-landscape');
@@ -427,10 +458,10 @@ void main() {
           );
           await save('22-editor-forced-rtl-arabic-title');
           await mount(size: const Size(320, 640), scale: 2, locale: 'fr');
-          await tester.tap(find.byKey(const ValueKey('current-voice')));
+          await tapVisible(find.byKey(const ValueKey('current-voice')));
           await save('23-voice-chooser-compact-fr-large');
           await mount(size: const Size(320, 640), scale: 2, locale: 'ja');
-          await tester.tap(find.byKey(const ValueKey('music-settings')));
+          await tapVisible(find.byKey(const ValueKey('music-settings')));
           await save('24-music-panel-compact-ja-large');
           final scratch = (await tester.runAsync(
             () => Directory.systemTemp.createTemp('doodimo-visual-export-'),
@@ -459,12 +490,12 @@ void main() {
 
           Future<void> exportPanel() async {
             await mount();
-            await tester.tap(find.byTooltip('Export loop'));
+            await tapVisible(find.byTooltip('Export loop'));
             await settle();
           }
 
           await exportPanel();
-          await tester.tap(find.byKey(const ValueKey('export-start')));
+          await tapVisible(find.byKey(const ValueKey('export-start')));
           await tester.pump();
           expect(find.byKey(const ValueKey('export-working')), findsOneWidget);
           await save('25-export-preparing-real-png', wait: false);
@@ -488,7 +519,7 @@ void main() {
             ).writeAsString('deliberate fixture blocking directory creation'),
           );
           await exportPanel();
-          await tester.tap(find.byKey(const ValueKey('export-start')));
+          await tapVisible(find.byKey(const ValueKey('export-start')));
           await untilVisible(find.text('Try export again'));
           await save('27-export-error-real-write-failure');
           await mount(page: const TutorialPage(firstUse: true));
@@ -515,6 +546,132 @@ void main() {
               .read(settingsProvider.notifier)
               .save(oldPreferences.copyWith(haptics: !oldPreferences.haptics));
           await save('30-settings-error-compact-rtl-dark-large');
+          if (_immersive) {
+            await mount(root: true, dark: false);
+            await tapVisible(find.byKey(const ValueKey('nav-library')));
+            await save('02b-drafts-cool-light-phone');
+            await tapVisible(find.text('Exports'));
+            await save('03b-exports-cool-light-phone');
+            await mount(page: const SettingsPage(), dark: false);
+            await save('04b-settings-cool-light-phone');
+            await mount(page: const TutorialPage(), dark: false);
+            await save('16b-help-cool-light-phone');
+            await mount(page: const LanguagePage(), dark: false);
+            await save('17b-language-cool-light-phone');
+            await mount(
+              page: const LanguagePage(),
+              rtl: true,
+              size: const Size(320, 640),
+              scale: 2,
+            );
+            await save('17c-language-compact-rtl-dark-large');
+            await mount(dark: false);
+            showRatingOffer(tester.element(find.byType(EditorWorkspace)))
+                .ignore();
+            await save('29b-optional-rating-cool-light-phone');
+            await mount(size: const Size(320, 640), scale: 2, locale: 'fr');
+            showRatingOffer(tester.element(find.byType(EditorWorkspace)))
+                .ignore();
+            await save('29c-optional-rating-compact-fr-dark-large');
+            await mount(dark: false);
+            await tapVisible(find.byTooltip('Export loop'));
+            await save('09b-export-cool-light-phone');
+            await exportPanel();
+            final transparent = find.byKey(
+              const ValueKey('png-transparent-background'),
+            );
+            await tester.ensureVisible(transparent);
+            await tapVisible(transparent);
+            await save('34-export-transparency-setting');
+            expect(tester.widget<SwitchListTile>(transparent).value, isTrue);
+            await tester.ensureVisible(
+              find.byKey(const ValueKey('export-intent-png')),
+            );
+            await save('34b-export-transparent-preview');
+            for (final (action, file) in [
+              ('score', '35-score-panel'),
+              ('mix', '36-accompaniment-panel'),
+              ('clear', '37-clear-confirmation'),
+            ]) {
+              await mount();
+              await tapVisible(find.byKey(const ValueKey('editor-tools')));
+              await settle();
+              await tapVisible(find.byKey(ValueKey('editor-tool-$action')));
+              await save(file);
+            }
+            await mount();
+            await tapVisible(find.byKey(const ValueKey('editor-tools')));
+            await settle();
+            await tapVisible(find.byKey(const ValueKey('editor-tool-tips')));
+            await settle();
+            expect(
+              find.byKey(const ValueKey('editor-tip-spotlight')),
+              findsOneWidget,
+            );
+            await save('38-coach-canvas-actual-target');
+            await tapVisible(find.text('Next tip'));
+            await save('38b-coach-play-actual-target');
+            await mount(size: const Size(320, 640), scale: 2, locale: 'fr');
+            await tapVisible(find.byKey(const ValueKey('editor-tools')));
+            await settle();
+            await tapVisible(find.byKey(const ValueKey('editor-tool-tips')));
+            await settle();
+            expect(
+              find.byKey(const ValueKey('editor-tip-spotlight')),
+              findsOneWidget,
+            );
+            await save('38c-coach-compact-fr-large-actual-target');
+            await mount(keyboardInset: 300);
+            await tapVisible(find.text('Sunday ribbons').first);
+            await save('31-editor-rename-keyboard-inset');
+            await mount(
+              size: const Size(320, 640),
+              scale: 2,
+              locale: 'fr',
+              keyboardInset: 220,
+            );
+            await tapVisible(find.text('Sunday ribbons').first);
+            await save('32-editor-rename-compact-fr-large-keyboard-inset');
+            await mount(
+              size: const Size(800, 840),
+              page: Builder(
+                builder: (context) => Scaffold(
+                  body: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Original instrument objects · optical study',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 24),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 16,
+                          children: [
+                            for (final voice in Instrument.values)
+                              SizedBox(
+                                width: 170,
+                                height: 150,
+                                child: Column(
+                                  children: [
+                                    InstrumentGlyph(voice, size: 56),
+                                    const SizedBox(height: 16),
+                                    Text(instrumentName(context, voice)),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+            await save('33-instrument-objects-optical-study');
+          }
           for (final locale in nativeLanguageNames.keys) {
             await mount(
               root: true,
@@ -523,6 +680,10 @@ void main() {
               locale: locale,
             );
             await save('locale-$locale-home-compact-large');
+            if (_immersive) {
+              await mount(size: const Size(320, 640), scale: 2, locale: locale);
+              await save('locale-$locale-editor-compact-large');
+            }
           }
         }
       }
@@ -534,6 +695,7 @@ void main() {
           const JsonEncoder.withIndent('  ').convert({
             'scope': 'Actual Flutter product widgets with fixture repository/preferences/audio/export metadata. Not Android emulator screenshots, native audio proof or physical acceptance.',
             'font': 'Bundled Space Grotesk display, Nunito Sans body weights and Noto script fallbacks loaded explicitly, plus MaterialIcons for legacy controls. Original Doodimo glyphs are CustomPaint geometry. SDK Roboto is also loaded for legacy comparison. No Ahem screenshots.',
+            'keyboard': 'Keyboard variants simulate viewInsets; the native system IME is not rendered by this widget harness.',
             'motion': 'Reduced motion enabled for deterministic still evidence; playback position is test audio fixture, not measured native timing.',
             'designStatus': _immersive
                 ? 'Immersive replacement proposal; neither prior rejected iteration is acceptance. Motion evidence remains separate.'

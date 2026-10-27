@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 /// Controls never animate their layout. The live canvas retains its GlobalKey
@@ -10,8 +12,10 @@ class ResponsiveEditorLayout extends StatelessWidget {
     required this.transport,
     required this.canvas,
     required this.alerts,
+    this.toolbarNaturalHeight = 0,
   });
   final Widget toolbar, summary, transport, canvas, alerts;
+  final double toolbarNaturalHeight;
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
@@ -55,6 +59,18 @@ class ResponsiveEditorLayout extends StatelessWidget {
         double.infinity,
       );
       final large = MediaQuery.textScalerOf(context).scale(14) > 21;
+      // A translated word may require full-width Draw/Erase rows. Give the
+      // complete measured palette height a bounded share of the existing
+      // control budget; take that share from the scrollable console, never the
+      // reserved drawable surface or alert budget.
+      final toolbarLimit = math.max(
+        budget * .24,
+        math.min(toolbarNaturalHeight, budget * .48),
+      );
+      final consoleLimit = math.max(
+        0.0,
+        budget * .58 - (toolbarLimit - budget * .24),
+      );
       return Column(
         children: [
           ConstrainedBox(
@@ -65,7 +81,7 @@ class ResponsiveEditorLayout extends StatelessWidget {
             ),
           ),
           ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: budget * .24),
+            constraints: BoxConstraints(maxHeight: toolbarLimit),
             child: SingleChildScrollView(
               key: const ValueKey('editor-tools-scroll'),
               child: toolbar,
@@ -75,7 +91,7 @@ class ResponsiveEditorLayout extends StatelessWidget {
           Expanded(child: canvas),
           const SizedBox(height: 12),
           ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: budget * .58),
+            constraints: BoxConstraints(maxHeight: consoleLimit),
             child: SingleChildScrollView(
               key: const ValueKey('editor-transport-scroll'),
               child: Column(

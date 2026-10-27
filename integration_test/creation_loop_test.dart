@@ -66,6 +66,11 @@ void main() {
         await tester.pumpAndSettle();
       }
 
+      final previousHitPolicy = WidgetController.hitTestWarningShouldBeFatal;
+      WidgetController.hitTestWarningShouldBeFatal = true;
+      addTearDown(
+        () => WidgetController.hitTestWarningShouldBeFatal = previousHitPolicy,
+      );
       await prepareFunctionalMotion();
       await app.main();
       await tester.pumpAndSettle();
@@ -312,7 +317,7 @@ void main() {
         400,
         scrollable: find
             .descendant(
-              of: find.byType(ListView).first,
+              of: find.byKey(const PageStorageKey('home-scroll')),
               matching: find.byType(Scrollable),
             )
             .first,

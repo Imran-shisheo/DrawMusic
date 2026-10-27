@@ -196,6 +196,11 @@ void main() {
   testWidgets('actual profile UI screenshots, interactions and frame timings', (
     tester,
   ) async {
+    final previousHitTestPolicy = WidgetController.hitTestWarningShouldBeFatal;
+    WidgetController.hitTestWarningShouldBeFatal = true;
+    addTearDown(() {
+      WidgetController.hitTestWarningShouldBeFatal = previousHitTestPolicy;
+    });
     expect(
       kProfileMode,
       isTrue,
@@ -267,7 +272,11 @@ void main() {
       await wait(1000);
     }
 
-    Future<void> measure(String name, Future<void> Function() action) async {
+    Future<void> measure(
+      String name,
+      Future<void> Function() action, {
+      Map<String, Object?> visibleScope = const {},
+    }) async {
       await host.event('perf_start', name);
       await wait(1500); // Flush earlier engine timing batches.
       final frames = <ui.FrameTiming>[];
@@ -292,6 +301,8 @@ void main() {
         measured,
         tester.view.display.refreshRate,
       );
+      result['observationElapsedUs'] = end - start;
+      if (visibleScope.isNotEmpty) result['visibleScope'] = visibleScope;
       await host.event('perf_finish', name, {
         'result': result,
         'recordingDuringMeasurement': false,
@@ -332,6 +343,39 @@ void main() {
       // Record actual decorative motion before interacting. A still screenshot
       // cannot establish the immersive Home sculpture's motion requirement.
       await clip('00-home-ambient', () async => wait(18000));
+      final create = key('home-start');
+      expect(create.hitTestable(), findsOneWidget);
+      final createContext = tester.element(create);
+      expect(MediaQuery.disableAnimationsOf(createContext), isFalse);
+      final bounds = tester.getRect(create);
+      await measure(
+        'home-ambient-visible',
+        () async {
+          await wait(17000);
+          expect(create.hitTestable(), findsOneWidget);
+          expect(
+            MediaQuery.disableAnimationsOf(tester.element(create)),
+            isFalse,
+          );
+        },
+        visibleScope: {
+          'route': router().routeInformationProvider.value.uri.toString(),
+          'homeCreateHitTestableAtStartAndEnd': true,
+          'homeCreateBounds': [
+            bounds.left,
+            bounds.top,
+            bounds.width,
+            bounds.height,
+          ],
+          'homeScrollOffset': Scrollable.maybeOf(createContext)
+              ?.position
+              .pixels,
+          'animationsDisabled': false,
+          'nominalObservationMilliseconds': 17000,
+          'screenRecordingActive': false,
+          'baselineComparison': 'No equivalent before phase exists; standalone after-source observation.',
+        },
+      );
     }
     await clip('01-root-navigation', () async {
       await tab('Library');

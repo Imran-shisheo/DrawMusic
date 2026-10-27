@@ -10,7 +10,7 @@ import tempfile
 
 FILES = ['integration_test/ui_visual_capture_test.dart', 'integration_test/support/ui_capture_metrics.dart',
          'test_driver/ui_visual_capture_driver.dart', 'scripts/capture-android-ui.py', 'scripts/check-android-visuals.sh',
-         'scripts/test-ui-capture-host.py']
+         'scripts/test-ui-capture-host.py', 'scripts/prepare-runtime-inspectors.sh']
 
 def git(*args):
     return subprocess.check_output(['git', *args], text=True).strip()

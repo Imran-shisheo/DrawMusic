@@ -12,6 +12,109 @@ import 'package:scribblesong/l10n/strings.dart';
 import 'support/memory_preferences.dart';
 
 void main() {
+  testWidgets(
+    'compact 200 percent RTL language choices stay discoverable while help preserves pending selection',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final store = MemoryPreferencesStore(
+        const UserPreferences(reduceMotion: true),
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            preferencesStoreProvider.overrideWith((ref) async => store),
+          ],
+          child: MaterialApp(
+            theme: buildTheme(brightness: Brightness.dark),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: const TextScaler.linear(2)),
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: child!,
+              ),
+            ),
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const LanguagePage(),
+                    ),
+                  ),
+                  child: const Text('Choose'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      Future<void> open() async {
+        await tester.tap(find.text('Choose'));
+        await tester.pumpAndSettle();
+      }
+
+      await open();
+      expect(
+        find.byKey(const ValueKey('language-en')).hitTestable(),
+        findsOneWidget,
+        reason: 'First choice must be visible before scrolling at320dp/200%',
+      );
+      expect(
+        find.byKey(const ValueKey('language-fr')).hitTestable(),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('language-fr')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('language-explanation')));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          'Choose a language, then Apply. Your drawing titles stay unchanged.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        store.preferences.languageCode,
+        'en',
+        reason: 'Help is informational and never applies a pending language',
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ListTile>(find.byKey(const ValueKey('language-fr')))
+            .selected,
+        isTrue,
+      );
+      expect(
+        find.byKey(const ValueKey('language-en')).hitTestable(),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(store.preferences.languageCode, 'en');
+      await open();
+      expect(
+        tester
+            .widget<ListTile>(find.byKey(const ValueKey('language-en')))
+            .selected,
+        isTrue,
+      );
+      await tester.tap(find.byKey(const ValueKey('language-fr')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(store.preferences.languageCode, 'fr');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   for (final brightness in Brightness.values) {
     testWidgets(
       'selected language text and check contrast in $brightness; pending choice survives focus and respects Cancel/Apply',

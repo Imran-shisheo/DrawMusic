@@ -10,6 +10,8 @@ on:
       - scripts/capture-android-ui.py
       - scripts/prepare-ui-capture-source.py
       - scripts/check-android-visuals.sh
+      - scripts/test-ui-capture-host.py
+      - scripts/prepare-runtime-inspectors.sh
       - .github/workflows/ui-visuals.yml
   workflow_dispatch:
 permissions:
@@ -35,6 +37,11 @@ jobs:
           java-version: '17'
       - name: Make room on disposable capture runner
         run: bash scripts/free-hosted-runner-space.sh
+      - name: Prepare required video inspectors and verify capture host before emulator
+        timeout-minutes: 8
+        run: |
+          bash scripts/prepare-runtime-inspectors.sh --video-only
+          python3 scripts/test-ui-capture-host.py
       - name: Prepare pinned Flutter and Android SDK
         run: bash scripts/setup-cloud-android.sh
       - name: Resolve pinned product dependencies and validate diagnostic sources

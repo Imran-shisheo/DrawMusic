@@ -4,9 +4,8 @@ on:
     # Development branches run through pull_request, avoiding duplicate emulator jobs.
     branches: [main]
   pull_request:
-    # Preserve the original main-bound full gate during the early stacked UI prototype.
-    # The dedicated source-pinned visual workflow validates the current slice.
-    branches: [main]
+    # Stacked redesign includes every unmerged audit fix.
+    branches: [main, codex/review-fixes-2026-10-27]
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,10 +18,17 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       app_exists: ${{ steps.detect.outputs.app_exists }}
+      product_changed: ${{ steps.changes.outputs.product_changed }}
     steps:
       - uses: actions/checkout@v7
         with:
+          fetch-depth: 0
           persist-credentials: false
+      - id: changes
+        name: Detect product changes conservatively
+        run: |
+          python3 scripts/test-product-change.py
+          python3 scripts/detect-product-change.py
       - name: Check setup syntax
         run: |
           bash -n cloud/env.sh scripts/setup-cloud-android.sh scripts/check-android.sh scripts/prepare-runtime-inspectors.sh scripts/check-ios-audio-state.sh
@@ -40,7 +46,7 @@ jobs:
   swift-audio-state:
     name: Pure Swift audio state (Linux; not iOS runtime)
     needs: setup-files
-    if: needs.setup-files.outputs.app_exists == 'true'
+    if: needs.setup-files.outputs.app_exists == 'true' && needs.setup-files.outputs.product_changed == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -63,7 +69,7 @@ jobs:
   android:
     name: Analyze, test and build Android
     needs: setup-files
-    if: needs.setup-files.outputs.app_exists == 'true'
+    if: needs.setup-files.outputs.app_exists == 'true' && needs.setup-files.outputs.product_changed == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:

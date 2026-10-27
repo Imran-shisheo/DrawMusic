@@ -11,3 +11,7 @@ This revision replaces the rejected pale-card composition with an open real-artw
 | ![Corrective Doodimo Home proposal](01-home-light-phone.png) | ![Corrective Doodimo editor proposal](06-editor-drawn-phone.png) | ![Corrective Doodimo export proposal](09-export-panel-phone.png) |
 
 This is a reviewable work-in-progress proposal. Compact/large-text/dark/RTL/tablet and keyboard refinement, final-source functional tests/builds, actual emulator motion recordings and measured profile acceptance remain in progress. Disabled Undo/Redo in the fixture represent an initial document with no edit history. All saved artwork, synthesis, free features and package identity are preserved.
+
+The three strict pixel references from this rejected iteration are archived in
+`rejected-goldens/`. Current automated references live in `test/goldens` and
+represent the immersive replacement; this archive never defines acceptance.

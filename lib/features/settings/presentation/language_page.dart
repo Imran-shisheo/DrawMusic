@@ -1,3 +1,4 @@
+import '../../../design_system/creative_panel.dart';
 import '../../../design_system/immersive_surface.dart';
 
 import 'package:flutter/material.dart';
@@ -70,22 +71,47 @@ class _LanguagePageState extends ConsumerState<LanguagePage> {
                         padding: EdgeInsets.only(bottom: 16),
                         child: LinearProgressIndicator(),
                       ),
-                    ImmersiveSurface(
-                      accent: DoodimoColors.violet,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const DoodimoIcon(DoodimoGlyph.language, size: 32),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Text(
-                              context.strings.languageExplanation,
-                              style: Theme.of(context).textTheme.bodyLarge,
+                    if (MediaQuery.textScalerOf(context).scale(16) >= 24 ||
+                        constraints.maxHeight < 320)
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: IconButton(
+                          key: const ValueKey('language-explanation'),
+                          tooltip: context.strings.languageExplanation,
+                          constraints: const BoxConstraints(
+                            minWidth: 48,
+                            minHeight: 48,
+                          ),
+                          icon: const DoodimoIcon(DoodimoGlyph.help),
+                          onPressed: () => showCreativePanel<void>(
+                            context: context,
+                            builder: (context) => CreativePanel(
+                              title: context.strings.languageSelectorTitle,
+                              child: Text(
+                                context.strings.languageExplanation,
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
                             ),
                           ),
-                        ],
+                        ),
+                      )
+                    else
+                      ImmersiveSurface(
+                        accent: DoodimoColors.violet,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const DoodimoIcon(DoodimoGlyph.language, size: 32),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                context.strings.languageExplanation,
+                                style: Theme.of(context).textTheme.bodyLarge,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 20),
                     Wrap(
                       spacing: 12,
