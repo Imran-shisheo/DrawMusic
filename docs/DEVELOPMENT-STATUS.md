@@ -383,3 +383,9 @@ Accepted run 40329847034: all 17 native tests completed with zero skips/failures
 Independent FFmpeg correlation measured 0.0 ms audio offset for the HD 30 fixture, compact 30 original UI, compact 60 fixture and compact 30 expanded UI outputs. The expanded MIDI contains 42 drawing notes, 4 bass notes, 16 arpeggio notes and 26 percussion notes, balanced through 3,840 ticks; parsed F♯/Lydian and accompaniment channel/velocity assertions passed. PNG 1080×1350 and actual MP4 gradient corner pixels agreed within the codec tolerance.
 
 The standalone diagnostic APK force-stopped PID 6134 and verified fresh PID 6315, recovered complete revision 0, unchanged baseline bytes, no automatic playback, successful explicit playback and exact revision 3 save/reopen retry. The probe does not guarantee a temporary write was interrupted; Linux's 12 staged interruption cases supply separate partial-write coverage. All native/runtime/inspection/upload steps and the complete job concluded success. Normal product APK artifact 12654848499 was uploaded before either diagnostic APK was built.
+
+### First current-source hosted runtime setup failure
+
+Run40480108092 at584cfb1 passed the complete product gate (240Flutter/24JVM/lint/APK/signature/Linux recovery) and15actualpureSwift tests. Runtimefailed immediately after emulator boot, before any instrumentation/UItest, at `svc data disable`: `cmd: Can't find service: phone`, exit20. The following inspector correctly failed because no runtime files had been produced. This is not a native/HD60 acceptance pass.
+
+The runtime bootstrap now waits up to180seconds for QEMU identity, boot and package/activity/Wi-Fi/phone/connectivity service availability, then still requires both network-disable commands to succeed. It records a passed:false report and fails if readiness/offline setup cannot be established. No product test, offline requirement or output assertion is skipped. New current-source hosted execution remains pending.

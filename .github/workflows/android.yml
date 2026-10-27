@@ -24,7 +24,7 @@ jobs:
       - name: Check setup syntax
         run: |
           bash -n cloud/env.sh scripts/setup-cloud-android.sh scripts/check-android.sh scripts/prepare-runtime-inspectors.sh scripts/check-ios-audio-state.sh
-          python3 -m py_compile scripts/run-android-ui.py scripts/validate-video.py
+          python3 -m py_compile scripts/run-android-ui.py scripts/prepare-offline-emulator.py scripts/validate-video.py
           python3 -m json.tool .fvmrc > /dev/null
       - id: detect
         shell: bash

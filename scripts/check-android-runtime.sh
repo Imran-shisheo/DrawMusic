@@ -5,8 +5,7 @@ export DASH__SUPPRESS_ANALYTICS=true
 mkdir -p work/runtime-output
 runtime_result=0
 runtime_device=emulator-5554
-adb -s "$runtime_device" shell svc wifi disable
-adb -s "$runtime_device" shell svc data disable
+python3 scripts/prepare-offline-emulator.py
 (cd android && ./gradlew :app:connectedDebugAndroidTest -Ptarget-platform=android-x64 -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --console=plain) || runtime_result=$?
 adb -s "$runtime_device" exec-out run-as com.imranshisheo.scribblesong cat cache/fixture-video.mp4 > work/runtime-output/fixture-video.mp4 || true
 adb -s "$runtime_device" exec-out run-as com.imranshisheo.scribblesong cat cache/audio-soak.json > work/runtime-output/audio-soak.json || true

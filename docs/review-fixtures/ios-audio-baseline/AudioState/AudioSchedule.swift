@@ -1,5 +1,5 @@
-/// Pure Swift scheduling state shared by the AVAudioEngine adapter and its Linux/
-/// Mac tests. The owner serializes access; this type does not own an audio clock.
+/// Intentionally failing extracted legacy semantics for manual review only.
+/// This fixture is not imported by the app and does not execute AVFoundation.
 protocol AudioLoopSnapshot {
   var frameCount: Int { get }
   var revision: Int64 { get }
