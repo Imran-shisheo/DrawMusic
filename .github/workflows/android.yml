@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: android-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -26,6 +27,8 @@ jobs:
           persist-credentials: false
       - id: changes
         name: Detect product changes conservatively
+        env:
+          DRAWMUSIC_GATE_TOKEN: ${{ github.token }}
         run: |
           python3 scripts/test-product-change.py
           python3 scripts/detect-product-change.py

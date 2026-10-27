@@ -1,5 +1,6 @@
 import 'support/functional_motion.dart';
 import '../test/support/editor_controls.dart';
+import '../test/support/export_gallery_navigation.dart';
 
 import 'package:scribblesong/creative_document/document.dart';
 import 'package:scribblesong/features/backgrounds/domain/background.dart';
@@ -223,13 +224,34 @@ void main() {
       await tester.tap(find.text('Library'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Exports'));
-      await until(
-        () async => find.text('Paper hills.wav').evaluate().isNotEmpty,
+      await until(() async => find.byType(ExportsPage).evaluate().isNotEmpty);
+      final initialCatalogContainer = ProviderScope.containerOf(
+        tester.element(find.byType(ExportsPage)),
+      );
+      final initialCatalog = await initialCatalogContainer.read(
+        exportListingProvider.future,
+      );
+      expect(initialCatalog.entries.length, 4);
+      expect(
+        initialCatalog.entries.map((entry) => entry.artifact.name),
+        containsAll([
+          'Paper hills.mp4',
+          'Paper hills.wav',
+          'Paper hills.png',
+          'Paper hills.mid',
+        ]),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Paper hills.mp4'), findsOneWidget);
-      expect(find.text('Paper hills.mid'), findsOneWidget);
-      await tester.tap(find.byTooltip('Actions for Paper hills.wav'));
+      for (final extension in ['wav', 'png', 'mid', 'mp4']) {
+        await revealExportGalleryItem(
+          tester,
+          find.text('Paper hills.$extension'),
+        );
+        expect(find.text('Paper hills.$extension'), findsOneWidget);
+      }
+      final wavActions = find.byTooltip('Actions for Paper hills.wav');
+      await revealExportGalleryItem(tester, wavActions);
+      await tester.tap(wavActions);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Save a copy'));
       final savedCopy = find.text(
