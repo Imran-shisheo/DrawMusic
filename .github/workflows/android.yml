@@ -22,6 +22,7 @@ jobs:
     outputs:
       app_exists: ${{ steps.detect.outputs.app_exists }}
       product_changed: ${{ steps.changes.outputs.product_changed }}
+      native_required: ${{ steps.native-proof.outputs.native_required }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -34,6 +35,13 @@ jobs:
         run: |
           python3 scripts/test-product-change.py
           python3 scripts/detect-product-change.py
+      - id: native-proof
+        name: Verify exact native source acceptance before reusing it
+        env:
+          DRAWMUSIC_GATE_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/test-native-source-proof.py
+          python3 scripts/native-source-proof.py
       - name: Check setup syntax
         run: |
           bash -n cloud/env.sh scripts/setup-cloud-android.sh scripts/check-android.sh scripts/prepare-runtime-inspectors.sh scripts/check-ios-audio-state.sh
@@ -103,17 +111,21 @@ jobs:
           if-no-files-found: error
           retention-days: 7
       - uses: actions/setup-python@v6
+        if: needs.setup-files.outputs.native_required != 'false'
         with:
           python-version: '3.12'
       - name: Prepare independent media inspectors
+        if: needs.setup-files.outputs.native_required != 'false'
         timeout-minutes: 10
         run: bash scripts/prepare-runtime-inspectors.sh
       - name: Generate original runtime fixtures
+        if: needs.setup-files.outputs.native_required != 'false'
         run: |
           source cloud/env.sh
           export DASH__SUPPRESS_ANALYTICS=true
           dart run tool/export_fixture.dart work/runtime-fixtures
       - name: Release build memory before emulator startup
+        if: needs.setup-files.outputs.native_required != 'false'
         run: |
           source cloud/env.sh
           cd android
@@ -124,11 +136,13 @@ jobs:
           python3 scripts/test-runtime-transport-diagnostics.py
           python3 scripts/test-runtime-artifact-inspect.py
       - name: Enable emulator acceleration
+        if: needs.setup-files.outputs.native_required != 'false'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Exercise real Android audio and video APIs
+        if: needs.setup-files.outputs.native_required != 'false'
         timeout-minutes: 40
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -141,7 +155,7 @@ jobs:
           script: bash scripts/check-android-runtime.sh
       - name: Inspect encoded audio, video and cursor timing
         timeout-minutes: 10
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.setup-files.outputs.native_required != 'false' }}
         run: |
           export PYTHONPATH="$PWD/work/validation-deps"
           python3 scripts/validate-video.py work/runtime-output/fixture-video.mp4 work/runtime-fixtures/original-loop.wav work/runtime-output/inspection.json
@@ -156,7 +170,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: drawmusic-runtime-evidence-${{ github.sha }}
+          name: ${{ needs.setup-files.outputs.native_required != 'false' && 'drawmusic-runtime-evidence' || 'drawmusic-core-evidence' }}-${{ github.sha }}
           path: |
             work/runtime-output/
             test/failures/
