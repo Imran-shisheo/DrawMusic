@@ -7,14 +7,17 @@ import 'package:share_plus/share_plus.dart';
 import '../domain/recovery_export_port.dart';
 
 import '../../../app/providers.dart';
-import 'library_tabs.dart';
+import 'library_gallery_layout.dart';
 import 'library_document_card.dart';
 import '../../../creative_document/document.dart';
 import '../../editor/presentation/canvas.dart';
 import '../../backgrounds/presentation/background_surface.dart';
 import '../../export/presentation/export_sheet.dart';
 import '../../../design_system/name_dialog.dart';
-import '../../../design_system/creative_components.dart';
+import '../../../design_system/creative_panel.dart';
+import 'library_state_panel.dart';
+import '../../../design_system/immersive_surface.dart';
+import '../../../design_system/doodimo_icon.dart';
 
 typedef ShareRecoveryData = Future<ShareResultStatus> Function(
   String path,
@@ -41,11 +44,10 @@ class DraftsPage extends ConsumerStatefulWidget {
 class _DraftsPageState extends ConsumerState<DraftsPage> {
   bool _busy = false;
   Future<void> _delete(String id, String title) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showCreativePanel<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.strings.deleteNamedItem(title)),
-        content: Text(context.strings.youCanUndoThisFromTheConfirmationMessage),
+      builder: (context) => CreativePanel(
+        title: context.strings.deleteNamedItem(title),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -56,6 +58,7 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
             child: Text(context.strings.delete),
           ),
         ],
+        child: Text(context.strings.youCanUndoThisFromTheConfirmationMessage),
       ),
     );
     if (confirmed != true || !mounted) return;
@@ -166,250 +169,229 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      bottom: false,
-      child: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              MediaQuery.sizeOf(context).height < 480 ? 8 : 16,
-              20,
-              0,
+    body: LibraryGalleryLayout(
+      exports: false,
+      scrollKey: 'drafts-scroll',
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.strings.yourDrawings,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    context.strings.libraryDrawingsSubtitle,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
             ),
-            child: LibraryTabs(exports: false),
-          ),
-          Expanded(
-            child: ListView(
-              key: const PageStorageKey('drafts-scroll'),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.strings.yourDrawings,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            context.strings.libraryDrawingsSubtitle,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: context.strings.refreshDrafts,
-                      onPressed: () => ref.invalidate(libraryProvider),
-                      icon: const Icon(Icons.refresh_rounded),
-                    ),
-                  ],
+            IconButton(
+              tooltip: context.strings.refreshDrafts,
+              onPressed: () => ref.invalidate(libraryProvider),
+              icon: const DoodimoIcon(DoodimoGlyph.replay),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        ...ref
+            .watch(libraryProvider)
+            .when(
+              loading: () => [
+                const Padding(
+                  padding: EdgeInsets.all(48),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-                const SizedBox(height: 20),
-                ...ref
-                    .watch(libraryProvider)
-                    .when(
-                      loading: () => [
-                        const Padding(
-                          padding: EdgeInsets.all(48),
-                          child: Center(child: CircularProgressIndicator()),
+              ],
+              error: (_, _) => [
+                LibraryStatePanel(
+                  glyph: DoodimoGlyph.replay,
+                  title: context.strings.couldNotLoadYourDrawings,
+                  message: context.strings.theOriginalFilesArePreserved,
+                  action: OutlinedButton(
+                    onPressed: () => ref.invalidate(libraryProvider),
+                    child: Text(context.strings.retry),
+                  ),
+                ),
+              ],
+              data: (listing) =>
+                  listing.projects.isEmpty && listing.failures.isEmpty
+                  ? [
+                      LibraryStatePanel(
+                        glyph: DoodimoGlyph.draw,
+                        title: context.strings.yourDrawings,
+                        message: context
+                            .strings
+                            .yourDrawingsWillLiveHereCreateANewDrawingToBegin,
+                        action: PrismAction(
+                          onPressed: () => context.push('/editor/new'),
+                          icon: const DoodimoIcon(DoodimoGlyph.add),
+                          label: context.strings.libraryNewDrawing,
                         ),
-                      ],
-                      error: (_, _) => [
-                        CreativeEmptyState(
-                          icon: Icons.refresh_rounded,
-                          title: context.strings.couldNotLoadYourDrawings,
-                          message: context.strings.theOriginalFilesArePreserved,
-                          action: OutlinedButton(
-                            onPressed: () => ref.invalidate(libraryProvider),
-                            child: Text(context.strings.retry),
-                          ),
-                        ),
-                      ],
-                      data: (listing) =>
-                          listing.projects.isEmpty && listing.failures.isEmpty
-                          ? [
-                              CreativeEmptyState(
-                                icon: Icons.draw_outlined,
-                                title: context.strings.yourDrawings,
-                                message: context
-                                    .strings
-                                    .yourDrawingsWillLiveHereCreateANewDrawingToBegin,
-                                action: FilledButton.icon(
-                                  onPressed: () => context.push('/editor/new'),
-                                  icon: const Icon(Icons.add_rounded),
-                                  label: Text(
-                                    context.strings.libraryNewDrawing,
+                      ),
+                    ]
+                  : <Widget>[
+                      for (final id in listing.failures)
+                        ImmersiveSurface(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const DoodimoIcon(
+                                    DoodimoGlyph.help,
+                                    size: 32,
                                   ),
-                                ),
-                              ),
-                            ]
-                          : <Widget>[
-                              for (final id in listing.failures)
-                                Card(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      ListTile(
-                                        leading: const Icon(
-                                          Icons.warning_amber,
-                                        ),
-                                        title: Text(
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
                                           context
                                               .strings
                                               .aDrawingCouldNotBeRecovered,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium,
                                         ),
-                                        subtitle: Text(
+                                        const SizedBox(height: 8),
+                                        Text(
                                           context
                                               .strings
                                               .theOriginalFilesArePreserved,
                                         ),
-                                        trailing: IconButton(
-                                          tooltip: context
-                                              .strings
-                                              .deleteDamagedDrawing,
-                                          onPressed: _busy
-                                              ? null
-                                              : () => _delete(
-                                                  id,
-                                                  context
-                                                      .strings
-                                                      .damagedDrawing,
-                                                ),
-                                          icon: const Icon(
-                                            Icons.delete_outline,
-                                          ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          12,
-                                          0,
-                                          12,
-                                          8,
-                                        ),
-                                        child: Wrap(
-                                          spacing: 8,
-                                          children: [
-                                            TextButton(
-                                              onPressed: _busy
-                                                  ? null
-                                                  : () {
-                                                      ref.invalidate(
-                                                        libraryProvider,
-                                                      );
-                                                      context.push(
-                                                        '/editor/$id',
-                                                      );
-                                                    },
-                                              child: Text(
-                                                context.strings.retry,
-                                              ),
-                                            ),
-                                            TextButton.icon(
-                                              onPressed: _busy
-                                                  ? null
-                                                  : () => _exportRecovery(id),
-                                              icon: const Icon(Icons.save_alt),
-                                              label: Text(
-                                                context.strings.recoveryExport,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              for (final doc in listing.projects)
-                                LibraryDocumentCard(
-                                  leading: SizedBox(
-                                    width: 80,
-                                    height: 100,
-                                    child: Center(
-                                      child: AspectRatio(
-                                        aspectRatio: .8,
-                                        child: BackgroundSurface(
-                                          paper: doc.effectiveBackground,
-                                          maxWidth: 112,
-                                          maxHeight: 140,
-                                          child: CustomPaint(
-                                            painter: DrawingPainter(doc),
-                                          ),
-                                        ),
-                                      ),
+                                      ],
                                     ),
                                   ),
-                                  title: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        context.strings.libraryEditable,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelSmall
-                                            ?.copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .primary,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(doc.title),
-                                    ],
+                                  IconButton(
+                                    tooltip:
+                                        context.strings.deleteDamagedDrawing,
+                                    onPressed: _busy
+                                        ? null
+                                        : () => _delete(
+                                            id,
+                                            context.strings.damagedDrawing,
+                                          ),
+                                    icon: const Icon(Icons.delete_outline),
                                   ),
-                                  subtitle: Text(
-                                    '${context.formatLocalDate(doc.updatedAt)}\n'
-                                    '${context.strings.drawingDetails(doc.root.label, context.formatNumber(doc.strokes.length), context.formatNumber(doc.tempo), scaleName(context, doc.scale))}'
-                                    '${listing.recoveredIds.contains(doc.id) ? '\n${context.strings.recoveredPreviousRevision}' : ''}',
-                                  ),
-                                  onTap: () =>
-                                      context.push('/editor/${doc.id}'),
-                                  trailing: PopupMenuButton<_Action>(
-                                    onOpened: () =>
-                                        ScaffoldMessenger.of(context)
-                                            .clearSnackBars(),
-                                    tooltip: context.strings.manageDrawing(
-                                      doc.title,
-                                    ),
-                                    enabled: !_busy,
-                                    onSelected: (action) => _act(doc, action),
-                                    itemBuilder: (_) => [
-                                      PopupMenuItem(
-                                        value: _Action.rename,
-                                        child: Text(context.strings.rename),
-                                      ),
-                                      PopupMenuItem(
-                                        value: _Action.duplicate,
-                                        child: Text(context.strings.duplicate),
-                                      ),
-                                      PopupMenuItem(
-                                        value: _Action.export,
-                                        child: Text(
-                                          context.strings.exportShare,
-                                        ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: _Action.delete,
-                                        child: Text(context.strings.delete),
-                                      ),
-                                    ],
-                                  ),
+                                ],
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  0,
+                                  12,
+                                  8,
                                 ),
+                                child: Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    TextButton(
+                                      onPressed: _busy
+                                          ? null
+                                          : () {
+                                              ref.invalidate(libraryProvider);
+                                              context.push('/editor/$id');
+                                            },
+                                      child: Text(context.strings.retry),
+                                    ),
+                                    TextButton.icon(
+                                      onPressed: _busy
+                                          ? null
+                                          : () => _exportRecovery(id),
+                                      icon: const DoodimoIcon(
+                                        DoodimoGlyph.save,
+                                      ),
+                                      label: Text(
+                                        context.strings.recoveryExport,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
-                    ),
-              ],
+                          ),
+                        ),
+                      for (final doc in listing.projects)
+                        LibraryDocumentCard(
+                          leading: SizedBox(
+                            width: 80,
+                            height: 100,
+                            child: Center(
+                              child: AspectRatio(
+                                aspectRatio: .8,
+                                child: BackgroundSurface(
+                                  paper: doc.effectiveBackground,
+                                  maxWidth: 112,
+                                  maxHeight: 140,
+                                  child: CustomPaint(
+                                    painter: DrawingPainter(doc),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          title: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                context.strings.libraryEditable,
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
+                                    ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(doc.title),
+                            ],
+                          ),
+                          subtitle: Text(
+                            '${context.formatLocalDate(doc.updatedAt)}\n'
+                            '${context.strings.drawingDetails(doc.root.label, context.formatNumber(doc.strokes.length), context.formatNumber(doc.tempo), scaleName(context, doc.scale))}'
+                            '${listing.recoveredIds.contains(doc.id) ? '\n${context.strings.recoveredPreviousRevision}' : ''}',
+                          ),
+                          onTap: () => context.push('/editor/${doc.id}'),
+                          trailing: PopupMenuButton<_Action>(
+                            onOpened: () =>
+                                ScaffoldMessenger.of(context).clearSnackBars(),
+                            tooltip: context.strings.manageDrawing(doc.title),
+                            enabled: !_busy,
+                            icon: const DoodimoIcon(DoodimoGlyph.more),
+                            onSelected: (action) => _act(doc, action),
+                            itemBuilder: (_) => [
+                              PopupMenuItem(
+                                value: _Action.rename,
+                                child: Text(context.strings.rename),
+                              ),
+                              PopupMenuItem(
+                                value: _Action.duplicate,
+                                child: Text(context.strings.duplicate),
+                              ),
+                              PopupMenuItem(
+                                value: _Action.export,
+                                child: Text(context.strings.exportShare),
+                              ),
+                              PopupMenuItem(
+                                value: _Action.delete,
+                                child: Text(context.strings.delete),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
             ),
-          ),
-        ],
-      ),
+      ],
     ),
   );
 }

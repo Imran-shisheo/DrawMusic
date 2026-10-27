@@ -369,5 +369,6 @@
   "voiceChooserHint": "次の線の音色を選びます。既存の線の音色は変わりません。",
   "welcomeToBrand": "{name}へようこそ",
   "backgroundPanelTitle": "紙と写真",
-  "exportFpsChoice": "{fps} FPS"
+  "exportFpsChoice": "{fps} FPS",
+  "editorToolsShort": "ツール"
 }

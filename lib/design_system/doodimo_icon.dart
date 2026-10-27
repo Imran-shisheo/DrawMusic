@@ -36,6 +36,10 @@ enum DoodimoGlyph {
   sun,
   help,
   language,
+  camera,
+  rotate,
+  mirror,
+  crop,
 }
 
 class DoodimoIcon extends StatelessWidget {
@@ -650,6 +654,70 @@ class _DoodimoGlyphPainter extends CustomPainter {
         );
         orb(12, 16.5, 1.2, detail);
         shine(7, 5, 3);
+      case DoodimoGlyph.camera:
+        slab(2, 7, 20, 14, side, 4);
+        slab(7, 3, 10, 6, middle, 2);
+        slab(3, 6, 18, 14, face, 3);
+        orb(12, 13, 5, middle);
+        orb(12, 13, 3, detail);
+        orb(11, 12, 1, gleam);
+        shine(16, 8, 3);
+      case DoodimoGlyph.rotate:
+        slab(5, 8, 12, 14, side, 3);
+        slab(8, 10, 11, 11, face, 2.5);
+        shape(
+          Path()
+            ..moveTo(2, 10)
+            ..cubicTo(2, 1, 18, 0, 21, 8)
+            ..lineTo(18, 10)
+            ..cubicTo(16, 4, 6, 4, 5, 11)
+            ..close(),
+          middle,
+        );
+        shape(
+          Path()
+            ..moveTo(20, 3)
+            ..lineTo(22, 11)
+            ..quadraticBezierTo(22, 12, 21, 12)
+            ..lineTo(14, 10)
+            ..close(),
+          face,
+        );
+        shine(10, 12, 6);
+      case DoodimoGlyph.mirror:
+        slab(2, 4, 8, 16, face, 2.5);
+        slab(14, 4, 8, 16, middle, 2.5);
+        for (final y in [2.0, 7.0, 12.0, 17.0]) {
+          slab(11.4, y, 1.2, 4, gleam, .6);
+        }
+        shine(4, 6, 4);
+        shine(16, 6, 4);
+      case DoodimoGlyph.crop:
+        shape(
+          Path()
+            ..moveTo(4, 2)
+            ..lineTo(8, 2)
+            ..lineTo(8, 16)
+            ..lineTo(22, 16)
+            ..lineTo(22, 20)
+            ..lineTo(7, 20)
+            ..quadraticBezierTo(4, 20, 4, 17)
+            ..close(),
+          face,
+        );
+        shape(
+          Path()
+            ..moveTo(2, 5)
+            ..lineTo(17, 5)
+            ..quadraticBezierTo(20, 5, 20, 8)
+            ..lineTo(20, 22)
+            ..lineTo(16, 22)
+            ..lineTo(16, 9)
+            ..lineTo(2, 9)
+            ..close(),
+          middle,
+        );
+        shine(9, 6, 6);
       case DoodimoGlyph.language:
         slab(2, 2, 15, 16, side, 3);
         slab(3, 3, 13, 14, middle, 2.5);

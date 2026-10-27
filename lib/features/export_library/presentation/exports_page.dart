@@ -9,10 +9,12 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../design_system/name_dialog.dart';
-import '../../../design_system/creative_components.dart';
+import '../../../design_system/creative_panel.dart';
+import '../../library/presentation/library_state_panel.dart';
+import '../../../design_system/doodimo_icon.dart';
 import '../../editor/presentation/canvas.dart';
 import '../../backgrounds/presentation/background_surface.dart';
-import '../../library/presentation/library_tabs.dart';
+import '../../library/presentation/library_gallery_layout.dart';
 import '../../library/presentation/library_document_card.dart';
 import '../data/export_actions.dart';
 import '../domain/export_library.dart';
@@ -90,15 +92,10 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
         case _Action.source:
           context.push('/editor/${entry.artifact.projectId}');
         case _Action.delete:
-          final confirmed = await showDialog<bool>(
+          final confirmed = await showCreativePanel<bool>(
             context: context,
-            builder: (context) => AlertDialog(
-              title: Text(strings.deleteNamedItem(entry.artifact.name)),
-              content: Text(
-                context
-                    .strings
-                    .thisRemovesTheAppPrivateExportAfterTheUndoWindowCopiesSave,
-              ),
+            builder: (context) => CreativePanel(
+              title: strings.deleteNamedItem(entry.artifact.name),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
@@ -109,6 +106,11 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
                   child: Text(strings.delete),
                 ),
               ],
+              child: Text(
+                context
+                    .strings
+                    .thisRemovesTheAppPrivateExportAfterTheUndoWindowCopiesSave,
+              ),
             ),
           );
           if (confirmed != true) return;
@@ -155,98 +157,79 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      bottom: false,
-      child: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              MediaQuery.sizeOf(context).height < 480 ? 8 : 16,
-              20,
-              0,
+    body: LibraryGalleryLayout(
+      exports: true,
+      scrollKey: 'exports-scroll',
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.strings.yourExports,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(context.strings.libraryExportsSubtitle),
+                ],
+              ),
             ),
-            child: LibraryTabs(exports: true),
-          ),
-          Expanded(
-            child: ListView(
-              key: const PageStorageKey('exports-scroll'),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.strings.yourExports,
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(context.strings.libraryExportsSubtitle),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: context.strings.refreshExports,
-                      onPressed: () => ref.invalidate(exportListingProvider),
-                      icon: const Icon(Icons.refresh_rounded),
-                    ),
-                  ],
+            IconButton(
+              tooltip: context.strings.refreshExports,
+              onPressed: () => ref.invalidate(exportListingProvider),
+              icon: const DoodimoIcon(DoodimoGlyph.replay),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        ...ref
+            .watch(exportListingProvider)
+            .when(
+              loading: () => [
+                const Padding(
+                  padding: EdgeInsets.all(48),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-                const SizedBox(height: 20),
-                ...ref
-                    .watch(exportListingProvider)
-                    .when(
-                      loading: () => [
-                        const Padding(
-                          padding: EdgeInsets.all(48),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                      ],
-                      error: (_, _) => [
-                        CreativeEmptyState(
-                          icon: Icons.refresh_rounded,
-                          title: context.strings.couldNotLoadYourExports,
-                          message: context.strings.theOriginalFilesArePreserved,
-                          action: OutlinedButton(
-                            onPressed: () =>
-                                ref.invalidate(exportListingProvider),
-                            child: Text(context.strings.retry),
+              ],
+              error: (_, _) => [
+                LibraryStatePanel(
+                  glyph: DoodimoGlyph.replay,
+                  title: context.strings.couldNotLoadYourExports,
+                  message: context.strings.theOriginalFilesArePreserved,
+                  action: OutlinedButton(
+                    onPressed: () => ref.invalidate(exportListingProvider),
+                    child: Text(context.strings.retry),
+                  ),
+                ),
+              ],
+              data: (listing) => listing.entries.isEmpty
+                  ? [
+                      LibraryStatePanel(
+                        glyph: DoodimoGlyph.export,
+                        title: context.strings.yourExports,
+                        message: listing.detailFailures > 0
+                            ? context.strings.exportsUnreadable
+                            : context.strings.exportsEmpty,
+                      ),
+                    ]
+                  : <Widget>[
+                      if (listing.detailFailures > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Text(
+                            context
+                                .strings
+                                .someExportDetailsCouldNotBeReadTheOriginalFilesArePreserve,
                           ),
                         ),
-                      ],
-                      data: (listing) => listing.entries.isEmpty
-                          ? [
-                              CreativeEmptyState(
-                                icon: Icons.file_copy_outlined,
-                                title: context.strings.yourExports,
-                                message: listing.detailFailures > 0
-                                    ? context.strings.exportsUnreadable
-                                    : context.strings.exportsEmpty,
-                              ),
-                            ]
-                          : <Widget>[
-                              if (listing.detailFailures > 0)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child: Text(
-                                    context
-                                        .strings
-                                        .someExportDetailsCouldNotBeReadTheOriginalFilesArePreserve,
-                                  ),
-                                ),
-                              for (final entry in listing.entries)
-                                _card(context, entry),
-                            ],
-                    ),
-              ],
+                      for (final entry in listing.entries)
+                        _card(context, entry),
+                    ],
             ),
-          ),
-        ],
-      ),
+      ],
     ),
   );
   Widget _card(BuildContext context, LibraryExport entry) {
@@ -334,6 +317,7 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
         onOpened: () => ScaffoldMessenger.of(context).clearSnackBars(),
         tooltip: context.strings.exportActions(entry.artifact.name),
         enabled: !_busy,
+        icon: const DoodimoIcon(DoodimoGlyph.more),
         onSelected: (action) => _act(entry, action),
         itemBuilder: (_) => [
           PopupMenuItem(

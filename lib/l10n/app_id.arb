@@ -369,5 +369,6 @@
   "voiceChooserHint": "Pilih suara untuk goresan berikutnya. Goresan lama tetap memakai suaranya.",
   "welcomeToBrand": "Selamat datang di {name}",
   "backgroundPanelTitle": "Kertas dan foto",
-  "exportFpsChoice": "{fps} FPS"
+  "exportFpsChoice": "{fps} FPS",
+  "editorToolsShort": "Alat"
 }

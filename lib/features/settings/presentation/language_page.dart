@@ -1,3 +1,5 @@
+import '../../../design_system/immersive_surface.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -46,148 +48,141 @@ class _LanguagePageState extends ConsumerState<LanguagePage> {
             .clamp(72, double.infinity),
         title: Text(context.strings.languageSelectorTitle, maxLines: 2),
       ),
-      body: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 840),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final columns =
-                  constraints.maxWidth >= 680 &&
-                      MediaQuery.textScalerOf(context).scale(16) < 25
-                  ? 2
-                  : 1;
-              final tileWidth =
-                  (constraints.maxWidth - 40 - (columns - 1) * 12) / columns;
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                children: [
-                  if (busy)
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 16),
-                      child: LinearProgressIndicator(),
+      body: SceneBackdrop(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 840),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final columns =
+                    constraints.maxWidth >= 680 &&
+                        MediaQuery.textScalerOf(context).scale(16) < 25
+                    ? 2
+                    : 1;
+                final tileWidth =
+                    (constraints.maxWidth - 40 - (columns - 1) * 12) / columns;
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  children: [
+                    if (busy)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: LinearProgressIndicator(),
+                      ),
+                    ImmersiveSurface(
+                      accent: DoodimoColors.violet,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const DoodimoIcon(DoodimoGlyph.language, size: 32),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              context.strings.languageExplanation,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(CreativeRadius.card),
-                    ),
-                    child: Text(
-                      context.strings.languageExplanation,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 10,
-                    children: [
-                      for (final language in nativeLanguageNames.entries)
-                        SizedBox(
-                          width: tileWidth,
-                          child: Semantics(
-                            selected: selected == language.key,
-                            child: AnimatedContainer(
-                              duration: CreativeMotion.duration(
-                                context,
-                                CreativeMotion.selection,
-                              ),
-                              curve: CreativeMotion.curve,
-                              decoration: BoxDecoration(
-                                color: selected == language.key
-                                    ? (Theme.of(context).brightness ==
-                                              Brightness.dark
-                                          ? colors.primaryContainer
-                                          : DoodimoColors.ink)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: selected == language.key
-                                        ? Colors.transparent
-                                        : colors.outlineVariant,
+                    const SizedBox(height: 20),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 10,
+                      children: [
+                        for (final language in nativeLanguageNames.entries)
+                          SizedBox(
+                            width: tileWidth,
+                            child: Semantics(
+                              selected: selected == language.key,
+                              child: AnimatedContainer(
+                                duration: CreativeMotion.duration(
+                                  context,
+                                  CreativeMotion.selection,
+                                ),
+                                curve: CreativeMotion.curve,
+                                decoration: BoxDecoration(
+                                  color: selected == language.key
+                                      ? DoodimoColors.cyan
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: selected == language.key
+                                          ? Colors.transparent
+                                          : colors.outlineVariant,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                borderRadius: BorderRadius.circular(
-                                  CreativeRadius.card,
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: ListTile(
-                                  key: ValueKey('language-${language.key}'),
-                                  minVerticalPadding: 18,
-                                  title: Text(
-                                    language.value,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          color: selected == language.key
-                                              ? (Theme.of(context).brightness ==
-                                                        Brightness.dark
-                                                    ? colors.onPrimaryContainer
-                                                    : DoodimoColors.paper)
-                                              : colors.onSurface,
-                                        ),
+                                child: Material(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(
+                                    CreativeRadius.card,
                                   ),
-                                  selected: selected == language.key,
-                                  textColor: colors.onSurface,
-                                  selectedColor:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? colors.onPrimaryContainer
-                                      : DoodimoColors.paper,
-                                  trailing: selected == language.key
-                                      ? DoodimoIcon(
-                                          DoodimoGlyph.check,
-                                          color:
-                                              Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? colors.onPrimaryContainer
-                                              : DoodimoColors.lime,
-                                        )
-                                      : const SizedBox.square(dimension: 24),
-                                  onTap: busy
-                                      ? null
-                                      : () => setState(
-                                          () => _pending = language.key,
-                                        ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: ListTile(
+                                    key: ValueKey('language-${language.key}'),
+                                    minVerticalPadding: 18,
+                                    title: Text(
+                                      language.value,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            color: selected == language.key
+                                                ? DoodimoColors.ink
+                                                : colors.onSurface,
+                                          ),
+                                    ),
+                                    selected: selected == language.key,
+                                    textColor: colors.onSurface,
+                                    selectedColor: DoodimoColors.ink,
+                                    trailing: selected == language.key
+                                        ? DoodimoIcon(
+                                            DoodimoGlyph.check,
+                                            color: DoodimoColors.ink,
+                                          )
+                                        : const SizedBox.square(dimension: 24),
+                                    onTap: busy
+                                        ? null
+                                        : () => setState(
+                                            () => _pending = language.key,
+                                          ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                  if (state.error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Semantics(
-                        liveRegion: true,
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: colors.errorContainer,
-                            borderRadius: BorderRadius.circular(
-                              CreativeRadius.card,
+                      ],
+                    ),
+                    if (state.error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: colors.errorContainer,
+                              borderRadius: BorderRadius.circular(
+                                CreativeRadius.card,
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            settingsFailureMessage(
-                              context.strings,
-                              state.error!,
+                            child: Text(
+                              settingsFailureMessage(
+                                context.strings,
+                                state.error!,
+                              ),
+                              style: TextStyle(color: colors.onErrorContainer),
                             ),
-                            style: TextStyle(color: colors.onErrorContainer),
                           ),
                         ),
                       ),
-                    ),
-                ],
-              );
-            },
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -217,7 +212,7 @@ class _LanguagePageState extends ConsumerState<LanguagePage> {
                     onPressed: busy ? null : () => Navigator.pop(context),
                     child: Text(context.strings.cancel),
                   ),
-                  FilledButton.icon(
+                  PrismAction(
                     onPressed: busy
                         ? null
                         : () async {
@@ -231,7 +226,7 @@ class _LanguagePageState extends ConsumerState<LanguagePage> {
                             if (ok && context.mounted) Navigator.pop(context);
                           },
                     icon: const DoodimoIcon(DoodimoGlyph.check),
-                    label: Text(context.strings.apply),
+                    label: context.strings.apply,
                   ),
                 ],
               ),

@@ -89,12 +89,10 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
       _confirmingEmpty = true;
       bool? confirmed;
       try {
-        confirmed = await showDialog<bool>(
+        confirmed = await showCreativePanel<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            scrollable: true,
-            title: Text(context.strings.pngEmptyTitle),
-            content: Text(context.strings.pngEmptyDescription),
+          builder: (context) => CreativePanel(
+            title: context.strings.pngEmptyTitle,
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -105,6 +103,7 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
                 child: Text(context.strings.exportPng),
               ),
             ],
+            child: Text(context.strings.pngEmptyDescription),
           ),
         );
       } finally {
@@ -425,6 +424,8 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     accent: _formatTint(_selectedFormat),
     extension: _extension(_selectedFormat),
     ready: ready,
+    transparentBackground:
+        _selectedFormat == ExportFormat.png && _transparentBackground,
   );
 
   Widget _detail() {
@@ -531,6 +532,7 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
           ),
           const SizedBox(height: 14),
           SwitchListTile.adaptive(
+            key: const ValueKey('png-transparent-background'),
             contentPadding: EdgeInsets.zero,
             title: Text(context.strings.transparentBackground),
             value: _transparentBackground,

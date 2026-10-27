@@ -1,3 +1,4 @@
+import '../../../design_system/immersive_surface.dart';
 import '../../../l10n/operation_messages.dart';
 
 import 'package:scribblesong/l10n/strings.dart';
@@ -93,108 +94,110 @@ class TutorialPage extends ConsumerWidget {
           maxLines: 2,
         ),
       ),
-      body: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-            children: [
-              if (firstUse && state.error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: Semantics(
-                    liveRegion: true,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colors.errorContainer,
-                        borderRadius: BorderRadius.circular(
-                          CreativeRadius.card,
+      body: SceneBackdrop(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+              children: [
+                if (firstUse && state.error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: colors.errorContainer,
+                          borderRadius: BorderRadius.circular(
+                            CreativeRadius.card,
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        settingsFailureMessage(context.strings, state.error!),
-                        style: TextStyle(color: colors.onErrorContainer),
+                        child: Text(
+                          settingsFailureMessage(context.strings, state.error!),
+                          style: TextStyle(color: colors.onErrorContainer),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              Semantics(
-                header: true,
-                child: Text(
-                  firstUse
-                      ? context.strings.welcomeToBrand(AppBrand.displayName)
-                      : context.strings.howToCreateALoop,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                context.strings.uiWelcomeSummary,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: DrawToSoundIllustration(),
-              ),
-              for (var i = 0; i < steps.length; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: ExpansionTile(
-                    key: ValueKey('creation-guide-step-$i'),
-                    initiallyExpanded: !firstUse && i == 0,
-                    maintainState: true,
-                    tilePadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
-                    childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                    backgroundColor: Colors.transparent,
-                    collapsedBackgroundColor: Colors.transparent,
-                    shape: Border(
-                      bottom: BorderSide(color: colors.outlineVariant),
-                    ),
-                    collapsedShape: Border(
-                      bottom: BorderSide(color: colors.outlineVariant),
-                    ),
-                    leading: ExcludeSemantics(
-                      child: SizedBox(
-                        width: 36,
-                        child: Text(
-                          context.formatNumber(i + 1).padLeft(2, '0'),
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                fontWeight: FontWeight.w900,
-                                color: colors.primary,
-                              ),
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      steps[i].$2,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    children: [
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          steps[i].$3,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ),
-                    ],
+                Semantics(
+                  header: true,
+                  child: Text(
+                    firstUse
+                        ? context.strings.welcomeToBrand(AppBrand.displayName)
+                        : context.strings.howToCreateALoop,
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
                 ),
-              const SizedBox(height: 12),
-              Text(
-                context
-                    .strings
-                    .noAccountIsNeededYouCanReplayThisGuideFromSettingsHelp,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: colors.onSurfaceVariant),
-              ),
-            ],
+                const SizedBox(height: 12),
+                Text(
+                  context.strings.uiWelcomeSummary,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: DrawToSoundIllustration(),
+                ),
+                for (var i = 0; i < steps.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: ExpansionTile(
+                      key: ValueKey('creation-guide-step-$i'),
+                      initiallyExpanded: !firstUse && i == 0,
+                      maintainState: true,
+                      tilePadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                      backgroundColor: Colors.transparent,
+                      collapsedBackgroundColor: Colors.transparent,
+                      shape: Border(
+                        bottom: BorderSide(color: colors.outlineVariant),
+                      ),
+                      collapsedShape: Border(
+                        bottom: BorderSide(color: colors.outlineVariant),
+                      ),
+                      leading: ExcludeSemantics(
+                        child: SizedBox(
+                          width: 36,
+                          child: Text(
+                            context.formatNumber(i + 1).padLeft(2, '0'),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  color: colors.primary,
+                                ),
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        steps[i].$2,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      children: [
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Text(
+                            steps[i].$3,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                Text(
+                  context
+                      .strings
+                      .noAccountIsNeededYouCanReplayThisGuideFromSettingsHelp,
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: colors.onSurfaceVariant),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -219,23 +222,13 @@ class TutorialPage extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (firstUse) ...[
-                        FilledButton.icon(
+                        PrismAction(
                           onPressed: state.saving ? null : complete,
-                          icon: state.saving
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const DoodimoIcon(DoodimoGlyph.arrowUpRight),
-                          label: Text(
-                            state.saving
-                                ? context.strings.saving
-                                : context.strings.startCreating,
-                            textAlign: TextAlign.center,
-                          ),
+                          busy: state.saving,
+                          icon: const DoodimoIcon(DoodimoGlyph.arrowUpRight),
+                          label: state.saving
+                              ? context.strings.saving
+                              : context.strings.startCreating,
                         ),
                         const SizedBox(height: 4),
                         TextButton(

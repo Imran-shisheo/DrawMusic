@@ -2337,6 +2337,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{fps} FPS'**
   String exportFpsChoice(String fps);
+
+  /// No description provided for @editorToolsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get editorToolsShort;
 }
 
 class _AppLocalizationsDelegate

@@ -37,6 +37,7 @@ Future<void> mountEditor(
   String locale = 'en',
   Size size = const Size(800, 600),
   double scale = 1,
+  Brightness brightness = Brightness.light,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -61,7 +62,7 @@ Future<void> mountEditor(
         ),
       ],
       child: MaterialApp(
-        theme: buildTheme(),
+        theme: buildTheme(brightness: brightness),
         locale: Locale(locale),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,

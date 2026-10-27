@@ -61,7 +61,11 @@ class _CaptureHost {
     // streaming/chunked request has no length and is deliberately rejected.
     request.contentLength = payload.length;
     request.add(payload);
-    final response = await request.close().timeout(const Duration(seconds: 35));
+    // Stopping a clip includes bounded native finalization, ADB transfer and
+    // whole-video decoding on the host before the event can claim success.
+    final response = await request.close().timeout(
+      Duration(seconds: operation == 'record_stop' ? 100 : 35),
+    );
     final value = jsonDecode(await utf8.decoder.bind(response).join()) as Map;
     if (response.statusCode != 200 ||
         value['ok'] != true ||
@@ -295,7 +299,15 @@ void main() {
     }
 
     await until(() => find.text('Paper hills').evaluate().isNotEmpty);
+    // Widget existence alone did not prove native splash handoff in the first
+    // after run. Wait for an actual engine-rasterized frame as well; the host
+    // independently rejects the observed flat compositor/splash image.
+    await binding.waitUntilFirstFrameRasterized.timeout(
+      const Duration(seconds: 20),
+    );
+    await wait(1500);
     await host.event('metadata', 'session', {
+      'firstFrameRasterized': binding.firstFrameRasterized,
       'label': _label,
       'buildMode': 'profile',
       'physicalSize': [

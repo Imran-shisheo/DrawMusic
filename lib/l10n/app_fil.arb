@@ -369,5 +369,6 @@
   "voiceChooserHint": "Pumili ng tunog para sa susunod na guhit. Nananatili ang tinig ng mga dating guhit.",
   "welcomeToBrand": "Maligayang pagdating sa {name}",
   "backgroundPanelTitle": "Papel at larawan",
-  "exportFpsChoice": "{fps} FPS"
+  "exportFpsChoice": "{fps} FPS",
+  "editorToolsShort": "Mga tool"
 }

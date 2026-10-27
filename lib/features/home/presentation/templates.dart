@@ -13,35 +13,49 @@ import '../domain/template_catalog.dart';
 class TemplateGallery extends StatelessWidget {
   const TemplateGallery({super.key});
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Expanded(
-            child: Text(
-              context.strings.tryAStartingPoint,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          const DoodimoIcon(DoodimoGlyph.music),
-        ],
-      ),
-      const SizedBox(height: 16),
-      LayoutBuilder(
-        builder: (context, constraints) {
-          final columns = (constraints.maxWidth / 170).floor().clamp(1, 4);
-          final width = (constraints.maxWidth - 16 * (columns - 1)) / columns;
-          return Wrap(
-            spacing: 16,
-            runSpacing: 24,
+  Widget build(BuildContext context) => SliverMainAxisGroup(
+    slivers: [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Row(
             children: [
-              for (var i = 0; i < originalTemplates.length; i++)
-                SizedBox(
-                  width: width,
-                  child: _TemplateSleeve(index: i),
+              Expanded(
+                child: Text(
+                  context.strings.tryAStartingPoint,
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
+              ),
+              const DoodimoIcon(DoodimoGlyph.music),
             ],
+          ),
+        ),
+      ),
+      SliverLayoutBuilder(
+        builder: (context, constraints) {
+          final columns = (constraints.crossAxisExtent / 170).floor().clamp(
+            1,
+            4,
+          );
+          final rows = (originalTemplates.length / columns).ceil();
+          return SliverList.builder(
+            itemCount: rows,
+            itemBuilder: (context, row) => Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var column = 0; column < columns; column++) ...[
+                    if (column > 0) const SizedBox(width: 16),
+                    Expanded(
+                      child: row * columns + column < originalTemplates.length
+                          ? _TemplateSleeve(index: row * columns + column)
+                          : const SizedBox(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           );
         },
       ),

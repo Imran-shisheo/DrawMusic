@@ -369,5 +369,6 @@
   "voiceChooserHint": "अगली रेखाओं की आवाज़ चुनें। पुरानी रेखाएँ अपनी आवाज़ रखेंगी।",
   "welcomeToBrand": "{name} में स्वागत है",
   "backgroundPanelTitle": "कागज़ और फ़ोटो",
-  "exportFpsChoice": "{fps} FPS"
+  "exportFpsChoice": "{fps} FPS",
+  "editorToolsShort": "उपकरण"
 }

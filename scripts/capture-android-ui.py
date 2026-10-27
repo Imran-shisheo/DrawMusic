@@ -5,6 +5,7 @@ The diagnostic profile target talks only through an authenticated localhost ADB
 reverse tunnel. Normal lib/main.dart has no capture server/network dependency.
 """
 import hashlib
+from collections import Counter
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
@@ -35,6 +36,44 @@ def slug(value):
     return value
 
 
+def optional_dump(*args):
+    try:
+        return adb('shell', *args, required=False, timeout=5).stdout
+    except subprocess.TimeoutExpired:
+        return 'Optional owned-emulator diagnostic timed out after5s\n'
+
+
+def presented_scene_evidence(png):
+    """Reject the observed flat native splash, not a visual-design acceptance."""
+    decoded = subprocess.run([
+        'ffmpeg', '-nostdin', '-v', 'error', '-i', 'pipe:0',
+        '-vf', 'crop=iw*0.8:ih*0.7:iw*0.1:ih*0.15,scale=64:112',
+        '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1',
+    ], input=png, capture_output=True, check=True, timeout=10).stdout
+    if len(decoded) != 64 * 112 * 3:
+        raise RuntimeError('Actual compositor PNG could not be sampled')
+    pixels = [tuple(decoded[i:i+3]) for i in range(0, len(decoded), 3)]
+    dominant = Counter(pixels).most_common(1)[0][0]
+    varied = sum(sum(abs(a-b) for a,b in zip(pixel, dominant)) > 30 for pixel in pixels)
+    return {'centralForegroundRatio': varied / len(pixels),
+            'centralDominantRgb': list(dominant),
+            'scope': 'Actual compositor central pixel coverage; rejects the observed flat splash, not design or motion acceptance'}
+
+
+def decode_recording(target):
+    started = time.monotonic()
+    try:
+        subprocess.run([
+            'ffmpeg', '-nostdin', '-v', 'error', '-xerror', '-err_detect', 'explode',
+            '-i', str(target), '-map', '0:v:0', '-an', '-sn', '-dn', '-f', 'null', '-',
+        ], check=True, capture_output=True, text=True, timeout=30)
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError('Whole MP4 video decode failed: ' + error.stderr[-1500:]) from error
+    return {'passed': True, 'decoder': 'ffmpeg -xerror -err_detect explode',
+            'elapsedSeconds': time.monotonic() - started, 'timeoutSeconds': 30,
+            'scope': 'Actual complete video-track software decode to null output; not audio, physical presentation/smoothness or iOS validation'}
+
+
 class Capture:
     def __init__(self):
         self.token = secrets.token_hex(16)
@@ -45,28 +84,90 @@ class Capture:
         self.complete = False
         self.report = {'passed': False, 'scope': 'Owned API35 QEMU profile-build screenshots, silent interaction recordings and real engine timings; not phone/iOS acceptance', 'events': [], 'recordingsHaveAudio': False}
 
+    def record_start(self, name):
+        if self.recording or adb('shell', 'pidof', 'screenrecord', required=False).stdout.strip():
+            raise RuntimeError('Another screen recording is active')
+        attempts = []
+        for width, height, bitrate in ((720, 1600, 4000000), (432, 960, 2000000)):
+            remote = f'/sdcard/Download/DrawMusicCapture-{self.token}-{name}-{width}x{height}.mp4'
+            path = OUTPUT / 'recordings' / f'{name}.log'
+            attempt_offset = path.stat().st_size if path.exists() else 0
+            log = path.open('a')
+            log.write(f'Owned codec startup attempt {width}x{height}\n'); log.flush()
+            process = subprocess.Popen(['adb', '-s', DEVICE, 'shell', 'screenrecord', '--verbose', '--bit-rate', str(bitrate), '--size', f'{width}x{height}', '--time-limit', '180', remote], stdout=log, stderr=subprocess.STDOUT)
+            deadline = time.monotonic() + 8
+            verified_since = None
+            pid = ''
+            while process.poll() is None and time.monotonic() < deadline:
+                pid = adb('shell', 'pidof', 'screenrecord', required=False).stdout.strip()
+                if re.fullmatch(r'\d+', pid):
+                    cmd = adb('shell', 'cat', f'/proc/{pid}/cmdline', required=False).stdout
+                    if remote not in cmd:
+                        log.close()
+                        raise RuntimeError('Recorder startup identity differs; refusing signal/fallback')
+                    if verified_since is None: verified_since = time.monotonic()
+                    if time.monotonic() - verified_since >= 1.5:
+                        settings = {'width': width, 'height': height, 'bitrate': bitrate,
+                                    'startupOwnershipVerifiedSeconds': 1.5, 'codecFallbackAttempts': attempts}
+                        self.recording = (name, remote, pid, process, log, settings)
+                        return settings
+                else:
+                    verified_since = None
+                time.sleep(.1)
+            if process.poll() is None:
+                cmd = adb('shell', 'cat', f'/proc/{pid}/cmdline', required=False).stdout if re.fullmatch(r'\d+', pid) else ''
+                if remote in cmd:
+                    adb('shell', 'kill', '-2', pid)
+                    try: process.wait(timeout=5)
+                    except subprocess.TimeoutExpired: process.terminate()
+                log.close()
+                raise RuntimeError('Owned recorder startup did not stabilize within8s; no speculative fallback')
+            process.wait(timeout=3); log.close()
+            tail = path.read_bytes()[attempt_offset:].decode(errors='replace')[-4000:].replace(self.token, '[redacted]')
+            attempts.append({'width': width, 'height': height, 'exitCode': process.returncode, 'diagnostic': tail})
+            adb('shell', 'rm', '-f', remote)
+            if 'unable to configure video/avc codec' not in tail:
+                raise RuntimeError(f'Owned recorder exited before startup: {tail[-800:]}')
+        raise RuntimeError(f'Both bounded AVC resolutions failed: {attempts}')
+
     def record_stop(self):
         if not self.recording:
             raise RuntimeError('No owned recording is active')
-        name, remote, pid, process, log = self.recording
+        name, remote, pid, process, log, settings = self.recording
         self.recording = None
-        cmd = adb('shell', 'cat', f'/proc/{pid}/cmdline', required=False).stdout
-        if remote not in cmd:
-            raise RuntimeError('Recording process identity changed; refusing signal')
-        adb('shell', 'kill', '-2', pid)
         try:
-            process.wait(timeout=20)
-        except subprocess.TimeoutExpired:
-            process.terminate()
-            raise RuntimeError('Screen recording did not finalize within 20 seconds')
+            cmd = adb('shell', 'cat', f'/proc/{pid}/cmdline', required=False).stdout
+            if remote not in cmd:
+                log.flush()
+                tail = Path(log.name).read_text(errors='replace')[-2000:].replace(self.token, '[redacted]')
+                raise RuntimeError(f'Recording exited or identity changed; refusing signal (exit={process.poll()}): {tail[-1000:]}')
+            adb('shell', 'kill', '-2', pid)
+            try:
+                process.wait(timeout=20)
+            except subprocess.TimeoutExpired:
+                process.terminate()
+                raise RuntimeError('Screen recording did not finalize within20s')
         finally:
             log.close()
         target = OUTPUT / 'recordings' / f'{name}.mp4'
-        adb('pull', remote, str(target), timeout=60)
+        adb('pull', remote, str(target), timeout=20)
         adb('shell', 'rm', '-f', remote)
         if target.stat().st_size < 1000:
             raise RuntimeError('No real screen recording was produced')
-        return {'file': str(target), 'bytes': target.stat().st_size, 'audio': False}
+        probe = subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+            '-show_entries', 'stream=codec_name,width,height,nb_frames:format=duration',
+            '-of', 'json', str(target)], check=True, capture_output=True, text=True, timeout=10)
+        metadata = json.loads(probe.stdout)
+        stream = metadata.get('streams', [{}])[0]
+        duration = float(metadata.get('format', {}).get('duration', 0))
+        if stream.get('codec_name') != 'h264' or duration <= 0 or (stream.get('width'), stream.get('height')) != (settings['width'], settings['height']):
+            raise RuntimeError('MP4 metadata does not identify the requested real AVC video')
+        if name == '00-home-ambient' and duration < 16:
+            raise RuntimeError('Actual ambient MP4 did not cover the authored16s loop')
+        decoded = decode_recording(target)
+        return {'file': str(target), 'bytes': target.stat().st_size, 'audio': False,
+                'sha256': hashlib.sha256(target.read_bytes()).hexdigest(),
+                'codec': metadata, 'wholeVideoDecode': decoded, 'recorderSettings': settings}
 
     def event(self, body):
         with self.lock:
@@ -76,28 +177,35 @@ class Capture:
             operation, name = body.get('operation'), slug(body.get('name'))
             item = {'sequence': self.sequence, 'operation': operation, 'name': name, 'hostMonotonicSeconds': time.monotonic()}
             if operation == 'snapshot':
-                result = adb('exec-out', 'screencap', '-p', binary=True)
-                if not result.stdout.startswith(b'\x89PNG\r\n\x1a\n'):
-                    raise RuntimeError('ADB did not return an actual PNG screenshot')
+                deadline = time.monotonic() + 20
+                attempts = 0
+                while True:
+                    result = adb('exec-out', 'screencap', '-p', binary=True)
+                    if not result.stdout.startswith(b'\x89PNG\r\n\x1a\n'):
+                        raise RuntimeError('ADB did not return an actual PNG screenshot')
+                    if name != '01-home' or self.report.get('source', {}).get('label') != 'after': break
+                    attempts += 1
+                    if attempts == 1:
+                        (OUTPUT / 'window-before-first-home.txt').write_text(optional_dump('dumpsys', 'window', 'windows'))
+                        (OUTPUT / 'surface-layers-before-first-home.txt').write_text(optional_dump('dumpsys', 'SurfaceFlinger', '--list'))
+                    evidence = presented_scene_evidence(result.stdout)
+                    item.update(presentation=evidence, compositorReadinessAttempts=attempts)
+                    if evidence['centralForegroundRatio'] >= .02:
+                        (OUTPUT / 'surface-layers-home-presented.txt').write_text(optional_dump('dumpsys', 'SurfaceFlinger', '--list'))
+                        break
+                    # Preserve the exact last failed compositor image as evidence.
+                    (OUTPUT / 'screenshots' / '00-home-not-presented.png').write_bytes(result.stdout)
+                    self.report['presentationFailure'] = {
+                        'name': '00-home-not-presented', 'sha256': hashlib.sha256(result.stdout).hexdigest(),
+                        'bytes': len(result.stdout), 'attempts': attempts, 'presentation': evidence}
+                    if time.monotonic() >= deadline:
+                        raise RuntimeError(f'Home widget tree loaded but actual compositor remains flat/native splash after20s: {evidence}')
+                    time.sleep(.5)
                 target = OUTPUT / 'screenshots' / f'{name}.png'
                 target.write_bytes(result.stdout)
                 item.update(file=str(target), bytes=len(result.stdout), sha256=hashlib.sha256(result.stdout).hexdigest())
             elif operation == 'record_start':
-                if self.recording or adb('shell', 'pidof', 'screenrecord', required=False).stdout.strip():
-                    raise RuntimeError('Another screen recording is active')
-                remote = f'/sdcard/Download/DrawMusicCapture-{self.token}-{name}.mp4'
-                log = (OUTPUT / 'recordings' / f'{name}.log').open('w')
-                process = subprocess.Popen(['adb', '-s', DEVICE, 'shell', 'screenrecord', '--bit-rate', '4000000', '--size', '720x1600', '--time-limit', '180', remote], stdout=log, stderr=subprocess.STDOUT)
-                deadline = time.monotonic() + 10
-                while True:
-                    pid = adb('shell', 'pidof', 'screenrecord', required=False).stdout.strip()
-                    if re.fullmatch(r'\d+', pid) and process.poll() is None:
-                        self.recording = (name, remote, pid, process, log)
-                        break
-                    if process.poll() is not None or time.monotonic() > deadline:
-                        log.close()
-                        raise RuntimeError('Actual Android screenrecord did not start')
-                    time.sleep(.1)
+                item.update(self.record_start(name))
             elif operation == 'record_stop':
                 if not self.recording or self.recording[0] != name:
                     raise ValueError('Recording name mismatch')

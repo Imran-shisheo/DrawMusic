@@ -72,12 +72,42 @@ class _AuroraSceneState extends State<AuroraScene>
     child: IgnorePointer(
       child: RepaintBoundary(
         child: ClipRect(
-          child: CustomPaint(
-            painter: _AuroraPainter(
-              _cycle,
-              Theme.of(context).brightness == Brightness.dark,
+          child: LayoutBuilder(
+            builder: (context, bounds) => AnimatedBuilder(
+              animation: _cycle,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // The broad gradients and ribbon never repaint on a tick.
+                  RepaintBoundary(
+                    child: CustomPaint(
+                      isComplex: true,
+                      painter: _AuroraPainter(
+                        _cycle,
+                        Theme.of(context).brightness == Brightness.dark,
+                        staticLayer: true,
+                      ),
+                    ),
+                  ),
+                  CustomPaint(
+                    painter: _AuroraPainter(
+                      _cycle,
+                      Theme.of(context).brightness == Brightness.dark,
+                    ),
+                  ),
+                ],
+              ),
+              builder: (context, child) {
+                final phase = _cycle.value * math.pi * 2;
+                return Transform.translate(
+                  offset: Offset(
+                    math.sin(phase) * bounds.maxWidth * .014,
+                    math.cos(phase) * bounds.maxHeight * .016,
+                  ),
+                  child: child,
+                );
+              },
             ),
-            child: const SizedBox.expand(),
           ),
         ),
       ),
@@ -86,7 +116,9 @@ class _AuroraSceneState extends State<AuroraScene>
 }
 
 class _AuroraPainter extends CustomPainter {
-  _AuroraPainter(this.cycle, this.dark) : super(repaint: cycle);
+  _AuroraPainter(this.cycle, this.dark, {this.staticLayer = false})
+    : super(repaint: staticLayer ? null : cycle);
+  final bool staticLayer;
   final Animation<double> cycle;
   final bool dark;
   Size? _size;
@@ -112,74 +144,72 @@ class _AuroraPainter extends CustomPainter {
     _geometry(size);
     final rect = Offset.zero & size;
     final phase = cycle.value * math.pi * 2;
-    final aura = Paint()
-      ..shader = ui.Gradient.radial(
-        Offset(size.width * (.72 + math.sin(phase) * .05), size.height * .34),
-        size.width * .7,
-        dark
-            ? const [Color(0x704f2b97), Color(0x00100e2a)]
-            : const [Color(0x559f8bff), Color(0x00e8efff)],
-      );
-    canvas.drawRect(rect, aura);
-    canvas.save();
-    canvas.translate(
-      math.sin(phase) * size.width * .014,
-      math.cos(phase) * size.height * .016,
-    );
     final ribbonWidth = math.min(size.width, size.height) * .085;
-    final shadow = Paint()
-      ..color = Colors.black.withValues(alpha: dark ? .32 : .09)
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = ribbonWidth + 8;
-    canvas.save();
-    canvas.translate(0, 7);
-    canvas.drawPath(_ribbon, shadow);
-    canvas.restore();
-    canvas.drawPath(
-      _echo,
-      Paint()
-        ..color = DoodimoColors.cyan.withValues(alpha: dark ? .16 : .24)
+    if (staticLayer) {
+      final aura = Paint()
+        ..shader = ui.Gradient.radial(
+          Offset(size.width * .72, size.height * .34),
+          size.width * .7,
+          dark
+              ? const [Color(0x704f2b97), Color(0x00100e2a)]
+              : const [Color(0x559f8bff), Color(0x00e8efff)],
+        );
+      canvas.drawRect(rect, aura);
+      final shadow = Paint()
+        ..color = Colors.black.withValues(alpha: dark ? .32 : .09)
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
-        ..strokeWidth = ribbonWidth * .35,
-    );
-    canvas.drawPath(
-      _ribbon,
-      Paint()
-        ..shader = ui.Gradient.linear(
-          Offset(size.width * .1, size.height * .8),
-          Offset(size.width, size.height * .2),
-          const [
-            Color(0xff5c2bbb),
-            Color(0xffa478ff),
-            Color(0xff6b66f6),
-            Color(0xff55dff5),
-          ],
-          const [0, .34, .67, 1],
-        )
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = ribbonWidth,
-    );
-    canvas.drawPath(
-      _ribbon,
-      Paint()
-        ..shader = ui.Gradient.linear(
-          Offset.zero,
-          Offset(size.width, size.height),
-          [
-            Colors.white.withValues(alpha: .55),
-            Colors.white.withValues(alpha: .02),
-            DoodimoColors.cyan.withValues(alpha: .55),
-          ],
-          const [0, .55, 1],
-        )
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeWidth = 1.2,
-    );
+        ..strokeWidth = ribbonWidth + 8;
+      canvas.save();
+      canvas.translate(0, 7);
+      canvas.drawPath(_ribbon, shadow);
+      canvas.restore();
+      canvas.drawPath(
+        _echo,
+        Paint()
+          ..color = DoodimoColors.cyan.withValues(alpha: dark ? .16 : .24)
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = ribbonWidth * .35,
+      );
+      canvas.drawPath(
+        _ribbon,
+        Paint()
+          ..shader = ui.Gradient.linear(
+            Offset(size.width * .1, size.height * .8),
+            Offset(size.width, size.height * .2),
+            const [
+              Color(0xff5c2bbb),
+              Color(0xffa478ff),
+              Color(0xff6b66f6),
+              Color(0xff55dff5),
+            ],
+            const [0, .34, .67, 1],
+          )
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..strokeWidth = ribbonWidth,
+      );
+      canvas.drawPath(
+        _ribbon,
+        Paint()
+          ..shader = ui.Gradient.linear(
+            Offset.zero,
+            Offset(size.width, size.height),
+            [
+              Colors.white.withValues(alpha: .55),
+              Colors.white.withValues(alpha: .02),
+              DoodimoColors.cyan.withValues(alpha: .55),
+            ],
+            const [0, .55, 1],
+          )
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = 1.2,
+      );
+      return;
+    }
     for (final metric in _metrics) {
       final start = cycle.value * metric.length;
       final end = start + metric.length * .12;
@@ -218,10 +248,11 @@ class _AuroraPainter extends CustomPainter {
         Paint()..color = DoodimoColors.cyan.withValues(alpha: .06),
       );
     }
-    canvas.restore();
   }
 
   @override
   bool shouldRepaint(_AuroraPainter oldDelegate) =>
-      oldDelegate.dark != dark || oldDelegate.cycle != cycle;
+      oldDelegate.dark != dark ||
+      oldDelegate.staticLayer != staticLayer ||
+      (!staticLayer && oldDelegate.cycle != cycle);
 }

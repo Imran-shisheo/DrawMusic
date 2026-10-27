@@ -106,6 +106,7 @@ class _PrismActionState extends State<PrismAction> {
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onPressed != null;
+    final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
     return Semantics(
       button: true,
       enabled: enabled,
@@ -175,9 +176,10 @@ class _PrismActionState extends State<PrismAction> {
                                 color: DoodimoColors.ink,
                               ),
                             )
-                          else
+                          else if (!largeText)
                             widget.icon,
-                          const SizedBox(width: 12),
+                          if (widget.busy || !largeText)
+                            const SizedBox(width: 12),
                           Flexible(
                             child: Text(
                               widget.label,

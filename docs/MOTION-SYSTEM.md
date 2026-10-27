@@ -1,6 +1,6 @@
 # Motion system
 
-27 October 2026. Proposed implementation tokens; visual and profile acceptance pending.
+27 October 2026. Implemented motion tokens; final visual and profile acceptance pending.
 
 | Motion | Purpose and trigger | Duration / curve | Interruption and reduced motion |
 |---|---|---|---|
@@ -15,3 +15,9 @@
 Keep animation state local to presentation widgets. Use repaint listeners for decorative paths, separate from document, canvas/pointer and cursor repaint boundaries. No geometry serialization, project mutations or full editor rebuilds per animation tick. Do not animate canvas constraints, pointer targets or readable content during drawing. Avoid unconditional entrance cascades on branch return.
 
 Test rapid switching, Back during transitions, retained scroll/dialog/language/editor/audio state, hidden/background ticker suspension and reduced-motion semantics. Use bounded deterministic pumps for looping decoration. Actual cloud emulator recordings and profile UI/raster timings must substantiate runtime claims; debug rendering alone is not a smoothness measurement.
+
+## Immersive sculpture implementation
+
+The 16-second Home sculpture is original decoration, not an audio meter. A retained static repaint layer contains the broad gradient and ribbon. A local transform supplies bounded periodic float; a separate painter draws the traveling highlight and three orbital accents. The highlight wraps across the path boundary, and orbital phase uses a complete integer cycle. Rendered tests cover both loop continuity and hidden/background/reduced-motion suspension. Reduced motion retains a static luminous composition. No animation writes project state or enters document thumbnails/exports.
+
+The first native after-capture attempt failed at the emulator recording encoder and also exposed insufficient presentation readiness. It is diagnostic only. Actual motion clips, final-source UI/raster measurements and physical-device acceptance remain pending; passing pixel tests do not establish frame rate.

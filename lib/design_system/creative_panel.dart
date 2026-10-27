@@ -4,6 +4,7 @@ import '../l10n/strings.dart';
 import 'motion.dart';
 import 'layout.dart';
 import 'doodimo_icon.dart';
+import 'immersive_surface.dart';
 
 /// The caller's state and job ownership remain outside the transition builder.
 Future<T?> showCreativePanel<T>({
@@ -24,10 +25,15 @@ Future<T?> showCreativePanel<T>({
         ),
       ),
       builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
         clipBehavior: Clip.antiAlias,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600, maxHeight: 760),
-          child: builder(context),
+          child: ImmersiveSurface(
+            padding: EdgeInsets.zero,
+            glow: true,
+            child: builder(context),
+          ),
         ),
       ),
     );
@@ -36,6 +42,7 @@ Future<T?> showCreativePanel<T>({
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
+    backgroundColor: Colors.transparent,
     useSafeArea: true,
     isDismissible: isDismissible,
     enableDrag: isDismissible,
@@ -51,7 +58,11 @@ Future<T?> showCreativePanel<T>({
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(context).height * .92,
         ),
-        child: builder(context),
+        child: ImmersiveSurface(
+          padding: EdgeInsets.zero,
+          glow: true,
+          child: builder(context),
+        ),
       ),
     ),
   );
@@ -80,11 +91,17 @@ class CreativePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SafeArea(
     top: false,
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
+    child: LayoutBuilder(
+      builder: (context, bounds) {
+        final compact = scrollable && bounds.maxHeight < 360;
+        final close = IconButton(
+          tooltip: context.strings.close,
+          onPressed: canClose
+              ? onClose ?? () => Navigator.of(context).maybePop()
+              : null,
+          icon: const DoodimoIcon(DoodimoGlyph.close),
+        );
+        final heading = Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(24, 16, 8, 12),
           child: Row(
             children: [
@@ -94,59 +111,96 @@ class CreativePanel extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
-              IconButton(
-                tooltip: context.strings.close,
-                onPressed: canClose
-                    ? onClose ?? () => Navigator.of(context).maybePop()
-                    : null,
-                icon: const DoodimoIcon(DoodimoGlyph.close),
-              ),
+              close,
             ],
           ),
-        ),
-        Flexible(
-          child: scrollable
-              ? SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (subtitle != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: Text(subtitle!),
-                        ),
-                      child,
-                    ],
-                  ),
-                )
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (subtitle != null)
-                      Flexible(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                          child: Text(subtitle!),
-                        ),
-                      ),
-                    Flexible(child: child),
-                  ],
+        );
+        final content = Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (subtitle != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(subtitle!),
                 ),
-        ),
-        if (actions.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.all(CreativeSpace.lg),
-            child: OverflowBar(
-              spacing: 12,
-              overflowSpacing: 8,
-              children: actions,
+              child,
+            ],
+          ),
+        );
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (compact)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 8),
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: close,
+                ),
+              )
+            else
+              heading,
+            Flexible(
+              child: scrollable
+                  ? SingleChildScrollView(
+                      child: compact
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    24,
+                                    0,
+                                    24,
+                                    12,
+                                  ),
+                                  child: Text(
+                                    title,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge,
+                                  ),
+                                ),
+                                content,
+                              ],
+                            )
+                          : content,
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (subtitle != null)
+                          Flexible(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                              child: Text(subtitle!),
+                            ),
+                          ),
+                        Flexible(child: child),
+                      ],
+                    ),
             ),
-          )
-        else
-          const SizedBox(height: 24),
-      ],
+            if (actions.isNotEmpty)
+              Padding(
+                padding: compact
+                    ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+                    : const EdgeInsets.all(CreativeSpace.lg),
+                child: OverflowBar(
+                  spacing: 12,
+                  overflowSpacing: 8,
+                  children: actions,
+                ),
+              )
+            else
+              SizedBox(height: compact ? 8 : 24),
+          ],
+        );
+      },
     ),
   );
 }

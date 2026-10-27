@@ -369,5 +369,6 @@
   "voiceChooserHint": "Escolha o som dos próximos traços. Os existentes mantêm sua voz.",
   "welcomeToBrand": "Boas-vindas ao {name}",
   "backgroundPanelTitle": "Papel e foto",
-  "exportFpsChoice": "{fps} FPS"
+  "exportFpsChoice": "{fps} FPS",
+  "editorToolsShort": "Ferramentas"
 }

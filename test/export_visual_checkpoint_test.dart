@@ -145,6 +145,25 @@ void main() {
       await tester.tap(find.text('Open export fixture'));
       await tester.pumpAndSettle();
       await save('09-export-image');
+      final transparency = find.byKey(
+        const ValueKey('png-transparent-background'),
+      );
+      await tester.ensureVisible(transparency);
+      await tester.pumpAndSettle();
+      expect(transparency.hitTestable(), findsOneWidget);
+      await tester.tap(transparency);
+      await tester.pumpAndSettle();
+      expect(tester.widget<SwitchListTile>(transparency).value, isTrue);
+      await save('09c-export-transparency-setting');
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('export-intent-png')),
+      );
+      await tester.pumpAndSettle();
+      await save('09d-export-transparent-preview');
+      await tester.ensureVisible(transparency);
+      await tester.pumpAndSettle();
+      await tester.tap(transparency);
+      await tester.pumpAndSettle();
       await tester.ensureVisible(
         find.byKey(const ValueKey('export-intent-mp4')),
       );

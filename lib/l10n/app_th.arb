@@ -369,5 +369,6 @@
   "voiceChooserHint": "เลือกเสียงสำหรับเส้นถัดไป เส้นเดิมยังใช้เสียงเดิม",
   "welcomeToBrand": "ยินดีต้อนรับสู่ {name}",
   "backgroundPanelTitle": "กระดาษและภาพถ่าย",
-  "exportFpsChoice": "{fps} FPS"
+  "exportFpsChoice": "{fps} FPS",
+  "editorToolsShort": "เครื่องมือ"
 }

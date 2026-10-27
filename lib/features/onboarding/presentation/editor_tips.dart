@@ -1,3 +1,6 @@
+import '../../../design_system/doodimo_icon.dart';
+import '../../../design_system/immersive_surface.dart';
+
 import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 
@@ -129,14 +132,12 @@ class _TipOverlayState extends State<_TipOverlay> with WidgetsBindingObserver {
       onPressed: () => Navigator.pop(context, true),
       child: Text(context.strings.skipTips, textAlign: TextAlign.center),
     );
-    Widget next() => FilledButton(
+    Widget next() => PrismAction(
       onPressed: _moving ? null : _next,
-      child: Text(
-        _index == widget.tips.length - 1
-            ? context.strings.done
-            : context.strings.nextTip,
-        textAlign: TextAlign.center,
-      ),
+      icon: const DoodimoIcon(DoodimoGlyph.arrowUpRight),
+      label: _index == widget.tips.length - 1
+          ? context.strings.done
+          : context.strings.nextTip,
     );
     return Material(
       type: MaterialType.transparency,
@@ -173,13 +174,9 @@ class _TipOverlayState extends State<_TipOverlay> with WidgetsBindingObserver {
                     maxHeight: landscape ? available : available * .58,
                   ),
                   child: FocusTraversalGroup(
-                    child: Card(
-                      margin: EdgeInsets.zero,
-                      color: colors.surface,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        side: BorderSide(color: colors.primary, width: 2),
-                      ),
+                    child: ImmersiveSurface(
+                      padding: EdgeInsets.zero,
+                      glow: true,
                       child: Padding(
                         padding: const EdgeInsets.all(20),
                         child: Column(

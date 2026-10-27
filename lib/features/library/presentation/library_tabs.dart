@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../design_system/motion.dart';
+import '../../../design_system/doodimo_icon.dart';
+import '../../../design_system/immersive_surface.dart';
 import '../../../l10n/strings.dart';
 
 /// In-flow library navigation grows with translated text rather than being
@@ -16,10 +18,10 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
     final colors = Theme.of(context).colorScheme;
     final short = MediaQuery.sizeOf(context).height < 480;
     final stacked = MediaQuery.textScalerOf(context).scale(14) > 21 && !short;
-    Widget tab(bool exported, IconData icon, String label) {
+    Widget tab(bool exported, DoodimoGlyph icon, String label) {
       final selected = exported == exports;
       final contents = [
-        Icon(icon, size: 22),
+        DoodimoIcon(icon, size: 24),
         const SizedBox(width: 8, height: 6),
         Flexible(child: Text(label, textAlign: TextAlign.center)),
       ];
@@ -34,10 +36,19 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
             ),
             curve: CreativeMotion.curve,
             decoration: BoxDecoration(
-              color: selected ? colors.surface : Colors.transparent,
+              gradient: selected
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colors.secondary.withValues(alpha: .22),
+                        colors.primary.withValues(alpha: .09),
+                      ],
+                    )
+                  : null,
               borderRadius: BorderRadius.circular(16),
               border: selected
-                  ? Border.all(color: colors.outlineVariant)
+                  ? Border.all(color: colors.secondary.withValues(alpha: .4))
                   : null,
             ),
             child: Material(
@@ -65,7 +76,7 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
                           ? Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(icon, size: 22),
+                                DoodimoIcon(icon, size: 24),
                                 const SizedBox(height: 6),
                                 Text(label, textAlign: TextAlign.center),
                               ],
@@ -84,18 +95,15 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
       );
     }
 
-    return Container(
+    return ImmersiveSurface(
       padding: const EdgeInsets.all(5),
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(21),
-      ),
+      radius: 21,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          tab(false, Icons.draw_outlined, context.strings.drafts),
+          tab(false, DoodimoGlyph.draw, context.strings.drafts),
           const SizedBox(width: 6),
-          tab(true, Icons.file_copy_outlined, context.strings.exports),
+          tab(true, DoodimoGlyph.export, context.strings.exports),
         ],
       ),
     );

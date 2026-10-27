@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/app/providers.dart';
 import 'package:scribblesong/app/app.dart';
 import 'package:scribblesong/features/export_library/data/export_actions.dart';
+import 'package:scribblesong/features/export/presentation/export_sheet.dart';
 import 'package:scribblesong/features/export_library/domain/export_library.dart';
 import 'package:scribblesong/creative_document/document.dart';
 import 'package:scribblesong/design_system/theme.dart';
@@ -124,8 +125,11 @@ void main() {
               tester,
               meetsGuideline(labeledTapTargetGuideline),
             );
-            await tester.tap(find.byTooltip('Close'));
+            final closeExport = find.byTooltip('Close');
+            expect(closeExport.hitTestable(), findsOneWidget);
+            await tester.tap(closeExport);
             await tester.pumpAndSettle();
+            expect(find.byType(ExportSheet), findsNothing);
             expect(tester.takeException(), isNull);
             await tester.pumpWidget(const SizedBox());
           } finally {

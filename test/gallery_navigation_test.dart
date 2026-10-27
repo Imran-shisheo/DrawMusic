@@ -30,9 +30,15 @@ void main() {
       );
       await tester.pumpAndSettle();
       final target = find.text('Three streams');
-      expect(target, findsOneWidget);
-      expect(target.hitTestable(), findsNothing);
-      await Scrollable.ensureVisible(tester.element(target), alignment: .2);
+      expect(target, findsNothing);
+      await tester.scrollUntilVisible(
+        target,
+        400,
+        scrollable: find.descendant(
+          of: find.byKey(const PageStorageKey('home-scroll')),
+          matching: find.byType(Scrollable),
+        ),
+      );
       await tester.pumpAndSettle();
       expect(target.hitTestable(), findsOneWidget);
       await tester.tap(target.hitTestable());

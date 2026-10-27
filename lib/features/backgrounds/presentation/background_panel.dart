@@ -9,6 +9,9 @@ import 'package:flutter/services.dart';
 import '../../../l10n/strings.dart';
 import '../../../design_system/creative_panel.dart';
 import '../../../design_system/motion.dart';
+import '../../../design_system/brand_colors.dart';
+import '../../../design_system/doodimo_icon.dart';
+import '../../../design_system/immersive_surface.dart';
 import 'photo_crop_workspace.dart';
 import '../domain/background.dart';
 import '../data/background_assets.dart';
@@ -254,13 +257,13 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
             children: [
               FilledButton.tonalIcon(
                 onPressed: () => Navigator.pop(sheetContext, false),
-                icon: const Icon(Icons.photo_library_outlined),
+                icon: const DoodimoIcon(DoodimoGlyph.image),
                 label: Text(sheetContext.strings.choosePhoto),
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => Navigator.pop(sheetContext, true),
-                icon: const Icon(Icons.camera_alt_outlined),
+                icon: const DoodimoIcon(DoodimoGlyph.camera),
                 label: Text(sheetContext.strings.takePhoto),
               ),
             ],
@@ -312,12 +315,19 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: .08),
-                      blurRadius: 16,
+                      color: DoodimoColors.violet.withValues(
+                        alpha: Theme.of(context).brightness == Brightness.dark
+                            ? .24
+                            : .12,
+                      ),
+                      blurRadius: 28,
                       offset: const Offset(0, 6),
                     ),
                   ],
-                  border: Border.all(color: scheme.outlineVariant),
+                  border: Border.all(
+                    color: scheme.secondary.withValues(alpha: .65),
+                    width: 1.5,
+                  ),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(22),
@@ -419,7 +429,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
               child: _BackgroundChoice(
                 key: const ValueKey('background-gradient-linear'),
                 label: context.strings.linearBackground,
-                icon: Icons.gradient_rounded,
+                glyph: DoodimoGlyph.sun,
                 selected: pending.kind == BackgroundKind.linear,
                 compact: true,
                 onTap: busy ? null : () => _changeKind(BackgroundKind.linear),
@@ -430,7 +440,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
               child: _BackgroundChoice(
                 key: const ValueKey('background-gradient-radial'),
                 label: context.strings.radialBackground,
-                icon: Icons.blur_circular_rounded,
+                glyph: DoodimoGlyph.sun,
                 selected: pending.kind == BackgroundKind.radial,
                 compact: true,
                 onTap: busy ? null : () => _changeKind(BackgroundKind.radial),
@@ -534,7 +544,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
                         quarterTurns: (pending.quarterTurns + 1) % 4,
                       ),
                     ),
-              icon: const Icon(Icons.rotate_right_rounded),
+              icon: const DoodimoIcon(DoodimoGlyph.rotate),
             ),
             IconButton.filledTonal(
               tooltip: strings.mirrorPhoto,
@@ -544,7 +554,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
                   : () => setState(
                       () => pending = pending.copyWith(mirror: !pending.mirror),
                     ),
-              icon: const Icon(Icons.flip_rounded),
+              icon: const DoodimoIcon(DoodimoGlyph.mirror),
             ),
             TextButton.icon(
               onPressed: busy
@@ -556,7 +566,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
                         mirror: false,
                       ),
                     ),
-              icon: const Icon(Icons.restart_alt_rounded),
+              icon: const DoodimoIcon(DoodimoGlyph.replay),
               label: Text(strings.resetCrop),
             ),
           ],
@@ -632,7 +642,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
           children: [
             OutlinedButton.icon(
               onPressed: busy ? null : () => _pick(false),
-              icon: const Icon(Icons.photo_library_outlined),
+              icon: const DoodimoIcon(DoodimoGlyph.image),
               label: Text(strings.replacePhoto),
             ),
             TextButton.icon(
@@ -642,7 +652,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
                       () =>
                           _selectPaper(BackgroundDefinition.solid(0xfff7f5eb)),
                     ),
-              icon: const Icon(Icons.delete_outline_rounded),
+              icon: const DoodimoIcon(DoodimoGlyph.erase),
               label: Text(strings.removePhoto),
             ),
           ],
@@ -686,14 +696,43 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
           onPressed: busy ? null : () => Navigator.pop(context),
           child: Text(strings.cancel),
         ),
-        FilledButton(
-          onPressed:
-              busy ||
-                  !validVisibleColors ||
-                  pending.kind == BackgroundKind.photo && image == null
-              ? null
-              : () => Navigator.pop(context, pending),
-          child: Text(strings.apply),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors:
+                  busy ||
+                      !validVisibleColors ||
+                      pending.kind == BackgroundKind.photo && image == null
+                  ? [
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                      Theme.of(context).colorScheme.surfaceContainerHigh,
+                    ]
+                  : const [Color(0xffbda4ff), Color(0xff86e8f7)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: DoodimoColors.violet.withValues(alpha: .18),
+                blurRadius: 18,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              disabledBackgroundColor: Colors.transparent,
+              foregroundColor: DoodimoColors.ink,
+              shadowColor: Colors.transparent,
+            ),
+            onPressed:
+                busy ||
+                    !validVisibleColors ||
+                    pending.kind == BackgroundKind.photo && image == null
+                ? null
+                : () => Navigator.pop(context, pending),
+            child: Text(strings.apply),
+          ),
         ),
       ],
       child: LayoutBuilder(
@@ -745,55 +784,61 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
             children: [
               LayoutBuilder(
                 builder: (context, choiceConstraints) {
+                  final scheme = Theme.of(context).colorScheme;
                   final columns = largeText && choiceConstraints.maxWidth < 400
                           ? 2
                           : 3,
                       width =
                           (choiceConstraints.maxWidth - 8 * (columns - 1)) /
                           columns;
-                  return Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      SizedBox(
-                        width: width,
-                        child: _BackgroundChoice(
-                          key: const ValueKey('background-mode-color'),
-                          label: strings.backgroundColorTab,
-                          icon: Icons.palette_outlined,
-                          selected: pending.kind == BackgroundKind.solid,
-                          onTap: busy
-                              ? null
-                              : () => _changeKind(BackgroundKind.solid),
+                  return ImmersiveSurface(
+                    padding: EdgeInsets.zero,
+                    radius: 22,
+                    accent: scheme.secondary,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        SizedBox(
+                          width: width,
+                          child: _BackgroundChoice(
+                            key: const ValueKey('background-mode-color'),
+                            label: strings.backgroundColorTab,
+                            glyph: DoodimoGlyph.paper,
+                            selected: pending.kind == BackgroundKind.solid,
+                            onTap: busy
+                                ? null
+                                : () => _changeKind(BackgroundKind.solid),
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        width: width,
-                        child: _BackgroundChoice(
-                          key: const ValueKey('background-mode-gradient'),
-                          label: strings.backgroundGradientTab,
-                          icon: Icons.gradient_rounded,
-                          selected: gradient,
-                          onTap: busy
-                              ? null
-                              : () => _changeKind(
-                                  gradient
-                                      ? pending.kind
-                                      : BackgroundKind.linear,
-                                ),
+                        SizedBox(
+                          width: width,
+                          child: _BackgroundChoice(
+                            key: const ValueKey('background-mode-gradient'),
+                            label: strings.backgroundGradientTab,
+                            glyph: DoodimoGlyph.sun,
+                            selected: gradient,
+                            onTap: busy
+                                ? null
+                                : () => _changeKind(
+                                    gradient
+                                        ? pending.kind
+                                        : BackgroundKind.linear,
+                                  ),
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        width: width,
-                        child: _BackgroundChoice(
-                          key: const ValueKey('background-mode-photo'),
-                          label: strings.photoBackground,
-                          icon: Icons.photo_outlined,
-                          selected: pending.kind == BackgroundKind.photo,
-                          onTap: busy ? null : _photoSource,
+                        SizedBox(
+                          width: width,
+                          child: _BackgroundChoice(
+                            key: const ValueKey('background-mode-photo'),
+                            label: strings.photoBackground,
+                            glyph: DoodimoGlyph.image,
+                            selected: pending.kind == BackgroundKind.photo,
+                            onTap: busy ? null : _photoSource,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   );
                 },
               ),
@@ -832,13 +877,13 @@ class _BackgroundChoice extends StatelessWidget {
   const _BackgroundChoice({
     super.key,
     required this.label,
-    required this.icon,
+    required this.glyph,
     required this.selected,
     required this.onTap,
     this.compact = false,
   });
   final String label;
-  final IconData icon;
+  final DoodimoGlyph glyph;
   final bool selected, compact;
   final VoidCallback? onTap;
   @override
@@ -865,12 +910,20 @@ class _BackgroundChoice extends StatelessWidget {
               constraints: BoxConstraints(minHeight: compact ? 76 : 96),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: selected
-                    ? scheme.primaryContainer
-                    : scheme.surfaceContainerLow,
+                gradient: selected
+                    ? LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          scheme.primaryContainer,
+                          scheme.secondaryContainer,
+                        ],
+                      )
+                    : null,
+                color: selected ? null : Colors.transparent,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: selected ? scheme.primary : scheme.outlineVariant,
+                  color: selected ? scheme.secondary : Colors.transparent,
                   width: selected ? 2 : 1,
                 ),
               ),
@@ -879,17 +932,17 @@ class _BackgroundChoice extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        icon,
-                        size: compact ? 20 : 24,
+                      DoodimoIcon(
+                        glyph,
+                        size: compact ? 24 : 32,
                         color: selected
                             ? scheme.onPrimaryContainer
                             : scheme.onSurfaceVariant,
                       ),
                       const Spacer(),
                       if (selected)
-                        Icon(
-                          Icons.check_circle_rounded,
+                        DoodimoIcon(
+                          DoodimoGlyph.check,
                           size: 18,
                           color: scheme.primary,
                         ),
@@ -951,9 +1004,25 @@ class _PaperPaletteTile extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
-                color: scheme.surfaceContainerLow,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    scheme.surfaceContainerHigh,
+                    scheme.surfaceContainerLow,
+                  ],
+                ),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: DoodimoColors.violet.withValues(alpha: .18),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : const [],
                 border: Border.all(
-                  color: selected ? scheme.primary : scheme.outlineVariant,
+                  color: selected ? scheme.secondary : scheme.outlineVariant,
                   width: selected ? 2 : 1,
                 ),
               ),
@@ -982,8 +1051,8 @@ class _PaperPaletteTile extends StatelessWidget {
                                 color: scheme.surface,
                                 shape: BoxShape.circle,
                               ),
-                              child: Icon(
-                                Icons.check_circle_rounded,
+                              child: DoodimoIcon(
+                                DoodimoGlyph.check,
                                 size: 22,
                                 color: scheme.primary,
                               ),

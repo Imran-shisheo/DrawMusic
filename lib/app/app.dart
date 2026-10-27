@@ -95,7 +95,34 @@ class _RootTabsState extends State<_RootTabs> {
     if (index == 1 || index == 2) _libraryIndex = index;
     final sideRail =
         MediaQuery.sizeOf(context).height < 440 &&
+        MediaQuery.sizeOf(context).width >= 520 &&
         MediaQuery.textScalerOf(context).scale(14) > 21;
+    var railWidth = 178.0;
+    if (sideRail) {
+      final style = Theme.of(context).textTheme.labelMedium
+          ?.copyWith(fontWeight: FontWeight.w700, height: 1.2);
+      for (final label in [
+        context.strings.home,
+        context.strings.library,
+        context.strings.settings,
+        context.strings.draw,
+      ]) {
+        for (final word in label.split(RegExp(r'\s+'))) {
+          final painter = TextPainter(
+            text: TextSpan(text: word, style: style),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+          )..layout();
+          if (painter.width + 78 > railWidth) {
+            railWidth = painter.width + 78;
+          }
+          painter.dispose();
+        }
+      }
+      railWidth = railWidth
+          .clamp(178.0, MediaQuery.sizeOf(context).width * .42)
+          .toDouble();
+    }
     final dock = CreativeDock(
       rail: sideRail,
       compactCreateLabel: context.strings.draw,
@@ -126,7 +153,7 @@ class _RootTabsState extends State<_RootTabs> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(width: 178, child: dock),
+                  SizedBox(width: railWidth, child: dock),
                   const SizedBox(width: 12),
                   Expanded(child: widget.shell),
                 ],
@@ -594,13 +621,23 @@ class _HomePageState extends ConsumerState<HomePage>
             }
             return false;
           },
-          child: ListView(
+          child: CustomScrollView(
             key: const PageStorageKey('home-scroll'),
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
-            children: [
-              KeyedSubtree(key: _heroKey, child: scene),
-              const SizedBox(height: 28),
-              const TemplateGallery(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                sliver: SliverMainAxisGroup(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 28),
+                        child: KeyedSubtree(key: _heroKey, child: scene),
+                      ),
+                    ),
+                    const TemplateGallery(),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

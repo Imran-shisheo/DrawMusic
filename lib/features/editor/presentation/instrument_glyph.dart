@@ -197,12 +197,19 @@ class _VoiceObjectPainter extends CustomPainter {
         canvas.save();
         canvas.translate(24, 25);
         canvas.rotate(.45);
-        final shape = Path()
-          ..moveTo(-5, -3)
-          ..cubicTo(-18, -10, -21, 5, -12, 9)
-          ..cubicTo(-24, 26, 23, 26, 12, 8)
-          ..cubicTo(21, 4, 18, -10, 5, -3)
-          ..close();
+        final shape = bass
+            ? (Path()
+                ..moveTo(-4, 0)
+                ..cubicTo(-11, -7, -16, 3, -9, 9)
+                ..cubicTo(-13, 24, 15, 24, 9, 8)
+                ..cubicTo(15, 2, 11, -7, 4, 0)
+                ..close())
+            : (Path()
+                ..moveTo(-5, -3)
+                ..cubicTo(-18, -10, -21, 5, -12, 9)
+                ..cubicTo(-24, 26, 23, 26, 12, 8)
+                ..cubicTo(21, 4, 18, -10, 5, -3)
+                ..close());
         canvas.drawPath(shape, body);
         box(-3, -22, 6, 31, dark, 2);
         box(-4, -25, 8, 10, body, 2);

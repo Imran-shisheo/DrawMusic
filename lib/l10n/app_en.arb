@@ -573,5 +573,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "editorToolsShort": "Tools"
 }

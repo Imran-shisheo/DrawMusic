@@ -369,5 +369,6 @@
   "voiceChooserHint": "Scegli il suono dei prossimi tratti. Quelli esistenti mantengono la loro voce.",
   "welcomeToBrand": "Benvenuto in {name}",
   "backgroundPanelTitle": "Carta e foto",
-  "exportFpsChoice": "{fps} FPS"
+  "exportFpsChoice": "{fps} FPS",
+  "editorToolsShort": "Strumenti"
 }

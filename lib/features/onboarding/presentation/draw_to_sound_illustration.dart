@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'dart:ui' as ui;
+
 import '../../../design_system/motion.dart';
 import '../../../design_system/brand_colors.dart';
 
@@ -25,10 +27,10 @@ class DrawToSoundIllustration extends StatelessWidget {
               builder: (context, value, child) => CustomPaint(
                 painter: _DrawingToWave(
                   value,
+                  DoodimoColors.cyan,
+                  DoodimoColors.indigo,
                   DoodimoColors.ink,
-                  DoodimoColors.lavender,
-                  DoodimoColors.ink,
-                  DoodimoColors.lime,
+                  DoodimoColors.violet,
                 ),
               ),
             ),
@@ -46,20 +48,39 @@ class _DrawingToWave extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width, h = size.height;
-    final cards = Paint()..color = tint;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * .02, h * .1, w * .4, h * .8),
-        const Radius.circular(26),
-      ),
-      cards,
+    final stage = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      const Radius.circular(28),
     );
     canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * .58, h * .1, w * .4, h * .8),
-        const Radius.circular(26),
-      ),
-      Paint()..color = warm,
+      stage,
+      Paint()
+        ..shader = ui.Gradient.linear(Offset.zero, Offset(w, h), [tint, warm]),
+    );
+    canvas.drawRRect(
+      stage.deflate(.5),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = outline.withValues(alpha: .45),
+    );
+    canvas.save();
+    canvas.clipRRect(stage);
+    canvas.drawCircle(
+      Offset(w * .78, h * .3),
+      w * .45,
+      Paint()
+        ..shader = ui.Gradient.radial(Offset(w * .78, h * .3), w * .45, [
+          outline.withValues(alpha: .25),
+          outline.withValues(alpha: 0),
+        ]),
+    );
+    canvas.drawLine(
+      Offset(w * .5, h * .16),
+      Offset(w * .5, h * .84),
+      Paint()
+        ..color = primary.withValues(alpha: .12)
+        ..strokeWidth = 1,
     );
     final drawing = Path()
       ..moveTo(w * .07, h * .67)
@@ -84,7 +105,7 @@ class _DrawingToWave extends CustomPainter {
     }
 
     trace(drawing);
-    pen.color = DoodimoColors.lime;
+    pen.color = DoodimoColors.lavender;
     trace(wave);
     final connector = Paint()
       ..color = primary.withValues(alpha: .65 * reveal)
@@ -116,20 +137,7 @@ class _DrawingToWave extends CustomPainter {
       5,
       Paint()..color = DoodimoColors.coral.withValues(alpha: reveal),
     );
-    canvas.drawLine(
-      Offset(w * .08, h * .81),
-      Offset(w * .35, h * .81),
-      Paint()
-        ..color = outline
-        ..strokeWidth = 1,
-    );
-    canvas.drawLine(
-      Offset(w * .65, h * .81),
-      Offset(w * .92, h * .81),
-      Paint()
-        ..color = outline
-        ..strokeWidth = 1,
-    );
+    canvas.restore();
   }
 
   @override

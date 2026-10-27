@@ -100,6 +100,25 @@ void main() {
         tester.getRect(find.text('Paper hills')).bottom,
         lessThanOrEqualTo(tester.getRect(find.byType(CreativeDock)).top),
       );
+      // The far end must remain reachable without eagerly mounting every
+      // preview. Switching branches must retain the actual scroll position.
+      expect(find.text('Warm columns'), findsNothing);
+      await tester.scrollUntilVisible(
+        find.text('Warm columns'),
+        400,
+        scrollable: find.descendant(
+          of: find.byKey(const PageStorageKey('home-scroll')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final beforeSwitch = tester.getTopLeft(find.text('Warm columns'));
+      await tester.tap(find.byKey(const ValueKey('nav-library')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('nav-home')));
+      await tester.pumpAndSettle();
+      expect(find.text('Warm columns').hitTestable(), findsOneWidget);
+      expect(tester.getTopLeft(find.text('Warm columns')), beforeSwitch);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },

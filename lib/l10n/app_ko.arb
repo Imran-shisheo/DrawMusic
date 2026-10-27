@@ -369,5 +369,6 @@
   "voiceChooserHint": "다음 선의 음색을 선택하세요. 기존 선은 원래 음색을 유지합니다.",
   "welcomeToBrand": "{name}에 오신 것을 환영합니다",
   "backgroundPanelTitle": "종이와 사진",
-  "exportFpsChoice": "{fps} FPS"
+  "exportFpsChoice": "{fps} FPS",
+  "editorToolsShort": "도구"
 }

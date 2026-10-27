@@ -7,6 +7,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/design_system/paper_panel.dart';
+import 'package:scribblesong/design_system/style_panel.dart';
+import 'package:scribblesong/creative_document/document.dart';
 import 'package:scribblesong/design_system/theme.dart';
 import 'package:scribblesong/features/backgrounds/data/background_assets.dart';
 import 'package:scribblesong/features/backgrounds/domain/background.dart';
@@ -30,6 +32,7 @@ void main() {
     if (!capture) return;
     for (final family in [
       'NunitoSans',
+      'SpaceGrotesk',
       'NotoSansDevanagari',
       'NotoSansThai',
       'NotoSansArabic',
@@ -352,6 +355,14 @@ void main() {
       2.0,
     ),
     (
+      'phone-french-large',
+      const Size(411, 850),
+      Brightness.dark,
+      TextDirection.ltr,
+      const Locale('fr'),
+      2.0,
+    ),
+    (
       'landscape-large',
       const Size(640, 360),
       Brightness.dark,
@@ -419,6 +430,66 @@ void main() {
           );
           image!.dispose();
         }
+      },
+    );
+  }
+  for (final brightness in [Brightness.light, Brightness.dark]) {
+    testWidgets(
+      'immersive style choices remain named, selected and usable in $brightness',
+      (tester) async {
+        tester.view.physicalSize = const Size(411, 850);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        DrawingStyle? selected;
+        await tester.pumpWidget(
+          RepaintBoundary(
+            key: rootKey,
+            child: MaterialApp(
+              debugShowCheckedModeBanner: false,
+              theme: buildTheme(brightness: brightness),
+              home: Builder(
+                builder: (context) => Scaffold(
+                  body: TextButton(
+                    onPressed: () async {
+                      selected = await showStylePanel(
+                        context,
+                        DrawingStyle.smooth,
+                      );
+                    },
+                    child: const Text('Open'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+        expect(find.text('Smooth'), findsOneWidget);
+        expect(find.text('Pixel'), findsOneWidget);
+        if (capture) {
+          final boundary = tester.renderObject<RenderRepaintBoundary>(
+                find.byKey(rootKey),
+              ),
+              image = await tester.runAsync(
+                () => boundary.toImage(pixelRatio: 1),
+              );
+          final data = await tester.runAsync(
+            () => image!.toByteData(format: ui.ImageByteFormat.png),
+          );
+          await tester.runAsync(
+            () =>
+                File('work/ui-backgrounds-after/style-${brightness.name}.png')
+                    .writeAsBytes(data!.buffer.asUint8List(), flush: true),
+          );
+          image!.dispose();
+        }
+        await tester.ensureVisible(find.text('Pixel'));
+        await tester.tap(find.text('Pixel'));
+        await tester.pumpAndSettle();
+        expect(selected, DrawingStyle.pixel);
+        expect(tester.takeException(), isNull);
       },
     );
   }

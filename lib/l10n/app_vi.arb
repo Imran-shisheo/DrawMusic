@@ -369,5 +369,6 @@
   "voiceChooserHint": "Chọn âm sắc cho nét tiếp theo. Nét hiện có giữ nguyên âm sắc.",
   "welcomeToBrand": "Chào mừng đến {name}",
   "backgroundPanelTitle": "Giấy và ảnh",
-  "exportFpsChoice": "{fps} FPS"
+  "exportFpsChoice": "{fps} FPS",
+  "editorToolsShort": "Công cụ"
 }

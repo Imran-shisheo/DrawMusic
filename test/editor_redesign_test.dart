@@ -150,6 +150,105 @@ void main() {
     }
   }
   testWidgets(
+    'short landscape music stays readable and tempo remains editable through its panel',
+    (tester) async {
+      await _mount(
+        tester,
+        size: const Size(640, 360),
+        brightness: Brightness.dark,
+      );
+      final canvas = tester.state<DrawingCanvasState>(
+        find.byType(DrawingCanvas),
+      );
+      final original = _current(tester);
+      final music = find.byKey(const ValueKey('music-settings'));
+      final value = find.descendant(of: music, matching: find.byType(Text));
+      expect(value, findsOneWidget);
+      expect(tester.getSize(value).width, greaterThanOrEqualTo(130));
+      expect(
+        tester.getRect(music).bottom,
+        lessThanOrEqualTo(
+          tester.getRect(find.byKey(const ValueKey('drawing-canvas'))).bottom,
+        ),
+      );
+      await openEditorMusic(tester);
+      final faster = find.byTooltip('Faster');
+      await tester.ensureVisible(faster);
+      await tester.tap(faster);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(_current(tester).tempo, original.tempo + 1);
+      expect(_current(tester).strokes, original.strokes);
+      final undo = find.byTooltip('Undo');
+      await tester.ensureVisible(undo);
+      await tester.tap(undo);
+      await tester.pumpAndSettle();
+      expect(_current(tester).tempo, original.tempo);
+      expect(
+        identical(
+          tester.state<DrawingCanvasState>(find.byType(DrawingCanvas)),
+          canvas,
+        ),
+        isTrue,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets(
+    'French200% header gives Export a complete word and preserves project identity width',
+    (tester) async {
+      await _mount(
+        tester,
+        size: const Size(320, 640),
+        scale: 2,
+        language: 'fr',
+        brightness: Brightness.dark,
+        document: _document().copyWith(title: 'Papier'),
+      );
+      final context = tester.element(find.byType(EditorWorkspace));
+      final label = find.text(context.strings.exportLoop);
+      final text = tester.widget<Text>(label);
+      final element = tester.element(label);
+      final painter = TextPainter(
+        text: TextSpan(
+          text: context.strings.exportLoop.split(' ').first,
+          style: DefaultTextStyle.of(element).style.merge(text.style),
+        ),
+        textDirection: Directionality.of(element),
+        textScaler: MediaQuery.textScalerOf(element),
+      )..layout();
+      expect(tester.getSize(label).width, greaterThanOrEqualTo(painter.width));
+      final title = find.text('Papier');
+      final titleElement = tester.element(title);
+      final titleWidget = tester.widget<Text>(title);
+      final titlePainter = TextPainter(
+        text: TextSpan(
+          text: 'Papier',
+          style: DefaultTextStyle.of(titleElement).style
+              .merge(titleWidget.style),
+        ),
+        textDirection: Directionality.of(titleElement),
+        textScaler: MediaQuery.textScalerOf(titleElement),
+      )..layout();
+      expect(
+        tester.getSize(title).width,
+        greaterThanOrEqualTo(titlePainter.width),
+      );
+      titlePainter.dispose();
+      final canvas = tester.getRect(
+        find.byKey(const ValueKey('drawing-canvas')),
+      );
+      expect(canvas.top, greaterThan(tester.getRect(label).bottom));
+      expect(canvas.width, greaterThanOrEqualTo(48));
+      expect(canvas.height, greaterThanOrEqualTo(48));
+      expect(tester.takeException(), isNull);
+      painter.dispose();
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+  testWidgets(
     'voice selection safely finishes active ink and resize retains canvas gesture identity',
     (tester) async {
       await _mount(tester, size: const Size(411, 911));

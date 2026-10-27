@@ -16,12 +16,14 @@ class ExportPreviewStage extends StatelessWidget {
     required this.accent,
     required this.extension,
     this.ready = false,
+    this.transparentBackground = false,
   });
 
   final ProjectDocument document;
   final Color accent;
   final String extension;
   final bool ready;
+  final bool transparentBackground;
 
   @override
   Widget build(BuildContext context) {
@@ -157,12 +159,17 @@ class ExportPreviewStage extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: ExcludeSemantics(
-            child: BackgroundSurface(
-              paper: document.effectiveBackground,
-              maxWidth: 352,
-              maxHeight: 440,
-              child: CustomPaint(painter: DrawingPainter(document)),
-            ),
+            child: transparentBackground
+                ? CustomPaint(
+                    painter: const _TransparencyGrid(),
+                    child: CustomPaint(painter: DrawingPainter(document)),
+                  )
+                : BackgroundSurface(
+                    paper: document.effectiveBackground,
+                    maxWidth: 352,
+                    maxHeight: 440,
+                    child: CustomPaint(painter: DrawingPainter(document)),
+                  ),
           ),
         ),
       ),
@@ -186,4 +193,25 @@ class ExportPreviewStage extends StatelessWidget {
         ),
     ],
   );
+}
+
+/// Familiar checkerboard communicates removed paper; it is never exported.
+class _TransparencyGrid extends CustomPainter {
+  const _TransparencyGrid();
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawColor(const Color(0xfff3f5fb), BlendMode.src);
+    final paint = Paint()..color = const Color(0xffd3d9e7);
+    const tile = 10.0;
+    for (var y = 0; y < size.height / tile; y++) {
+      for (var x = 0; x < size.width / tile; x++) {
+        if ((x + y).isEven) {
+          canvas.drawRect(Rect.fromLTWH(x * tile, y * tile, tile, tile), paint);
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TransparencyGrid oldDelegate) => false;
 }

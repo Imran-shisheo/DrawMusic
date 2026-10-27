@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../l10n/strings.dart';
+import '../../../design_system/brand_colors.dart';
 import '../domain/background.dart';
 
 /// A local editing interaction. Only Apply publishes a document revision. The
@@ -258,7 +259,7 @@ class _CropFramePainter extends CustomPainter {
     canvas.drawPath(
       grid,
       Paint()
-        ..color = Colors.white.withValues(alpha: .75)
+        ..color = DoodimoColors.cyan.withValues(alpha: .55)
         ..strokeWidth = .7
         ..style = PaintingStyle.stroke,
     );
@@ -272,7 +273,7 @@ class _CropFramePainter extends CustomPainter {
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, const Radius.circular(14)),
       Paint()
-        ..color = focused ? color : Colors.white
+        ..color = focused ? color : DoodimoColors.cyan
         ..strokeWidth = focused ? 3 : 1.5
         ..style = PaintingStyle.stroke,
     );

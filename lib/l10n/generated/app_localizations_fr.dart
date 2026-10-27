@@ -1273,4 +1273,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String exportFpsChoice(String fps) {
     return '$fps i/s';
   }
+
+  @override
+  String get editorToolsShort => 'Outils';
 }

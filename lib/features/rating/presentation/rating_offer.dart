@@ -1,3 +1,5 @@
+import '../../../design_system/immersive_surface.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../l10n/strings.dart';
@@ -21,29 +23,27 @@ Future<bool> showRatingOffer(BuildContext context) async {
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(context.strings.reviewNotNow),
               ),
-              FilledButton.icon(
+              PrismAction(
                 icon: const DoodimoIcon(DoodimoGlyph.arrowUpRight),
                 onPressed: () => Navigator.pop(context, true),
-                label: Text(context.strings.reviewContinue),
+                label: context.strings.reviewContinue,
               ),
             ],
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 24),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 20,
-                  ),
-                  decoration: BoxDecoration(
-                    color: DoodimoColors.lavender,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: SketchMark(size: 72),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: ImmersiveSurface(
+                    accent: DoodimoColors.violet,
+                    glow: true,
+                    child: const Row(
+                      children: [
+                        SketchMark(size: 72),
+                        SizedBox(width: 20),
+                        Expanded(child: Divider()),
+                      ],
+                    ),
                   ),
                 ),
                 Text(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -177,18 +178,24 @@ void main() {
     return root;
   }
 
-  Future<void> open(WidgetTester tester, ExportLibrary library) async {
+  Future<void> open(
+    WidgetTester tester,
+    ExportLibrary library, {
+    ProjectDocument? snapshot,
+    Brightness brightness = Brightness.light,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [exportLibraryProvider.overrideWith((ref) async => library)],
         child: MaterialApp(
-          theme: buildTheme(),
+          theme: buildTheme(brightness: brightness),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
-                onPressed: () => showExportSheet(context, _drawing()),
+                onPressed: () =>
+                    showExportSheet(context, snapshot ?? _drawing()),
                 child: const Text('Open export'),
               ),
             ),
@@ -315,4 +322,90 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     },
   );
+  for (final transparent in [false, true]) {
+    testWidgets(
+      'real PNG UI publishes ${transparent ? 'transparent' : 'paper'} pixels after reaching scrolled settings',
+      (tester) async {
+        tester.view.physicalSize = const Size(411, 850);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final root = await storage(tester);
+        final library = FileExportLibrary(Directory('${root.path}/exports'));
+        final snapshot = _drawing().copyWith(background: 0xff123456);
+        final before = snapshot.encode();
+        await open(
+          tester,
+          library,
+          snapshot: snapshot,
+          brightness: Brightness.dark,
+        );
+        final switchTile = find.byKey(
+          const ValueKey('png-transparent-background'),
+        );
+        await tester.ensureVisible(switchTile);
+        await tester.pumpAndSettle();
+        expect(switchTile.hitTestable(), findsOneWidget);
+        expect(tester.widget<SwitchListTile>(switchTile).value, isFalse);
+        if (transparent) {
+          await tester.tap(switchTile);
+          await tester.pumpAndSettle();
+        }
+        expect(tester.widget<SwitchListTile>(switchTile).value, transparent);
+        await tester.ensureVisible(find.byKey(const ValueKey('png-width-640')));
+        await tester.tap(find.byKey(const ValueKey('png-width-640')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('export-start')));
+        await tester.pump();
+        await _until(
+          tester,
+          () =>
+              find.byKey(const ValueKey('export-ready')).evaluate().isNotEmpty,
+        );
+        final listing = (await tester.runAsync(library.list))!;
+        expect(listing.entries, hasLength(1));
+        final artifact = listing.entries.single.artifact;
+        final pixels = (await tester.runAsync(() async {
+          final bytes = await File(artifact.path).readAsBytes();
+          final codec = await ui.instantiateImageCodec(bytes);
+          try {
+            final image = (await codec.getNextFrame()).image;
+            try {
+              expect(image.width, 640);
+              expect(image.height, 800);
+              return (await image.toByteData(
+                format: ui.ImageByteFormat.rawRgba,
+              ))!.buffer.asUint8List();
+            } finally {
+              image.dispose();
+            }
+          } finally {
+            codec.dispose();
+          }
+        }))!;
+        List<int> pixel(int x, int y) =>
+            pixels.sublist((y * 640 + x) * 4, (y * 640 + x) * 4 + 4);
+        for (final point in [
+          const Offset(0, 0),
+          const Offset(639, 0),
+          const Offset(0, 799),
+          const Offset(639, 799),
+        ]) {
+          expect(
+            pixel(point.dx.toInt(), point.dy.toInt()),
+            transparent ? [0, 0, 0, 0] : [18, 52, 86, 255],
+          );
+        }
+        expect(
+          pixel(320, 400)[3],
+          255,
+          reason: 'Real ink stays opaque with or without paper.',
+        );
+        expect(pixel(320, 400).take(3), isNot([18, 52, 86]));
+        expect(snapshot.encode(), before);
+        expect(listing.entries.single.preview!.background, 0xff123456);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
 }
