@@ -1,0 +1,628 @@
+Redesign DrawMusic’s complete UI/UX and motion experience.
+
+The owner likes the application’s functionality but strongly dislikes the
+current presentation and interaction design. UI/UX is now a primary product
+priority.
+
+Implement a cohesive, beautiful, soothing creative experience with:
+- Smooth animated navigation
+- Elegant transitions throughout the app
+- Original ambient background motion graphics
+- Consistent branding
+- Clear visual hierarchy
+- Comfortable typography and spacing
+- Intuitive controls and progressive disclosure
+- Polished interaction feedback
+- Excellent drawing and audio responsiveness
+
+This is an implementation request. Review, design, implement, render,
+test, refine, and deliver working Flutter code. Continue beyond planning
+or producing mockups.
+
+1. AUTHORIZATION AND SCOPE
+
+This request authorizes replacing the previous visual layouts and motion
+specifications where needed to achieve the new direction.
+
+Preserve all functional PRD requirements, project compatibility, audio
+behavior, editing behavior, recovery, exports and accessibility.
+
+Read AGENTS.md and applicable nested instructions first.
+
+Keep all creative features free.
+
+Ads, billing, accounts, servers, uploads, paid infrastructure and cloud
+collaboration remain excluded.
+
+Leave reviewable draft PRs UNMERGED. Do not publish to stores, force-push,
+operate the owner’s personal phone, or schedule future tasks.
+
+Android is the executable cloud target. Keep the presentation portable
+to iOS. Do not claim iOS compilation or device validation from Linux.
+
+Do not introduce remote assets or runtime network dependencies for the UI.
+
+2. REVIEW THE CURRENT APPLICATION FIRST
+
+Read:
+- PRD.md
+- docs/CREATIVE-IMPLEMENTATION-PLAN.md
+- docs/CREATIVE-REQUIREMENT-MATRIX.md
+- docs/DEVELOPMENT-STATUS.md
+- Existing bug-fix requests and review findings
+- docs/ASSET-PROVENANCE.md
+- docs/ANDROID-ACCEPTANCE.md
+- docs/IOS-IMPLEMENTATION.md
+
+Inspect these implementation areas:
+- lib/app/app.dart
+- lib/design_system/
+- lib/features/home/
+- lib/features/editor/presentation/
+- lib/features/library/presentation/
+- lib/features/export_library/presentation/
+- lib/features/export/presentation/export_sheet.dart
+- lib/features/backgrounds/presentation/
+- lib/features/settings/presentation/
+- lib/features/onboarding/presentation/
+- lib/features/rating/presentation/
+
+The reviewed baseline was main a7c3670, version 2.0.0+22. Start from the
+latest appropriate main and inspect newer fixes before editing.
+
+Known presentation weaknesses at that baseline:
+- ThemeData defines a small palette and surface styling, with little
+  branded typography/component/motion infrastructure.
+- Root navigation uses StatefulShellRoute.indexedStack without a dedicated
+  animated branch-content transition.
+- The editor exposes many chips, icons and dropdowns simultaneously,
+  including two independently scrolling control regions.
+- Thirteen instruments appear as horizontal ChoiceChips.
+- Export shows a long sequence of descriptions, selectors and buttons.
+- Settings is a long list of switches, sliders and explanatory text.
+- Most feature panels use standard AlertDialog/control arrangements.
+- No consistent original ambient motion language connects the screens.
+
+Capture current screens and representative interactions before redesigning.
+Use actual widgets and realistic fixture data. Inspect rendered screens;
+source inspection alone is insufficient for visual design.
+
+Do not confuse test-rendering artifacts, missing test fonts, debug banners
+or disabled test shadows with actual product defects.
+
+3. DESIGN DIRECTION
+
+Create an original “calm musical sketchbook” identity.
+
+Desired feeling:
+- Creative, warm and inviting
+- Quietly playful
+- Clear and uncluttered
+- Tactile and carefully composed
+- Visually refined
+- Comfortable during long creative sessions
+
+Use a continuous drawn line becoming a musical wave as the central visual
+motif. Carry this motif through the mark, onboarding illustrations, empty
+states, subtle page graphics and motion.
+
+Use composition, hierarchy, spacing and interaction design to create polish.
+A palette change or rounded corners alone will not satisfy this task.
+
+Keep the current working display name consistent through a centralized
+brand definition. ScribbleSong is provisional and DrawMusic is the
+repository name. Do not invent a permanent store-name decision or change
+the application identifier.
+
+Preserve com.imranshisheo.scribblesong.
+
+4. BUILD A REAL DESIGN SYSTEM
+
+Create reusable tokens/components for:
+- Brand identity and mark
+- Semantic light/dark colors
+- Typography
+- Spacing and layout
+- Radii
+- Borders and elevation
+- Icon treatment
+- Interaction states
+- Motion durations, curves and distances
+
+A suggested starting palette:
+Light:
+- App background: warm off-white around #F8F7F3
+- Surfaces: soft ivory around #FFFEFB
+- Main text: deep forest around #223C35
+- Secondary text: muted green-gray around #576D64
+- Primary action: restrained teal around #167D73
+- Supporting accents: muted sage, lavender, amber and dusty coral
+
+Dark:
+- Deep green-charcoal background
+- Raised warm dark surfaces
+- Soft off-white text
+- Muted teal/sage accents
+- Clear separation between app chrome and document paper
+
+These are starting directions, not pre-approved contrast combinations.
+Measure actual contrast and refine.
+
+Do not change existing artwork colors or instrument identities merely to
+match new chrome. Saved document rendering and exports must remain correct.
+
+Choose a well-licensed, bundled type family with a friendly, refined
+character. Establish a clear heading/body/label/caption scale.
+
+Use appropriate font fallbacks for every shipped language. Do not rely on
+network font downloads or compromise Hindi/CJK/Thai rendering.
+
+Use one coherent icon language:
+- Consistent optical size, weight and alignment
+- Clear selected/unselected treatment
+- Labels for important actions
+- Accessible names for icon controls
+
+Create original or licensed assets and record provenance. Simple original
+vector/CustomPainter artwork is appropriate. Do not extract competitor art.
+
+5. CREATE A SHARED MOTION SYSTEM
+
+Define motion centrally and use it throughout the app.
+
+Suggested starting values:
+- Press feedback: 90–140 ms
+- Selection changes: 160–220 ms
+- Root-tab content transition: 240–280 ms
+- Forward navigation: 300–360 ms
+- Back navigation: approximately 220–280 ms
+- Sheets: 280–340 ms
+- Shared drawing-to-editor transition: 360–440 ms
+- Small first-entry stagger: 20–35 ms between a few elements
+- Ambient background cycle: approximately 12–20 seconds
+
+Refine these values through visual review. They are proposed design values,
+not measured requirements.
+
+Motion should:
+- Explain where content came from and where it goes
+- Make hierarchy and selected state understandable
+- Respond promptly to input
+- Reverse naturally on Back
+- Survive rapid repeated actions
+- Finish cleanly without visual snapping
+- Preserve focus and interaction state
+
+Use gentle easing and restrained, well-damped settling where appropriate.
+Keep drawing targets, readable text and controls stable during interaction.
+
+Every important interaction should have coherent feedback. Continuous
+movement belongs in quiet decorative areas, not every control.
+
+6. REDESIGN NAVIGATION
+
+Keep Home, Library and Settings clear and consistently reachable.
+
+Create a refined shared navigation dock with:
+- Clear selected icon and label
+- A smoothly moving selection treatment
+- Comfortable touch targets
+- A deliberate New Drawing action
+- Proper safe-area spacing
+- No overlap with scrolling content
+
+Animate root-tab content with a subtle fade and short directional movement.
+Preserve each branch’s navigation, scroll and state.
+
+Important:
+Do not replace the stateful navigation structure with an AnimatedSwitcher
+that disposes and recreates branches on every selection.
+
+Preserve:
+- Drafts/Exports section selection
+- Scroll positions
+- Pending language selection
+- Dialog ownership
+- Editor origin and safe Back behavior
+- Project/controller lifetimes
+
+Handle rapid tab switching, Back during transitions, keyboard visibility,
+and reduced motion.
+
+Use shared-element transitions between a template/draft preview and the
+editor canvas where this is visually and technically sound.
+
+Use unique hero identities, avoid duplicate heroes in retained branches,
+and animate a safe snapshot rather than rebuilding the live drawing/audio
+engine during every animation frame.
+
+Native share sheets, camera, photo pickers and document providers remain
+OS-owned interactions.
+
+7. ADD ORIGINAL AMBIENT BACKGROUND MOTION
+
+Implement a subtle line/wave-based ambient visual system.
+
+Appropriate treatments:
+- Slowly drifting original curved paths
+- A quiet line gradually becoming a wave
+- Very subtle tonal movement behind a hero illustration
+- Small original decorative marks with restrained movement
+
+Use it selectively on Home, welcome/help and empty-state surfaces.
+Settings may use a very quiet static or minimally animated treatment.
+
+Requirements:
+- Keep content and text on stable, readable surfaces.
+- Confine decoration to purposeful regions.
+- Use bounded, lightweight rendering.
+- Pause offscreen and in the background.
+- Respect reduced motion.
+- Avoid continuous battery-heavy effects.
+- Exclude decorative elements from semantics and hit testing.
+- Freeze or suppress decorative movement during active drawing when needed.
+- Preserve clear focus during playback and export.
+
+App-level motion graphics must never become part of saved drawings,
+thumbnails, PNGs or MP4 document exports.
+
+If a visual reacts to music, derive its timing from the real audio clock.
+Do not invent a fake waveform, audio meter or independent beat scheduler.
+
+8. REDESIGN HOME AND THE GALLERY
+
+Give Home a clear hierarchy:
+- Compact branded header
+- A welcoming original illustration/motion region
+- One immediately discoverable Start Drawing action
+- Resume/recent work only when real saved data exists
+- Attractive original template previews
+- Clear section headings and comfortable spacing
+
+Reduce the large introductory text wall.
+
+Make templates feel like inviting creative starting points:
+- Consistent preview treatment
+- Clear titles
+- Subtle depth and selection/press feedback
+- Useful accessible descriptions
+- Responsive grid
+- Stable loading and image placeholders
+
+Use actual project/template data. Do not invent recommendations, user
+statistics, streaks or fake activity.
+
+Limit entrance animation to a small visible group. Do not replay a cascade
+on every rebuild or when returning from the editor.
+
+9. REDESIGN THE EDITOR AROUND THE CANVAS
+
+The drawing and its sound are the main experience.
+
+Create a calmer hierarchy:
+- Compact header: Back, readable project title, quiet save state and Export
+- Generous stable canvas
+- Immediately reachable Draw/Erase and Undo/Redo
+- Clear current instrument and an elegant instrument chooser
+- Prominent Play/Pause with accessible Replay
+- Compact tempo/key/scale summary
+- Progressive disclosure for accompaniment, paper, style and expression
+
+At normal phone sizes, give the canvas the largest practical share of the
+workspace. Do not shrink it unnecessarily to display every advanced control.
+
+Keep important actions reachable at 320 dp and 200% text. Adapt layout
+rather than clipping labels or reducing text/touch-target sizes.
+
+Replace the long instrument-chip strip with a refined solution:
+- Clearly visible current voice
+- Named, color-linked instrument tiles
+- Efficient access to all 13 voices
+- Selected check/outline plus label
+- A compact dock or well-designed chooser
+- No reliance on color or tiny icons alone
+
+Use a subtle, responsive selection transition. Selecting an instrument
+must preserve previous strokes and safely finish an active gesture.
+
+For music settings:
+- Show readable current values
+- Use a focused, branded key/scale selector
+- Keep tempo changes easy
+- Put accompaniment/mix controls in a coherent panel
+- Explain expression briefly without occupying permanent canvas space
+
+For playback:
+- Smooth Play/Pause icon/state transition
+- Honest preparation state
+- Gentle, readable active-note feedback
+- Audio-clock-owned cursor
+- Quiet “updates next loop/beat” and save indicators
+
+Do not delay pointer capture or sound preparation to finish decorative
+animations. Do not remount the canvas or reset an active gesture during
+layout/selection animation.
+
+10. REDESIGN PANELS, BACKGROUNDS AND CROPPING
+
+Build a shared branded sheet/dialog system:
+- Consistent header and close/back treatment
+- Clear title and optional concise explanation
+- Comfortable content spacing
+- Predictable primary/secondary actions
+- Keyboard-safe layout
+- Sensible height constraints
+- Focus entry and restoration
+- Smooth open/close transitions
+
+Use adaptive bottom sheets on phones and appropriate bounded panels on
+larger screens. Keep native system interfaces native.
+
+Background editing should feel visual and direct:
+- Clear Color / Gradient / Photo choices
+- Attractive presets and readable selected states
+- Correct document-aspect preview
+- Accessible custom color entry
+- Clear opacity control
+- Useful image replacement/removal
+
+Provide an intuitive crop workspace with visible crop bounds, direct
+manipulation where practical, rotation/mirror/reset and clear Apply/Cancel.
+Preserve the existing background model and transactional semantics.
+
+If the reviewed bugs are still present in touched code, fix them:
+- Preview framing differs from the final 4:5 document
+- Hidden invalid gradient fields block valid background Apply
+- Export thumbnails omit photo/gradient paper
+
+Do not silently regress fixes already implemented on newer branches.
+
+11. REDESIGN LIBRARY AND EXPORT
+
+Library:
+- Cohesive Drafts / Exports segmented navigation
+- Recognizable document thumbnails
+- Readable names and dates
+- Clear artifact-type badges
+- Consistent overflow actions
+- Attractive, useful empty states
+- Honest missing/corrupt/recovery states
+
+Preserve rename, duplicate, delete/Undo, raw recovery and public file actions.
+
+Export:
+Replace the long sequence of controls with a clear selection flow.
+
+Present four intent-led options:
+- Image — PNG
+- Sound — WAV
+- Video — MP4
+- Notes — MIDI
+
+Each option needs:
+- A recognizable icon
+- A concise explanation
+- Clear selected state
+
+Show only the relevant settings for the selected format, then one clear
+primary Export action.
+
+Keep MIDI’s different playback/timbre behavior understandable.
+
+Animate changes between:
+- Format selection
+- Format options
+- Preparing/rendering/finalizing
+- Ready
+- Error/retry
+- Cancellation
+
+Use actual progress and honest indeterminate states. Do not animate fake
+completion, display success before publication, or equate opening a share
+sheet with delivery.
+
+Success should present the real artifact with useful Share, Save and Open
+actions, using restrained confirmation feedback.
+
+Keep export job ownership and cancellation correct during route/sheet
+animations. A decorative transition must not accidentally cancel a valid
+job or leave it detached from the UI.
+
+12. REDESIGN SETTINGS, ONBOARDING AND HELP
+
+Group Settings into coherent sections:
+- Appearance
+- Sound and feedback
+- Accessibility/motion
+- Language
+- Help and app information
+
+Use concise labels and progressive detail. Reduce permanently visible
+paragraphs.
+
+Make theme changes feel smooth while preserving the user’s artwork and
+route.
+
+Keep the existing reduced-motion preference and system preference.
+An optional persisted Ambient Motion toggle is acceptable if useful;
+reduced motion must override decorative animation.
+
+Welcome/help should introduce drawing → sound through an original,
+lightweight demonstration.
+
+Keep Start/Skip immediately available. Do not add a mandatory animated
+splash delay or replay onboarding on every launch.
+
+Coach marks should:
+- Point to current control geometry
+- Have readable text and Next/Skip
+- Block accidental tap-through
+- Restore focus
+- Preserve the current project
+
+Use the same illustration, type, color and motion language in empty states,
+recovery states and optional rating prompts.
+
+13. ACCESSIBILITY AND RESPONSIVE REQUIREMENTS
+
+Support:
+- Light and dark themes
+- All 12 shipped languages
+- Long/non-Latin/RTL content
+- 200% text
+- 320 dp phones through tablets
+- Portrait/landscape
+- Safe areas, keyboards and system navigation bars
+
+Measure:
+- Normal-text contrast of at least 4.5:1
+- Appropriate large-text and non-text contrast
+- Touch targets of at least 48 dp where required by the Android design
+- Clear selected/disabled/error states
+
+Reduced motion must remove decorative loops, large translations, parallax
+and unnecessary shared-element movement. Keep a clear static/essential
+playback position and equivalent usable state changes.
+
+Honor motion preferences in custom route containers, sheets, animated
+icons and background painters—not only the page-transition theme.
+
+Keep semantics and focus stable during transitions. Avoid announcing
+decorative graphics or duplicated outgoing/incoming page content.
+
+14. PERFORMANCE AND ARCHITECTURE
+
+Use the pinned Flutter SDK and inspect APIs compatible with the repository.
+
+Prefer Flutter-native animation and original vector drawing. Add a
+dependency only when its benefit and license are clear.
+
+Keep animation state local. Do not update the whole Riverpod project,
+serialize geometry or rebuild the entire editor on every animation tick.
+
+Keep canvas, pointer preview, playback cursor and ambient graphics in
+separate repaint paths.
+
+Pause hidden-branch/background tickers. Dispose controllers/listeners.
+Use lazy lists/grids and bounded image decoding.
+
+Avoid expensive full-screen blur, unnecessary offscreen layers and
+animation-driven heavy layout work.
+
+Profile actual transitions and drawing under load. Target the appropriate
+frame budget for the tested refresh rate and report measured UI/raster
+timings and dropped frames. A debug screenshot or passing widget test
+does not prove smooth physical performance.
+
+15. IMPLEMENTATION SEQUENCE
+
+Proceed through:
+1. Baseline screen/flow audit and a concise design/motion specification
+2. Tokens, typography, brand primitives and shared components
+3. Home, navigation and editor as one coherent vertical slice
+4. Library, export and visual background editing
+5. Settings, onboarding, help, empty/error/recovery states
+6. Light/dark/localization/accessibility refinement
+7. Animation/performance testing and final visual polish
+
+Use routine design judgment to progress without repeatedly requesting
+approval. Preserve concrete product decisions and document meaningful
+departures from previous presentation specifications.
+
+Do not deliver a design document without implementing the app.
+
+16. TEST AND VISUALLY VERIFY
+
+Add meaningful coverage for:
+- Rapid tab switching
+- Forward/Back during transitions
+- Retained scroll/branch/editor state
+- No duplicate routes, heroes or audio sessions
+- No gesture loss or canvas coordinate changes
+- Sheet focus, Back and keyboard behavior
+- Reduced motion and disabled hidden tickers
+- Theme/locale changes without project loss
+- Real export/cancel/error/save/reopen flows
+- Compact/large-text/tablet layouts
+
+Continuous ambient animation must not make tests hang.
+Use bounded pumps, deterministic animation clocks and reduced-motion/test
+configuration where appropriate. Do not disable production animation
+globally merely to make tests pass.
+
+Add representative visual regression coverage for the original new design.
+Use deterministic fixture data and correctly loaded fonts/icons.
+
+Render and inspect:
+- Home
+- Editor empty/drawn/playing
+- Instrument and music controls
+- Background/crop flow
+- Drafts and Exports
+- Export selection/progress/ready/error
+- Settings/language/help
+- Light/dark and compact/large-text/tablet variants
+
+Fix the visual issues visible in those captures. Do not accept clipped
+labels, accidental overlap, inconsistent spacing or mismatched component
+styles simply because the analyzer is green.
+
+Provide short recordings of real implemented interactions:
+- Home → editor → Back
+- Root-tab switching
+- Instrument selection and Play/Pause
+- Sheet open/close
+- Export state transitions
+- Reduced-motion behavior
+
+Use only an owned cloud emulator for runtime captures. Do not operate the
+owner’s personal phone.
+
+Run formatter, analyzer, the existing test suite,
+bash scripts/check-android.sh, and relevant runtime checks.
+Preserve functional tests and update presentation-specific tests
+meaningfully rather than deleting coverage.
+
+17. DELIVERY AND COMPLETION CRITERIA
+
+Create/update:
+- docs/UI-UX-REDESIGN.md
+- docs/DESIGN-SYSTEM.md
+- docs/MOTION-SYSTEM.md
+- docs/DEVELOPMENT-STATUS.md
+- Asset/font license provenance
+- Relevant acceptance and implementation documentation
+
+Document each animation’s purpose, duration/curve, trigger, interruption
+behavior and reduced-motion alternative.
+
+Deliver:
+- Working implementation
+- Development commits and unmerged draft PRs
+- Downloadable debug APK with exact source/CI links
+- Before/after screenshots
+- Real interaction recordings
+- Executed functional/visual/performance checks
+- Remaining physical/iOS acceptance items
+
+Completion requires:
+- Consistent branding across every major screen
+- A visibly redesigned layout and hierarchy
+- Smooth, state-preserving navigation
+- Original ambient motion with correct lifecycle behavior
+- A calm, canvas-focused editor
+- Clear, efficient export and background workflows
+- Accessible motion alternatives
+- Preserved creation/audio/save/export functionality
+- Visual inspection and measured evidence for the implemented motion
+
+Do not declare completion because animations were added to a few buttons
+or a new theme was applied.
+
+If execution limits prevent completion, leave a tested usable checkpoint,
+accurate remaining-work list and exact continuation steps. Do not schedule
+future work or mislabel unfinished screens as complete.
+
+Start by inspecting the latest repository, capturing the current flows,
+writing the concise design/motion plan, and implementing the shared design
+system plus the Home/navigation/editor vertical slice.
