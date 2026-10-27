@@ -1,0 +1,51 @@
+name: Inspect private UI capture evidence (read only)
+on:
+  push:
+    branches: [codex/ui-redesign-2026-10-27]
+    paths:
+      - .github/workflows/ui-capture-inspect.yml
+      - cloud/ui-capture-inspect.json
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - id: request
+        name: Read bounded diagnostic artifact request
+        run: |
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          request=json.loads(Path('cloud/ui-capture-inspect.json').read_text())
+          assert isinstance(request['runId'],int) and request['runId']>0
+          assert isinstance(request['artifactName'],str) and request['artifactName'].startswith('drawmusic-ui-visuals-')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              out.write(f"run={request['runId']}\nname={request['artifactName']}\n")
+          PY
+      - uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.request.outputs.run }}
+          name: ${{ steps.request.outputs.name }}
+          path: work/ui-capture-inspect
+      - name: Print actual diagnostic failure (no product test pass)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('work/ui-capture-inspect')
+          for name in ('source-provenance.json','capture-report.json','flutter-drive.log'):
+              path=root/name
+              print(f'UI_INSPECT_START {name}',flush=True)
+              text=path.read_text(errors='replace') if path.exists() else 'Missing diagnostic file'
+              for line in text.splitlines()[-180:]:
+                  if 'UI_CAPTURE_TOKEN=' in line: continue
+                  print(line,flush=True)
+              print(f'UI_INSPECT_END {name}',flush=True)
+          PY
