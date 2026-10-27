@@ -73,15 +73,113 @@ class AndroidRuntimeTest {
             assertTrue(output.length()>10000)
         } finally {extractor.release()}
     }
-    @Test fun cancelDuringVideoEncodingRemovesEveryPartialFile() {
+    @Test(timeout=240000) fun compactSixtyFpsUsesRealCodecTimestampsAndReportsBoundedRendering() {
         val (document,pcm)=fixture()
-        val output=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"canceled-video.mp4")
-        val cancel=AtomicBoolean(false)
-        assertThrows(CancellationException::class.java) {
-            CanvasVideoEncoder().export(document,pcm,640,output,cancel) {if(it>.25) cancel.set(true)}
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val output=File(context.cacheDir,"fixture-video-60.mp4")
+        val report=File(context.cacheDir,"video-60-profile.json")
+        output.delete()
+        val started=SystemClock.elapsedRealtime()
+        val initialPss=android.os.Debug.getPss()
+        var peakPss=initialPss
+        var progressBucket=-1
+        var count=0
+        var minStep=Long.MAX_VALUE
+        var maxStep=0L
+        var firstPts=-1L
+        var lastPts=-1L
+        var videoDuration=0L
+        var audioDuration=0L
+        var passed=false
+        try {
+            val metadata=CanvasVideoEncoder().export(document,pcm,640,output,AtomicBoolean(false),60) { progress ->
+                val bucket=(progress*10).toInt()
+                if(bucket!=progressBucket) {
+                    progressBucket=bucket
+                    peakPss=maxOf(peakPss,android.os.Debug.getPss())
+                }
+            }
+            assertEquals(60,metadata["fps"])
+            assertEquals(640,metadata["width"])
+            assertEquals(800,metadata["height"])
+            val extractor=MediaExtractor()
+            try {
+                extractor.setDataSource(output.path)
+                var videoTrack=-1
+                for(track in 0 until extractor.trackCount) {
+                    val format=extractor.getTrackFormat(track)
+                    when(format.getString(MediaFormat.KEY_MIME)) {
+                        "video/avc" -> {
+                            videoTrack=track
+                            assertEquals(60,format.getInteger(MediaFormat.KEY_FRAME_RATE))
+                            assertEquals(640,format.getInteger(MediaFormat.KEY_WIDTH))
+                            assertEquals(800,format.getInteger(MediaFormat.KEY_HEIGHT))
+                            videoDuration=format.getLong(MediaFormat.KEY_DURATION)
+                        }
+                        "audio/mp4a-latm" -> audioDuration=format.getLong(MediaFormat.KEY_DURATION)
+                    }
+                }
+                assertTrue(videoTrack>=0)
+                assertTrue(audioDuration>0)
+                extractor.selectTrack(videoTrack)
+                while(extractor.sampleTime>=0) {
+                    val pts=extractor.sampleTime
+                    if(firstPts<0) firstPts=pts
+                    if(lastPts>=0) {
+                        val step=pts-lastPts
+                        assertTrue("Encoded video timestamps must advance",step>0)
+                        minStep=minOf(minStep,step);maxStep=maxOf(maxStep,step)
+                    }
+                    lastPts=pts;count++
+                    if(!extractor.advance()) break
+                }
+            } finally {extractor.release()}
+            assertEquals(0L,firstPts)
+            assertTrue("60 FPS must have real 16.667 ms samples",minStep in 16665L..16668L)
+            assertTrue("60 FPS cannot be just relabeled 30 FPS",maxStep in 16665L..16668L)
+            assertTrue(count>200)
+            assertTrue(kotlin.math.abs(videoDuration-audioDuration)<=18667L)
+            assertTrue(kotlin.math.abs(lastPts+16667L-videoDuration)<=2000L)
+            assertTrue(output.length()>10000)
+            assertFalse(File(output.parentFile,".video-${output.name}").exists())
+            passed=true
+        } finally {
+            report.writeText(org.json.JSONObject().put("passed",passed)
+                .put("width",640).put("height",800).put("requestedFps",60)
+                .put("encodedVideoSamples",count).put("firstPtsUs",firstPts).put("lastPtsUs",lastPts)
+                .put("minVideoStepUs",if(count>1) minStep else 0).put("maxVideoStepUs",maxStep)
+                .put("videoDurationUs",videoDuration).put("audioDurationUs",audioDuration)
+                .put("elapsedMs",SystemClock.elapsedRealtime()-started)
+                .put("initialPssKb",initialPss).put("peakSampledPssKb",peakPss)
+                .put("finalPssKb",android.os.Debug.getPss())
+                .put("rendererBitmapAndPixelArrayBytes",640*800*8)
+                .put("scope","API 35 emulator codec/export profile. Reuses one bitmap and pixel array plus bounded codec buffers; sampled whole-process PSS is not a physical-device FPS/memory guarantee. No frames accumulate for the whole video.")
+                .toString(2))
+        }
+    }
+
+    @Test fun unsupportedVideoFrameRateFailsBeforeCreatingFiles() {
+        val (document,pcm)=fixture()
+        val output=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"unsupported-fps.mp4")
+        output.delete()
+        assertThrows(IllegalArgumentException::class.java) {
+            CanvasVideoEncoder().export(document,pcm,640,output,AtomicBoolean(false),24) {}
         }
         assertFalse(output.exists())
         assertFalse(File(output.parentFile,".video-${output.name}").exists())
+    }
+
+    @Test fun cancelDuringVideoEncodingRemovesEveryPartialFile() {
+        val (document,pcm)=fixture()
+        val output=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"canceled-video.mp4")
+        for(fps in listOf(30,60)) {
+            val cancel=AtomicBoolean(false)
+            assertThrows(CancellationException::class.java) {
+                CanvasVideoEncoder().export(document,pcm,640,output,cancel,fps) {if(it>.25) cancel.set(true)}
+            }
+            assertFalse(output.exists())
+            assertFalse(File(output.parentFile,".video-${output.name}").exists())
+        }
     }
     @SdkSuppress(minSdkVersion=29)
     @Test fun explicitDownloadsCopyContainsTheOriginalBytes() {

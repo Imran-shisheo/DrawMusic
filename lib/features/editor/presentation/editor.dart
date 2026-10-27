@@ -16,8 +16,12 @@ import 'package:go_router/go_router.dart';
 import '../../../app/providers.dart';
 import '../../settings/application/settings_controller.dart';
 import '../../../creative_document/document.dart';
-import '../../../design_system/name_dialog.dart';
+import 'accompaniment_panel.dart';
+import 'responsive_workspace.dart';
+import '../../rating/application/rating_provider.dart';
+import '../../rating/presentation/rating_offer.dart';
 import '../../../design_system/paper_panel.dart';
+import '../../../design_system/name_dialog.dart';
 import '../../../design_system/style_panel.dart';
 import '../../../design_system/repeating_icon_button.dart';
 import '../../composition/domain/score.dart';
@@ -222,6 +226,35 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     if (mounted) setState(() => _playing = false);
   }
 
+  bool get _safeForRating =>
+      mounted &&
+      !_playing &&
+      !_preparing &&
+      !_leaving &&
+      !_tipsShowing &&
+      !ref.read(editorProvider).saving &&
+      _canvas.currentState?.hasActiveGesture != true &&
+      ModalRoute.of(context)?.isCurrent == true;
+  Future<void> _offerRating({bool recordTask = false}) async {
+    try {
+      final coordinator = await ref.read(ratingCoordinatorProvider.future);
+      if (recordTask) await coordinator.recordSuccessfulTask();
+      await coordinator.offerIfEligible(
+        isSafe: () => _safeForRating,
+        confirm: () => showRatingOffer(context),
+      );
+    } catch (_) {
+      /* Optional platform review never changes creative task success. */
+    }
+  }
+
+  Future<void> _explicitSave() async {
+    _canvas.currentState?.finish();
+    if (await ref.read(editorProvider.notifier).save() && mounted) {
+      await _offerRating(recordTask: true);
+    }
+  }
+
   void _edit(ProjectDocument next) {
     final previous = ref.read(editorProvider).document;
     if (next.revision <= previous.revision) {
@@ -246,7 +279,10 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
   void _documentChanged(ProjectDocument previous, ProjectDocument next) {
     final geometry =
         !listEquals(previous.strokes, next.strokes) ||
-        previous.scale != next.scale;
+        previous.scale != next.scale ||
+        previous.expressionMode != next.expressionMode ||
+        previous.root != next.root ||
+        !identical(previous.mix, next.mix);
     final tempo = previous.tempo != next.tempo;
     if (!geometry && !tempo) return;
     _wantedRevision = next.revision;
@@ -552,12 +588,12 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
 
   Future<void> _background() async {
     _canvas.currentState?.finish();
-    final value = await showPaperPanel(
+    final value = await showBackgroundPanel(
       context,
-      ref.read(editorProvider).document.background,
+      ref.read(editorProvider).document.effectiveBackground,
     );
     if (value != null && mounted) {
-      _edit(ref.read(editorProvider).document.copyWith(background: value));
+      _edit(ref.read(editorProvider).document.copyWith(paper: value));
     }
   }
 
@@ -575,7 +611,12 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
           title: Text(context.strings.yourLoopInNotes),
           content: SingleChildScrollView(
             child: Text(
-              '${context.strings.scoreSummary(context.formatNumber(score.notes.length), context.formatNumber(doc.tempo), doc.scale == MusicalScale.major ? context.strings.major : context.strings.minor)}\n\n${score.notes.take(80).map((n) => context.strings.scoreEvent(instrumentName(context, n.instrument), context.formatNumber(n.pitch), context.formatDecimal(n.startBeat + 1), context.formatDecimal(n.durationBeat))).join('\n')}${score.notes.length > 80 ? '\n${context.strings.showingFirst80Events}' : ''}',
+              '${context.strings.scoreSummary(doc.root.label, context.formatNumber(score.notes.length), context.formatNumber(doc.tempo), scaleName(context, doc.scale))}\n\n${score.notes.take(80).map((n) => context.strings.scoreEvent(n.percussion ? switch (n.pitch) {
+                      36 => context.strings.kick,
+                      38 => context.strings.snare,
+                      39 => context.strings.clap,
+                      _ => context.strings.hiHat,
+                    } : instrumentName(context, n.instrument), context.formatNumber(n.pitch), context.formatDecimal(n.startBeat + 1), context.formatDecimal(n.durationBeat))).join('\n')}${score.notes.length > 80 ? '\n${context.strings.showingFirst80Events}' : ''}',
             ),
           ),
           actions: [
@@ -686,7 +727,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
             ),
             IconButton(
               tooltip: context.strings.exportLoop,
-              onPressed: doc.strokes.isEmpty
+              onPressed: _leaving
                   ? null
                   : () async {
                       _canvas.currentState?.finish();
@@ -696,13 +737,14 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                           context,
                           ref.read(editorProvider).document,
                         );
+                        if (mounted) await _offerRating();
                       }
                     },
               icon: const Icon(Icons.ios_share),
             ),
             IconButton(
               tooltip: context.strings.saveDrawing,
-              onPressed: state.saving ? null : () => controller.save(),
+              onPressed: state.saving ? null : _explicitSave,
               icon: const Icon(Icons.save_outlined),
             ),
           ],
@@ -711,7 +753,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
             child: LayoutBuilder(
-              builder: (context, constraints) => Column(
+              builder: (context, constraints) => ResponsiveEditorLayout(
+                width: constraints.maxWidth,
                 children: [
                   ConstrainedBox(
                     constraints: BoxConstraints(
@@ -722,6 +765,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (doc.hasCompatibilityFallbacks)
+                            Text(context.strings.compatibilityFallback),
                           if (widget.recovered)
                             Text(
                               context
@@ -780,6 +825,28 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                                 onPressed: _background,
                                 icon: const Icon(Icons.palette_outlined),
                               ),
+                              Tooltip(
+                                message: context.strings.expressiveModeHelp,
+                                child: FilterChip(
+                                  label: Text(context.strings.expressiveMode),
+                                  selected:
+                                      doc.expressionMode ==
+                                      ExpressionMode.expressive,
+                                  onSelected: (enabled) {
+                                    _canvas.currentState?.finish();
+                                    _edit(
+                                      ref
+                                          .read(editorProvider)
+                                          .document
+                                          .copyWith(
+                                            expressionMode: enabled
+                                                ? ExpressionMode.expressive
+                                                : ExpressionMode.geometry,
+                                          ),
+                                    );
+                                  },
+                                ),
+                              ),
                               IconButton(
                                 tooltip: context.strings.clearDrawing,
                                 onPressed: doc.strokes.isEmpty ? null : _clear,
@@ -814,22 +881,66 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                                   onPressed: _describing ? null : _describe,
                                   icon: const Icon(Icons.list_alt),
                                 ),
+                                Semantics(
+                                  label: context.strings.rootKey,
+                                  child: DropdownButton<RootKey>(
+                                    value: doc.root,
+                                    items: [
+                                      for (final root in RootKey.values)
+                                        DropdownMenuItem(
+                                          value: root,
+                                          child: Text(root.label),
+                                        ),
+                                    ],
+                                    onChanged: (root) {
+                                      if (root != null) {
+                                        _canvas.currentState?.finish();
+                                        _edit(
+                                          ref
+                                              .read(editorProvider)
+                                              .document
+                                              .copyWith(root: root),
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: context.strings.accompaniment,
+                                  icon: const Icon(Icons.queue_music),
+                                  onPressed: () async {
+                                    _canvas.currentState?.finish();
+                                    final mix = await showAccompanimentPanel(
+                                      context,
+                                      ref.read(editorProvider).document.mix,
+                                    );
+                                    if (mix != null && mounted) {
+                                      _edit(
+                                        ref
+                                            .read(editorProvider)
+                                            .document
+                                            .copyWith(mix: mix),
+                                      );
+                                    }
+                                  },
+                                ),
                                 DropdownButton<MusicalScale>(
                                   key: _scaleTarget,
                                   value: doc.scale,
                                   items: [
-                                    DropdownMenuItem(
-                                      value: MusicalScale.major,
-                                      child: Text(
-                                        context.strings.cMajorPentatonic,
+                                    for (final scale in MusicalScale.values)
+                                      DropdownMenuItem(
+                                        value: scale,
+                                        child: Text(
+                                          doc.root == RootKey.c &&
+                                                  scale == MusicalScale.major
+                                              ? context.strings.cMajorPentatonic
+                                              : doc.root == RootKey.c &&
+                                                    scale == MusicalScale.minor
+                                              ? context.strings.cMinorPentatonic
+                                              : '${doc.root.label} ${scaleName(context, scale)}',
+                                        ),
                                       ),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: MusicalScale.minor,
-                                      child: Text(
-                                        context.strings.cMinorPentatonic,
-                                      ),
-                                    ),
                                   ],
                                   onChanged: (scale) {
                                     if (scale != null) {
@@ -866,6 +977,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                                 .document
                                 .copyWith(strokes: strokes),
                           ),
+                          onSimplified: (before, after) =>
+                              _message(context.strings.geometrySimplified),
                           onLimit: () =>
                               _message(context.strings.drawingPointLimit),
                         ),
@@ -908,7 +1021,9 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                                     ? context.strings.pause
                                     : context.strings.play,
                                 onPressed:
-                                    (!_playing && doc.strokes.isEmpty) ||
+                                    (!_playing &&
+                                            doc.strokes.isEmpty &&
+                                            !doc.mix.isActive) ||
                                         _preparing
                                     ? null
                                     : () => _play(),
@@ -927,7 +1042,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                               ),
                               IconButton(
                                 tooltip: context.strings.replay,
-                                onPressed: doc.strokes.isEmpty
+                                onPressed:
+                                    doc.strokes.isEmpty && !doc.mix.isActive
                                     ? null
                                     : () => _play(replay: true),
                                 icon: const Icon(Icons.replay),
@@ -942,7 +1058,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           Text(
-                            doc.strokes.isEmpty
+                            doc.strokes.isEmpty && !doc.mix.isActive
                                 ? context.strings.drawSomethingToHearIt
                                 : state.saving
                                 ? context.strings.saving

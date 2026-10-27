@@ -7,6 +7,7 @@ import '../../composition/domain/score.dart';
 import '../../composition/domain/audio_renderer.dart';
 import '../domain/midi.dart';
 import '../domain/export_port.dart';
+import 'file_image_export_adapter.dart';
 
 class FileExportAdapter implements ExportPort {
   FileExportAdapter(this.root);
@@ -18,6 +19,9 @@ class FileExportAdapter implements ExportPort {
     ExportCancellation cancellation,
   ) async {
     cancellation.check();
+    if (format == ExportFormat.png) {
+      return FileImageExportAdapter(root).exportImage(document, cancellation);
+    }
     if (format == ExportFormat.mp4) {
       throw UnsupportedError('Use the video export adapter for MP4');
     }

@@ -26,7 +26,7 @@ class FileExportLibrary implements ExportLibrary {
         id.startsWith('.') ||
         id.length > 255 ||
         id.contains(RegExp(r'[/\\\x00-\x1f]')) ||
-        !const ['mid', 'wav', 'mp4'].contains(id.split('.').last)) {
+        !const ['mid', 'wav', 'mp4', 'png'].contains(id.split('.').last)) {
       throw const FormatException('Invalid export identifier');
     }
   }
@@ -34,6 +34,7 @@ class FileExportLibrary implements ExportLibrary {
   String _mime(String id) => switch (id.split('.').last) {
     'mid' => 'audio/midi',
     'wav' => 'audio/wav',
+    'png' => 'image/png',
     _ => 'video/mp4',
   };
   File _file(String id) {
@@ -65,6 +66,13 @@ class FileExportLibrary implements ExportLibrary {
               ascii.decode(bytes.sublist(8, 12), allowInvalid: true) == 'WAVE',
         'mp4' =>
           ascii.decode(bytes.sublist(4, 8), allowInvalid: true) == 'ftyp',
+        'png' =>
+          bytes[0] == 137 &&
+              ascii.decode(bytes.sublist(1, 4), allowInvalid: true) == 'PNG' &&
+              bytes[4] == 13 &&
+              bytes[5] == 10 &&
+              bytes[6] == 26 &&
+              bytes[7] == 10,
         _ => false,
       };
     } finally {
@@ -105,6 +113,7 @@ class FileExportLibrary implements ExportLibrary {
         width: json['width'] as int?,
         height: json['height'] as int?,
         durationSeconds: (json['durationSeconds'] as num?)?.toDouble(),
+        framesPerSecond: json['framesPerSecond'] as int?,
       ),
       createdAt: DateTime.parse(json['createdAt'] as String),
       bytes: available ? await source.length() : 0,
@@ -168,6 +177,7 @@ class FileExportLibrary implements ExportLibrary {
       'width': artifact.width,
       'height': artifact.height,
       'durationSeconds': artifact.durationSeconds,
+      'framesPerSecond': artifact.framesPerSecond,
       'preview': entry.preview?.encode(),
       'deletedAt': entry.deletedAt?.toUtc().toIso8601String(),
       'legacy': entry.legacy,
@@ -245,12 +255,7 @@ class FileExportLibrary implements ExportLibrary {
           if (!identical(points.last, stroke.points.last)) {
             points.add(stroke.points.last);
           }
-          return Stroke(
-            id: stroke.id,
-            instrument: stroke.instrument,
-            width: stroke.width,
-            points: points,
-          );
+          return stroke.copyWith(points: points);
         });
         await _write(
           LibraryExport(
@@ -290,6 +295,7 @@ class FileExportLibrary implements ExportLibrary {
           width: old.width,
           height: old.height,
           durationSeconds: old.durationSeconds,
+          framesPerSecond: old.framesPerSecond,
         ),
         createdAt: entry.createdAt,
         bytes: entry.bytes,

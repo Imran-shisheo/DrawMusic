@@ -13,8 +13,13 @@ adb -s "$runtime_device" exec-out run-as com.imranshisheo.scribblesong cat cache
 if [[ "$runtime_result" == 0 ]]; then
   flutter test integration_test/creation_loop_test.dart --no-uninstall -d "$runtime_device" --timeout 10m || runtime_result=$?
 fi
-for runtime_file in ui-export-video.mp4 ui-export-audio.wav ui-export-notes.mid ui-project.json ui-export-metadata.json; do
+for runtime_file in ui-export-video.mp4 ui-export-audio.wav ui-export-notes.mid ui-project.json ui-export-metadata.json ui-export-image.png video-60-profile.json fixture-video-60.mp4 expanded-project.json expanded-video.mp4 expanded-audio.wav expanded-notes.mid expanded-image.png; do
   adb -s "$runtime_device" exec-out run-as com.imranshisheo.scribblesong cat "cache/$runtime_file" > "work/runtime-output/$runtime_file" || true
+done
+for runtime_report in audio-soak.json video-60-profile.json; do
+  if [[ -s "work/runtime-output/$runtime_report" ]]; then
+    cat "work/runtime-output/$runtime_report"
+  fi
 done
 if [[ "$runtime_result" == 0 ]]; then
   python3 scripts/check-android-force-stop.py || runtime_result=$?

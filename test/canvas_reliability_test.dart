@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/creative_document/document.dart';
 import 'package:scribblesong/features/editor/presentation/canvas.dart';
+import 'package:scribblesong/features/editor/domain/history.dart';
 
 void main() {
   testWidgets(
@@ -121,7 +122,74 @@ void main() {
   );
 
   testWidgets(
-    'long stroke keeps exact samples, paints mutable preview and obeys point budget',
+    'dense older geometry simplifies before the limit and both edits undo',
+    (tester) async {
+      final cursor = ValueNotifier<double?>(null);
+      addTearDown(cursor.dispose);
+      final original = ProjectDocument(
+        id: 'compression',
+        strokes: [
+          Stroke(
+            id: 'dense',
+            instrument: Instrument.keys,
+            points: List.generate(90000, (_) => InkPoint(.1, .5)),
+          ),
+        ],
+      );
+      final history = DocumentHistory(original);
+      final notifications = <(int, int)>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatefulBuilder(
+            builder: (context, refresh) => Center(
+              child: SizedBox(
+                width: 300,
+                height: 400,
+                child: DrawingCanvas(
+                  document: history.document,
+                  instrument: Instrument.keys,
+                  eraser: false,
+                  cursor: cursor,
+                  onCommit: (strokes) => refresh(
+                    () => history.commit(
+                      history.document.copyWith(strokes: strokes),
+                    ),
+                  ),
+                  onLimit: () => fail(
+                    'compressible geometry should not hit the hard limit',
+                  ),
+                  onSimplified: (before, after) =>
+                      notifications.add((before, after)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final top = tester.getTopLeft(
+        find.byKey(const ValueKey('drawing-canvas')),
+      );
+      final gesture = await tester.startGesture(top + const Offset(60, 80));
+      await tester.pump();
+      await gesture.moveTo(top + const Offset(120, 120));
+      await gesture.up();
+      await tester.pump();
+      expect(notifications, [(90000, 2)]);
+      expect(history.document.pointCount, 4);
+      expect(history.undoCount, 2);
+      history.undo();
+      expect(history.document.pointCount, 2);
+      history.undo();
+      expect(history.document.pointCount, 90000);
+      expect(
+        identical(history.document.strokes.single, original.strokes.single),
+        isTrue,
+      );
+    },
+  );
+
+  testWidgets(
+    'unsimplifiable long stroke keeps exact samples and obeys hard point budget',
     (tester) async {
       final cursor = ValueNotifier<double?>(null);
       addTearDown(cursor.dispose);
@@ -133,7 +201,10 @@ void main() {
           Stroke(
             id: 'existing',
             instrument: Instrument.bell,
-            points: List.generate(90000, (_) => InkPoint(.1, .1)),
+            points: List.generate(
+              90000,
+              (i) => InkPoint(i / 89999, i.isEven ? .1 : .9),
+            ),
           ),
         ],
       );
@@ -167,7 +238,9 @@ void main() {
           .singleWhere((p) => p.active.isNotEmpty);
       final points = initialPainter.active;
       for (var i = 1; i < 10000; i++) {
-        await gesture.moveTo(top + Offset(30 + (i % 200).toDouble(), 100));
+        await gesture.moveTo(
+          top + Offset(30 + (i % 200).toDouble(), i.isEven ? 100 : 300),
+        );
       }
       await tester.pump();
       final current = tester

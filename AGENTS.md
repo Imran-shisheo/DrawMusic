@@ -2,6 +2,8 @@
 
 ## Authorized scope
 
+Latest owner authorization, 26 October 2026: implement the creative expansion in docs/requests/CREATIVE-EXPANSION-2026-10-26.txt, including P1 creative tools, specified offline P2 and feasible iOS source. All creative features are free in this build. Leave reviewable draft PRs UNMERGED; this overrides earlier merging permission below. Ads/reward SDKs, billing/subscriptions, accounts, servers/uploads, paid services, cloud collaboration, store publication, force pushes, personal-phone operations and scheduled continuations are excluded. Use docs/CREATIVE-IMPLEMENTATION-PLAN.md and CREATIVE-REQUIREMENT-MATRIX.md; new source needs new evidence.
+
 The owner authorized Android Flutter development in Codex Cloud on 2026-10-24. The earlier research-only instruction applied to the completed research phase. iOS compilation, signing and device testing will be performed by the owner on a local Mac; retain portable Dart code and platform boundaries. Do not claim iOS validation from a Linux run.
 
 Read PRD.md, docs/ROADMAP.md and cloud/FIRST-TASK.md. ScribbleSong is the PRD's provisional original product name; DrawMusic is the repository name. Use `com.imranshisheo.scribblesong` as the development application identifier; final store naming is a later owner decision.

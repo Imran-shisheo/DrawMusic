@@ -167,10 +167,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'MP4 animates this drawing with its music. Video export cancels if you leave the app.';
 
   @override
-  String get hd1080135030Fps => 'HD · 1080 × 1350 · 30 fps';
+  String get hd1080135030Fps => 'HD · 1080 × 1350';
 
   @override
-  String get compact64080030Fps => 'Compact · 640 × 800 · 30 fps';
+  String get compact64080030Fps => 'Compact · 640 × 800';
 
   @override
   String get exportMp4 => 'Export MP4';
@@ -402,7 +402,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not save language. Retry from Settings.';
 
   @override
-  String get languageExplanation => 'English is currently available.';
+  String get languageExplanation =>
+      'Choose a language, then Apply. Your drawing titles stay unchanged.';
 
   @override
   String updatedOn(String date) {
@@ -449,7 +450,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo =>
-      'This version uses the key of C. Choose major or minor pentatonic here to change the mood. The same score drives preview and exports.';
+      'Choose any root key and scale to change the mood. The same score drives preview and exports.';
 
   @override
   String get warmPaper => 'Warm paper';
@@ -464,8 +465,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rosePaper => 'Rose paper';
 
   @override
-  String drawingDetails(String marks, String tempo, String scale) {
-    return '$marks marks · $tempo BPM · C $scale';
+  String drawingDetails(String root, String marks, String tempo, String scale) {
+    return '$marks marks · $tempo BPM · $root $scale';
   }
 
   @override
@@ -559,8 +560,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String scoreSummary(String count, String tempo, String scale) {
-    return '$count note events · $tempo BPM · C $scale pentatonic.';
+  String scoreSummary(String root, String count, String tempo, String scale) {
+    return '$count note events · $tempo BPM · $root $scale';
   }
 
   @override
@@ -723,7 +724,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exportsEmpty =>
-      'Completed exports will appear here.\nOpen a drawing and choose Export to create MIDI, WAV or MP4.';
+      'Completed exports will appear here.\nOpen a drawing and choose Export to create MIDI, WAV, MP4 or PNG.';
 
   @override
   String get nameYourExport => 'Name your export';
@@ -787,4 +788,342 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pause => 'Pause';
+
+  @override
+  String get exportPng => 'Export PNG';
+
+  @override
+  String get pngExportDescription =>
+      'Save the drawing as an image without controls or playback cursor.';
+
+  @override
+  String get transparentBackground => 'Transparent background';
+
+  @override
+  String get pngOutputSize => 'PNG image size';
+
+  @override
+  String get pngHd => 'HD · 1080 × 1350';
+
+  @override
+  String get pngCompact => 'Compact · 640 × 800';
+
+  @override
+  String get rootKey => 'Root key';
+
+  @override
+  String get scaleFamily => 'Scale';
+
+  @override
+  String get majorPentatonic => 'Major pentatonic';
+
+  @override
+  String get minorPentatonic => 'Minor pentatonic';
+
+  @override
+  String get diatonicMajor => 'Major';
+
+  @override
+  String get diatonicMinor => 'Minor';
+
+  @override
+  String get harmonicMinor => 'Harmonic minor';
+
+  @override
+  String get dorian => 'Dorian';
+
+  @override
+  String get phrygian => 'Phrygian';
+
+  @override
+  String get lydian => 'Lydian';
+
+  @override
+  String get mixolydian => 'Mixolydian';
+
+  @override
+  String get blues => 'Blues';
+
+  @override
+  String get chromatic => 'Chromatic';
+
+  @override
+  String get warmSynth => 'Amber pad';
+
+  @override
+  String get pluck => 'Dew pluck';
+
+  @override
+  String get flute => 'Reed breeze';
+
+  @override
+  String get strings => 'Velvet strings';
+
+  @override
+  String get chime => 'Silver chime';
+
+  @override
+  String get bass => 'Earth bass';
+
+  @override
+  String get chip => 'Pocket chip';
+
+  @override
+  String get electronicBass => 'Neon bass';
+
+  @override
+  String get guitar => 'Cedar guitar';
+
+  @override
+  String get saxophone => 'Copper reed';
+
+  @override
+  String get geometrySimplified =>
+      'Dense points were simplified within the documented tolerance. Undo restores the original drawing.';
+
+  @override
+  String get compatibilityFallback =>
+      'Some saved sounds or scales are unavailable. A safe substitute is used; original identifiers are preserved.';
+
+  @override
+  String get backgroundType => 'Background type';
+
+  @override
+  String get solidBackground => 'Solid color';
+
+  @override
+  String get linearBackground => 'Linear gradient';
+
+  @override
+  String get radialBackground => 'Radial gradient';
+
+  @override
+  String get photoBackground => 'Photo';
+
+  @override
+  String get customColor => 'Custom color (RRGGBB)';
+
+  @override
+  String get secondColor => 'Second color (RRGGBB)';
+
+  @override
+  String get choosePhoto => 'Choose photo';
+
+  @override
+  String get takePhoto => 'Take photo';
+
+  @override
+  String get replacePhoto => 'Replace photo';
+
+  @override
+  String get removePhoto => 'Remove photo';
+
+  @override
+  String get rotatePhoto => 'Rotate photo';
+
+  @override
+  String get mirrorPhoto => 'Mirror photo';
+
+  @override
+  String get cropLeft => 'Crop left';
+
+  @override
+  String get cropTop => 'Crop top';
+
+  @override
+  String get cropWidth => 'Crop width';
+
+  @override
+  String get cropHeight => 'Crop height';
+
+  @override
+  String get imageUnavailable =>
+      'This photo is unavailable. Replace or remove it.';
+
+  @override
+  String get imageImportFailed =>
+      'Could not import this image. Choose a valid JPEG, PNG or supported HEIC image under 32 MB.';
+
+  @override
+  String get cameraUnavailable =>
+      'No camera app is available. You can choose a photo instead.';
+
+  @override
+  String get photoPermissionDenied =>
+      'Photo access was denied. Choose another image or check system permissions.';
+
+  @override
+  String get backgroundImportBusy => 'Importing image…';
+
+  @override
+  String get backgroundRecovered =>
+      'Recovered your interrupted photo selection.';
+
+  @override
+  String get resetCrop => 'Reset crop';
+
+  @override
+  String get backgroundGradientTip =>
+      'Backgrounds change the picture only; your notes stay the same.';
+
+  @override
+  String get gradientDawn => 'Dawn gradient';
+
+  @override
+  String get gradientOrchard => 'Orchard gradient';
+
+  @override
+  String get gradientTwilight => 'Twilight gradient';
+
+  @override
+  String get accompaniment => 'Accompaniment';
+
+  @override
+  String get drumKit => 'Drum kit';
+
+  @override
+  String get arpeggio => 'Arpeggio';
+
+  @override
+  String get kick => 'Kick';
+
+  @override
+  String get snare => 'Snare';
+
+  @override
+  String get clap => 'Clap';
+
+  @override
+  String get hiHat => 'Hi-hat';
+
+  @override
+  String get muted => 'Muted';
+
+  @override
+  String get layerLevel => 'Layer level';
+
+  @override
+  String get expressiveMode => 'Expressive dynamics';
+
+  @override
+  String get expressiveModeHelp =>
+      'Use recorded gesture speed for note dynamics. Geometry mode stays independent of drawing speed.';
+
+  @override
+  String get darkTheme => 'Dark theme';
+
+  @override
+  String get useSystemTheme => 'Use system theme';
+
+  @override
+  String get pngEmptyTitle => 'Export an empty drawing?';
+
+  @override
+  String get pngEmptyDescription =>
+      'This image will contain only the background, or be transparent when that option is selected.';
+
+  @override
+  String get videoFrameRate => 'Video frame rate';
+
+  @override
+  String get videoFps30 => '30 FPS — standard';
+
+  @override
+  String get videoFps60 => '60 FPS — smoother, slower export';
+
+  @override
+  String get reviewOptionalTitle => 'Optional app review';
+
+  @override
+  String get reviewOptionalBody =>
+      'Your work is saved. Your device may show a review sheet, which you can close without submitting a review.';
+
+  @override
+  String get reviewNotNow => 'Not now';
+
+  @override
+  String get reviewContinue => 'Continue';
+
+  @override
+  String get muteLayer => 'Mute layer';
+
+  @override
+  String get unmuteLayer => 'Unmute layer';
+
+  @override
+  String get templateDescription0 => 'Two rising peaks on a mallet voice.';
+
+  @override
+  String get templateDescription1 => 'Falling bell lines form vertical chords.';
+
+  @override
+  String get templateDescription2 => 'A smooth keyboard wave explores pitch.';
+
+  @override
+  String get templateDescription3 =>
+      'Eight isolated mallet dots make a rhythm.';
+
+  @override
+  String get templateDescription4 => 'A bell ellipse meets the scan twice.';
+
+  @override
+  String get templateDescription5 =>
+      'Three original voices travel side by side.';
+
+  @override
+  String get templateDescription6 =>
+      'Ascending plucked steps leave breathing gaps.';
+
+  @override
+  String get templateDescription7 => 'Four flute chords at spaced times.';
+
+  @override
+  String get templateDescription8 => 'A broad string wave changes direction.';
+
+  @override
+  String get templateDescription9 =>
+      'Separate chime dots make a short pattern.';
+
+  @override
+  String get templateDescription10 => 'A low-voice ellipse is a beginner loop.';
+
+  @override
+  String get templateDescription11 =>
+      'Guitar, reed and keyboard ribbons interweave.';
+
+  @override
+  String get templateDescription12 =>
+      'Electronic bass steps climb through the scale.';
+
+  @override
+  String get templateDescription13 =>
+      'Guitar chords make four vertical windows.';
+
+  @override
+  String get templateDescription14 => 'A reed wave meanders across the page.';
+
+  @override
+  String get templateDescription15 => 'Keyboard dots leave generous silence.';
+
+  @override
+  String get templateDescription16 =>
+      'A mallet ring demonstrates two pitch paths.';
+
+  @override
+  String get templateDescription17 =>
+      'Three voices with original bass and drum accompaniment.';
+
+  @override
+  String get templateDescription18 => 'Bell steps rise through the scale.';
+
+  @override
+  String get templateDescription19 =>
+      'Four warm synthesizer chords with bass and drum accompaniment.';
+
+  @override
+  String get recoveryExport => 'Export recovery data';
+
+  @override
+  String get recoveryExportFailed =>
+      'Could not export recovery data. The original files are preserved.';
 }

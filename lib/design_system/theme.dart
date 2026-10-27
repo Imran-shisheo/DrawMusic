@@ -4,7 +4,8 @@ const ink = Color(0xff243b35);
 const paper = Color(0xfff7f5eb);
 const accent = Color(0xff007e73);
 
-ThemeData buildTheme() => ThemeData(
+ThemeData buildTheme({Brightness brightness = Brightness.light}) => ThemeData(
+  brightness: brightness,
   useMaterial3: true,
   pageTransitionsTheme: const PageTransitionsTheme(
     builders: {
@@ -12,21 +13,32 @@ ThemeData buildTheme() => ThemeData(
       TargetPlatform.iOS: AccessiblePageTransitions(),
     },
   ),
-  scaffoldBackgroundColor: const Color(0xfffffdf5),
+  scaffoldBackgroundColor: brightness == Brightness.dark
+      ? const Color(0xff151f1d)
+      : const Color(0xfffffdf5),
   colorScheme: ColorScheme.fromSeed(
     seedColor: accent,
-    primary: accent,
-    onSurface: ink,
-    surface: const Color(0xfffffdf5),
+    brightness: brightness,
+    primary: brightness == Brightness.dark ? const Color(0xff70d5c5) : accent,
+    onSurface: brightness == Brightness.dark ? const Color(0xffecf4ef) : ink,
+    surface: brightness == Brightness.dark
+        ? const Color(0xff151f1d)
+        : const Color(0xfffffdf5),
   ),
-  appBarTheme: const AppBarTheme(
-    backgroundColor: Color(0xfffffdf5),
-    foregroundColor: ink,
+  appBarTheme: AppBarTheme(
+    backgroundColor: brightness == Brightness.dark
+        ? const Color(0xff151f1d)
+        : const Color(0xfffffdf5),
+    foregroundColor: brightness == Brightness.dark
+        ? const Color(0xffecf4ef)
+        : ink,
   ),
-  cardTheme: const CardThemeData(
+  cardTheme: CardThemeData(
     elevation: 0,
-    color: Colors.white,
-    shape: RoundedRectangleBorder(
+    color: brightness == Brightness.dark
+        ? const Color(0xff24332f)
+        : Colors.white,
+    shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(20)),
     ),
   ),

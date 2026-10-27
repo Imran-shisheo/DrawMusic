@@ -2,13 +2,31 @@ import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../domain/recovery_export_port.dart';
 
 import '../../../app/providers.dart';
 import 'library_tabs.dart';
 import '../../../creative_document/document.dart';
 import '../../editor/presentation/canvas.dart';
+import '../../backgrounds/presentation/background_surface.dart';
 import '../../export/presentation/export_sheet.dart';
 import '../../../design_system/name_dialog.dart';
+
+typedef ShareRecoveryData = Future<ShareResultStatus> Function(
+  String path,
+  Rect? origin,
+);
+final shareRecoveryDataProvider = Provider<ShareRecoveryData>(
+  (ref) =>
+      (path, origin) async => (await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(path, mimeType: 'application/json')],
+          sharePositionOrigin: origin,
+        ),
+      )).status,
+);
 
 enum _Action { rename, duplicate, export, delete }
 
@@ -71,6 +89,46 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _exportRecovery(String id) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final repository = await ref.read(repositoryProvider.future);
+      if (repository is! RecoveryExportPort) {
+        throw UnsupportedError('Recovery export unavailable');
+      }
+      final path = await (repository as RecoveryExportPort).exportRecoveryData(
+        id,
+      );
+      if (!mounted) return;
+      final box = context.findRenderObject() as RenderBox?;
+      final status = await ref.read(shareRecoveryDataProvider)(
+        path,
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(switch (status) {
+            ShareResultStatus.dismissed => context.strings.shareDismissed,
+            ShareResultStatus.unavailable => context.strings.shareUnavailable,
+            ShareResultStatus.success => context.strings.shareClosed,
+          }),
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.strings.recoveryExportFailed)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _act(ProjectDocument doc, _Action action) async {
@@ -147,21 +205,54 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                   children: [
                     for (final id in listing.failures)
-                      ListTile(
-                        leading: const Icon(Icons.warning_amber),
-                        title: Text(
-                          context.strings.aDrawingCouldNotBeRecovered,
-                        ),
-                        subtitle: Text(
-                          context.strings.theOriginalFilesArePreserved,
-                        ),
-                        trailing: IconButton(
-                          tooltip: context.strings.deleteDamagedDrawing,
-                          onPressed: _busy
-                              ? null
-                              : () =>
-                                    _delete(id, context.strings.damagedDrawing),
-                          icon: const Icon(Icons.delete_outline),
+                      Card(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.warning_amber),
+                              title: Text(
+                                context.strings.aDrawingCouldNotBeRecovered,
+                              ),
+                              subtitle: Text(
+                                context.strings.theOriginalFilesArePreserved,
+                              ),
+                              trailing: IconButton(
+                                tooltip: context.strings.deleteDamagedDrawing,
+                                onPressed: _busy
+                                    ? null
+                                    : () => _delete(
+                                        id,
+                                        context.strings.damagedDrawing,
+                                      ),
+                                icon: const Icon(Icons.delete_outline),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                              child: Wrap(
+                                spacing: 8,
+                                children: [
+                                  TextButton(
+                                    onPressed: _busy
+                                        ? null
+                                        : () {
+                                            ref.invalidate(libraryProvider);
+                                            context.push('/editor/$id');
+                                          },
+                                    child: Text(context.strings.retry),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: _busy
+                                        ? null
+                                        : () => _exportRecovery(id),
+                                    icon: const Icon(Icons.save_alt),
+                                    label: Text(context.strings.recoveryExport),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     for (final doc in listing.projects)
@@ -173,17 +264,23 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                             height: 70,
                             child: ColoredBox(
                               color: Color(opaquePaperColor(doc.background)),
-                              child: CustomPaint(painter: DrawingPainter(doc)),
+                              child: BackgroundSurface(
+                                paper: doc.effectiveBackground,
+                                maxWidth: 320,
+                                maxHeight: 400,
+                                child: CustomPaint(
+                                  painter: DrawingPainter(doc),
+                                ),
+                              ),
                             ),
                           ),
                           title: Text(doc.title),
                           subtitle: Text(
                             context.strings.drawingDetails(
+                                  doc.root.label,
                                   context.formatNumber(doc.strokes.length),
                                   context.formatNumber(doc.tempo),
-                                  doc.scale == MusicalScale.major
-                                      ? context.strings.major
-                                      : context.strings.minor,
+                                  scaleName(context, doc.scale),
                                 ) +
                                 (listing.recoveredIds.contains(doc.id)
                                     ? '\n${context.strings.recoveredPreviousRevision}'

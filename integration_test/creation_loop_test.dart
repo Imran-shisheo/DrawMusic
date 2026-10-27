@@ -1,4 +1,6 @@
 import 'package:scribblesong/creative_document/document.dart';
+import 'package:scribblesong/features/backgrounds/domain/background.dart';
+import 'package:scribblesong/app/providers.dart';
 
 import 'dart:io';
 
@@ -34,6 +36,12 @@ void main() {
           await tester.pump(const Duration(milliseconds: 100));
         }
         await tester.pump();
+      }
+
+      Future<void> reveal(Finder target) async {
+        await Scrollable.ensureVisible(tester.element(target), alignment: .2);
+        await tester.pumpAndSettle();
+        expect(target.hitTestable(), findsOneWidget);
       }
 
       app.main();
@@ -99,7 +107,9 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Paper color'));
       await tester.pumpAndSettle();
+      await reveal(find.byTooltip('Lilac paper'));
       await tester.tap(find.byTooltip('Lilac paper'));
+      await reveal(find.byType(Slider));
       await tester.tapAt(tester.getCenter(find.byType(Slider)));
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
@@ -107,8 +117,10 @@ void main() {
         tester
             .widget<DrawingCanvas>(find.byType(DrawingCanvas))
             .document
-            .background,
-        0x80f3eef9,
+            .effectiveBackground
+            .colors
+            .first,
+        0xfff3eef9,
       );
       await tester.tap(find.byTooltip('Drawing style'));
       await tester.pumpAndSettle();
@@ -131,14 +143,19 @@ void main() {
           .writeAsString(snapshot.encode());
       await tester.tap(find.byTooltip('Export loop'));
       await tester.pumpAndSettle();
-      final resolution = find.byType(DropdownButton<int>);
-      await tester.ensureVisible(resolution);
+      final resolution = find.byKey(const ValueKey('video-output-width'));
+      await reveal(resolution);
       await tester.tap(resolution);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Compact · 640 × 800 · 30 fps').last);
+      await tester.tap(find.text('Compact · 640 × 800').last);
       await tester.pumpAndSettle();
       Future<File> export(String label, String extension) async {
-        await tester.ensureVisible(find.text(label));
+        final root = await getApplicationDocumentsDirectory();
+        final exportDirectory = Directory('${root.path}/exports');
+        final before = await exportDirectory.exists()
+            ? await exportDirectory.list().map((f) => f.path).toSet()
+            : <String>{};
+        await reveal(find.text(label));
         await tester.tap(find.text(label));
         await tester.pump();
         await until(
@@ -146,10 +163,14 @@ void main() {
               find.text('Export ready on this device.').evaluate().isNotEmpty,
           seconds: 240,
         );
-        final root = await getApplicationDocumentsDirectory();
         final files = await Directory('${root.path}/exports')
             .list()
-            .where((f) => f is File && f.path.endsWith(extension))
+            .where(
+              (f) =>
+                  f is File &&
+                  f.path.endsWith(extension) &&
+                  !before.contains(f.path),
+            )
             .cast<File>()
             .toList();
         expect(files.length, 1);
@@ -161,9 +182,11 @@ void main() {
       await video.copy('${cache.path}/ui-export-video.mp4');
       final wav = await export('Export WAV', '.wav');
       await wav.copy('${cache.path}/ui-export-audio.wav');
+      final png = await export('Export PNG', '.png');
+      await png.copy('${cache.path}/ui-export-image.png');
       final midi = await export('Export MIDI', '.mid');
       await midi.copy('${cache.path}/ui-export-notes.mid');
-      await tester.ensureVisible(find.text('Close'));
+      await reveal(find.text('Close'));
       await tester.tap(find.text('Close'));
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Back to gallery'));
@@ -204,7 +227,7 @@ void main() {
         tester.element(find.byType(ExportsPage)),
       );
       final catalog = await catalogContainer.read(exportListingProvider.future);
-      expect(catalog.entries.length, 3);
+      expect(catalog.entries.length, 4);
       expect(
         catalog.entries.every(
           (entry) =>
@@ -227,7 +250,8 @@ void main() {
           .document;
       expect(reopened.id, snapshot.id);
       expect(reopened.tempo, 122);
-      expect(reopened.background, 0x80f3eef9);
+      expect(reopened.effectiveBackground.colors.first, 0xfff3eef9);
+      expect(reopened.effectiveBackground.opacity, closeTo(.5, .01));
       expect(reopened.style, DrawingStyle.pixel);
       expect(reopened.strokes.length, 2);
       await tester.pumpWidget(const SizedBox());
@@ -258,6 +282,132 @@ void main() {
       );
       expect(find.text('Paper hills.wav'), findsOneWidget);
       expect(find.text('Paper hills.mid'), findsOneWidget);
+      await tester.tap(find.text('Home'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Three streams'),
+        400,
+        scrollable: find
+            .descendant(
+              of: find.byType(ListView).first,
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await Scrollable.ensureVisible(
+        tester.element(find.text('Three streams')),
+        alignment: .2,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Three streams').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('Three streams').hitTestable());
+      await until(() async => find.byType(DrawingCanvas).evaluate().isNotEmpty);
+      await tester.pumpAndSettle();
+      ProjectDocument expandedDoc() =>
+          tester.widget<DrawingCanvas>(find.byType(DrawingCanvas)).document;
+      expect(expandedDoc().mix.isActive, isTrue);
+      await reveal(find.byType(DropdownButton<RootKey>));
+      await tester.tap(find.byType(DropdownButton<RootKey>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('F♯').last);
+      await tester.pumpAndSettle();
+      await reveal(find.byType(DropdownButton<MusicalScale>));
+      await tester.tap(find.byType(DropdownButton<MusicalScale>));
+      await tester.pumpAndSettle();
+      await reveal(find.text('F♯ Lydian').last);
+      await tester.tap(find.text('F♯ Lydian').last);
+      await tester.pumpAndSettle();
+      await reveal(find.byTooltip('Accompaniment'));
+      await tester.tap(find.byTooltip('Accompaniment'));
+      await tester.pumpAndSettle();
+      await reveal(find.text('Arpeggio'));
+      await tester.tap(find.text('Arpeggio'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      await reveal(find.byTooltip('Paper color'));
+      await tester.tap(find.byTooltip('Paper color'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(DropdownButtonFormField<BackgroundKind>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Linear gradient').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(expandedDoc().root, RootKey.fSharp);
+      expect(expandedDoc().scale, MusicalScale.lydian);
+      expect(expandedDoc().effectiveBackground.kind, BackgroundKind.linear);
+      await reveal(find.byTooltip('Play'));
+      await tester.tap(find.byTooltip('Play'));
+      await until(
+        () async =>
+            (await audio.status()).playing &&
+            (await audio.status()).fraction > .05,
+      );
+      await tester.tap(find.byTooltip('Pause'));
+      await tester.pumpAndSettle();
+      final expanded = expandedDoc();
+      await File('${cache.path}/expanded-project.json')
+          .writeAsString(expanded.encode());
+      await tester.tap(find.byTooltip('Save drawing'));
+      await until(
+        () async => find.text('Saved on this device').evaluate().isNotEmpty,
+      );
+      await tester.tap(find.byTooltip('Export loop'));
+      await tester.pumpAndSettle();
+      final expandedWidth = find.byKey(const ValueKey('video-output-width'));
+      await reveal(expandedWidth);
+      await tester.tap(expandedWidth);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Compact · 640 × 800').last);
+      await tester.pumpAndSettle();
+      for (final item in [
+        ('Export MP4', '.mp4', 'video.mp4'),
+        ('Export WAV', '.wav', 'audio.wav'),
+        ('Export MIDI', '.mid', 'notes.mid'),
+        ('Export PNG', '.png', 'image.png'),
+      ]) {
+        final file = await export(item.$1, item.$2);
+        await file.copy('${cache.path}/expanded-${item.$3}');
+      }
+      await reveal(find.text('Close'));
+      await tester.tap(find.text('Close'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Back to gallery'));
+      await until(() async => find.text('Home').evaluate().isNotEmpty);
+      await tester.pumpAndSettle();
+      final container = ProviderScope.containerOf(
+        tester.element(find.text('Home')),
+      );
+      final repository = await container.read(repositoryProvider.future);
+      final recovered = (await repository.open(expanded.id)).document;
+      expect(recovered.root, expanded.root);
+      expect(recovered.mix.toJson(), expanded.mix.toJson());
+      expect(
+        recovered.effectiveBackground.toJson(),
+        expanded.effectiveBackground.toJson(),
+      );
+      await tester.tap(find.text('Settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Language'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('日本語'), 200);
+      await reveal(find.text('日本語'));
+      await tester.tap(find.text('日本語').hitTestable());
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ListTile>(find.byKey(const ValueKey('language-ja')))
+            .selected,
+        isTrue,
+      );
+      await tester.tap(find.text('Apply'));
+      await until(
+        () async =>
+            container.read(settingsProvider).preferences.languageCode == 'ja',
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('日本語'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     },
   );

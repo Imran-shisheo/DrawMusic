@@ -1,6 +1,6 @@
 # P0 implementation and acceptance coverage
 
-Updated 25 October 2026. This maps the completed PRD to the current Android branch. Cloud evidence and physical acceptance are different gates. No row closes physical acceptance from a fake audio adapter, a setup-only build or the owner's report about an earlier build. Pixel style is F11/P1 in the PRD; it is an implemented optional addition, not a missing P0 prerequisite.
+Historical MVP coverage, updated 25 October 2026. For the authorized 26 October creative expansion, **use [CREATIVE-REQUIREMENT-MATRIX.md](CREATIVE-REQUIREMENT-MATRIX.md)**; it maps every F01–F25 and QA01–QA23 to new implementation and separate acceptance. The old deferred catalog/PNG/photo/localization statements below describe the baseline, not current missing implementation. This maps the completed PRD to the current Android branch. Cloud evidence and physical acceptance are different gates. No row closes physical acceptance from a fake audio adapter, a setup-only build or the owner's report about an earlier build. Pixel style is F11/P1 in the PRD; it is an implemented optional addition, not a missing P0 prerequisite.
 
 | PRD requirement | Current implementation and evidence | Remaining acceptance or limit |
 |---|---|---|

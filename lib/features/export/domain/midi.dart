@@ -1,8 +1,12 @@
 import 'dart:typed_data';
 
+import '../../../creative_document/document.dart';
 import '../../composition/domain/score.dart';
 
-const midiPrograms = [0, 12, 10]; // GM piano, marimba, music box; channels 1–3.
+const midiPrograms = [0, 12, 10, 89, 45, 73, 48, 14, 32, 80, 38, 24, 65];
+// Channel 10 (zero-based 9) is reserved for percussion, never melodic voices.
+int midiChannel(Instrument instrument) =>
+    instrument.index < 9 ? instrument.index : instrument.index + 1;
 Uint8List encodeMidi(ScoreSnapshot score) {
   final events = <(int, int, List<int>)>[];
   final tempo = (60000000 / score.tempo).round();
@@ -11,12 +15,43 @@ Uint8List encodeMidi(ScoreSnapshot score) {
     0,
     [0xff, 0x51, 3, (tempo >> 16) & 255, (tempo >> 8) & 255, tempo & 255],
   ));
-  for (var c = 0; c < 3; c++) {
-    events.add((0, 1, [0xc0 + c, midiPrograms[c]]));
+  for (final instrument in Instrument.values) {
+    events.add((
+      0,
+      1,
+      [0xc0 + midiChannel(instrument), midiPrograms[instrument.index]],
+    ));
+  }
+  // Two free melodic channels isolate bass/arpeggio note lifetimes from ink.
+  // They use the same GM substitutions as their PCM instrument definitions.
+  for (final (channel, program) in [(14, 32), (15, 45)]) {
+    if (score.notes.any(
+      (n) =>
+          !n.percussion &&
+          n.midiChannelOverride == channel &&
+          n.gain > 0 &&
+          n.velocity > 0,
+    )) {
+      events.add((0, 1, [0xc0 + channel, program]));
+    }
   }
   for (final n in score.notes) {
-    events.add((n.startBin * 40, 3, [0x90 + n.instrument.index, n.pitch, 100]));
-    events.add((n.endBin * 40, 2, [0x80 + n.instrument.index, n.pitch, 0]));
+    if (n.gain <= 0 || n.velocity <= 0) continue;
+    final channel = n.percussion
+        ? 9
+        : n.midiChannelOverride ?? midiChannel(n.instrument);
+    if (channel < 0 ||
+        channel > 15 ||
+        (!n.percussion && channel == 9) ||
+        !n.gain.isFinite) {
+      throw const FormatException('Invalid MIDI part');
+    }
+    events.add((
+      n.startBin * 40,
+      3,
+      [0x90 + channel, n.pitch, (n.velocity * n.gain).round().clamp(1, 127)],
+    ));
+    events.add((n.endBin * 40, 2, [0x80 + channel, n.pitch, 0]));
   }
   events.add((3840, 4, [0xff, 0x2f, 0]));
   events.sort((a, b) {

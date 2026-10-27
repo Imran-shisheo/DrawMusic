@@ -83,32 +83,38 @@ class _RootTabsState extends State<_RootTabs> {
         icon: const Icon(Icons.add),
         label: Text(context.strings.newDrawing),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index == 0
-            ? 0
-            : index == 3
-            ? 2
-            : 1,
-        onDestinationSelected: (destination) =>
-            widget.shell.goBranch(switch (destination) {
-              0 => 0,
-              1 => _libraryIndex,
-              _ => 3,
-            }),
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.grid_view_rounded),
-            label: context.strings.home,
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: NavigationBar(
+            selectedIndex: index == 0
+                ? 0
+                : index == 3
+                ? 2
+                : 1,
+            onDestinationSelected: (destination) =>
+                widget.shell.goBranch(switch (destination) {
+                  0 => 0,
+                  1 => _libraryIndex,
+                  _ => 3,
+                }),
+            destinations: [
+              NavigationDestination(
+                icon: Icon(Icons.grid_view_rounded),
+                label: context.strings.home,
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.folder_outlined),
+                label: context.strings.library,
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.tune),
+                label: context.strings.settings,
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.folder_outlined),
-            label: context.strings.library,
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.tune),
-            label: context.strings.settings,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -140,6 +146,11 @@ class _ScribbleSongAppState extends ConsumerState<ScribbleSongApp> {
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     theme: buildTheme(),
+    darkTheme: buildTheme(brightness: Brightness.dark),
+    themeMode:
+        ref.watch(settingsProvider.select((s) => s.preferences.darkTheme))
+        ? ThemeMode.dark
+        : ThemeMode.light,
     routerConfig: router,
     builder: (context, child) {
       final reduce =

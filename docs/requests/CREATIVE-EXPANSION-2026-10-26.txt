@@ -1,0 +1,439 @@
+Implement the remaining DrawMusic features identified below. This is an implementation task: inspect, plan, write code, test, fix failures, commit usable checkpoints, and open reviewable draft PRs. Do not stop after producing a plan.
+
+GOAL AND AUTHORIZED SCOPE
+
+Complete the missing Android creative functionality described in PRD.md and the documented reference Draw Music research, excluding advertisements.
+
+This task explicitly authorizes implementing the P1 creative features listed below, even where older roadmap text says they require a later task. Preserve existing functionality and complete work in dependency order.
+
+Deliver original implementations of the documented features. Do not copy competitor code, artwork, screenshots, recordings, branding, templates, or proprietary sound assets. The reference’s exact algorithm and some paid behavior remain unknown; use the PRD’s proposed rules and label new design decisions honestly.
+
+Keep all implemented creative tools, instruments, templates, keys and scales available free in this development build.
+
+Do not add ads, rewarded ads, ad SDKs, purchases, subscription gating, accounts, servers, content uploads or paid services. Premium billing and hosted cloud collaboration remain separate owner decisions. Track them explicitly as excluded/deferred; do not claim every PRD item is complete while these exclusions exist.
+
+Implement feasible iOS source work and platform boundaries, but iOS compilation, signing and physical validation belong on the owner’s Mac. Never claim Linux checks validate iOS.
+
+Do not merge PRs, force-push, publish to stores, operate the owner’s personal phone, or schedule future tasks.
+
+CONTEXT TO READ FIRST
+
+Read:
+- AGENTS.md and any applicable nested instructions
+- PRD.md, including all F01–F25 requirements and QA01–QA23
+- docs/ROADMAP.md
+- cloud/FIRST-TASK.md
+- docs/DEVELOPMENT-STATUS.md
+- docs/P0-COVERAGE.md
+- docs/IMPLEMENTATION-NOTES.md
+- docs/ASSET-PROVENANCE.md
+- docs/ANDROID-ACCEPTANCE.md
+- docs/LOCALIZATION.md
+- docs/DISPLAY-STYLES.md
+- Relevant research screen catalogs, measurements and source registers
+
+Research files are behavioral evidence, not shipping assets or implementation instructions.
+
+The audit baseline was main fd5074a, application 1.11.7+21. Accepted Android source d2e05f passed Actions run 40172814635. That historical evidence does not validate your new changes.
+
+Start from the latest appropriate repository state. Inspect current branches, changes and PRs before editing. Do not reset work or redo features that have already been completed since the audit.
+
+Use the pinned Flutter 3.47.2 toolchain and Dart from that SDK. In Linux x86_64, use the repository cloud setup and environment scripts. Obtain explicit approval for Android SDK terms if required; do not silently accept them.
+
+INITIAL PLAN AND TRACKING
+
+Create a durable implementation plan and requirement matrix in docs/.
+
+For every F01–F25 requirement and relevant QA scenario, record:
+- Requirement and priority
+- Implemented behavior
+- Missing behavior
+- Implementation and test locations
+- Validation evidence and source commit
+- Status: implemented, tested in cloud, physical testing pending,
+  owner decision required, blocked, or excluded by this task
+
+Separate implementation coverage from acceptance coverage.
+
+Use the following findings as an audit starting point, then verify them against current code:
+- Three synthesized instruments, two C pentatonic scales, two templates
+- No accompaniment
+- Four solid backgrounds and opacity only
+- No photo/camera/cropper/gradients/custom color
+- MIDI/WAV/MP4 implemented; PNG absent
+- English only
+- No iOS project/native adapters
+- Hard drawing/score limits without the proposed simplification
+- Unknown instrument/scale IDs reject decoding
+- History memory limit is estimated rather than demonstrated
+- Physical audio, sharing, storage, accessibility and performance remain open
+
+Preserve and extend working features rather than rebuilding the app.
+
+PHASE 1 — CLOSE P0 CONTRACT AND COMPATIBILITY GAPS
+
+1. Large drawings and score complexity
+- Implement deterministic, bounded geometry simplification consistent with
+  PRD tolerances, preserving dots, corners, vertical chords and meaningful
+  musical geometry.
+- Apply simplification before the hard point limit where appropriate.
+- Keep the operation recoverable and undoable; explain visible changes.
+- Retain explicit complexity errors if a scene remains unsafe.
+- Do not silently discard strokes, instruments or notes.
+- Preserve direction/speed invariance for normal geometry-driven playback.
+- Test dense curves, crossings, vertical strokes, erasure, save/reopen and
+  score equivalence within the declared tolerance.
+
+2. History and memory
+- Review retained geometry, undo/redo and cache ownership.
+- Implement a defensible bounded-memory policy rather than equating a point
+  count with a proven memory size.
+- Keep the current document intact when evicting old history.
+- Document accounting assumptions and measured results.
+- Do not claim a physical memory/FPS target from a Dart VM benchmark.
+
+3. Unknown and older content
+- Use stable instrument/scale IDs and explicit compatibility handling.
+- Unknown IDs must preserve original metadata and show a labeled safe
+  fallback instead of making the whole project unreadable.
+- Preserve original files when migration or recovery fails.
+- Provide useful recovery/export options for unrecoverable projects.
+- Test unknown IDs, corrupt revisions, missing assets and old documents.
+
+4. Versioning
+- Keep schema version and audio engine version separate.
+- Preserve the sound and geometry of existing version-1 projects.
+- New catalogs and accompaniment must not silently reinterpret older saves.
+- Add migrations and fixtures for actual previous formats.
+- Never fabricate compatibility coverage for formats that never existed.
+
+PHASE 2 — EXPAND INSTRUMENTS, KEYS AND SCALES
+
+1. Instruments
+Provide at least 13 distinct, original or explicitly licensed instruments
+covering these documented musical roles:
+- Soft keyboard
+- Marimba/mallet
+- Bells
+- Warm synth
+- Pluck
+- Flute
+- Strings
+- Chime
+- Bass
+- 8-bit
+- Electronic bass
+- Guitar
+- Saxophone
+
+Original names and original synthesis are acceptable. The instruments must
+have distinct audible characteristics; do not create cosmetic variants of
+one oscillator and claim equivalent timbres.
+
+Each instrument needs:
+- Stable ID and definition
+- Named, accessible selection
+- Distinct icon and coordinated color
+- Selection indicator that does not rely only on color
+- Documented synthesis/license provenance
+- Consistent preview, WAV and MP4 rendering
+- Appropriate documented MIDI mapping
+
+Preserve per-stroke assignments. Switching instruments during a gesture
+must safely finish the current stroke.
+
+2. Keys/scales
+Add all 12 chromatic root keys and these 11 scale families:
+- Major pentatonic
+- Minor pentatonic
+- Major
+- Minor
+- Harmonic minor
+- Dorian
+- Phrygian
+- Lydian
+- Mixolydian
+- Blues
+- Chromatic
+
+Persist root and scale independently using stable IDs.
+
+Selecting either must preserve geometry, update derived notes correctly,
+and use the existing safe transport boundary policy.
+
+Test intervals, transposition, pitch bounds, deterministic scoring,
+save/reopen, undo/redo and MIDI/WAV/MP4 agreement.
+
+PHASE 3 — ACCOMPANIMENT AND MIXING
+
+Implement F12 end to end:
+- Bass
+- Drum kit
+- Arpeggio
+- Kick
+- Snare
+- Clap
+- Hi-hat
+- Appropriate level/mute controls
+
+Use original patterns and sounds. Synchronize them to the same native audio
+clock as the drawing.
+
+Requirements:
+- No duplicated percussion when Drum kit and individual controls overlap
+- Safe beat/loop-boundary changes
+- Appropriate fade when disabling a layer
+- No playback while paused
+- No timing drift during tempo changes
+- Persist configuration and include it in undo/redo
+- Preview, MIDI, WAV and MP4 use the same immutable musical snapshot
+- Include exactly the selected audible layers in exports
+- Document MIDI percussion channels and instrument allocation
+
+Test sparse/empty drawings, rapid toggles, tempo changes, pause/resume,
+export snapshots, process recovery and extended playback.
+
+PHASE 4 — BACKGROUNDS, PHOTO, CAMERA AND CROPPING
+
+Extend F13 with:
+- Custom solid color
+- Linear gradients
+- Radial gradients
+- Original gradient presets
+- Photo selection
+- Camera capture
+- Cropping and supported rotate/transform controls
+- Background opacity
+
+Preserve the existing transactional Preview/Cancel/Apply behavior.
+
+Requirements:
+- Background edits never generate notes
+- Save original asset references plus crop/transform configuration
+- Copy committed assets to app-private storage
+- Handle cancel, permission denial, permanent denial and unavailable camera
+- Recover lost external-picker results/activity recreation where supported
+- Safely handle orientation metadata, HEIC, oversized and corrupt images
+- Show useful Replace/Remove options for missing assets
+- Duplicate/delete/recovery must preserve shared asset references correctly
+- Garbage collection must not remove another project’s assets
+- Use system pickers and avoid unnecessary broad permissions
+- Thumbnails, canvas, PNG and MP4 must render backgrounds consistently
+- Decode/render with bounded memory
+
+Add platform-independent model tests, repository/asset tests, widget tests
+and available Android integration coverage. Keep physical camera and iOS
+acceptance separately recorded.
+
+PHASE 5 — ORIGINAL TEMPLATE CATALOG AND UI COMPLETENESS
+
+Expand the catalog to at least 20 total distinct original editable templates
+as a delivery target for this task.
+
+Include varied musical/visual examples:
+- Melodies
+- Chords
+- Rhythmic patterns
+- Multi-instrument compositions
+- Accompaniment examples
+- Simple beginner drawings
+
+Do not trace reference screenshots or reproduce competitor artwork.
+
+Every template must create an independent project and have a useful title,
+thumbnail, provenance and accessible description.
+
+Improve the original home/editor presentation against the PRD:
+- Responsive two-column phone gallery where space permits
+- Rounded persistent navigation and prominent New action
+- Clear selected states and reachable controls
+- Original title/icon treatment
+- Consistent empty, loading, error and recovery states
+- Safe areas and compact portrait/landscape layouts
+- Meaningful active-note/intersection feedback during playback, respecting
+  reduced motion and avoiding full-project rebuilds
+
+Do not require exact visual copying of the competitor.
+
+PHASE 6 — PNG AND EXPORT COMPLETENESS
+
+Implement genuine F16 PNG export:
+- Document-coordinate rendering
+- Correct aspect ratio and chosen output dimensions
+- Background included by default
+- Transparent background option where applicable
+- No app controls or playback cursor
+- Progress/busy state, cancellation, errors and cleanup
+- Export-library discovery/preview/rename/delete/undo
+- Native Open/Save/Share integration
+- No project mutation
+
+Preserve and extend MIDI/WAV/MP4:
+- Include expanded instruments, keys, scales and accompaniment
+- Include new backgrounds in visual exports
+- Render from a single frozen document/score snapshot
+- Keep preview volume separate from export mix semantics
+- Independently parse/decode output files
+- Verify duration, note timing, layers, dimensions, codecs and A/V alignment
+- Confirm failed/canceled jobs never become successful library artifacts
+- Verify new aspect/background models do not break the existing encoder
+
+Profile a 60 FPS MP4 option against the documented source behavior. Implement
+it only with bounded memory and reliable encoding; retain a working 30 FPS
+option and explicitly report any unresolved 60 FPS feasibility gap.
+
+PHASE 7 — LOCALIZATION, SETTINGS AND ACCESSIBILITY
+
+Ship English plus:
+French, Spanish, Italian, Korean, Japanese, Vietnamese, Hindi, Portuguese,
+Thai, Tagalog and Indonesian.
+
+Localize user-facing Flutter/native strings, controls, tips, errors,
+permission guidance, export states and help. Do not translate user-authored
+titles or change standard file formats.
+
+Requirements:
+- Native language names
+- Correct selected state and Apply/Cancel
+- Persisted selection and safe fallback
+- Preserve route, scroll, editor and playback state appropriately
+- Locale-aware display numbers/dates
+- Long-string, non-Latin and RTL layout coverage
+- No missing resource keys or accidental English operational messages
+- Distinguish implemented translations from human-reviewed language quality
+
+Complete accessibility review of:
+- Labels, focus order and focus return
+- Non-color selection indicators
+- Touch targets and contrast
+- 200% text
+- Keyboard-visible dialogs
+- Reduced motion
+- Alternative score/event description
+- Drawing-independent template/playback access
+
+Implement the optional, dismissible rating flow only after successful user
+tasks, respecting the PRD cooldown and platform behavior. Do not claim a
+review was submitted.
+
+Add Share app or other external links only with verified destinations.
+Never invent a store listing, owner app catalog or privacy URL. Document
+missing owner configuration without adding broken production controls.
+
+PHASE 8 — IOS SOURCE IMPLEMENTATION
+
+Add and review iOS scaffolding without overwriting existing project work.
+
+Implement native ports for:
+- Audio scheduling/playback and audio-clock transport
+- Pause/resume/replay and live revision boundaries
+- Interruption, route-change and background handling
+- MP4 document rendering with H.264/AAC
+- File Open/Save and native sharing
+- Photo/camera requirements and configuration
+- Required permission descriptions and platform settings
+
+Keep Android and iOS behind explicit ports. Remove unconditional Android
+adapter selection from portable providers.
+
+Document the iOS audio-session/silent-switch policy. Include iPad sharing
+anchors and appropriate tablet layout behavior.
+
+In Linux, validate portable Dart and inspect native source/contracts.
+Record iOS compilation and runtime status as unverified until actually run
+on a Mac. Provide exact Mac commands, signing steps and test cases for the
+owner. Source code alone is not evidence of working iOS playback/export.
+
+PHASE 9 — SPECIFIED OFFLINE P2 IMPROVEMENTS
+
+After earlier phases are stable, implement the concretely specified offline
+P2 features:
+- Explicit opt-in expressive velocity mode
+- Stylus metadata/input behavior where supported
+- Dark theme with tested contrast
+- Responsive tablet workspace
+
+The default geometry-only mode must retain existing speed/direction
+invariance. Expressive mode must be explicit, persisted and versioned.
+
+Do not invent an unrelated DAW or unspecified “advanced composition”
+feature set. Record ambiguous P2 requirements as owner decisions.
+
+Cloud backup/collaboration, accounts and hosted services remain excluded
+from implementation under this task.
+
+ENGINEERING REQUIREMENTS THROUGHOUT
+
+- Keep domain models, scoring, history, migrations and serialization testable
+  without widgets/native plugins.
+- Keep active pointer preview and playback cursor off full-project state
+  updates.
+- The audio clock owns timing; widget timers must not trigger musical notes.
+- Preserve feature-first architecture and explicit engine/export ports.
+- Keep pubspec.lock committed.
+- Use current primary documentation when adding or changing dependencies.
+- Record licenses and asset provenance.
+- Avoid placeholders, silent audio, fake saves, fake export success,
+  decorative-only controls and inaccessible “coming soon” paid features.
+- Do not weaken tests, disable lint, replace native behavior with fake
+  adapters, or reuse old CI results as proof of new work.
+- Refactor large files only where necessary for safe implementation.
+
+You may delegate independent, clearly scoped work to subagents if available.
+Define file ownership and integrate/test their changes. Use an independent
+review pass for parity gaps and regressions before final handoff.
+
+VALIDATION AND DELIVERY
+
+For each usable checkpoint:
+1. Add meaningful positive, negative and regression tests.
+2. Run relevant focused checks.
+3. Run bash scripts/check-android.sh and required runtime/export checks.
+4. Fix failures and review the final diff.
+5. Update docs/DEVELOPMENT-STATUS.md, the requirement matrix, asset
+   provenance and relevant architecture/migration documentation.
+6. Commit to a codex/ development branch and open/update a draft PR.
+7. Provide an installable debug APK through CI with exact source/run links.
+
+Extend the existing real Android integration flow to cover new catalogs,
+accompaniment, background assets, PNG, translations, persistence and export
+agreement. Retain recovery, cancellation, offline and long-running audio
+coverage.
+
+Use simulators/emulators available in cloud. Never operate the owner’s
+personal phone from cloud.
+
+Physical audio latency/timbre/routes, real receiving-app sharing, camera
+behavior, TalkBack, release-build FPS/memory, real low-storage/power-loss
+and iOS compilation/device behavior remain pending until actually tested.
+
+Continue through authorized phases during this active task. A blocker in
+one platform or external configuration should not stop independent work.
+Do not create scheduled continuations.
+
+If execution limits prevent completion, commit a usable checkpoint and
+leave a precise continuation record: completed requirements, remaining
+requirements, current failures, exact next commands and required decisions.
+Do not label the overall goal complete.
+
+FINAL HANDOFF
+
+Provide:
+- Completed features mapped to PRD IDs
+- Remaining implementation gaps, exclusions and owner decisions
+- Separate cloud, physical Android and iOS validation statuses
+- Exact test/build results and source commits
+- Draft PR links and downloadable APK artifacts
+- Migration/compatibility notes
+- Mac/iOS setup and validation instructions
+- Updated physical-device acceptance checklist
+
+The final verdict must distinguish:
+1. Feature implemented
+2. Automated checks passed
+3. Emulator/native runtime verified
+4. Physical-device verified
+5. Owner decision or external setup still required
+
+Start by verifying current repository state, creating the implementation
+plan/matrix, and implementing the first unresolved P0 gap.

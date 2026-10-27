@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -6,10 +7,11 @@ import 'package:crypto/crypto.dart';
 
 import '../../../creative_document/document.dart';
 import '../domain/project_repository.dart';
+import '../domain/recovery_export_port.dart';
 
 // Immutable checksummed revisions and atomic publication. Previous complete
 // revisions remain available when the newest file is corrupt or a write fails.
-class FileProjectRepository implements ProjectRepository {
+class FileProjectRepository implements ProjectRepository, RecoveryExportPort {
   FileProjectRepository(this.root);
   final Directory root;
   Future<void> _queue = Future.value();
@@ -155,17 +157,133 @@ class FileProjectRepository implements ProjectRepository {
         name = name.substring(0, name.length - 1);
       }
     }
-    final copy = ProjectDocument(
+    final now = DateTime.now().toUtc();
+    final copy = document.copyWith(
       id: newId(),
       title: '$name copy',
-      strokes: document.strokes,
-      tempo: document.tempo,
-      scale: document.scale,
-      background: document.background,
-      style: document.style,
+      revision: 0,
+      createdAt: now,
+      updatedAt: now,
     );
     await _save(copy);
     return copy;
+  });
+
+  /// A lossless, bounded raw-byte envelope, never a pretend decoded project.
+  @override
+  Future<String> exportRecoveryData(String id) => _serialize(() async {
+    _validate(id);
+    final directory = Directory('${root.path}/$id');
+    if (await FileSystemEntity.type(directory.path, followLinks: false) !=
+        FileSystemEntityType.directory) {
+      throw const FileSystemException('Recovery project is unavailable');
+    }
+    final ownedRoot = await root.resolveSymbolicLinks();
+    final ownedProject = await directory.resolveSymbolicLinks();
+    if (ownedProject != '$ownedRoot/$id') {
+      throw const FileSystemException('Invalid recovery project location');
+    }
+    const byteLimit = 64 * 1024 * 1024;
+    const fileLimit = 200;
+    final revisions = <(File, FileStat, String)>[];
+    var totalBytes = 0;
+    final allowed = RegExp(
+      r'^(r[0-9]{12}\.json(\.tmp|\.preserved-[0-9]+)?|deleted\.json(\.tmp)?)$',
+    );
+    await for (final entity in directory.list(followLinks: false)) {
+      final name = entity.uri.pathSegments.last;
+      if (entity is! File || !allowed.hasMatch(name)) {
+        throw const FileSystemException(
+          'Unsupported recovery entry; original files retained',
+        );
+      }
+      final stat = await entity.stat();
+      if (stat.type != FileSystemEntityType.file ||
+          stat.size < 0 ||
+          await entity.resolveSymbolicLinks() != '$ownedProject/$name') {
+        throw const FileSystemException('Invalid recovery file location');
+      }
+      totalBytes += stat.size;
+      if (revisions.length >= fileLimit || totalBytes > byteLimit) {
+        throw const FileSystemException(
+          'Recovery export exceeds 200 files or 64 MiB',
+        );
+      }
+      revisions.add((entity, stat, name));
+    }
+    if (revisions.isEmpty) throw const FileSystemException('No recovery files');
+    revisions.sort((a, b) => a.$3.compareTo(b.$3));
+    final destination = Directory('${root.parent.path}/recovery-exports');
+    final destinationType = await FileSystemEntity.type(
+      destination.path,
+      followLinks: false,
+    );
+    if (destinationType != FileSystemEntityType.notFound &&
+        destinationType != FileSystemEntityType.directory) {
+      throw const FileSystemException('Invalid recovery export destination');
+    }
+    await destination.create(recursive: true);
+    final ownedParent = await root.parent.resolveSymbolicLinks();
+    if (await destination.resolveSymbolicLinks() !=
+        '$ownedParent/recovery-exports') {
+      throw const FileSystemException('Invalid recovery export destination');
+    }
+    final output = File(
+      '${destination.path}/${id}_${newId()}.drawmusic-recovery.json',
+    );
+    final temporary = File('${output.path}.tmp');
+    IOSink? sink;
+    var completed = false;
+    try {
+      sink = temporary.openWrite();
+      // Install the asynchronous I/O error handler before the first write.
+      final closed = sink.done;
+      unawaited(closed.catchError((Object _) {}));
+      sink.write(
+        '{"format":"drawmusic-raw-recovery","bundleVersion":1,"projectId":${jsonEncode(id)},"totalBytes":$totalBytes,"files":[',
+      );
+      await sink.flush();
+      var first = true;
+      for (final (file, original, name) in revisions) {
+        final digest = await sha256.bind(file.openRead(0, original.size)).first;
+        if (!first) sink.write(',');
+        first = false;
+        sink.write(
+          '{"name":${jsonEncode(name)},"bytes":${original.size},"sha256":${jsonEncode(digest.toString())},"contentBase64":"',
+        );
+        await sink.flush();
+        await for (final chunk in base64.encoder.bind(
+          file.openRead(0, original.size),
+        )) {
+          sink.write(chunk);
+          // Backpressure bounds pending output, including a maximum-size file.
+          await sink.flush();
+        }
+        sink.write('"}');
+        final after = await file.stat();
+        if (after.size != original.size ||
+            after.modified != original.modified ||
+            await FileSystemEntity.type(file.path, followLinks: false) !=
+                FileSystemEntityType.file) {
+          throw const FileSystemException('Recovery files changed; retry');
+        }
+      }
+      sink.write(']}');
+      await sink.flush();
+      await sink.close();
+      sink = null;
+      await temporary.rename(output.path);
+      completed = true;
+      return output.path;
+    } finally {
+      try {
+        await sink?.close();
+      } catch (_) {
+        /* Preserve the original I/O failure. */
+      }
+      if (await temporary.exists()) await temporary.delete();
+      if (!completed && await output.exists()) await output.delete();
+    }
   });
 
   @override

@@ -35,12 +35,16 @@ class AndroidVideoExportAdapter implements VideoExportPort {
     ProjectDocument document,
     ExportCancellation cancellation, {
     int width = 1080,
+    int fps = 30,
     void Function(double)? onProgress,
   }) async {
     if (!Platform.isAndroid) {
       throw UnsupportedError('Video export currently requires Android');
     }
     cancellation.check();
+    if (!const [30, 60].contains(fps) || !const [640, 1080].contains(width)) {
+      throw ArgumentError('Unsupported video dimensions or frame rate');
+    }
     _register();
     final pcm = await compute(
       (ProjectDocument doc) => renderPcm(compileScore(doc)),
@@ -71,6 +75,7 @@ class AndroidVideoExportAdapter implements VideoExportPort {
           'document': document.encode(),
           'pcm': pcm.buffer.asUint8List(pcm.offsetInBytes, pcm.lengthInBytes),
           'width': width,
+          'fps': fps,
           'path': temporary.path,
         },
       );
@@ -82,8 +87,10 @@ class AndroidVideoExportAdapter implements VideoExportPort {
       }
       final encodedWidth = (metadata['width'] as num).toInt();
       final encodedHeight = (metadata['height'] as num).toInt();
+      final encodedFps = (metadata['fps'] as num?)?.toInt();
       final encodedDuration = (metadata['durationSeconds'] as num).toDouble();
-      if (encodedWidth != width ||
+      if (encodedFps != fps ||
+          encodedWidth != width ||
           encodedHeight != width * 5 ~/ 4 ||
           !encodedDuration.isFinite ||
           encodedDuration <= 0) {
@@ -101,6 +108,7 @@ class AndroidVideoExportAdapter implements VideoExportPort {
         width: encodedWidth,
         height: encodedHeight,
         durationSeconds: encodedDuration,
+        framesPerSecond: encodedFps,
       );
     } on PlatformException catch (error) {
       if (error.code == 'export_cancelled') {

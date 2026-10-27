@@ -1,8 +1,14 @@
 # Development status
 
-Updated: 25 October 2026. Latest accepted application: **1.11.7+21**, source `d2e05fdedb4c8264ee9096e65d18fcc97797eeea`, Actions [40172814635](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40172814635). PRs #17–#20 deliver operational resources, Android recovery/soak checks, compact layouts and explicit unavailable sharing. Their GitHub pages record merge state. Later sections preserve checkpoint history; earlier pending statements are superseded by this acceptance record.
+Updated: **26 October 2026 — creative expansion 2.0.0+22**, branch `codex/creative-expansion`. The owner's uploaded scope supersedes older P1 deferrals and merging permission. All creative features remain free; leave this task's PR unmerged. Historical checkpoints below remain evidence only for their own source.
 
-Current gate: formatter/analyzer/Android lint, **82 Flutter / 20 JVM / eight real Android native tests**, full offline creation/save/reopen/export flow and independent MIDI/MP4 inspection pass. The native suite includes a **600-second streaming soak**, and the host-driven **Android force-stop/fresh-process recovery/playback/retry** check passed. All **12 Linux interruption/recovery/retry attempts** also passed. A real debug APK was built; its v2 signature passed locally. Physical Android audibility/routes/sharing/storage/accessibility/drawing performance and iOS audio/video/file adapters plus Mac/device validation remain open. P0 device completion is not claimed.
+**Accepted Android application source:** `c721ce6d508ebde63b318859e3931342600f79f6`, [Actions 40329847034](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40329847034). Formatter/analyzer, **170 Flutter / 20 JVM / 17 native Android tests**, Android lint, debug APK and local v2 signature, all 12 Linux interrupted-save recovery/retry checks, complete offline original/expanded creation and exports, independent MIDI/PNG/30+60 FPS MP4 inspection, the 600-second native playback soak and real Android force-stop/fresh-process recovery/explicit playback/exact save retry pass. [Download 2.0.0+22 debug APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40329847034/artifacts/12654848499) · [Runtime reports and exports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40329847034/artifacts/12657186456), retained until 2 November 2026. Later documentation-only commits do not change this accepted application/test/check-script tree. See [full requirement matrix](CREATIVE-REQUIREMENT-MATRIX.md).
+
+**Implemented:** deterministic bounded simplification with exact score/Undo checks; shared-object history byte accounting; stable unknown-ID fallback and raw metadata/byte preservation; separate schema/sound versions and actual v1 fixtures; 13 original instruments, 12 keys/11 scales; original bass/arp/drum mixing and isolated MIDI channels; custom/linear/radial/photo/camera/crop/rotate/mirror backgrounds; 20 original templates, responsive gallery/navigation and playhead intersection feedback; true PNG/library/Open/Save/Share; 30/60FPS video options; twelve languages/330 keys, native labels and accessible compact controls; optional review threshold/cooldown; explicit expressive mode/stylus metadata/dark/tablet workspace; iOS source ports and scaffolding.
+
+**Open acceptance/limits:** physical Android audio latency/timbre/routes, sharing recipients, camera/grants/HEIC/activity death, TalkBack and release FPS/memory, real disk-full/power loss; human linguistic review; iOS compilation/signing/XCTest/AVFoundation/device validation. Images are retained conservatively, so destructive orphan GC/storage cleanup is not claimed. Native review UI is platform/quota controlled, with no submission claim. Original store branding/listing/external destinations need owner configuration; broken links are not added. Ads/rewards, purchases/subscriptions, accounts, uploads, paid services, hosted backup/collaboration and unspecified advanced composition are excluded or owner decisions.
+
+## Historical MVP checkpoint ledger
 
 | Gate | Current evidence |
 |---|---|
@@ -304,3 +310,69 @@ PR #18 merged as 6f3800d. PR #20 includes the compact-layout implementation from
 ### Test-runner compatibility resolution
 
 The subsequent CI-only experiment in runs 40174852183/40175089074 is not accepted evidence. Run 40174852183 completed all eight native tests and executed the UI scenario, but failed test loading because `--no-dds` makes the pinned Flutter integration runner request an unsupported VM service stream (`integration_test.VmServiceProxyGoldenFileComparator`). The experiment is reverted in full, restoring the exact application, native configuration, check scripts and recovery probe of the fully accepted d2e05f source. No assertion, gate or test is removed. The final documentation uses that accepted source and its artifacts; a new normal full-gate run will also run on this documentation checkpoint. PR #19's layout changes are included in PR #20, avoiding a separate merge of an earlier failing harness checkpoint.
+
+## Creative expansion engineering and continuation
+
+Source and behavior: CREATIVE-IMPLEMENTATION-PLAN.md; all F01–F25/QA01–QA23 rows in CREATIVE-REQUIREMENT-MATRIX.md. Detailed scope: DOCUMENT-COMPATIBILITY.md, MUSIC-CATALOG.md, MIDI-CATALOG-PARITY.md, GEOMETRY-MEMORY.md, EXPRESSIVE-INPUT.md, BACKGROUNDS.md, PNG-EXPORT.md, VIDEO-FRAME-RATE.md, TRANSLATIONS.md, RATING-FLOW.md, RAW-RECOVERY-EXPORT.md, IOS-IMPLEMENTATION.md. ASSET-PROVENANCE.md records all original synthesis/patterns/templates/gradients/platform glyphs and dependency licensing.
+
+The full-suite first integration run found the old opacity test could no longer reach the expanded panel's slider; opacity was moved ahead of advanced controls, and tests retain transactional Cancel/Apply/Undo/Redo/reopen/no-audio-requeue assertions against the new paper model. A native test compilation error needed an explicit Kotlin Set type. Concurrent source integration briefly referenced recovery strings before generation; all twelve resources were generated before the final gate. Creative UI test semantics cleanup was corrected with try/finally. No failed or unrun check is counted as passing.
+
+Independent review found and fixed MIDI arpeggio note-offs cutting held drawing notes (separate melodic channels14/15, percussion9), raw recovery options missing for undecodable projects, per-frame iOS photo loading/integrity gaps, rating modal/saving guards, and compaction Undo retention. New regression checks exercise those contracts. The current 169-test full run passes. The measured Linux VM history diagnostic retains one 100k-point exclusive previous scene at 14,529,854 accounted bytes under the 20MiB additional-history budget; observed whole-process RSS194.8–329.5MiB/peak372.5MiB includes VM/temp/GC and is not a physical heap/FPS target.
+
+All implementation runs in the selected cloud with the pinned SDK and refreshed proxy/CA, TLS enabled and unchanged HOME. A local /dev/kvm is absent; real Android execution uses the isolated existing hosted workflow. Runtime/job deadlines are increased to40/60minutes to accommodate17native cases, the600second soak, genuine60FPS encoding and expanded offline UI/export inspection; no test/assertion/lint gate is disabled. No force push, PR merge, store publish, personal-phone operation or scheduled task is authorized in this scope.
+
+If interrupted, source these environments and run:
+
+```bash
+source /workspace/drawmusic-tools/env.sh
+source cloud/env.sh
+export DASH__SUPPRESS_ANALYTICS=true
+bash scripts/check-android.sh
+(cd android && ./gradlew :app:assembleDebugAndroidTest --console=plain)
+```
+
+Then review the draft PR's new Actions run, exact17native results and independent exported-file reports. Fix any new failure and push normally, preserving all gates. Run Mac commands from IOS-IMPLEMENTATION.md only on the owner's Mac; do not convert source-only iOS status to accepted. Retained photo storage needs a deliberately reviewed reachability/deletion policy before enabling destructive collection.
+
+Final review also made all twenty template geometries distinct independently of their assigned voices, with a geometry-only uniqueness regression. Native lint found and corrected suspicious Kotlin indentation; photo recovery no longer consumes ready metadata before Dart acknowledgement. The worker verifies synchronous metadata publication, and AndroidX ExifInterface1.4.2 replaces the platform parser. Focused photo/model/panel checks and native source/instrumentation compilation/lint pass after those corrections; the final complete gate is being rerun on this source.
+
+Final local gate passed on the checkpointed application tree: formatter/analyzer,169Flutter/20JVM,lintzeroerrors,APKbuild/v2signature,17-testinstrumentationAPKcompilation and12Linuxinterruption/recovery/retry attempts. RealAndroid17-testexecution,offlineexpandedUI/nativefileinspection/60FPSprofile/600-secondsoak/force-stop remain pending the new hosted run. No physical or iOS native acceptance is claimed.
+
+Local accepted application source `5e0051217f3a775458c4efc081b7d361eb70c947` passed all product checks above; Android lint0errors/11nonblockingwarnings (resource/KTX/lifecyclelint suggestions, not ignored errors). The next checkpoint only records this source/evidence. Reviewable work remains unmerged; hosted17-native/offlineUI/export/60FPS/soak/force-stop acceptance is pending.
+
+The expanded native UI harness snapshots existing artifacts before each export. Final source review found that the first fresh-install export directory can legitimately be absent; the harness now treats that as an empty set before the real export, retaining the assertion that exactly one new file is published. Product code is unchanged by this harness correction.
+
+### First expanded hosted runtime failure — diagnosis pending
+
+Actions 40316035590 at source 2cca4dafb8e5023684e8b40ccdab8abb037336b0 passed the product gate and uploaded APK artifact12647950832. The real Android runtime step failed at12:10:44UTC on26October; subsequent encoded-file inspection remained active, and GitHub returned BlobNotFound for the unfinished job log. This is not a native17-test acceptance or a successful full gate. Exact cause awaits the completed log. This status-only checkpoint preserves all test/lint/runtime assertions and uses the normal workflow concurrency setting; new-source checks remain mandatory. No physical or iOS result is inferred.
+
+
+### Expanded runtime diagnosis and gallery regression
+
+Run40316035590 actually passed all17native cases, with no skips/failures. The600second soak recorded600162ms and2396samples. The640×800/60FPS codec profile passed with317real encoded samples,16666–16667µs steps,19.272s elapsed and65292KiB peak-sampled whole-process PSS. These are emulator observations, not physical performance. The original offline creation/save/reopen/four-format export flow also completed before the expanded gallery step.
+
+The overall UI test then failed at creation_loop_test.dart292: its Three streams tap was still at y2002 in a731dp viewport because the scroll's layout had not been pumped. The harness now explicitly aligns/reveals controls, waits for layout and asserts hit-testability; a new real411×731 gallery-navigation regression passes. No warning or assertion is suppressed. Shipping app code is unchanged. The full local suite is rerun with170tests and the new hosted source must finish the entire expanded UI/inspection/recovery gate before acceptance.
+
+The post-failure inspector stage stalled fetching FFmpeg packages from Ubuntu's Azure mirror. Inspector preparation now runs before emulator startup, uses Ubuntu's official HTTPS archive with existing signature/keyring validation, bounds package operations and keeps all file-validation commands. No lint/native/output gate is disabled. The previous failed run was superseded through the standard concurrency setting to retrieve its log; it is not reported as a successful full gate.
+
+The corrected gallery harness and new phone-navigation regression now pass the full170-test Flutter suite; formatter/analyzer are clean. Preparation installs Python3.12 before pinned NumPy/Mido so inspector wheels and interpreter agree. The new inspector script's shell syntax and workflow YAML parse pass. All17 native tests/60FPS/soak passed on the preceding shipping-code-equivalent source, but the entire expanded UI/independent-inspection/recovery run still must complete on the corrected harness before full cloud acceptance.
+
+
+### Expanded media inspection passed; language harness corrected
+
+Run [40324186739](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40324186739), at `e194f7963004e1f7bb36d69d421737e36b04738c`, passed the full product gate (170 Flutter/20 JVM tests, analyzer, lint, debug APK and Linux recovery checks), all 17 Android native tests, the ten-minute soak and compact 60 FPS profile. Independent inspection passed for both original and expanded UI WAV/MIDI/PNG/MP4 outputs, including root, scale, accompaniment channels and gradient agreement. Runtime evidence is artifact12653746483; the normal app APK is artifact12651232120.
+
+The combined UI test failed only at its final language preference assertion: it tapped Japanese and immediately tapped Apply without pumping the selection rebuild, so Apply still saved English. The existing fourteen locale/resource widget cases already wait for this rebuild and pass. The native integration harness now also pumps the selection, asserts that the Japanese tile is selected, then applies it. All fourteen cases and analysis pass locally. No product code or acceptance assertion is removed; full current-source cloud acceptance and the downstream Android force-stop/recovery probe remain pending.
+
+## Final creative cloud acceptance
+
+Actions [40329847034](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40329847034) accepted application/test/check-script source `c721ce6d508ebde63b318859e3931342600f79f6`. All 17 actual Android tests passed, including real 60 FPS timestamps/codecs, PNG/native public copying, EXIF/import integrity, thirteen-color/gradient/photo raster cases and the 600-second streaming test. The actual offline UI creates, plays, saves/reopens and exports both the original and expanded root/scale/accompaniment/gradient project; independent parsers verify its MIDI part lifetimes/layers and PNG/video visual agreement. The direct-APK recovery probe verifies a different process, complete revision, preserved baseline, no automatic playback and exact explicit retry. This is new-source evidence; older baseline results are not reused.
+
+[Debug APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40329847034/artifacts/12654848499) · [Complete runtime evidence](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40329847034/artifacts/12657186456). Exact 60 FPS elapsed/PSS and file timing values are in the uploaded reports; emulator observations do not establish physical hardware performance. iOS source and its three portable IPC checks remain separate from unrun Swift/XCTest/native integration. Human translations, actual receiving apps/camera/TalkBack/routes/storage and safe asset-retention follow-up remain as listed. PR #21 stays draft/unmerged. No store publish, paid service, personal-phone operation, force push or scheduled continuation was performed.
+
+### Exact observed expanded runtime results
+
+Accepted run 40329847034: all 17 native tests completed with zero skips/failures; the actual original/expanded Flutter UI test passed. The AudioTrack soak ran 600,251 ms, with 2,398 status samples and 150 loops, without a sampled progress stall. Compact 640×800/60 FPS encoded 317 samples with 16,666–16,667 µs steps, 5,283,333 µs video and 5,270,929 µs audio duration (12.404 ms difference), 16.796 s export elapsed and 66,110 KiB peak-sampled process PSS. Native renderer bitmap/pixel-array accounting is 4,096,000 bytes. These are isolated emulator codec/clock observations, not physical-device performance or a Flutter UI memory guarantee. HD 60 FPS remains unprofiled.
+
+Independent FFmpeg correlation measured 0.0 ms audio offset for the HD 30 fixture, compact 30 original UI, compact 60 fixture and compact 30 expanded UI outputs. The expanded MIDI contains 42 drawing notes, 4 bass notes, 16 arpeggio notes and 26 percussion notes, balanced through 3,840 ticks; parsed F♯/Lydian and accompaniment channel/velocity assertions passed. PNG 1080×1350 and actual MP4 gradient corner pixels agreed within the codec tolerance.
+
+The standalone diagnostic APK force-stopped PID 6134 and verified fresh PID 6315, recovered complete revision 0, unchanged baseline bytes, no automatic playback, successful explicit playback and exact revision 3 save/reopen retry. The probe does not guarantee a temporary write was interrupted; Linux's 12 staged interruption cases supply separate partial-write coverage. All native/runtime/inspection/upload steps and the complete job concluded success. Normal product APK artifact 12654848499 was uploaded before either diagnostic APK was built.

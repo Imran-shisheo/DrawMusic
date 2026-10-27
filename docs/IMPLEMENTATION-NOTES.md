@@ -1,6 +1,6 @@
 # Android checkpoint implementation notes
 
-This is an incremental PR, not a completed P0 release. Requirements remain in PRD.md.
+The current 2.0.0+22 creative expansion is described in CREATIVE-REQUIREMENT-MATRIX.md and its linked compatibility/music/background/export/iOS contracts. The v1 notes below are preserved as a historical baseline. New catalogs, root/family, accompaniment, gradients/photos/crop, PNG, twelve locales and explicit offline P2 now exist in source; acceptance must come from new checks. This is an incremental draft PR, not a completed physical P0 release. Requirements remain in PRD.md.
 
 ## Current contracts
 

@@ -39,7 +39,7 @@ void main() {
     await store.save(
       const UserPreferences(
         previewVolume: .35,
-        languageCode: 'ja',
+        languageCode: 'zz',
         editorTipsCompleted: true,
       ),
     );
@@ -53,7 +53,7 @@ void main() {
   testWidgets(
     'unsupported device locale uses English; language cancel/apply retain tabs and drawing',
     (tester) async {
-      tester.platformDispatcher.localesTestValue = const [Locale('ja')];
+      tester.platformDispatcher.localesTestValue = const [Locale('zz')];
       addTearDown(tester.platformDispatcher.clearLocalesTestValue);
       final preferences = ObservedPreferences(), repo = MemoryRepository();
       final drawing = ProjectDocument(
@@ -93,6 +93,13 @@ void main() {
       await tester.tap(find.text('Language'));
       await tester.pumpAndSettle();
       expect(find.text('Choose language'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('language-ja')),
+        200,
+      );
+      await tester.tap(find.byKey(const ValueKey('language-ja')));
+      await tester.pumpAndSettle();
+      expect(preferences.writes, 0);
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(preferences.writes, 0);
@@ -154,6 +161,10 @@ void main() {
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
       expect(find.text('Choose language'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.textContaining('Could not save preferences'),
+        300,
+      );
       expect(find.textContaining('Could not save preferences'), findsOneWidget);
       preferences.fail = false;
       await tester.tap(find.text('Apply'));

@@ -28,13 +28,15 @@ internal class VideoExportChannel(private val context: Context, messenger: Binar
                         require(document.length<=20_000_000)
                         val pcm=call.argument<ByteArray>("pcm")!!
                         val width=call.argument<Int>("width")!!
+                        val fps=call.argument<Int>("fps") ?: 30
+                        require(fps == 30 || fps == 60)
                         val output=File(call.argument<String>("path")!!).canonicalFile
                         require(output.path.startsWith(File(context.applicationInfo.dataDir).canonicalPath + File.separator))
                         val cancel=AtomicBoolean(false)
                         check(jobs.putIfAbsent(id,cancel)==null) { "Export already exists" }
                         executor.execute {
                             try {
-                                val metadata=CanvasVideoEncoder().export(document,pcm,width,output,cancel) { progress ->
+                                val metadata=CanvasVideoEncoder(File(context.filesDir,"backgrounds")).export(document,pcm,width,output,cancel,fps) { progress ->
                                     main.post { channel.invokeMethod("progress",mapOf("jobId" to id,"progress" to progress)) }
                                 }
                                 main.post { result.success(metadata) }

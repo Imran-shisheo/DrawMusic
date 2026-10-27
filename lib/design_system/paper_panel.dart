@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import '../creative_document/document.dart';
 
+export '../features/backgrounds/presentation/background_panel.dart';
+
 Future<int?> showPaperPanel(BuildContext context, int background) {
   var rgb = background & 0xffffff;
   var opacity = (background >>> 24) / 255;

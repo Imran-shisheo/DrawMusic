@@ -1,28 +1,50 @@
 import 'package:scribblesong/l10n/strings.dart';
 
 import 'dart:math' as math;
+import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../creative_document/document.dart';
 import '../domain/history.dart';
+import 'playback_intersections.dart';
+import '../../backgrounds/presentation/background_surface.dart';
+import '../domain/simplification.dart';
 
-const instrumentColors = [
-  Color(0xff7961c6),
-  Color(0xffa46b16),
-  Color(0xff287e61),
+final instrumentColors = [
+  for (final i in Instrument.values) Color(i.definition.color),
 ];
 String instrumentName(BuildContext context, Instrument instrument) =>
     switch (instrument) {
       Instrument.keys => context.strings.cloudKeys,
       Instrument.mallet => context.strings.woodDrops,
       Instrument.bell => context.strings.glassStars,
+      Instrument.warmSynth => context.strings.warmSynth,
+      Instrument.pluck => context.strings.pluck,
+      Instrument.flute => context.strings.flute,
+      Instrument.strings => context.strings.strings,
+      Instrument.chime => context.strings.chime,
+      Instrument.bass => context.strings.bass,
+      Instrument.chip => context.strings.chip,
+      Instrument.electronicBass => context.strings.electronicBass,
+      Instrument.guitar => context.strings.guitar,
+      Instrument.saxophone => context.strings.saxophone,
     };
 const instrumentIcons = [
   Icons.piano,
   Icons.water_drop_outlined,
   Icons.auto_awesome,
+  Icons.waves,
+  Icons.spa_outlined,
+  Icons.air,
+  Icons.straighten,
+  Icons.notifications_none,
+  Icons.graphic_eq,
+  Icons.memory,
+  Icons.bolt,
+  Icons.music_note,
+  Icons.surround_sound,
 ];
 
 class DrawingPainter extends CustomPainter {
@@ -169,6 +191,7 @@ class DrawingCanvas extends StatefulWidget {
     required this.cursor,
     required this.onCommit,
     required this.onLimit,
+    this.onSimplified,
   });
   final ProjectDocument document;
   final Instrument instrument;
@@ -176,11 +199,13 @@ class DrawingCanvas extends StatefulWidget {
   final ValueNotifier<double?> cursor;
   final ValueChanged<List<Stroke>> onCommit;
   final VoidCallback onLimit;
+  final void Function(int before, int after)? onSimplified;
   @override
   State<DrawingCanvas> createState() => DrawingCanvasState();
 }
 
 class DrawingCanvasState extends State<DrawingCanvas> {
+  bool get hasActiveGesture => _pointer != null;
   int? _pointer;
   final _clock = Stopwatch();
   final _preview = ValueNotifier(0);
@@ -237,6 +262,16 @@ class DrawingCanvasState extends State<DrawingCanvas> {
         ..._baseStrokes,
         Stroke(id: newId(), instrument: widget.instrument, points: _active),
       ];
+      if (_basePointCount >= simplificationPointThreshold) {
+        final result = simplifyGeometry(
+          widget.document.copyWith(strokes: _baseStrokes),
+        );
+        if (result.changed) {
+          _baseStrokes = result.strokes;
+          _basePointCount = result.after;
+          widget.onSimplified?.call(result.before, result.after);
+        }
+      }
       widget.onCommit(_baseStrokes);
     }
     _active = [];
@@ -245,11 +280,33 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     _preview.value++;
   }
 
-  void _sample(Offset point, Size size) {
-    final p = InkPoint(
+  void _sample(Offset point, Size size, {PointerEvent? input}) {
+    final kind = switch (input?.kind) {
+      PointerDeviceKind.stylus => InputKind.stylus,
+      PointerDeviceKind.invertedStylus => InputKind.invertedStylus,
+      PointerDeviceKind.mouse => InputKind.mouse,
+      PointerDeviceKind.touch || null => InputKind.touch,
+      _ => InputKind.unknown,
+    };
+    final stylus = kind == InputKind.stylus || kind == InputKind.invertedStylus;
+    double? pressure, tilt;
+    if (stylus && input != null) {
+      final range = input.pressureMax - input.pressureMin;
+      if (range.isFinite && range > 0 && input.pressure.isFinite) {
+        pressure = ((input.pressure - input.pressureMin) / range).clamp(
+          0.0,
+          1.0,
+        );
+      }
+      if (input.tilt.isFinite) tilt = input.tilt.clamp(0.0, math.pi / 2);
+    }
+    final p = InkPoint.input(
       point.dx / size.width,
       point.dy / size.height,
-      _clock.elapsedMilliseconds,
+      ms: _clock.elapsedMilliseconds,
+      pressure: pressure,
+      tilt: tilt,
+      kind: kind,
     );
     if (widget.eraser) {
       final last = _lastErase ?? p;
@@ -274,7 +331,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     } else {
       if (_basePointCount + _active.length >= 100000) {
         finish();
-        widget.onLimit();
+        if (_basePointCount >= 100000) widget.onLimit();
         return;
       }
       _active.add(p);
@@ -296,11 +353,24 @@ class DrawingCanvasState extends State<DrawingCanvas> {
           behavior: HitTestBehavior.opaque,
           onPointerDown: (event) {
             if (_pointer != null) return;
+            if (!widget.eraser &&
+                _basePointCount >= simplificationPointThreshold) {
+              final result = simplifyGeometry(
+                widget.document.copyWith(strokes: _baseStrokes),
+              );
+              if (result.changed) {
+                _baseStrokes = result.strokes;
+                _basePointCount = result.after;
+                widget.onCommit(_baseStrokes);
+                widget.onSimplified?.call(result.before, result.after);
+                _preview.value++;
+              }
+            }
             _pointer = event.pointer;
             _clock
               ..reset()
               ..start();
-            _sample(event.localPosition, size);
+            _sample(event.localPosition, size, input: event);
           },
           onPointerMove: (event) {
             if (event.pointer != _pointer) return;
@@ -308,7 +378,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
               finish();
               return;
             }
-            _sample(event.localPosition, size);
+            _sample(event.localPosition, size, input: event);
           },
           onPointerUp: (event) {
             if (event.pointer == _pointer) finish();
@@ -321,9 +391,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                ColoredBox(
-                  color: Color(opaquePaperColor(widget.document.background)),
-                ),
+                BackgroundSurface(paper: widget.document.effectiveBackground),
                 RepaintBoundary(
                   child: ListenableBuilder(
                     listenable: _preview,
@@ -363,6 +431,14 @@ class DrawingCanvasState extends State<DrawingCanvas> {
                     child: CustomPaint(painter: CursorPainter(widget.cursor)),
                   ),
                 ),
+                IgnorePointer(
+                  child: RepaintBoundary(
+                    child: PlaybackIntersections(
+                      document: widget.document,
+                      cursor: widget.cursor,
+                    ),
+                  ),
+                ),
                 if (widget.eraser)
                   IgnorePointer(
                     child: RepaintBoundary(
@@ -382,3 +458,17 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     },
   );
 }
+
+String scaleName(BuildContext context, MusicalScale scale) => switch (scale) {
+  MusicalScale.major => context.strings.majorPentatonic,
+  MusicalScale.minor => context.strings.minorPentatonic,
+  MusicalScale.diatonicMajor => context.strings.diatonicMajor,
+  MusicalScale.diatonicMinor => context.strings.diatonicMinor,
+  MusicalScale.harmonicMinor => context.strings.harmonicMinor,
+  MusicalScale.dorian => context.strings.dorian,
+  MusicalScale.phrygian => context.strings.phrygian,
+  MusicalScale.lydian => context.strings.lydian,
+  MusicalScale.mixolydian => context.strings.mixolydian,
+  MusicalScale.blues => context.strings.blues,
+  MusicalScale.chromatic => context.strings.chromatic,
+};

@@ -11,6 +11,6 @@ Authorized 2026-10-24. Source of requirements: [PRD](../PRD.md). Cloud target is
 | M4 — Export and sharing | MIDI, WAV and MP4 adapters from the same immutable score/document snapshot, cancel/error/success and native share | Parsed MIDI fixture, decoded WAV and inspected MP4 with real duration/audio; APK for physical share checks |
 | M5 — Hardening | Accessibility, offline behavior, focus/lifecycle, large scenes, original asset manifest | PRD P0 QA coverage, device test notes, known-risk list and reviewable PR |
 
-P1 accompaniment, extended catalogs, photo/camera/cropping, PNG, premium and ads follow core reliability and require their own tasks. Do not reduce MIDI/WAV/MP4 parity silently; report native-export feasibility failures as blockers with evidence.
+The 26 October 2026 [creative expansion task](CREATIVE-IMPLEMENTATION-PLAN.md) now authorizes accompaniment, extended catalogs, photo/camera/cropping, PNG, twelve languages, iOS source and specified offline P2. Premium billing, ads and hosted services remain excluded. The earlier MVP milestone evidence remains historical; new changes require new gates. Do not reduce MIDI/WAV/MP4 parity silently; report native-export feasibility failures as blockers with evidence.
 
 The PRD's proposed score policy is the starting contract. Implement it first with deterministic fixtures; changes to it must update the contract and tests together. Source captures cannot prove the proprietary algorithm.
