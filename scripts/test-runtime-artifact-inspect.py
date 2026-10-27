@@ -269,5 +269,43 @@ class OriginalInteractionInspection(unittest.TestCase):
             self.assertIn('UNACCEPTED_DIAGNOSTIC_ONLY', text)
 
 
+    def test_contact_names_are_explicit_unique_fixed_and_at_most_two(self):
+        for names in (True, '../private.mp4', ['../private'], list(ui.INTERACTION_RECORDINGS[:3]), [ui.INTERACTION_RECORDINGS[0]] * 2):
+            with self.assertRaises(ValueError): ui.interaction_contact_names({'interactionMotionDiagnostic': True, 'interactionContactNames': names})
+        with self.assertRaises(ValueError): ui.interaction_contact_names({'interactionContactNames': [ui.INTERACTION_RECORDINGS[0]]})
+        self.assertEqual(ui.interaction_contact_names({}), [])
+
+    def test_actual_three_frame_contact_emits_declared_pts_without_retiming_original(self):
+        png = b'\x89PNG\r\n\x1a\nfixture'
+        stderr = b'[Parsed_showinfo] n:0 pts:0 pts_time:0.0\n[Parsed_showinfo] n:1 pts:20 pts_time:2.0\n[Parsed_showinfo] n:2 pts:40 pts_time:4.0\n'
+        with patch.object(ui.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, png, stderr)) as run, patch.object(ui, 'emit_png') as emit, contextlib.redirect_stdout(io.StringIO()) as output:
+            size = ui.interaction_contact(self.folder / '01-root-navigation.mp4', '01-root-navigation', 5, 100)
+        self.assertEqual(size, len(png))
+        self.assertIn('"actualDecodedPtsSeconds": [0.0, 2.0, 4.0]', output.getvalue())
+        self.assertIn('UNACCEPTED_DIAGNOSTIC_ONLY', output.getvalue())
+        command = run.call_args.args[0]
+        self.assertNotIn('-r', command)
+        self.assertNotIn('-ss', command)
+        self.assertNotIn('-t', command)
+        self.assertEqual(command[-1], 'pipe:1')
+        emit.assert_called_once_with('01-root-navigation-contact.png', png, motion=True)
+
+    def test_contact_rejects_missing_pts_too_few_frames_and_combined_byte_overflow(self):
+        png = b'\x89PNG\r\n\x1a\nfixture'
+        times = b'n:0 pts_time:0\nn:1 pts_time:2\nn:2 pts_time:4\n'
+        for frames, remaining, stderr in ((2, 100, times), (5, 1, times), (5, 100, b'')):
+            with patch.object(ui.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, png, stderr)), patch.object(ui, 'emit_png') as emit:
+                with self.assertRaises(ValueError): ui.interaction_contact(self.folder / '01-root-navigation.mp4', '01-root-navigation', frames, remaining)
+                emit.assert_not_called()
+
+    def test_contact_is_never_sampled_after_failed_original_whole_decode(self):
+        def run(command, **kwargs):
+            if command[0] == 'ffmpeg': raise subprocess.CalledProcessError(1, command, stderr='corrupt AVC')
+            return self.result(self.packets if '-show_packets' in command else self.metadata)
+        with patch.object(ui.subprocess, 'run', side_effect=run), patch.object(ui, 'interaction_contact') as contact, contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(ValueError): ui.inspect_interaction_recordings({'interactionMotionDiagnostic': True, 'interactionContactNames': [ui.INTERACTION_RECORDINGS[0]]}, self.report)
+            contact.assert_not_called()
+
+
 if __name__ == '__main__':
     unittest.main()

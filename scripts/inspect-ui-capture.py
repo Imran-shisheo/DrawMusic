@@ -20,7 +20,46 @@ INTERACTION_RECORDINGS = (
 )
 
 
+def interaction_contact_names(request):
+    names = request.get('interactionContactNames', [])
+    if not isinstance(names, list) or len(names) > 2 or any(not isinstance(name, str) or name not in INTERACTION_RECORDINGS for name in names) or len(set(names)) != len(names):
+        raise ValueError('Select at most two unique exact interaction recording names')
+    if names and request.get('interactionMotionDiagnostic') is not True:
+        raise ValueError('Interaction contacts require explicit recording diagnostics')
+    return names
+
+
+def interaction_contact(clip, name, frame_count, remaining_bytes):
+    if frame_count < 3:
+        raise ValueError('Three distinct original decoded frames required for contact')
+    # Decoded-frame ordinals span the actual clip. showinfo reports the actual
+    # PTS for each selected frame, rather than assigning synthetic timestamps.
+    indices = [0, (frame_count - 1) // 2, frame_count - 1]
+    selection = '+'.join(f'eq(n\\,{index})' for index in indices)
+    result = subprocess.run([
+        'ffmpeg', '-nostdin', '-v', 'info', '-xerror', '-err_detect', 'explode',
+        '-i', str(clip), '-map', '0:v:0', '-an', '-sn', '-dn',
+        '-vf', f'select={selection},showinfo,scale=220:-2,tile=3x1:padding=2:color=navy',
+        '-frames:v', '1', '-f', 'image2pipe', '-vcodec', 'png', 'pipe:1',
+    ], check=True, capture_output=True, timeout=30)
+    data = result.stdout
+    times = [float(value) for value in re.findall(r'\bn:\s*\d+.*?\bpts_time:([-+0-9.eE]+)', result.stderr.decode(errors='replace'))]
+    if len(times) != 3 or not all(math.isfinite(value) for value in times) or any(b <= a for a, b in zip(times, times[1:])):
+        raise ValueError('Original decoded contact timestamps missing or not distinct')
+    if not data.startswith(b'\x89PNG\r\n\x1a\n') or len(data) > remaining_bytes:
+        raise ValueError('Contact PNG signature/combined byte bound rejected')
+    print('UI_INTERACTION_CONTACT_SCOPE ' + json.dumps({
+        'name': name, 'status': 'UNACCEPTED_DIAGNOSTIC_ONLY',
+        'decodedFrameIndices': indices, 'actualDecodedPtsSeconds': times,
+        'scope': 'Three actual decoded original frames at first/middle/last frame; resized only for this contact PNG. Original MP4 unchanged; not smoothness or complete scene acceptance.',
+    }), flush=True)
+    emit_png(name + '-contact.png', data, motion=True)
+    return len(data)
+
+
 def inspect_interaction_recordings(request, report):
+    contacts = interaction_contact_names(request)
+    contact_bytes = 0
     diagnostic = request.get('interactionMotionDiagnostic', False)
     if type(diagnostic) is not bool:
         raise ValueError('Expected boolean interactionMotionDiagnostic')
@@ -86,6 +125,13 @@ def inspect_interaction_recordings(request, report):
             verdict = {'wholeVideoDecodePassed': False, 'error': 'Whole-video diagnostic decode timed out after30s'}
         verdict.update(name=name, status='UNACCEPTED_DIAGNOSTIC_ONLY', scope='Complete original video-track decode; not full visual-suite acceptance')
         print('UI_INTERACTION_DIAGNOSTIC_DECODE ' + json.dumps(verdict), flush=True)
+        if name in contacts:
+            if not verdict['wholeVideoDecodePassed']:
+                raise ValueError('Cannot sample interaction with failed whole-stream decode: ' + name)
+            frame_count = int(stream['nb_read_frames'])
+            if frame_count != len(values):
+                raise ValueError('Contact original decoded-frame/packet count mismatch: ' + name)
+            contact_bytes += interaction_contact(clip, name, frame_count, 1_500_000 - contact_bytes)
 
 
 def load_capture_report(request):
