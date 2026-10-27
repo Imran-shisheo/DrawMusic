@@ -21,6 +21,8 @@
 		DB0000000000000000000003 /* DrawMusicFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0000000000000000000003 /* DrawMusicFiles.swift */; };
 		DB0000000000000000000004 /* DrawMusicBackgrounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0000000000000000000004 /* DrawMusicBackgrounds.swift */; };
 		DE0000000000000000000001 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = DD0000000000000000000001 /* InfoPlist.strings */; };
+		E00000000000000000000001 /* AudioSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0000000000000000000001 /* AudioSchedule.swift */; };
+		E00000000000000000000002 /* AudioScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF0000000000000000000002 /* AudioScheduleTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,6 +82,8 @@
 		DC000000000000000000000A /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = th.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		DC000000000000000000000B /* fil */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fil; path = fil.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		DC000000000000000000000C /* id */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		DF0000000000000000000001 /* AudioSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AudioSchedule.swift; path = "../AudioState/AudioSchedule.swift"; sourceTree = "<group>"; };
+		DF0000000000000000000002 /* AudioScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AudioScheduleTests.swift; path = "../AudioStateTests/AudioScheduleTests.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +102,7 @@
 			isa = PBXGroup;
 			children = (
 				331C807B294A618700263BE5 /* RunnerTests.swift */,
+				DF0000000000000000000002 /* AudioScheduleTests.swift */,
 			);
 			path = RunnerTests;
 			sourceTree = "<group>";
@@ -144,6 +149,7 @@
 				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+				DF0000000000000000000001 /* AudioSchedule.swift */,
 				DA0000000000000000000004 /* DrawMusicBackgrounds.swift */,
 				DA0000000000000000000003 /* DrawMusicFiles.swift */,
 				DA0000000000000000000002 /* DrawMusicVideo.swift */,
@@ -312,6 +318,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */,
+				E00000000000000000000002 /* AudioScheduleTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -320,6 +327,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
+				E00000000000000000000001 /* AudioSchedule.swift in Sources */,
 				DB0000000000000000000004 /* DrawMusicBackgrounds.swift in Sources */,
 				DB0000000000000000000003 /* DrawMusicFiles.swift in Sources */,
 				DB0000000000000000000002 /* DrawMusicVideo.swift in Sources */,

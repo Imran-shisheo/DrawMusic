@@ -1,5 +1,7 @@
 # Creative expansion implementation plan
 
+**27 October update:** PR #21 is merged at main a7c3670. Follow the active [review-fix plan](REVIEW-FIX-PLAN-2026-10-27.md) for defect reproduction, safe cleanup, native iOS scheduling recovery and real HD 60 FPS evidence. New fix PRs remain unmerged. The original 26 October plan below is historical; it does not validate new fixes.
+
 26 October 2026. Source: requests/CREATIVE-EXPANSION-2026-10-26.txt. New authorization supersedes older P1 deferrals and merging permission: leave reviewable draft PRs unmerged. All tools and catalogs remain free; no accounts, backend, ads, purchases, uploads, paid services or schedules.
 
 Baseline inspected: main fd5074a, clean working tree, no open PRs. Work on codex/creative-expansion. Preserve existing source and use pinned Flutter 3.47.2; previously approved SDK terms apply. Runtime proxy refreshed, TLS/HOME preserved. Record current branch evidence separately from historical acceptance.
@@ -20,4 +22,4 @@ For every checkpoint: focused regressions, formatter/analyzer, bash scripts/chec
 
 Execution-limit fallback: preserve a tested usable checkpoint and list exact remaining requirements, failing commands and next steps. Do not label the expanded goal complete until implemented and validated; do not wait for personal-device tests before independent source work.
 
-Checkpoint: `c721ce6d508ebde63b318859e3931342600f79f6` passes the complete new Android cloud gate in [Actions 40329847034](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40329847034); draft PR #21 remains unmerged. Source implementation across phases 1–9 is recorded in the matrix. Physical/human/iOS-native acceptance, conservative image-retention storage policy and excluded/owner-configured scope remain explicit; no automatic future task is created.
+Checkpoint: `c721ce6d508ebde63b318859e3931342600f79f6` passes the complete new Android cloud gate in [Actions 40329847034](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40329847034); PR #21 was unmerged at that historical checkpoint and is now merged at a7c3670. Source implementation across phases 1–9 is recorded in the matrix. Physical/human/iOS-native acceptance, conservative image-retention storage policy and excluded/owner-configured scope remain explicit; no automatic future task is created.

@@ -10,15 +10,57 @@ import UIKit
 /// access is requested only after the creator selects Capture.
 final class DrawMusicBackgrounds: NSObject, PHPickerViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
   private let channel: FlutterMethodChannel
+  private var cleanupSealed = false
+  private var cleanupOwner: String?
+  private let canCleanup: () -> Bool
   private var pending: FlutterResult?
   private let recoveredKey = "DrawMusic.pendingBackgroundImport.v1"
+  private let activeKey = "DrawMusic.pendingBackgroundImport.active.v1"
   private let worker = DispatchQueue(label: "DrawMusic.image-import", qos: .userInitiated)
-  init(messenger: FlutterBinaryMessenger) {
+  init(messenger: FlutterBinaryMessenger, canCleanup: @escaping () -> Bool = { true }) {
+    self.canCleanup = canCleanup
     channel = FlutterMethodChannel(name: "scribblesong/backgrounds", binaryMessenger: messenger)
     super.init()
     channel.setMethodCallHandler { [weak self] call, result in self?.handle(call, result) }
   }
   private func handle(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+    if call.method == "beginCleanup" {
+      guard let arguments = call.arguments as? [String: Any], let token = arguments["token"] as? String,
+            token.range(of: "^[a-zA-Z0-9_-]{1,80}$", options: .regularExpression) != nil,
+            !cleanupSealed, cleanupOwner == nil, pending == nil, canCleanup(),
+            UserDefaults.standard.object(forKey: activeKey) == nil else {
+        result(["allowed": false]); return
+      }
+      let knownKeys = Set([recoveredKey, activeKey])
+      guard !UserDefaults.standard.dictionaryRepresentation().keys.contains(where: {
+        $0.hasPrefix("DrawMusic.pendingBackgroundImport") && !knownKeys.contains($0)
+      }) else { result(["allowed": false]); return }
+      var pins: [String] = []
+      if let ready = UserDefaults.standard.dictionary(forKey: recoveredKey) {
+        guard Set(ready.keys) == Set(["id", "width", "height", "bytes"]),
+              let id = ready["id"] as? String,
+              id.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil,
+              let width = ready["width"] as? Int, (1...2048).contains(width),
+              let height = ready["height"] as? Int, (1...2048).contains(height),
+              let bytes = ready["bytes"] as? Int, (1...(32 * 1024 * 1024)).contains(bytes) else {
+          result(["allowed": false]); return
+        }
+        pins = [id]
+      } else if UserDefaults.standard.object(forKey: recoveredKey) != nil {
+        result(["allowed": false]); return
+      }
+      cleanupOwner = token
+      result(["allowed": true, "pins": pins]); return
+    }
+    if call.method == "endCleanup" {
+      let token = (call.arguments as? [String: Any])?["token"] as? String
+      if token != nil && token == cleanupOwner { cleanupOwner = nil }
+      cleanupSealed = true // No collection after Dart hot restart on this engine.
+      result(nil); return
+    }
+    guard cleanupOwner == nil else {
+      result(FlutterError(code: "picker_busy", message: "Background startup cleanup is in progress", details: nil)); return
+    }
     if call.method == "acknowledge" {
       UserDefaults.standard.removeObject(forKey: recoveredKey)
       result(nil); return
@@ -33,6 +75,7 @@ final class DrawMusicBackgrounds: NSObject, PHPickerViewControllerDelegate, UIIm
     }
     switch call.method {
     case "pickPhoto":
+      UserDefaults.standard.set(true, forKey: activeKey)
       pending = result
       var options = PHPickerConfiguration()
       options.filter = .images; options.selectionLimit = 1
@@ -43,6 +86,7 @@ final class DrawMusicBackgrounds: NSObject, PHPickerViewControllerDelegate, UIIm
       guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
         result(FlutterError(code: "camera_unavailable", message: "This device has no available camera", details: nil)); return
       }
+      UserDefaults.standard.set(true, forKey: activeKey)
       pending = result
       switch AVCaptureDevice.authorizationStatus(for: .video) {
       case .authorized: showCamera()
@@ -145,5 +189,8 @@ final class DrawMusicBackgrounds: NSObject, PHPickerViewControllerDelegate, UIIm
     UserDefaults.standard.set(value, forKey: recoveredKey)
     finish(value)
   }
-  private func finish(_ value: Any?) { let result = pending; pending = nil; result?(value) }
+  private func finish(_ value: Any?) {
+    UserDefaults.standard.removeObject(forKey: activeKey)
+    let result = pending; pending = nil; result?(value)
+  }
 }

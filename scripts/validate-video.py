@@ -22,6 +22,16 @@ assert (v['width'],v['height'])==(expected_width,expected_width*5//4)
 expected_fps=int(sys.argv[5]) if len(sys.argv)>5 else 30
 assert expected_fps in (30,60)
 assert abs(float(fractions.Fraction(v['avg_frame_rate']))-expected_fps)<.01
+# Inspect actual samples independently of the encoder and its nominal FPS tag.
+packets=json.loads(subprocess.check_output(['ffprobe','-v','error','-select_streams','v:0',
+    '-show_packets','-show_entries','packet=pts_time,duration_time','-of','json',str(video)]))['packets']
+pts=[float(packet['pts_time']) for packet in packets]
+assert len(pts)>1 and abs(pts[0])<=.000002
+steps=[b-a for a,b in zip(pts,pts[1:])]
+assert all(abs(step-1/expected_fps)<=.000002 for step in steps),(min(steps),max(steps),expected_fps)
+assert abs(pts[-1]+1/expected_fps-float(v['duration']))<=.002
+# Decode the complete video stream as well as the independently correlated audio.
+subprocess.run(['ffmpeg','-v','error','-xerror','-i',str(video),'-map','0:v:0','-an','-f','null','-'],check=True)
 assert a['sample_rate']=='44100' and a['channels']==1
 vd,ad=float(v['duration']),float(a['duration'])
 assert abs(vd-ad)<=1/expected_fps+.002,(vd,ad)
@@ -93,6 +103,7 @@ for time in (loop_seconds*.25,loop_seconds*.75):
     assert abs(x-expected)<=width/120,(time,x,expected)
     cursor_checks.append({'seconds':time,'x':x,'expected_x':expected,'matching_rows':count})
 report={'video':{'codec':v['codec_name'],'width':v['width'],'height':v['height'],'fps':v['avg_frame_rate'],'duration':vd},'audio':{'codec':a['codec_name'],'rate':a['sample_rate'],'channels':a['channels'],'duration':ad},'av_duration_difference_seconds':abs(vd-ad),'audio_correlation':best[0],'audio_offset_ms':best[1],'cursor':cursor_checks,'paper':paper_checks,'style':style_checks}
+report['encoded_video_samples']={'count':len(pts),'first_pts_seconds':pts[0],'last_pts_seconds':pts[-1],'min_step_seconds':min(steps),'max_step_seconds':max(steps),'complete_stream_decoded':True}
 report_path.parent.mkdir(parents=True,exist_ok=True)
 report_path.write_text(json.dumps(report,indent=2)+'\n')
 print(json.dumps(report,indent=2))

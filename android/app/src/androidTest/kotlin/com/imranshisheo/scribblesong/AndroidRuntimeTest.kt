@@ -74,10 +74,16 @@ class AndroidRuntimeTest {
         } finally {extractor.release()}
     }
     @Test(timeout=240000) fun compactSixtyFpsUsesRealCodecTimestampsAndReportsBoundedRendering() {
+        profileSixtyFps(640,"fixture-video-60.mp4","video-60-profile.json")
+    }
+    @Test(timeout=360000) fun hdSixtyFpsUsesRealCodecTimestampsAndReportsBoundedRendering() {
+        profileSixtyFps(1080,"fixture-video-hd-60.mp4","video-hd-60-profile.json")
+    }
+    private fun profileSixtyFps(width: Int, fixtureName: String, reportName: String) {
         val (document,pcm)=fixture()
         val context=InstrumentationRegistry.getInstrumentation().targetContext
-        val output=File(context.cacheDir,"fixture-video-60.mp4")
-        val report=File(context.cacheDir,"video-60-profile.json")
+        val output=File(context.cacheDir,fixtureName)
+        val report=File(context.cacheDir,reportName)
         output.delete()
         val started=SystemClock.elapsedRealtime()
         val initialPss=android.os.Debug.getPss()
@@ -92,7 +98,7 @@ class AndroidRuntimeTest {
         var audioDuration=0L
         var passed=false
         try {
-            val metadata=CanvasVideoEncoder().export(document,pcm,640,output,AtomicBoolean(false),60) { progress ->
+            val metadata=CanvasVideoEncoder().export(document,pcm,width,output,AtomicBoolean(false),60) { progress ->
                 val bucket=(progress*10).toInt()
                 if(bucket!=progressBucket) {
                     progressBucket=bucket
@@ -100,8 +106,8 @@ class AndroidRuntimeTest {
                 }
             }
             assertEquals(60,metadata["fps"])
-            assertEquals(640,metadata["width"])
-            assertEquals(800,metadata["height"])
+            assertEquals(width,metadata["width"])
+            assertEquals(width*5/4,metadata["height"])
             val extractor=MediaExtractor()
             try {
                 extractor.setDataSource(output.path)
@@ -112,8 +118,8 @@ class AndroidRuntimeTest {
                         "video/avc" -> {
                             videoTrack=track
                             assertEquals(60,format.getInteger(MediaFormat.KEY_FRAME_RATE))
-                            assertEquals(640,format.getInteger(MediaFormat.KEY_WIDTH))
-                            assertEquals(800,format.getInteger(MediaFormat.KEY_HEIGHT))
+                            assertEquals(width,format.getInteger(MediaFormat.KEY_WIDTH))
+                            assertEquals(width*5/4,format.getInteger(MediaFormat.KEY_HEIGHT))
                             videoDuration=format.getLong(MediaFormat.KEY_DURATION)
                         }
                         "audio/mp4a-latm" -> audioDuration=format.getLong(MediaFormat.KEY_DURATION)
@@ -145,14 +151,14 @@ class AndroidRuntimeTest {
             passed=true
         } finally {
             report.writeText(org.json.JSONObject().put("passed",passed)
-                .put("width",640).put("height",800).put("requestedFps",60)
+                .put("width",width).put("height",width*5/4).put("requestedFps",60)
                 .put("encodedVideoSamples",count).put("firstPtsUs",firstPts).put("lastPtsUs",lastPts)
                 .put("minVideoStepUs",if(count>1) minStep else 0).put("maxVideoStepUs",maxStep)
                 .put("videoDurationUs",videoDuration).put("audioDurationUs",audioDuration)
                 .put("elapsedMs",SystemClock.elapsedRealtime()-started)
                 .put("initialPssKb",initialPss).put("peakSampledPssKb",peakPss)
                 .put("finalPssKb",android.os.Debug.getPss())
-                .put("rendererBitmapAndPixelArrayBytes",640*800*8)
+                .put("rendererBitmapAndPixelArrayBytes",width*(width*5/4)*8)
                 .put("scope","API 35 emulator codec/export profile. Reuses one bitmap and pixel array plus bounded codec buffers; sampled whole-process PSS is not a physical-device FPS/memory guarantee. No frames accumulate for the whole video.")
                 .toString(2))
         }
@@ -180,6 +186,20 @@ class AndroidRuntimeTest {
             assertFalse(output.exists())
             assertFalse(File(output.parentFile,".video-${output.name}").exists())
         }
+    }
+    @Test(timeout=240000) fun cancelHdSixtyFpsRemovesEveryPartialFileAndKeepsRetryUsable() {
+        val (document,pcm)=fixture()
+        val output=File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir,"canceled-hd-sixty.mp4")
+        val cancel=AtomicBoolean(false)
+        assertThrows(CancellationException::class.java) {
+            CanvasVideoEncoder().export(document,pcm,1080,output,cancel,60) {if(it>.25) cancel.set(true)}
+        }
+        assertFalse(output.exists())
+        assertFalse(File(output.parentFile,".video-${output.name}").exists())
+        // A canceled HD job must not poison the encoder used by the next job.
+        CanvasVideoEncoder().export(document,pcm,640,output,AtomicBoolean(false),30) {}
+        assertTrue(output.length()>10000)
+        output.delete()
     }
     @SdkSuppress(minSdkVersion=29)
     @Test fun explicitDownloadsCopyContainsTheOriginalBytes() {

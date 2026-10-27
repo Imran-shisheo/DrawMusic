@@ -329,5 +329,6 @@
   "templateDescription18": "Escalones de campana suben por la escala.",
   "templateDescription19": "Cuatro acordes cálidos de sintetizador con bajo y batería.",
   "recoveryExport": "Exportar datos de recuperación",
-  "recoveryExportFailed": "No se pudieron exportar los datos de recuperación. Los archivos originales se conservan."
+  "recoveryExportFailed": "No se pudieron exportar los datos de recuperación. Los archivos originales se conservan.",
+  "erasureLimitRejected": "No se borró porque se superaría el límite del dibujo. Deshaz algunos trazos o guarda este dibujo y empieza otro."
 }

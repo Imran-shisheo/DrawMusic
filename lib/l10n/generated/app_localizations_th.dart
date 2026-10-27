@@ -1098,4 +1098,8 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get recoveryExportFailed =>
       'ส่งออกข้อมูลกู้คืนไม่ได้ ไฟล์ต้นฉบับยังถูกเก็บไว้';
+
+  @override
+  String get erasureLimitRejected =>
+      'ไม่ได้ใช้การลบเนื่องจากจะเกินขีดจำกัดของภาพ ย้อนกลับบางเส้น หรือบันทึกภาพนี้แล้วเริ่มภาพใหม่';
 }

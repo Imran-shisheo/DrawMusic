@@ -1136,4 +1136,8 @@ class AppLocalizationsFil extends AppLocalizations {
   @override
   String get recoveryExportFailed =>
       'Hindi ma-export ang datos para sa pagbawi. Napanatili ang mga orihinal na file.';
+
+  @override
+  String get erasureLimitRejected =>
+      'Hindi inilapat ang pagbura dahil lalampas ito sa limitasyon ng drawing. I-undo ang ilang guhit, o i-save ang drawing na ito at magsimula ng bago.';
 }

@@ -1128,4 +1128,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get recoveryExportFailed =>
       'Tidak dapat mengekspor data pemulihan. Berkas asli tetap disimpan.';
+
+  @override
+  String get erasureLimitRejected =>
+      'Penghapusan tidak diterapkan karena akan melampaui batas gambar. Urungkan beberapa goresan, atau simpan gambar ini dan mulai gambar baru.';
 }

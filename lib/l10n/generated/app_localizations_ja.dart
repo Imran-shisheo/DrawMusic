@@ -1074,4 +1074,8 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get recoveryExportFailed => '復旧用データを書き出せません。元のファイルは保存されています。';
+
+  @override
+  String get erasureLimitRejected =>
+      '描画の上限を超えるため、消去を適用しませんでした。一部の線を元に戻すか、この絵を保存して新しい絵を始めてください。';
 }

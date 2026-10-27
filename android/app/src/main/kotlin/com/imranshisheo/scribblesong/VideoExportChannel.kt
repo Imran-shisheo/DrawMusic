@@ -53,5 +53,6 @@ internal class VideoExportChannel(private val context: Context, messenger: Binar
             }
         }
     }
+    fun hasActiveJobs(): Boolean = jobs.isNotEmpty()
     fun close() { jobs.values.forEach { it.set(true) }; executor.shutdown(); channel.setMethodCallHandler(null) }
 }

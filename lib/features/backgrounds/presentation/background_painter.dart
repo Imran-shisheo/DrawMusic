@@ -51,9 +51,19 @@ void paintBackground(
     if (paper.kind == BackgroundKind.linear ||
         paper.kind == BackgroundKind.radial) {
       if (colors.length == 1) colors.add(colors.first);
+      // dart:ui requires explicit stops for three/four-color documents. Native
+      // Android/iOS renderers use the same evenly spaced interpolation policy.
+      final stops = [
+        for (var i = 0; i < colors.length; i++) i / (colors.length - 1),
+      ];
       paint.shader = paper.kind == BackgroundKind.linear
-          ? ui.Gradient.linear(rect.topLeft, rect.bottomRight, colors)
-          : ui.Gradient.radial(rect.center, rect.longestSide / 2, colors);
+          ? ui.Gradient.linear(rect.topLeft, rect.bottomRight, colors, stops)
+          : ui.Gradient.radial(
+              rect.center,
+              rect.longestSide / 2,
+              colors,
+              stops,
+            );
       // Shader colors preserve each stop's alpha; opacity is an independent mix.
       if (paper.opacity < 1) {
         canvas.saveLayer(

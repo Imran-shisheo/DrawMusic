@@ -1,5 +1,7 @@
 package com.imranshisheo.scribblesong
 
+import android.os.Bundle
+
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -13,6 +15,12 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var restoredForCleanup = false
+    override fun onCreate(savedInstanceState: Bundle?) {
+        restoredForCleanup = savedInstanceState != null
+        super.onCreate(savedInstanceState)
+    }
+
     private var backgroundFiles: BackgroundFilesChannel? = null
     private var exportFiles: ExportFilesChannel? = null
     private var videoExports: VideoExportChannel? = null
@@ -29,7 +37,7 @@ class MainActivity : FlutterActivity() {
     }
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        backgroundFiles=BackgroundFilesChannel(this,flutterEngine.dartExecutor.binaryMessenger)
+        backgroundFiles=BackgroundFilesChannel(this,flutterEngine.dartExecutor.binaryMessenger,restoredForCleanup) { videoExports?.hasActiveJobs()!=true }
         exportFiles=ExportFilesChannel(this,flutterEngine.dartExecutor.binaryMessenger)
         videoExports=VideoExportChannel(applicationContext,flutterEngine.dartExecutor.binaryMessenger)
         if (Build.VERSION.SDK_INT >= 33) {

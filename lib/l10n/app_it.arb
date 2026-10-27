@@ -329,5 +329,6 @@
   "templateDescription18": "Gradini di campana salgono nella scala.",
   "templateDescription19": "Quattro accordi di synth caldo con basso e batteria.",
   "recoveryExport": "Esporta dati di recupero",
-  "recoveryExportFailed": "Impossibile esportare i dati di recupero. I file originali sono conservati."
+  "recoveryExportFailed": "Impossibile esportare i dati di recupero. I file originali sono conservati.",
+  "erasureLimitRejected": "La cancellazione non è stata applicata perché supererebbe il limite del disegno. Annulla alcuni tratti oppure salva questo disegno e iniziane uno nuovo."
 }

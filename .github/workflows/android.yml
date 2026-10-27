@@ -23,7 +23,8 @@ jobs:
           persist-credentials: false
       - name: Check setup syntax
         run: |
-          bash -n cloud/env.sh scripts/setup-cloud-android.sh scripts/check-android.sh scripts/prepare-runtime-inspectors.sh
+          bash -n cloud/env.sh scripts/setup-cloud-android.sh scripts/check-android.sh scripts/prepare-runtime-inspectors.sh scripts/check-ios-audio-state.sh
+          python3 -m py_compile scripts/run-android-ui.py scripts/validate-video.py
           python3 -m json.tool .fvmrc > /dev/null
       - id: detect
         shell: bash
@@ -34,6 +35,29 @@ jobs:
             echo 'app_exists=false' >> "$GITHUB_OUTPUT"
             echo 'Setup-only repository. Flutter checks and APK build are skipped until cloud bootstrap.' >> "$GITHUB_STEP_SUMMARY"
           fi
+  swift-audio-state:
+    name: Pure Swift audio state (Linux; not iOS runtime)
+    needs: setup-files
+    if: needs.setup-files.outputs.app_exists == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Execute render-used scheduling and reset policy regressions
+        run: bash scripts/check-ios-audio-state.sh
+      - name: Upload portable Swift evidence (not iOS runtime)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: drawmusic-swift-state-${{ github.sha }}
+          path: |
+            work/ios-audio-state/compiler.log
+            work/ios-audio-state/tests.log
+            work/ios-audio-state/grammar.log
+          if-no-files-found: warn
+          retention-days: 7
   android:
     name: Analyze, test and build Android
     needs: setup-files
@@ -54,6 +78,10 @@ jobs:
         run: bash scripts/setup-cloud-android.sh
       - name: Format, analyze, test and build
         run: bash scripts/check-android.sh
+      - name: Verify product APK signature
+        run: |
+          source cloud/env.sh
+          "$ANDROID_HOME/build-tools/$DRAWMUSIC_ANDROID_BUILD_TOOLS/apksigner" verify --verbose build/app/outputs/flutter-apk/app-debug.apk
       - name: Upload installable test APK
         uses: actions/upload-artifact@v7
         with:
@@ -101,6 +129,7 @@ jobs:
           python3 scripts/validate-video.py work/runtime-output/fixture-video.mp4 work/runtime-fixtures/original-loop.wav work/runtime-output/inspection.json
           python3 scripts/validate-video.py work/runtime-output/ui-export-video.mp4 work/runtime-output/ui-export-audio.wav work/runtime-output/ui-inspection.json 640
           python3 scripts/validate-video.py work/runtime-output/fixture-video-60.mp4 work/runtime-fixtures/original-loop.wav work/runtime-output/video-60-inspection.json 640 60
+          python3 scripts/validate-video.py work/runtime-output/fixture-video-hd-60.mp4 work/runtime-fixtures/original-loop.wav work/runtime-output/video-hd-60-inspection.json 1080 60
           python3 scripts/validate-runtime-midi.py
           python3 scripts/validate-runtime-png.py
           python3 scripts/validate-video.py work/runtime-output/expanded-video.mp4 work/runtime-output/expanded-audio.wav work/runtime-output/expanded-video-inspection.json 640

@@ -329,5 +329,6 @@
   "templateDescription18": "Bậc chuông tăng qua thang âm.",
   "templateDescription19": "Bốn hợp âm synth ấm với trầm và trống.",
   "recoveryExport": "Xuất dữ liệu khôi phục",
-  "recoveryExportFailed": "Không thể xuất dữ liệu khôi phục. Các tệp gốc vẫn được giữ."
+  "recoveryExportFailed": "Không thể xuất dữ liệu khôi phục. Các tệp gốc vẫn được giữ.",
+  "erasureLimitRejected": "Chưa áp dụng thao tác xóa vì sẽ vượt giới hạn bản vẽ. Hoàn tác một số nét hoặc lưu bản vẽ này và bắt đầu bản vẽ mới."
 }

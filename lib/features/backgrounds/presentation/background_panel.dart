@@ -13,15 +13,17 @@ import 'background_painter.dart';
 /// changes the document and never deletes a file another revision may reference.
 Future<BackgroundDefinition?> showBackgroundPanel(
   BuildContext context,
-  BackgroundDefinition initial,
-) => showDialog<BackgroundDefinition>(
+  BackgroundDefinition initial, {
+  BackgroundAssets? assets,
+}) => showDialog<BackgroundDefinition>(
   context: context,
-  builder: (context) => _BackgroundPanel(initial: initial),
+  builder: (context) => _BackgroundPanel(initial: initial, assets: assets),
 );
 
 class _BackgroundPanel extends StatefulWidget {
-  const _BackgroundPanel({required this.initial});
+  const _BackgroundPanel({required this.initial, this.assets});
   final BackgroundDefinition initial;
+  final BackgroundAssets? assets;
   @override
   State<_BackgroundPanel> createState() => _BackgroundPanelState();
 }
@@ -29,7 +31,22 @@ class _BackgroundPanel extends StatefulWidget {
 class _BackgroundPanelState extends State<_BackgroundPanel> {
   late BackgroundDefinition pending = widget.initial;
   ui.Image? image;
-  bool busy = false, validColor = true, validSecond = true;
+  bool busy = false;
+  late final firstColor = TextEditingController(
+    text: _hex(pending.colors.first),
+  );
+  late final secondColor = TextEditingController(
+    text: _hex(pending.colors[math.min(1, pending.colors.length - 1)]),
+  );
+  int kindSelection = 0;
+  bool get gradient =>
+      pending.kind == BackgroundKind.linear ||
+      pending.kind == BackgroundKind.radial;
+  bool get validColor => _parseColor(firstColor.text) != null;
+  bool get validSecond => _parseColor(secondColor.text) != null;
+  bool get validVisibleColors =>
+      pending.kind == BackgroundKind.photo ||
+      (validColor && (!gradient || validSecond));
   String? error;
   int generation = 0;
   @override
@@ -48,7 +65,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
         assetId: asset.id,
       );
       setState(() {
-        pending = next;
+        _selectPaper(next);
         error = null;
       });
       await _load(next);
@@ -63,7 +80,12 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
     final token = ++generation;
     ui.Image? next;
     try {
-      next = await loadBackgroundImage(paper, maxWidth: 512, maxHeight: 640);
+      next = await loadBackgroundImage(
+        paper,
+        maxWidth: 512,
+        maxHeight: 640,
+        assets: widget.assets,
+      );
       if (!mounted || token != generation) {
         next?.dispose();
         return;
@@ -95,7 +117,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
         assetId: asset.id,
         opacity: pending.opacity,
       );
-      setState(() => pending = next);
+      setState(() => _selectPaper(next));
       await _load(next);
     } on PlatformException catch (e) {
       if (mounted) setState(() => error = e.code);
@@ -112,19 +134,32 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
   void dispose() {
     generation++;
     image?.dispose();
+    firstColor.dispose();
+    secondColor.dispose();
     super.dispose();
   }
 
+  static String _hex(int color) =>
+      (color & 0xffffff).toRadixString(16).padLeft(6, '0').toUpperCase();
+  static int? _parseColor(String text) =>
+      RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(text)
+      ? int.tryParse(text, radix: 16)
+      : null;
+
+  // Type changes and presets deliberately restore fields from the last valid
+  // model, so stale manual text cannot disagree with the displayed background.
+  void _selectPaper(BackgroundDefinition next) {
+    pending = next;
+    firstColor.value = TextEditingValue(text: _hex(next.colors.first));
+    secondColor.value = TextEditingValue(
+      text: _hex(next.colors[math.min(1, next.colors.length - 1)]),
+    );
+    kindSelection++;
+  }
+
   void _color(String text, bool second) {
-    final parsed = RegExp(r'^[a-fA-F0-9]{6}$').hasMatch(text)
-        ? int.tryParse(text, radix: 16)
-        : null;
+    final parsed = _parseColor(text);
     setState(() {
-      if (second) {
-        validSecond = parsed != null;
-      } else {
-        validColor = parsed != null;
-      }
       if (parsed != null) {
         final colors = pending.colors.toList();
         if (second && colors.length == 1) colors.add(colors.first);
@@ -182,7 +217,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
           children: [
             DropdownButtonFormField<BackgroundKind>(
               initialValue: pending.kind,
-              key: ValueKey(pending.kind),
+              key: ValueKey(('background-kind', pending.kind, kindSelection)),
               isExpanded: true,
               decoration: InputDecoration(labelText: strings.backgroundType),
               items: [
@@ -197,16 +232,19 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
                   : (kind) {
                       if (kind == null) return;
                       if (kind == BackgroundKind.photo) {
+                        setState(() => kindSelection++);
                         _pick(false);
                         return;
                       }
                       setState(
-                        () => pending = BackgroundDefinition(
-                          kind: kind,
-                          colors: pending.colors.length > 1
-                              ? pending.colors
-                              : [pending.colors.first, 0xffd8e9f3],
-                          opacity: pending.opacity,
+                        () => _selectPaper(
+                          BackgroundDefinition(
+                            kind: kind,
+                            colors: pending.colors.length > 1
+                                ? pending.colors
+                                : [pending.colors.first, 0xffd8e9f3],
+                            opacity: pending.opacity,
+                          ),
                         ),
                       );
                     },
@@ -233,10 +271,21 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
             const SizedBox(height: 12),
             Semantics(
               label: strings.paperPreview,
-              child: CustomPaint(
-                key: const ValueKey('paper-preview'),
-                size: const Size(240, 180),
-                painter: _BackgroundPreview(pending, image),
+              child: Align(
+                child: SizedBox(
+                  width: 240,
+                  child: AspectRatio(
+                    aspectRatio: 4 / 5,
+                    child: RepaintBoundary(
+                      key: const ValueKey('paper-preview-boundary'),
+                      child: CustomPaint(
+                        key: const ValueKey('paper-preview'),
+                        painter: _BackgroundPreview(pending, image),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
             if (pending.kind != BackgroundKind.photo) ...[
@@ -253,13 +302,14 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
                       onPressed: busy
                           ? null
                           : () => setState(() {
-                              pending = pending.copyWith(
-                                colors: [
-                                  0xff000000 | color,
-                                  ...pending.colors.skip(1),
-                                ],
+                              _selectPaper(
+                                pending.copyWith(
+                                  colors: [
+                                    0xff000000 | color,
+                                    ...pending.colors.skip(1),
+                                  ],
+                                ),
                               );
-                              validColor = true;
                             }),
                       icon: Icon(
                         pending.colors.first & 0xffffff == color
@@ -270,11 +320,9 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
                 ],
               ),
               TextFormField(
-                key: ValueKey('first-${pending.colors.first}'),
-                initialValue: (pending.colors.first & 0xffffff)
-                    .toRadixString(16)
-                    .padLeft(6, '0')
-                    .toUpperCase(),
+                key: const ValueKey('background-first-color'),
+                enabled: !busy,
+                controller: firstColor,
                 maxLength: 6,
                 decoration: InputDecoration(
                   labelText: strings.customColor,
@@ -285,11 +333,9 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
               if (pending.kind == BackgroundKind.linear ||
                   pending.kind == BackgroundKind.radial)
                 TextFormField(
-                  key: ValueKey('second-${pending.kind}'),
-                  initialValue: (pending.colors.last & 0xffffff)
-                      .toRadixString(16)
-                      .padLeft(6, '0')
-                      .toUpperCase(),
+                  key: const ValueKey('background-second-color'),
+                  enabled: !busy,
+                  controller: secondColor,
                   maxLength: 6,
                   decoration: InputDecoration(
                     labelText: strings.secondColor,
@@ -315,9 +361,13 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
                               (entry) =>
                                   pending.colors[entry.key] == entry.value,
                             ),
-                        onPressed: () => setState(
-                          () => pending = pending.copyWith(colors: colors),
-                        ),
+                        onPressed: busy
+                            ? null
+                            : () => setState(
+                                () => _selectPaper(
+                                  pending.copyWith(colors: colors),
+                                ),
+                              ),
                         icon: Icon(
                           pending.colors.length == colors.length &&
                                   colors.asMap().entries.every(
@@ -375,8 +425,8 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
                     onPressed: busy
                         ? null
                         : () => setState(
-                            () => pending = BackgroundDefinition.solid(
-                              0xfff7f5eb,
+                            () => _selectPaper(
+                              BackgroundDefinition.solid(0xfff7f5eb),
                             ),
                           ),
                     child: Text(strings.removePhoto),
@@ -489,8 +539,7 @@ class _BackgroundPanelState extends State<_BackgroundPanel> {
         FilledButton(
           onPressed:
               busy ||
-                  !validColor ||
-                  !validSecond ||
+                  !validVisibleColors ||
                   pending.kind == BackgroundKind.photo && image == null
               ? null
               : () => Navigator.pop(context, pending),

@@ -329,5 +329,6 @@
   "templateDescription18": "Des marches de cloche montent dans la gamme.",
   "templateDescription19": "Quatre accords de synthé chaleureux avec basse et batterie.",
   "recoveryExport": "Exporter les données de récupération",
-  "recoveryExportFailed": "Impossible d’exporter les données de récupération. Les fichiers d’origine sont conservés."
+  "recoveryExportFailed": "Impossible d’exporter les données de récupération. Les fichiers d’origine sont conservés.",
+  "erasureLimitRejected": "L’effacement n’a pas été appliqué car il dépasserait la limite du dessin. Annulez des traits, ou enregistrez ce dessin et commencez-en un nouveau."
 }

@@ -15,6 +15,7 @@ final class DrawMusicVideo {
   private let channel: FlutterMethodChannel
   private let worker = DispatchQueue(label: "DrawMusic.offline-video", qos: .userInitiated)
   private var jobs: [String: Job] = [:] // Main-queue ownership.
+  var hasActiveJobs: Bool { !jobs.isEmpty } // Read only on the main channel.
   private var background: NSObjectProtocol?
   init(messenger: FlutterBinaryMessenger) {
     channel = FlutterMethodChannel(name: "scribblesong/video", binaryMessenger: messenger)
@@ -253,7 +254,17 @@ final class DrawMusicDocumentFrames {
     guard let id = paper["assetId"] as? String, id.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil,
           let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
     else { throw NativePortError.invalid("Invalid background image reference") }
-    let url = support.appendingPathComponent("backgrounds/\(id).png")
+    let root = support.appendingPathComponent("backgrounds", isDirectory: true).resolvingSymlinksInPath()
+    let active = root.appendingPathComponent("\(id).png")
+    let stage = root.appendingPathComponent(".cleanup-staging", isDirectory: true)
+    let usingStage = !FileManager.default.fileExists(atPath: active.path)
+    let url = usingStage ? stage.appendingPathComponent("\(id).png") : active
+    guard (!usingStage || stage.resolvingSymlinksInPath().path == stage.path),
+          url.resolvingSymlinksInPath().path == url.path,
+          (try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])).isRegularFile == true,
+          (try url.resourceValues(forKeys: [.isSymbolicLinkKey])).isSymbolicLink != true else {
+      throw NativePortError.invalid("Unsafe background image location")
+    }
     guard let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > 0, size <= 32 * 1024 * 1024
     else { throw NativePortError.invalid("Background image unavailable or oversized") }
     let data = try Data(contentsOf: url, options: .mappedIfSafe)

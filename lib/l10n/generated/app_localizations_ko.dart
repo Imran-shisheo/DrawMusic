@@ -1084,4 +1084,8 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get recoveryExportFailed => '복구 데이터를 내보낼 수 없습니다. 원본 파일은 보존됩니다.';
+
+  @override
+  String get erasureLimitRejected =>
+      '그림의 한도를 초과하므로 지우기를 적용하지 않았습니다. 일부 획을 실행 취소하거나 이 그림을 저장하고 새 그림을 시작하세요.';
 }

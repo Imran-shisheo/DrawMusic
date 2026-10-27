@@ -1126,4 +1126,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recoveryExportFailed =>
       'Could not export recovery data. The original files are preserved.';
+
+  @override
+  String get erasureLimitRejected =>
+      'Erasure was not applied because it would exceed the drawing limit. Undo some ink, or save this drawing and start a new one.';
 }

@@ -192,6 +192,7 @@ class DrawingCanvas extends StatefulWidget {
     required this.onCommit,
     required this.onLimit,
     this.onSimplified,
+    this.onEraseRejected,
   });
   final ProjectDocument document;
   final Instrument instrument;
@@ -199,6 +200,7 @@ class DrawingCanvas extends StatefulWidget {
   final ValueNotifier<double?> cursor;
   final ValueChanged<List<Stroke>> onCommit;
   final VoidCallback onLimit;
+  final VoidCallback? onEraseRejected;
   final void Function(int before, int after)? onSimplified;
   @override
   State<DrawingCanvas> createState() => DrawingCanvasState();
@@ -252,9 +254,19 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     _pointer = null;
     if (widget.eraser) {
       if (_erased != null && !identical(_erased, _baseStrokes)) {
-        _baseStrokes = _erased!;
-        _basePointCount = _baseStrokes.fold(0, (n, s) => n + s.points.length);
-        widget.onCommit(_baseStrokes);
+        // Clipping can add two endpoints without removing any source samples.
+        // Validate before replacing committed canvas state or constructing the
+        // editor document. Unrelated ink must not be simplified just to fit an
+        // eraser gesture; a rejected preview restores the complete prior state.
+        final erased = _erased!;
+        final pointCount = erased.fold<int>(0, (n, s) => n + s.points.length);
+        if (pointCount > 100000) {
+          (widget.onEraseRejected ?? widget.onLimit)();
+        } else {
+          _baseStrokes = erased;
+          _basePointCount = pointCount;
+          widget.onCommit(_baseStrokes);
+        }
       }
     } else if (_active.isNotEmpty) {
       _basePointCount += _active.length;

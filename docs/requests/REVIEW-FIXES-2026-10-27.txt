@@ -1,0 +1,441 @@
+Fix the defects and implementation gaps identified in the 27 October 2026 DrawMusic review.
+
+This is an implementation task. Inspect the current repository, reproduce the issues, write fixes and meaningful regression tests, run the required checks, update documentation, commit usable checkpoints and open reviewable draft PRs. Do not stop after producing a plan.
+
+1. BASELINE, SCOPE AND INSTRUCTIONS
+
+Read:
+- AGENTS.md and applicable nested instructions
+- PRD.md
+- docs/requests/CREATIVE-EXPANSION-2026-10-26.txt
+- docs/CREATIVE-IMPLEMENTATION-PLAN.md
+- docs/CREATIVE-REQUIREMENT-MATRIX.md
+- docs/DEVELOPMENT-STATUS.md
+- docs/IOS-IMPLEMENTATION.md
+- docs/ANDROID-ACCEPTANCE.md
+- docs/BACKGROUNDS.md
+- docs/VIDEO-FRAME-RATE.md
+- Relevant geometry/history, recovery and export documentation
+
+The review baseline was:
+- main a7c367058101633271c990e57922ca25f7187811
+- Application 2.0.0+22
+- Creative expansion PR #21, already merged
+
+Start from the latest appropriate main state. Verify whether subsequent changes have already fixed any finding. Do not reset, overwrite or duplicate existing work.
+
+The earlier accepted Android source was c721ce6d508ebde63b318859e3931342600f79f6, Actions 40329847034. That historical success does not validate new fixes.
+
+Preserve the existing creative expansion:
+- 13 original instruments
+- 12 roots and 11 scales
+- Accompaniment and mixing
+- 20 original templates
+- Custom/gradient/photo/camera backgrounds
+- MIDI/WAV/MP4/PNG
+- 12 locales
+- Expressive/stylus input, dark theme and tablet workspace
+- iOS scaffold and native adapter source
+
+All creative features remain free.
+
+Ads/reward SDKs, billing/subscriptions, accounts, servers/uploads, paid services, cloud collaboration and store publication remain excluded.
+
+Do not merge PRs, force-push, operate the owner’s personal phone, or create scheduled continuations.
+
+Use the pinned Flutter 3.47.2 SDK and its Dart SDK. Follow repository cloud setup instructions. Obtain explicit approval for any SDK terms that require it.
+
+Record this request and a concise fix plan in docs/. Update the existing requirement matrix with new evidence as fixes land.
+
+The original review artifacts were created on a Mac and may not exist in cloud. Everything necessary to reproduce the findings is described below.
+
+2. FIX: ERASING NEAR THE POINT CAP THROWS AN EXCEPTION
+
+Relevant code:
+- lib/features/editor/presentation/canvas.dart, approximately lines 250–257
+- lib/features/editor/presentation/editor.dart, approximately lines 974–978
+- lib/creative_document/document.dart, approximately line 213
+- lib/features/editor/domain/history.dart: eraseAt
+
+Verified behavior:
+The eraser clips segments into fragments. This can ADD intersection endpoints.
+
+A valid 99,999-point document can become 100,001 points after an erasure. The canvas commits the erased geometry without checking capacity; the editor constructs a ProjectDocument and throws:
+FormatException: Invalid project
+
+The same issue occurs at 100,000 → 100,002 points.
+
+Minimal reproduction:
+- Create a two-point horizontal stroke from (.1,.5) to (.9,.5).
+- Add a second stroke containing enough points outside the eraser region,
+  for example at (.1,.1), to bring the document to 99,999 or 100,000 points.
+- Call eraseAt(document.strokes, InkPoint(.5,.5), .03).
+- Construct document.copyWith(strokes: erased).
+- Observe that the added clipping endpoints exceed the point cap.
+
+This is relevant to supported older/reopened dense drawings. A dense
+outside zigzag that cannot simplify also makes the state reachable.
+
+Required fix:
+- Validate eraser output before changing committed canvas state.
+- Apply safe, bounded simplification if appropriate.
+- If valid output cannot fit, preserve the prior document and give
+  actionable feedback instead of throwing.
+- Do not silently discard unrelated geometry or musical content.
+- Keep one eraser gesture as one undoable edit.
+- Do not show a successful save for a rejected operation.
+
+Tests:
+- Near-cap and exactly-at-cap documents
+- Erasure that increases point count
+- Repeated erasure gestures
+- No-op erasure
+- Undo/redo
+- Save/reopen after successful erasure
+- Rejected operation preserves original document and usable input
+- Existing geometry-to-score invariants remain intact
+
+3. FIX: HIDDEN INVALID GRADIENT INPUT BLOCKS APPLY
+
+Relevant code:
+lib/features/backgrounds/presentation/background_panel.dart,
+approximately lines 285–320 and 490–494.
+
+Verified reproduction:
+1. Open background controls.
+2. Choose Linear gradient.
+3. Enter invalid text such as ZZZZZZ in Second color.
+4. Switch to Solid color.
+5. The second field disappears, but Apply remains disabled.
+
+The handler checks validSecond even when that field does not apply.
+Choosing a valid gradient preset also does not reliably reset validation.
+
+Required fix:
+- Validate only inputs relevant to the selected background type.
+- Synchronize model values, visible field text and validation state when
+  changing types or selecting presets.
+- Selecting a valid preset must recover from invalid manual input.
+- Invalid hidden fields must not block valid Solid or Photo settings.
+- Preserve transactional Cancel/Apply behavior.
+- Do not simply bypass validation and accept malformed values.
+
+Add widget regressions for:
+- Invalid second color → Solid
+- Invalid color → valid preset
+- Background-type round trips
+- Relevant photo transition with a valid imported asset
+- Cancel preserves the original background
+
+4. FIX: PHOTO CROP PREVIEW DOES NOT MATCH SAVED FRAMING
+
+Relevant code:
+- lib/features/backgrounds/presentation/background_panel.dart:
+  CustomPaint preview around lines 236–239
+- lib/features/backgrounds/presentation/background_painter.dart:
+  source cover-fit calculations
+- Editor and visual exports currently use a 4:5 document aspect
+
+Verified behavior:
+The preview requests Size(240,180) inside a stretched column. In the
+review widget its actual aspect ratio was 3.73333, while the editor and
+exports use .8.
+
+Because photo rendering uses cover-fit, the preview and final document
+show different source-image regions. Apply therefore changes framing.
+
+Required fix:
+- Use the same document aspect and crop transformation for preview,
+  editor, thumbnails, PNG and MP4.
+- Use the stored document aspect if supported; otherwise preserve the
+  current 4:5 contract.
+- Do not change project geometry or export aspect merely to match the
+  incorrect preview.
+- Keep controls reachable on compact screens and at 200% text.
+
+Tests:
+- Preview aspect equals document aspect under actual layout constraints
+- Square, portrait and landscape source images
+- Crop, quarter-turn rotation and mirror combinations
+- Equivalent visible source bounds across preview and final renderer
+- Compact portrait/landscape and large text
+- No overflow or inaccessible Apply/Cancel controls
+
+5. FIX: VIDEO-LIBRARY THUMBNAILS IGNORE NEW BACKGROUNDS
+
+Relevant code:
+lib/features/export_library/presentation/exports_page.dart,
+approximately lines 234–240.
+
+Verified behavior:
+PNG entries display their actual encoded image.
+Other entries render preview.background plus DrawingPainter, ignoring
+preview.paper.
+
+A saved MP4 with a red/blue gradient therefore displays a beige thumbnail.
+The review pixel test observed green channel 245, where the gradient
+center should have green below 40.
+
+Required fix:
+- Render non-PNG thumbnails from the saved export snapshot using the
+  shared background/document renderer.
+- Include photo, gradient, opacity, crop, rotation and mirror state.
+- Keep image decoding bounded for small thumbnails.
+- Do not substitute the project’s current edited state for the exported
+  revision.
+- Missing assets must show an honest fallback without crashing.
+- Preserve current PNG thumbnail behavior.
+
+Add real widget/pixel regressions for:
+- Gradient MP4 thumbnail
+- Photo/cropped MP4 thumbnail
+- Saved snapshot stays unchanged after later project edits
+- Missing background asset
+- Library scrolling and repeated thumbnail disposal
+
+6. FIX: IOS PAUSE CAN DISCARD A LIVE AUDIO REVISION
+
+Relevant code:
+- ios/Runner/DrawMusicAudio.swift:
+  render-side revision adoption around line 138
+  audiblePosition around lines 183–188
+  pause around lines 199–202
+- lib/features/editor/presentation/editor.dart:
+  resume queue logic around lines 421–425
+
+Source finding:
+After the render thread adopts a queued revision, it clears pending.
+During output latency, audiblePosition can still refer to the previous
+revision. Pause assigns that old audible loop back to loop, discarding
+the newly adopted target.
+
+Dart already considers the new revision queued, so Resume may not resend
+it. Old audio can persist until another edit or Replay, with an update
+indicator that does not resolve.
+
+Required fix:
+- Preserve the newest desired/queued revision while retaining a correct
+  audible pause position.
+- Define native current revision, target revision and paused phase
+  consistently.
+- Reconcile native and Dart target state where needed.
+- Preserve the documented tempo/loop-boundary update policy.
+- Maintain one engine/session and safe rapid pause/resume behavior.
+
+Add meaningful native scheduling tests covering:
+- Pause just before and after a revision boundary
+- Rendered target ahead of audible position
+- Positive output latency
+- Resume without another edit
+- Repeated edits and tempo changes
+- Accurate status/current/target revision reporting
+- No lost updates or permanently pending indicator
+
+Do not treat mocked Dart channel payload tests as proof that this native
+state machine works.
+
+7. FIX: IOS MEDIA-SERVICES RESET DOES NOT REBUILD AUDIO OBJECTS
+
+Relevant code:
+ios/Runner/DrawMusicAudio.swift:
+- Immutable AVAudioEngine around line 36
+- Notification handling around lines 60–65
+
+Source finding:
+mediaServicesWereResetNotification only calls pause().
+The engine/source graph is not reconstructed.
+
+Apple requires audio objects to be reinitialized and session
+configuration restored after a media-services reset:
+https://developer.apple.com/documentation/AVFAudio/AVAudioSession/mediaServicesWereResetNotification
+
+Required fix:
+- Implement explicit reset recovery.
+- Safely dispose/recreate invalidated native audio objects and graph.
+- Restore appropriate category/mode/options and controlled internal state.
+- Preserve the editable project and latest intended musical snapshot.
+- Leave playback paused until explicit user action.
+- Make subsequent Prepare/Play recover correctly.
+- Avoid render-thread races, deadlocks and duplicate observers/sessions.
+
+Add native tests or testable state-machine coverage where possible, and
+document the exact Mac/device reset test:
+iOS Settings → Developer → Reset Media Services.
+
+Linux source checks are not native execution evidence.
+
+8. INVESTIGATE AND FIX IOS SELF-GENERATED ROUTE-CHANGE PAUSES
+
+Relevant code:
+ios/Runner/DrawMusicAudio.swift:
+- Unconditional route-change pause around lines 60–65
+- Play sets the session category around line 92
+
+Review qualification:
+This is a source/API risk, not an executed first-play failure. Session
+category changes are themselves a documented route-change reason, and
+notification timing determines whether the unconditional handler can
+pause newly started playback.
+
+Required work:
+- Inspect AVAudioSessionRouteChangeReasonKey.
+- Distinguish app-generated category/configuration changes from actual
+  disconnection or relevant external route changes.
+- Preserve safe pause behavior for genuine interruption/headphone removal.
+- Handle notification ordering without automatic unintended resume.
+- Verify initial Play and repeated Play after configuration changes.
+- Add native regression coverage, including delayed notifications.
+
+Do not claim a guaranteed first-play failure without reproducing it.
+Do not leave the risk unresolved merely because existing mocks pass.
+
+9. IMPLEMENT SAFE ORPHAN BACKGROUND CLEANUP
+
+Current code intentionally retains all immutable background images to
+avoid deleting files still referenced elsewhere. This protects data, but
+canceled imports and deleted projects can accumulate images indefinitely.
+
+This task authorizes a safe cleanup/storage-reclamation implementation.
+
+Required safety:
+- Account for active documents, retained revisions, duplicates, undoable
+  deletion, recovery and pending imports.
+- Account for in-memory editor/Undo references, or run cleanup only at a
+  demonstrably safe lifecycle point where those references cannot exist.
+- Do not race an import, save, duplicate, restore or recovery operation.
+- Unknown/corrupt/future documents must not cause assets to be assumed
+  unreferenced.
+- Use conservative retention when reference analysis is uncertain.
+- Validate asset IDs and constrain operations to owned background storage.
+- Make interruption during cleanup safe and recoverable.
+- Never delete external photo-library files or shared/public exports.
+- Do not use destructive cleanup simply to meet a storage number.
+
+Choose and document a practical policy, such as a coordinated safe-startup
+mark/sweep with age protection and recoverable staging. Avoid adding a
+complex background service.
+
+Use real-filesystem tests covering:
+- True orphan removal
+- Active-project retention
+- Shared duplicate retention
+- Retained revision/history protection
+- Deleted-with-Undo protection
+- Pending import/recovery protection
+- Corrupt/unknown documents
+- Concurrent save/import coordination
+- Cleanup interruption and retry
+
+10. PROFILE HD 60 FPS AND HANDLE CAPABILITIES HONESTLY
+
+The accepted evidence covers compact 640×800 at 60 FPS.
+HD 1080×1350 at 60 FPS is exposed but was not independently profiled.
+
+Required work:
+- Exercise real Android HD 60 FPS encoding on the available emulator.
+- Independently inspect actual encoded timestamps/frame rate, dimensions,
+  codecs, duration, audible output and A/V alignment.
+- Measure elapsed time and a clearly scoped memory metric.
+- Test cancellation, cleanup and background behavior.
+- Preserve the working 30 FPS options and compact 60 FPS behavior.
+
+If HD 60 FPS cannot be supported reliably:
+- Record the actual failure and tested environment.
+- Provide a clear capability/error/fallback path.
+- Never silently change resolution or FPS while claiming the requested
+  export succeeded.
+- Do not infer physical-device support from emulator success.
+
+iOS 30/60 FPS remains a separate Mac/native validation gate.
+
+11. DOCUMENTATION AND ACCEPTANCE CORRECTIONS
+
+Update:
+- Creative implementation plan and requirement matrix
+- Development status
+- Background storage/cleanup policy
+- Geometry/history limits
+- Video frame-rate evidence
+- iOS implementation and Mac checklist
+- Physical Android acceptance checklist
+- README artifact/install instructions where changed
+
+Reconcile stale statements that PR #21 remains unmerged: it is already
+merged. Do not undo or rewrite that merge, and do not attribute who merged
+it without evidence.
+
+Clearly distinguish historical implementation notes from current behavior.
+
+Keep these acceptance items explicitly pending unless actually executed:
+- Physical audio/timbre/latency/routes and interruptions
+- Real receiving-app delivery and document-provider behavior
+- Physical camera permissions/grants/HEIC/vendor behavior
+- Real low storage/power loss
+- Release-device FPS/memory/thermal behavior
+- Physical stylus/Pencil behavior
+- TalkBack/VoiceOver and complete tablet accessibility
+- Human translation review
+- iOS compilation, signing, simulator and physical testing
+
+Provide actionable owner test steps instead of inventing results.
+
+12. VALIDATION AND WORKFLOW
+
+Reproduce each defect before fixing it and add a regression that fails for
+the intended behavioral reason.
+
+For each usable checkpoint:
+- Run focused tests.
+- Run formatter and analyzer.
+- Run bash scripts/check-android.sh.
+- Run relevant real Android/native/export checks.
+- Inspect actual output files independently where applicable.
+- Fix failures and review the diff.
+- Update source-specific evidence and known limitations.
+- Commit to a codex/ development branch.
+- Open or update a draft PR and leave it UNMERGED.
+
+Preserve existing tests and gates. Do not disable assertions, suppress
+real failures, replace native behavior with fake successful adapters, or
+relax verification just to get green CI.
+
+The prior review locally observed:
+- 169 Flutter tests passed; one Linux-only test skipped on Mac
+- Analyzer passed
+- Formatter: 126 files, zero changes
+- Three additional review regressions failed on the intended background/
+  thumbnail assertions
+- Eraser-cap Dart reproduction threw the described exception
+- Historical Android CI was green
+
+Those observations establish the starting point, not acceptance of your
+changes.
+
+Use subagents for independent, clearly owned tasks if available, then
+integrate and independently review the final changes.
+
+Complete the authorized fixes during this active task. If native iOS
+execution is unavailable, finish feasible source/test work and continue
+independent Android work. Do not mark iOS tests as passed because they
+were skipped.
+
+If execution limits prevent completion, leave a tested checkpoint with
+precise remaining work and continuation commands. Do not label the
+overall task complete.
+
+FINAL HANDOFF
+
+Provide:
+- Each finding: reproduced, fixed, regression test and validation evidence
+- Current commit and draft PR links
+- Downloadable debug APK and exact CI run/source
+- New cleanup policy and migration implications
+- Android native/export results
+- iOS source changes versus actually executed native checks
+- Remaining implementation gaps
+- Separate physical-device and human-review checklist
+
+Success means the reproduced bugs are fixed with meaningful regressions,
+the remaining source fixes are implemented without breaking the creative
+expansion, Android checks pass for the new source, and every unexecuted
+platform/device acceptance item remains honestly identified.

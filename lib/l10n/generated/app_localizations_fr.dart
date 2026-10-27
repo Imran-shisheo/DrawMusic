@@ -1139,4 +1139,8 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get recoveryExportFailed =>
       'Impossible d’exporter les données de récupération. Les fichiers d’origine sont conservés.';
+
+  @override
+  String get erasureLimitRejected =>
+      'L’effacement n’a pas été appliqué car il dépasserait la limite du dessin. Annulez des traits, ou enregistrez ce dessin et commencez-en un nouveau.';
 }

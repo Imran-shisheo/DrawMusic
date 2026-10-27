@@ -1,7 +1,5 @@
 import 'package:scribblesong/l10n/strings.dart';
 
-import '../../../creative_document/document.dart';
-
 import 'dart:async';
 import 'dart:io';
 
@@ -12,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../design_system/name_dialog.dart';
 import '../../editor/presentation/canvas.dart';
+import '../../backgrounds/presentation/background_surface.dart';
 import '../../library/presentation/library_tabs.dart';
 import '../data/export_actions.dart';
 import '../domain/export_library.dart';
@@ -234,9 +233,23 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
             : SizedBox(
                 width: 56,
                 height: 70,
-                child: ColoredBox(
-                  color: Color(opaquePaperColor(entry.preview!.background)),
-                  child: CustomPaint(painter: DrawingPainter(entry.preview!)),
+                // ListTile can cap leading height below 70. Letterbox rather
+                // than let those constraints change the document's crop/aspect.
+                child: Center(
+                  child: AspectRatio(
+                    aspectRatio: .8,
+                    child: BackgroundSurface(
+                      key: ValueKey('export-preview-${entry.id}'),
+                      // The export catalog owns this immutable revision. Never
+                      // load the newer editable project for a saved thumbnail.
+                      paper: entry.preview!.effectiveBackground,
+                      maxWidth: 112,
+                      maxHeight: 140,
+                      child: CustomPaint(
+                        painter: DrawingPainter(entry.preview!),
+                      ),
+                    ),
+                  ),
                 ),
               ),
         title: Text(

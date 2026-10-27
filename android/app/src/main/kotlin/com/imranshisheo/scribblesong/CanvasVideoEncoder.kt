@@ -253,8 +253,14 @@ internal class DocumentFrames(document: JSONObject, private val width: Int, priv
         val id=definition.getString("assetId")
         require(Regex("^[a-f0-9]{64}$").matches(id))
         val root=backgroundRoot ?: error("Photo asset root unavailable")
-        val file=File(root,"$id.png")
-        require(file.isFile && file.length() in 1..33_554_432)
+        val ownedRoot=root.canonicalFile
+        val active=File(ownedRoot,"$id.png")
+        val stage=File(ownedRoot,".cleanup-staging")
+        val file=if(active.exists()) active else {
+            require(stage.canonicalPath==File(ownedRoot,".cleanup-staging").absolutePath) {"Background staging link unavailable"}
+            File(stage,"$id.png")
+        }
+        require(file.canonicalPath==file.absolutePath && file.isFile && file.length() in 1..33_554_432)
         val bytes=file.readBytes()
         val hash=java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString(""){"%02x".format(it)}
         require(hash==id) { "Photo asset checksum mismatch" }

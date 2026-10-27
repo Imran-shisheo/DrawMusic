@@ -6,13 +6,16 @@ import 'dart:isolate';
 import 'package:crypto/crypto.dart';
 
 import '../../../creative_document/document.dart';
+import '../../backgrounds/data/background_cleanup_coordination.dart';
 import '../domain/project_repository.dart';
 import '../domain/recovery_export_port.dart';
 
 // Immutable checksummed revisions and atomic publication. Previous complete
 // revisions remain available when the newest file is corrupt or a write fails.
 class FileProjectRepository implements ProjectRepository, RecoveryExportPort {
-  FileProjectRepository(this.root);
+  FileProjectRepository(this.root, {BackgroundStorageCoordinator? coordinator})
+    : _coordinator = coordinator ?? BackgroundStorageCoordinator.application;
+  final BackgroundStorageCoordinator _coordinator;
   final Directory root;
   Future<void> _queue = Future.value();
   void _validate(String id) {
@@ -22,7 +25,7 @@ class FileProjectRepository implements ProjectRepository, RecoveryExportPort {
   }
 
   Future<T> _serialize<T>(Future<T> Function() operation) {
-    final pending = _queue.then((_) => operation());
+    final pending = _queue.then((_) => _coordinator.write(operation));
     _queue = pending.then<void>(
       (_) {},
       onError: (Object error, StackTrace stack) {},

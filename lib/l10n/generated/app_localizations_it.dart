@@ -1136,4 +1136,8 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get recoveryExportFailed =>
       'Impossibile esportare i dati di recupero. I file originali sono conservati.';
+
+  @override
+  String get erasureLimitRejected =>
+      'La cancellazione non è stata applicata perché supererebbe il limite del disegno. Annulla alcuni tratti oppure salva questo disegno e iniziane uno nuovo.';
 }
