@@ -24,6 +24,7 @@ import 'editor_tools_panel.dart';
 import '../../../design_system/motion.dart';
 import '../../../design_system/doodimo_icon.dart';
 import '../../../design_system/brand_colors.dart';
+import '../../../design_system/immersive_surface.dart';
 import 'studio_control.dart';
 import 'instrument_glyph.dart';
 import '../../rating/application/rating_provider.dart';
@@ -763,128 +764,119 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
               : context.strings.updatesNextLoop)
         : (!hasMusic ? context.strings.drawSomethingToHearIt : '');
 
-    final viewport = MediaQuery.sizeOf(context);
-    final stackedPod =
-        largeText || viewport.width < 380 || viewport.width >= 900;
-    const forest = DoodimoColors.ink,
-        cream = DoodimoColors.paper,
-        lime = DoodimoColors.lime;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final showModeGlyph = !largeText && MediaQuery.sizeOf(context).width >= 380;
-    final toolbar = Row(
-      children: [
-        Expanded(
-          child: Material(
-            color: colors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(24),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _EditorModeButton(
-                      label: context.strings.draw,
-                      glyph: DoodimoGlyph.draw,
-                      showGlyph: showModeGlyph,
-                      selected: !_eraser,
-                      onPressed: () {
-                        _canvas.currentState?.finish();
-                        setState(() => _eraser = false);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: _EditorModeButton(
-                      label: context.strings.erase,
-                      glyph: DoodimoGlyph.erase,
-                      showGlyph: showModeGlyph,
-                      selected: _eraser,
-                      onPressed: () {
-                        _canvas.currentState?.finish();
-                        setState(() => _eraser = true);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        if (!largeText) ...[
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: context.strings.undo,
-            onPressed: controller.canUndo
-                ? () => _historyEdit(redo: false)
-                : null,
-            icon: const DoodimoIcon(DoodimoGlyph.undo),
-          ),
-          IconButton(
-            tooltip: context.strings.redo,
-            onPressed: controller.canRedo
-                ? () => _historyEdit(redo: true)
-                : null,
-            icon: const DoodimoIcon(DoodimoGlyph.redo),
-          ),
-        ],
-      ],
-    );
-    final voice = StudioControl(
-      key: _voiceTarget,
-      interactionKey: const ValueKey('current-voice'),
-      label:
-          '${context.strings.chooseAVoice}: ${instrumentName(context, _instrument)}',
-      onPressed: _chooseVoice,
-      fill: forest,
-      foreground: cream,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      radius: 20,
+    final toolbar = ImmersiveSurface(
+      padding: const EdgeInsets.all(4),
+      radius: 22,
+      accent: DoodimoColors.cyan,
       child: Row(
         children: [
-          if (largeText)
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: instrumentColors[_instrument.index],
-                shape: BoxShape.circle,
-              ),
-            )
-          else
-            Container(
-              width: 32,
-              height: 32,
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: cream,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: InstrumentGlyph(
-                _instrument,
-                color: instrumentColors[_instrument.index],
-                size: 20,
-              ),
-            ),
-          const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              instrumentName(context, _instrument),
-              style: type.bodyMedium?.copyWith(
-                color: cream,
-                fontWeight: FontWeight.w600,
+            child: Material(
+              color: colors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(24),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _EditorModeButton(
+                        label: context.strings.draw,
+                        glyph: DoodimoGlyph.draw,
+                        showGlyph: showModeGlyph,
+                        selected: !_eraser,
+                        onPressed: () {
+                          _canvas.currentState?.finish();
+                          setState(() => _eraser = false);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: _EditorModeButton(
+                        label: context.strings.erase,
+                        glyph: DoodimoGlyph.erase,
+                        showGlyph: showModeGlyph,
+                        selected: _eraser,
+                        onPressed: () {
+                          _canvas.currentState?.finish();
+                          setState(() => _eraser = true);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          if (stackedPod) ...[
+          if (!largeText) ...[
             const SizedBox(width: 8),
-            const DoodimoIcon(DoodimoGlyph.chevronDown, color: cream, size: 18),
+            IconButton(
+              tooltip: context.strings.undo,
+              onPressed: controller.canUndo
+                  ? () => _historyEdit(redo: false)
+                  : null,
+              icon: const DoodimoIcon(DoodimoGlyph.undo),
+            ),
+            IconButton(
+              tooltip: context.strings.redo,
+              onPressed: controller.canRedo
+                  ? () => _historyEdit(redo: true)
+                  : null,
+              icon: const DoodimoIcon(DoodimoGlyph.redo),
+            ),
           ],
         ],
       ),
     );
-    final summary = Material(
-      color: colors.secondaryContainer,
-      borderRadius: BorderRadius.circular(18),
+    final voice = ImmersiveSurface(
+      padding: EdgeInsets.zero,
+      radius: 22,
+      accent: DoodimoColors.violet,
+      child: StudioControl(
+        key: _voiceTarget,
+        interactionKey: const ValueKey('current-voice'),
+        label:
+            '${context.strings.chooseAVoice}: ${instrumentName(context, _instrument)}',
+        onPressed: _chooseVoice,
+        fill: Colors.transparent,
+        foreground: colors.onSurface,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        radius: 22,
+        child: Row(
+          children: [
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: instrumentColors[_instrument.index],
+                    width: 3,
+                  ),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: InstrumentGlyph(_instrument, size: largeText ? 32 : 42),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                instrumentName(context, _instrument),
+                style: type.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            const SizedBox(width: 6),
+            const DoodimoIcon(DoodimoGlyph.chevronDown, size: 18),
+          ],
+        ),
+      ),
+    );
+    final summary = ImmersiveSurface(
+      radius: 20,
+      padding: EdgeInsets.zero,
+      accent: DoodimoColors.cyan,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Row(
@@ -902,7 +894,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                     '${context.strings.musicSettings}: ${context.strings.tempoValue(context.formatNumber(doc.tempo))}, ${doc.root.label} ${scaleName(context, doc.scale)}',
                 onPressed: _musicSettings,
                 fill: Colors.transparent,
-                foreground: colors.onSecondaryContainer,
+                foreground: colors.onSurface,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 radius: 16,
                 child: Row(
@@ -914,7 +906,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                           '${context.strings.tempoValue(context.formatNumber(doc.tempo))} · ${doc.root.label} ${scaleName(context, doc.scale)}',
                           key: _tempoTarget,
                           style: type.labelMedium?.copyWith(
-                            color: colors.onSecondaryContainer,
+                            color: colors.onSurface,
                           ),
                         ),
                       )
@@ -930,14 +922,14 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                               ),
                               key: _tempoTarget,
                               style: type.labelLarge?.copyWith(
-                                color: colors.onSecondaryContainer,
+                                color: colors.onSurface,
                               ),
                             ),
                             Text(
                               '${doc.root.label} ${scaleName(context, doc.scale)}',
                               key: _scaleTarget,
                               style: type.labelSmall?.copyWith(
-                                color: colors.onSecondaryContainer,
+                                color: colors.onSurface,
                               ),
                             ),
                           ],
@@ -946,7 +938,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                       const SizedBox(width: 6),
                       DoodimoIcon(
                         DoodimoGlyph.chevronDown,
-                        color: colors.onSecondaryContainer,
+                        color: colors.onSurface,
                         size: 18,
                       ),
                     ],
@@ -965,37 +957,49 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       ),
     );
     final play = DecoratedBox(
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x33000000),
-            offset: Offset(0, 4),
-            blurRadius: 5,
-          ),
-        ],
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: hasMusic
+              ? const [Color(0xffb9a1ff), Color(0xff71e2f5)]
+              : const [Color(0xff606d94), Color(0xff46577e)],
+        ),
+        border: Border.all(
+          color: const Color(0xffd1d9ff).withValues(alpha: .7),
+        ),
+        boxShadow: hasMusic
+            ? [
+                BoxShadow(
+                  color: DoodimoColors.violet.withValues(
+                    alpha: dark ? .24 : .12,
+                  ),
+                  blurRadius: 22,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : const [],
       ),
       child: SizedBox.square(
-        dimension: 64,
-        child: IconButton.filled(
+        dimension: 72,
+        child: IconButton(
           key: _playTarget,
           style: IconButton.styleFrom(
-            backgroundColor: lime,
-            foregroundColor: forest,
-            disabledBackgroundColor: const Color(0xff52634c),
-            disabledForegroundColor: cream.withValues(alpha: .6),
+            foregroundColor: DoodimoColors.ink,
+            disabledForegroundColor: const Color(0xffd6def6),
           ),
           tooltip: _playing ? context.strings.pause : context.strings.play,
           onPressed: (!_playing && !hasMusic) || _preparing
               ? null
               : () => _play(),
           icon: SizedBox.square(
-            dimension: 30,
+            dimension: 32,
             child: _preparing
                 ? const Padding(
                     padding: EdgeInsets.all(3),
                     child: CircularProgressIndicator(
-                      color: forest,
+                      color: DoodimoColors.ink,
                       strokeWidth: 2.5,
                     ),
                   )
@@ -1007,10 +1011,10 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                     child: DoodimoIcon(
                       _playing ? DoodimoGlyph.pause : DoodimoGlyph.play,
                       key: ValueKey(_playing),
-                      size: 30,
-                      color: (!_playing && !hasMusic)
-                          ? cream.withValues(alpha: .6)
-                          : forest,
+                      size: 32,
+                      color: hasMusic
+                          ? DoodimoColors.ink
+                          : const Color(0xffd6def6),
                     ),
                   ),
           ),
@@ -1019,84 +1023,87 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     );
     final replay = IconButton(
       tooltip: context.strings.replay,
-      style: IconButton.styleFrom(
-        foregroundColor: cream,
-        disabledForegroundColor: cream.withValues(alpha: .3),
-      ),
       onPressed: hasMusic ? () => _play(replay: true) : null,
       icon: const DoodimoIcon(DoodimoGlyph.replay),
     );
     final tools = IconButton(
       key: const ValueKey('editor-tools'),
       tooltip: context.strings.editorTools,
-      style: IconButton.styleFrom(foregroundColor: cream),
       onPressed: _tools,
       icon: const DoodimoIcon(DoodimoGlyph.more),
     );
-    final transport = DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: colors.shadow.withValues(alpha: .14),
-            offset: const Offset(0, 5),
-            blurRadius: 14,
+    final utility = Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        if (largeText) ...[
+          IconButton(
+            tooltip: context.strings.undo,
+            onPressed: controller.canUndo
+                ? () => _historyEdit(redo: false)
+                : null,
+            icon: const DoodimoIcon(DoodimoGlyph.undo),
+          ),
+          IconButton(
+            tooltip: context.strings.redo,
+            onPressed: controller.canRedo
+                ? () => _historyEdit(redo: true)
+                : null,
+            icon: const DoodimoIcon(DoodimoGlyph.redo),
           ),
         ],
-      ),
-      child: Material(
-        color: forest,
-        borderRadius: BorderRadius.circular(28),
-        child: Padding(
-          padding: const EdgeInsets.all(8),
-          child: stackedPod
-              ? Column(
+        replay,
+        tools,
+      ],
+    );
+    final viewport = MediaQuery.sizeOf(context);
+    final compactDeck =
+        largeText || viewport.width < 380 || viewport.width >= 900;
+    final transport = compactDeck
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              voice,
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  play,
+                  const SizedBox(width: 12),
+                  Expanded(child: utility),
+                ],
+              ),
+              const SizedBox(height: 8),
+              summary,
+            ],
+          )
+        : Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 80,
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [play, const SizedBox(height: 4), replay],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    voice,
-                    const SizedBox(height: 4),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        if (largeText) ...[
-                          IconButton(
-                            tooltip: context.strings.undo,
-                            style: IconButton.styleFrom(foregroundColor: cream),
-                            onPressed: controller.canUndo
-                                ? () => _historyEdit(redo: false)
-                                : null,
-                            icon: const DoodimoIcon(DoodimoGlyph.undo),
-                          ),
-                          IconButton(
-                            tooltip: context.strings.redo,
-                            style: IconButton.styleFrom(foregroundColor: cream),
-                            onPressed: controller.canRedo
-                                ? () => _historyEdit(redo: true)
-                                : null,
-                            icon: const DoodimoIcon(DoodimoGlyph.redo),
-                          ),
-                        ] else
-                          const SizedBox(width: 96),
-                        play,
-                        replay,
+                        Expanded(child: voice),
+                        const SizedBox(width: 4),
                         tools,
                       ],
                     ),
-                  ],
-                )
-              : Row(
-                  children: [
-                    Expanded(child: voice),
-                    const SizedBox(width: 8),
-                    play,
-                    replay,
-                    tools,
+                    const SizedBox(height: 8),
+                    summary,
                   ],
                 ),
-        ),
-      ),
-    );
+              ),
+            ],
+          );
     final alerts = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1129,7 +1136,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: colors.shadow.withValues(alpha: .07),
+                color: DoodimoColors.violet.withValues(alpha: dark ? .13 : .07),
                 blurRadius: 20,
                 offset: const Offset(0, 5),
               ),
@@ -1209,37 +1216,49 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
               onPressed: state.saving ? null : _explicitSave,
               icon: const DoodimoIcon(DoodimoGlyph.save),
             ),
-            IconButton(
-              tooltip: context.strings.exportLoop,
-              onPressed: () async {
-                _canvas.currentState?.finish();
-                await _pause();
-                if (context.mounted) {
-                  await showExportSheet(
-                    context,
-                    ref.read(editorProvider).document,
-                  );
-                  if (mounted) await _offerRating();
-                }
-              },
-              icon: const DoodimoIcon(DoodimoGlyph.export),
+            Tooltip(
+              message: context.strings.exportLoop,
+              child: TextButton.icon(
+                label: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 110),
+                  child: Text(
+                    context.strings.exportLoop,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                onPressed: () async {
+                  _canvas.currentState?.finish();
+                  await _pause();
+                  if (context.mounted) {
+                    await showExportSheet(
+                      context,
+                      ref.read(editorProvider).document,
+                    );
+                    if (mounted) await _offerRating();
+                  }
+                },
+                icon: const DoodimoIcon(DoodimoGlyph.export),
+              ),
             ),
           ],
         ),
-        body: SafeArea(
-          minimum: EdgeInsets.only(
-            left: MediaQuery.viewPaddingOf(context).left,
-            right: MediaQuery.viewPaddingOf(context).right,
-            bottom: MediaQuery.viewPaddingOf(context).bottom,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-            child: ResponsiveEditorLayout(
-              toolbar: toolbar,
-              summary: summary,
-              transport: transport,
-              canvas: canvas,
-              alerts: alerts,
+        body: SceneBackdrop(
+          child: SafeArea(
+            minimum: EdgeInsets.only(
+              left: MediaQuery.viewPaddingOf(context).left,
+              right: MediaQuery.viewPaddingOf(context).right,
+              bottom: MediaQuery.viewPaddingOf(context).bottom,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: ResponsiveEditorLayout(
+                toolbar: toolbar,
+                summary: const SizedBox.shrink(),
+                transport: transport,
+                canvas: canvas,
+                alerts: alerts,
+              ),
             ),
           ),
         ),

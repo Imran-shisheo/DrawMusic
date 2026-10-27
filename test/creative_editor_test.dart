@@ -294,7 +294,9 @@ void main() {
       expect(tester.takeException(), isNull);
       final semantics = tester.ensureSemantics();
       try {
-        final preferences = MemoryPreferencesStore();
+        final preferences = MemoryPreferencesStore(
+          const UserPreferences(darkTheme: false),
+        );
         await tester.pumpWidget(const SizedBox());
         await tester.pumpWidget(
           ProviderScope(

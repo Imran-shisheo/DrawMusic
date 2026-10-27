@@ -33,6 +33,7 @@ const _verify = bool.fromEnvironment('UI_VISUAL_VERIFY');
 const _enabled = bool.fromEnvironment('UI_VISUAL_CAPTURE') || _verify;
 const _previewOnly = bool.fromEnvironment('UI_CAPTURE_PREVIEW_ONLY');
 const _homeOnly = bool.fromEnvironment('UI_CAPTURE_HOME_ONLY');
+const _immersive = bool.fromEnvironment('UI_CAPTURE_IMMERSIVE');
 const _output = String.fromEnvironment(
   'UI_CAPTURE_DIR',
   defaultValue: 'work/ui-after',
@@ -155,6 +156,11 @@ void main() {
   testWidgets(
     'capture actual product screens with real fonts and declared fixtures',
     (tester) async {
+      if (_verify && _immersive) {
+        fail(
+          'Immersive visual references are not established. Capture and inspect the new scene plus real motion evidence before authorizing new golden comparisons.',
+        );
+      }
       final directory = Directory(_output);
       if (_output.endsWith('/ui-before') &&
           File('$_output/manifest.json').existsSync()) {
@@ -162,6 +168,7 @@ void main() {
       }
       await tester.runAsync(() => directory.create(recursive: true));
       final manifest = <Map<String, dynamic>>[];
+      var currentDark = false;
       debugDisableShadows = false;
       addTearDown(() {
         debugDisableShadows = true;
@@ -228,6 +235,7 @@ void main() {
             tester.view.physicalSize.height,
           ],
           'textScale': tester.platformDispatcher.textScaleFactor,
+          'brightness': currentDark ? 'dark' : 'light',
           'renderExceptions': errors,
         });
       }
@@ -235,7 +243,7 @@ void main() {
       Future<void> mount({
         Widget? page,
         bool root = false,
-        bool dark = false,
+        bool? dark,
         String locale = 'en',
         Size size = const Size(411, 850),
         double scale = 1,
@@ -247,6 +255,8 @@ void main() {
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1;
         tester.platformDispatcher.textScaleFactorTestValue = scale;
+        final useDark = dark ?? _immersive;
+        currentDark = useDark;
         final doc = document ?? _drawing();
         final repo = MemoryRepository();
         repo.documents[doc.id] = doc;
@@ -291,7 +301,7 @@ void main() {
                       tutorialCompleted: true,
                       editorTipsCompleted: true,
                       reduceMotion: true,
-                      darkTheme: dark,
+                      darkTheme: useDark,
                       languageCode: locale,
                     ),
                   )..fail = failPreferenceWrites,
@@ -303,7 +313,9 @@ void main() {
                   : MaterialApp(
                       debugShowCheckedModeBanner: false,
                       theme: buildTheme(
-                        brightness: dark ? Brightness.dark : Brightness.light,
+                        brightness: useDark
+                            ? Brightness.dark
+                            : Brightness.light,
                       ),
                       locale: Locale(locale),
                       localizationsDelegates:
@@ -330,7 +342,9 @@ void main() {
       }
 
       await mount(root: true);
-      await save('01-home-light-phone');
+      await save(
+        _immersive ? '01-home-immersive-dark-phone' : '01-home-light-phone',
+      );
       if (!_homeOnly) {
         if (!_previewOnly) {
           await tester.tap(find.text('Library'));
@@ -343,7 +357,11 @@ void main() {
           await save('05-editor-empty-phone');
         }
         await mount();
-        await save('06-editor-drawn-phone');
+        await save(
+          _immersive
+              ? '06-editor-immersive-dark-phone'
+              : '06-editor-drawn-phone',
+        );
         if (!_previewOnly) {
           await tester.tap(find.byTooltip('Play'));
           await settle();
@@ -357,12 +375,22 @@ void main() {
         }
         await mount();
         await tester.tap(find.byTooltip('Export loop'));
-        await save('09-export-panel-phone');
+        await save(
+          _immersive
+              ? '09-export-immersive-dark-phone'
+              : '09-export-panel-phone',
+        );
         if (!_previewOnly) {
           await mount(root: true, dark: true);
           await save('10-home-dark-phone');
           await mount(dark: true);
           await save('11-editor-dark-phone');
+          if (_immersive) {
+            await mount(root: true, dark: false);
+            await save('10b-home-cool-light-phone');
+            await mount(dark: false);
+            await save('11b-editor-cool-light-phone');
+          }
           await mount(
             root: true,
             size: const Size(320, 640),
@@ -507,7 +535,12 @@ void main() {
             'scope': 'Actual Flutter product widgets with fixture repository/preferences/audio/export metadata. Not Android emulator screenshots, native audio proof or physical acceptance.',
             'font': 'Bundled Space Grotesk display, Nunito Sans body weights and Noto script fallbacks loaded explicitly, plus MaterialIcons for legacy controls. Original Doodimo glyphs are CustomPaint geometry. SDK Roboto is also loaded for legacy comparison. No Ahem screenshots.',
             'motion': 'Reduced motion enabled for deterministic still evidence; playback position is test audio fixture, not measured native timing.',
-            'designStatus': 'Corrective design proposal; not owner acceptance. The first iteration remains preserved separately as rejected evidence.',
+            'designStatus': _immersive
+                ? 'Immersive replacement proposal; neither prior rejected iteration is acceptance. Motion evidence remains separate.'
+                : 'Historical second-iteration proposal; rejected by the owner. Both earlier directions remain rejected evidence.',
+            'theme': _immersive
+                ? 'First three fixtures explicitly dark; cool-light variants are separately named in the full matrix.'
+                : 'Historical light-first fixtures.',
             'screens': manifest,
           }),
         ),

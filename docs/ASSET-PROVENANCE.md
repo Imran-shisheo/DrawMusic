@@ -39,10 +39,57 @@ Android includes a legacy vector, round legacy fallback, API26 adaptive foregrou
 
 iOS includes all 15 unique opaque RGB app-icon sizes required by the existing catalog, plus three normal and three dark transparent launch images and a light/dark named launch background. The 12 native localized bundles use the same Doodimo display name. `assets/branding/native-icon-manifest.json` records SVG/output SHA256 values, dimensions and the safe-area calculation; `python3 scripts/check-brand-icons.py` validates source identity, native resource wiring, real PNG headers/CRCs/sizes/opacity format and unchanged package identifiers without Pillow. Native iOS compilation and physical launcher/splash appearance remain separate Mac/device checks.
 
-### Original Doodimo control glyphs
+### Historical rejected Doodimo line control glyphs
 
-`lib/design_system/doodimo_icon.dart` contains 31 project-authored geometric glyphs on a 24-unit grid, drawn with rounded 1.85-unit strokes and filled transport marks. Paths are authored in source; no Material/Cupertino glyph, SVG path, commercial icon pack or icon font is copied into this family. Common action metaphors remain recognizable while the Home arch, folded musical sheet and voice line carry the drawing-to-music motif. Parent controls supply localized labels and at least 48 dp targets. Four directional actions mirror for RTL; music/play symbols keep their orientation. Widget tests inspect actual 24 px ink bounds, reflected coverage, disabled opacity and Android labeled-target guidelines; this is not physical screen-reader certification. A real-font optical contact sheet is generated explicitly under work/ui-icons.
+At the rejected checkpoint 9d71f43, `lib/design_system/doodimo_icon.dart` contained 31 project-authored geometric glyphs on a 24-unit grid, drawn with rounded 1.85-unit strokes and filled transport marks. Paths are authored in source; no Material/Cupertino glyph, SVG path, commercial icon pack or icon font is copied into this family. Common action metaphors remain recognizable while the Home arch, folded musical sheet and voice line carry the drawing-to-music motif. Parent controls supply localized labels and at least 48 dp targets. Four directional actions mirror for RTL; music/play symbols keep their orientation. Widget tests inspect actual 24 px ink bounds, reflected coverage, disabled opacity and Android labeled-target guidelines; this is not physical screen-reader certification. A real-font optical contact sheet is generated explicitly under work/ui-icons.
 
 ### Corrective display face
 
 Space Grotesk 600/700 adds a distinct editorial heading voice while Nunito Sans remains the body/control face and all script fallbacks remain bundled. Its official Google Fonts master and original SIL OFL1.1 are pinned to upstream commit e7db6ca603fd4862010383ff17ffd6cc4ffac1c0 and hashed in FONT-MANIFEST.json. The master STAT table lacks a named 600 instance, so static instance name/weight/style metadata is set explicitly; no glyph outlines are redesigned. Latin and Vietnamese example glyphs are present, with Nunito/Noto display fallbacks for other scripts. This is offline typography, not a runtime font download or a new Flutter dependency.
+
+### Immersive Doodimo ribbon identity — 27 October 2026 replacement
+
+The owner rejected both warm-paper/forest visual iterations, including their thin
+loop mark. Those sections are historical evidence, not the current shipping
+identity. The active original identity is `assets/branding/mark.svg`: a broad
+filled D-shaped sound orbit, a cyan diagonal folded ribbon and a restrained
+curved edge highlight. This is newly authored absolute cubic/line geometry,
+without reference-app media or a stock icon source.
+
+The SVG is authoritative for all three planes and their gradients. The outer
+orbit moves from #B7A0FF through #8B5CF6 to #EF81C7; the front folded plane moves
+from #6672F5 through #55DFF5 to #C6F8FF; the edge uses #F2EBFF with bounded alpha.
+The icon and native launch background are ink navy #090B18. No old forest,
+warm-ivory, coral-endpoint or thin-loop glyph is used by the generated assets.
+`tool/generate_brand_icons.py` parses these exact filled paths/linear gradients,
+rasterizes the iOS icons with developer-only Pillow, and writes corresponding
+Android vector gradient planes. Android monochrome intentionally combines the
+two solid material planes without a decorative highlight.
+
+The Android adaptive foreground uses the existing 108dp viewport and
+20dp translation/0.68 scale; the entire critical filled silhouette measures
+25.409dp from center, inside the 33dp safe radius. The required legacy, round,
+adaptive and Android 13 monochrome resources remain wired. All 15 opaque RGB
+iOS app-icon sizes and six transparent launch-size/light-dark variants were
+regenerated. The authored raster was inspected at 1024px and actual 24/48/96px,
+with a nearest-neighbor enlargement for small-size edge review. These are asset
+inspections, not an observed device launcher or Apple compilation.
+The in-app `DoodimoMarkPainter` uses the same three checked SVG path constants
+and gradient family. Its actual Flutter-engine 24/48/256px raster output was
+also generated and inspected on Linux; its only optional motion shifts the
+edge reflection by at most 1.4 viewport units without changing the silhouette.
+
+Validation: `python3 scripts/check-brand-icons.py` checks shared SVG/output
+hashes, exact filled path order, gradients, native labels, adaptive bounds,
+PNG headers/sizes/opaque app-icon format and unchanged application identifiers.
+The pinned Android AAPT2 compiled the complete updated resource tree. Product
+Android build and actual redesigned UI/emulator validation are recorded
+separately. iOS remains uncompiled until a Mac executes the documented checks.
+The approved Doodimo display name, package/bundle identifier
+`com.imranshisheo.scribblesong`, storage locations, existing `DrawMusic` public
+paths and saved project titles remain unchanged by this visual replacement.
+
+
+## Active immersive duotone symbols — replaces both rejected icon iterations
+
+Following the second owner rejection on 27 October 2026, all 31 action/navigation compositions in `lib/design_system/doodimo_icon.dart` were reauthored as original rounded filled planes, solid foreground silhouettes, tonal depth faces and restrained highlights. These are not recolored prior line paths, stock icons or an icon font. The stable public action enum preserves function and localized host labels. Theme-selected color and secondary accent inform the material; one outer opacity group applies disabled alpha once to prevent overlapping faces appearing enabled. Directional actions mirror while music/transport orientation stays stable. The actual 24 px raster contact study includes 28/32 px examples, a selected violet state, disabled state and white help-symbol contrast, at `work/ui-icons-immersive/contact-sheet.png`. It is an icon-material study, not proof of accepted overall product design. Prior warm/forest line-family evidence is retained only as rejected historical work.

@@ -38,13 +38,27 @@ def main():
     assert app.get(ANDROID + 'roundIcon') == '@mipmap/ic_launcher_round'
     strings = ET.parse(ROOT / 'android/app/src/main/res/values/strings.xml').getroot()
     assert strings.find("string[@name='app_name']").text == brand
-    original_path = ET.parse(svg).getroot().find('{http://www.w3.org/2000/svg}path').get('d')
+    svg_root = ET.parse(svg).getroot()
+    planes = svg_root.findall('{http://www.w3.org/2000/svg}path')
+    assert [p.get('id') for p in planes] == ['orbit-plane', 'fold-plane', 'edge-light']
+    assert all(p.get('stroke') is None and p.get('fill', '').startswith('url(#') for p in planes)
+    painter = (ROOT / 'lib/design_system/doodimo_mark_painter.dart').read_text()
+    for plane, name in zip(planes, ('Orbit', 'Fold', 'Edge')):
+        actual = re.search(rf"const doodimo{name}PathData\s*=\s*'([^']+)';", painter)
+        assert actual and actual.group(1) == plane.get('d'), f'In-app {name} geometry differs from original SVG/native identity'
+    assert report['background'] == '#090B18'
     for name in ('doodimo_icon_foreground', 'doodimo_icon_monochrome', 'doodimo_splash_mark'):
         vector = ET.parse(ROOT / f'android/app/src/main/res/drawable/{name}.xml').getroot()
         group = vector.find('group')
         assert group.get(ANDROID + 'scaleX') == group.get(ANDROID + 'scaleY') == '0.68'
         assert group.get(ANDROID + 'translateX') == group.get(ANDROID + 'translateY') == '20'
-        assert group.find('path').get(ANDROID + 'pathData') == original_path
+        paths = group.findall('path')
+        expected = planes[:2] if name == 'doodimo_icon_monochrome' else planes
+        assert [p.get(ANDROID + 'pathData') for p in paths] == [p.get('d') for p in expected]
+        assert all(p.get(ANDROID + 'strokeColor') is None for p in paths)
+        assert all(p.get(ANDROID + 'fillType') == 'evenOdd' for p in paths)
+        if name != 'doodimo_icon_monochrome':
+            assert all(p.find('{http://schemas.android.com/aapt}attr/gradient') is not None for p in paths)
     for api in (26, 33):
         for name in ('ic_launcher', 'ic_launcher_round'):
             adaptive = ET.parse(ROOT / f'android/app/src/main/res/mipmap-anydpi-v{api}/{name}.xml').getroot()

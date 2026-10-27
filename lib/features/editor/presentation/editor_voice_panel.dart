@@ -55,6 +55,7 @@ class _VoiceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final name = instrumentName(context, instrument);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     void choose() => Navigator.pop(context, instrument);
     return Semantics(
       selected: selected,
@@ -64,14 +65,30 @@ class _VoiceTile extends StatelessWidget {
       child: ExcludeSemantics(
         child: AnimatedContainer(
           duration: CreativeMotion.duration(context, CreativeMotion.selection),
-          constraints: const BoxConstraints(minHeight: 112),
+          constraints: const BoxConstraints(minHeight: 136),
           decoration: BoxDecoration(
-            color: selected ? DoodimoColors.ink : scheme.surfaceContainerLow,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: dark
+                  ? [
+                      selected
+                          ? const Color(0xff37315d)
+                          : const Color(0xff202746),
+                      const Color(0xff11172c),
+                    ]
+                  : [
+                      Colors.white,
+                      selected
+                          ? const Color(0xffe3ddff)
+                          : const Color(0xffe9edff),
+                    ],
+            ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: selected
-                  ? DoodimoColors.ink
-                  : scheme.outlineVariant.withValues(alpha: .45),
+                  ? (dark ? DoodimoColors.cyan : scheme.primary)
+                  : DoodimoColors.violet.withValues(alpha: .35),
               width: 2,
             ),
           ),
@@ -91,25 +108,26 @@ class _VoiceTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: DoodimoColors.paper,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: InstrumentGlyph(
-                            instrument,
-                            color: instrumentColors[instrument.index],
-                            size: 24,
-                          ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            InstrumentGlyph(instrument, size: 56),
+                            const SizedBox(height: 6),
+                            Container(
+                              width: 30,
+                              height: 3,
+                              decoration: BoxDecoration(
+                                color: instrumentColors[instrument.index],
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ],
                         ),
                         const Spacer(),
                         if (selected)
                           const DoodimoIcon(
                             DoodimoGlyph.check,
-                            color: DoodimoColors.lime,
+                            color: DoodimoColors.cyan,
                             size: 20,
                           ),
                       ],
@@ -117,11 +135,8 @@ class _VoiceTile extends StatelessWidget {
                     const SizedBox(height: 14),
                     Text(
                       name,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: selected
-                            ? DoodimoColors.paper
-                            : scheme.onSurface,
-                      ),
+                      style: Theme.of(context).textTheme.labelLarge
+                          ?.copyWith(color: scheme.onSurface),
                     ),
                   ],
                 ),

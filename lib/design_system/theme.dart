@@ -6,35 +6,44 @@ import 'typography.dart';
 import 'brand_colors.dart';
 
 // Document paper/instrument colors are defined by the document, not this theme.
-const ink = Color(0xff223c35);
-const paper = Color(0xfff7f5eb);
-const accent = Color(0xff167d73);
+const ink = DoodimoColors.ink;
+const paper = Color(
+  0xfff7f5eb,
+); // Legacy document paper, independent of chrome.
+const accent = DoodimoColors.violet;
 
 ThemeData buildTheme({Brightness brightness = Brightness.light}) {
   final dark = brightness == Brightness.dark;
   final scheme = ColorScheme.fromSeed(
-    seedColor: DoodimoColors.ink,
+    seedColor: DoodimoColors.violet,
     brightness: brightness,
-    primary: dark ? DoodimoColors.lime : DoodimoColors.ink,
-    onPrimary: dark ? DoodimoColors.ink : DoodimoColors.paper,
-    surface: dark ? const Color(0xff172622) : const Color(0xfff8f7f3),
-    onSurface: dark ? const Color(0xfff1f3eb) : ink,
-    onSurfaceVariant: dark ? const Color(0xffbbc9bf) : const Color(0xff50645c),
-    surfaceContainerLow: dark
-        ? const Color(0xff22372d)
-        : const Color(0xffefeee8),
-    surfaceContainerHighest: dark
-        ? const Color(0xff30443b)
-        : const Color(0xffe8e8df),
-    primaryContainer: dark ? const Color(0xff324b38) : DoodimoColors.lime,
-    onPrimaryContainer: dark ? DoodimoColors.lime : DoodimoColors.ink,
-    secondaryContainer: dark ? const Color(0xff353c49) : DoodimoColors.lavender,
+    primary: dark ? const Color(0xffbca6ff) : const Color(0xff6840c7),
+    onPrimary: dark ? DoodimoColors.ink : Colors.white,
+    primaryContainer: dark ? const Color(0xff302051) : const Color(0xffe8ddff),
+    onPrimaryContainer: dark
+        ? const Color(0xffeadeff)
+        : const Color(0xff382052),
+    secondary: dark ? DoodimoColors.cyan : const Color(0xff006878),
+    onSecondary: dark ? DoodimoColors.ink : Colors.white,
+    secondaryContainer: dark
+        ? const Color(0xff143446)
+        : const Color(0xffd8f5fc),
     onSecondaryContainer: dark
-        ? const Color(0xffe8e2f3)
-        : const Color(0xff49405f),
-    tertiary: dark ? const Color(0xffe8ad99) : const Color(0xff9b4d39),
-    outline: dark ? const Color(0xff8c9f94) : const Color(0xff73877b),
-    outlineVariant: dark ? const Color(0xff3f5148) : const Color(0xffd7dfd6),
+        ? const Color(0xffb8f4ff)
+        : const Color(0xff123646),
+    tertiary: dark ? const Color(0xfff79dd4) : const Color(0xff96386d),
+    surface: dark ? DoodimoColors.ink : const Color(0xfff4f7ff),
+    onSurface: dark ? const Color(0xfff0f3ff) : const Color(0xff141b35),
+    onSurfaceVariant: dark ? const Color(0xffbdc5e3) : const Color(0xff505b7a),
+    surfaceContainerLow: dark ? DoodimoColors.indigo : const Color(0xffe9eefe),
+    surfaceContainerHigh: dark
+        ? const Color(0xff202845)
+        : const Color(0xffe0e7fb),
+    surfaceContainerHighest: dark
+        ? const Color(0xff293353)
+        : const Color(0xffd7e0f5),
+    outline: dark ? const Color(0xff8794b9) : const Color(0xff7580a1),
+    outlineVariant: dark ? const Color(0xff36405e) : const Color(0xffcfd7ef),
   );
   final base = ThemeData(
     useMaterial3: true,
@@ -110,7 +119,7 @@ ThemeData buildTheme({Brightness brightness = Brightness.light}) {
     cardTheme: CardThemeData(
       elevation: 0,
       margin: EdgeInsets.zero,
-      color: dark ? const Color(0xff21342c) : const Color(0xfffffefb),
+      color: scheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(CreativeRadius.card),
       ),
@@ -151,14 +160,14 @@ ThemeData buildTheme({Brightness brightness = Brightness.light}) {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: dark ? const Color(0xff21342c) : const Color(0xfffffefb),
+      fillColor: scheme.surfaceContainerLow,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(CreativeRadius.control),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
     bottomSheetTheme: BottomSheetThemeData(
-      backgroundColor: dark ? const Color(0xff21342c) : const Color(0xfffffefb),
+      backgroundColor: scheme.surfaceContainerLow,
       surfaceTintColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
@@ -167,14 +176,14 @@ ThemeData buildTheme({Brightness brightness = Brightness.light}) {
       ),
     ),
     dialogTheme: DialogThemeData(
-      backgroundColor: dark ? const Color(0xff21342c) : const Color(0xfffffefb),
+      backgroundColor: scheme.surfaceContainerLow,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(CreativeRadius.panel),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: dark ? const Color(0xff21342c) : const Color(0xfffffefb),
+      backgroundColor: scheme.surfaceContainerLow,
       surfaceTintColor: Colors.transparent,
       indicatorColor: scheme.primaryContainer,
       labelTextStyle: WidgetStateProperty.resolveWith(

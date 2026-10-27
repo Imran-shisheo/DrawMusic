@@ -13,6 +13,8 @@ import '../design_system/brand.dart';
 import '../design_system/brand_colors.dart';
 import '../design_system/creative_dock.dart';
 import '../design_system/doodimo_icon.dart';
+import '../design_system/immersive_surface.dart';
+import '../design_system/aurora_scene.dart';
 import '../features/home/domain/template_catalog.dart';
 import '../design_system/motion.dart';
 import '../design_system/creative_components.dart';
@@ -91,32 +93,53 @@ class _RootTabsState extends State<_RootTabs> {
   Widget build(BuildContext context) {
     final index = widget.shell.currentIndex;
     if (index == 1 || index == 2) _libraryIndex = index;
+    final sideRail =
+        MediaQuery.sizeOf(context).height < 440 &&
+        MediaQuery.textScalerOf(context).scale(14) > 21;
+    final dock = CreativeDock(
+      rail: sideRail,
+      compactCreateLabel: context.strings.draw,
+      selectedIndex: index == 0
+          ? 0
+          : index == 3
+          ? 2
+          : 1,
+      onDestinationSelected: (destination) =>
+          widget.shell.goBranch(switch (destination) {
+            0 => 0,
+            1 => _libraryIndex,
+            _ => 3,
+          }),
+      onCreate: () => context.push('/editor/new'),
+      labels: [
+        context.strings.home,
+        context.strings.library,
+        context.strings.settings,
+      ],
+      createLabel: context.strings.newDrawing,
+    );
     return Scaffold(
-      body: widget.shell,
-      bottomNavigationBar: SafeArea(
-        top: false,
-        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: CreativeDock(
-          selectedIndex: index == 0
-              ? 0
-              : index == 3
-              ? 2
-              : 1,
-          onDestinationSelected: (destination) =>
-              widget.shell.goBranch(switch (destination) {
-                0 => 0,
-                1 => _libraryIndex,
-                _ => 3,
-              }),
-          onCreate: () => context.push('/editor/new'),
-          labels: [
-            context.strings.home,
-            context.strings.library,
-            context.strings.settings,
-          ],
-          createLabel: context.strings.newDrawing,
-        ),
-      ),
+      resizeToAvoidBottomInset: !sideRail,
+      body: sideRail
+          ? SafeArea(
+              minimum: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(width: 178, child: dock),
+                  const SizedBox(width: 12),
+                  Expanded(child: widget.shell),
+                ],
+              ),
+            )
+          : widget.shell,
+      bottomNavigationBar: sideRail
+          ? null
+          : SafeArea(
+              top: false,
+              minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: dock,
+            ),
     );
   }
 }
@@ -269,220 +292,317 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
-  bool _heroVisible = true;
+class _HomePageState extends ConsumerState<HomePage>
+    with SingleTickerProviderStateMixin {
+  bool _heroVisible = true, _entered = false;
   final _heroKey = GlobalKey();
+  late final AnimationController _entry = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 720),
+  );
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _entry.value = 1;
+      _entered = true;
+    } else if (!_entered) {
+      _entered = true;
+      _entry.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _entry.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final type = Theme.of(context).textTheme;
-    final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+    final large = MediaQuery.textScalerOf(context).scale(14) > 21;
     final recent = ref.watch(libraryProvider).asData?.value.projects;
     final saved = recent != null && recent.isNotEmpty;
     final template = originalTemplates[2];
     final artwork = saved ? recent.first : template.create();
     final destination = saved ? artwork.id : template.id;
-    final headerHeight = largeText
+    final headerHeight = large
         ? 16 + MediaQuery.textScalerOf(context).scale(22) * 2.5
-        : 64.0;
-    final start = FilledButton.icon(
+        : 68.0;
+    void openArtwork() => context.push('/editor/$destination');
+    final create = PrismAction(
       key: const ValueKey('home-start'),
-      style: FilledButton.styleFrom(
-        backgroundColor: DoodimoColors.ink,
-        foregroundColor: DoodimoColors.paper,
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      ),
+      label: context.strings.startDrawing,
+      icon: const DoodimoIcon(DoodimoGlyph.add, color: DoodimoColors.ink),
       onPressed: () => context.push('/editor/new'),
-      icon: const DoodimoIcon(DoodimoGlyph.draw, color: DoodimoColors.lime),
-      label: Text(context.strings.startDrawing),
     );
-    Widget openArtwork() => Semantics(
+    final preview = Semantics(
       button: true,
       label: artwork.title,
-      onTap: () => context.push('/editor/$destination'),
+      onTap: openArtwork,
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => context.push('/editor/$destination'),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final paperHeight = largeText ? 150.0 : 178.0;
-              final preview = SizedBox(
-                width: paperHeight * .8,
-                height: paperHeight,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fill(
-                      child: Transform.rotate(
-                        angle: -.065,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: DoodimoColors.lavender,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: .10),
-                              blurRadius: 18,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: BackgroundSurface(
-                            paper: artwork.effectiveBackground,
-                            maxWidth: 320,
-                            maxHeight: 400,
-                            child: CustomPaint(
-                              painter: DrawingPainter(artwork),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+          onTap: openArtwork,
+          borderRadius: BorderRadius.circular(20),
+          child: ImmersiveSurface(
+            padding: const EdgeInsets.all(5),
+            radius: 18,
+            glow: true,
+            accent: DoodimoColors.cyan,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: AspectRatio(
+                aspectRatio: 4 / 5,
+                child: BackgroundSurface(
+                  paper: artwork.effectiveBackground,
+                  maxWidth: 320,
+                  maxHeight: 400,
+                  child: CustomPaint(painter: DrawingPainter(artwork)),
                 ),
-              );
-              final caption = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    saved
-                        ? context.strings.yourDrawings
-                        : context.strings.tryAStartingPoint,
-                    style: type.labelMedium?.copyWith(
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(artwork.title, style: type.titleLarge),
-                  const SizedBox(height: 16),
-                  DecoratedBox(
-                    decoration: const BoxDecoration(
-                      color: DoodimoColors.lime,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: DoodimoIcon(
-                        DoodimoGlyph.arrowUpRight,
-                        color: DoodimoColors.ink,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: largeText
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          caption,
-                          const SizedBox(height: 20),
-                          Align(
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: preview,
-                          ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(child: caption),
-                          const SizedBox(width: 20),
-                          preview,
-                          const SizedBox(width: 6),
-                        ],
-                      ),
-              );
-            },
+              ),
+            ),
           ),
         ),
       ),
     );
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: headerHeight,
-        title: Row(
-          children: [
-            const SketchMark(size: 38),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                AppBrand.displayName,
-                maxLines: 2,
-                style: type.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          if (notification.depth == 0) {
-            final box =
-                _heroKey.currentContext?.findRenderObject() as RenderBox?;
-            if (box != null && box.hasSize) {
-              final visible =
-                  box.localToGlobal(Offset(0, box.size.height)).dy >
-                  MediaQuery.paddingOf(context).top + headerHeight;
-              if (visible != _heroVisible) {
-                setState(() => _heroVisible = visible);
-              }
-            }
-          }
-          return false;
-        },
-        child: ListView(
-          key: const PageStorageKey('home-scroll'),
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-          children: [
-            if (largeText) ...[
-              Align(alignment: AlignmentDirectional.centerStart, child: start),
-              const SizedBox(height: 20),
-            ],
-            Text(
-              largeText
-                  ? context.strings.drawYourMelody
-                  : context.strings.aLittleLineALittleMusic,
-              style: largeText ? type.titleLarge : type.headlineLarge,
-            ),
-            const SizedBox(height: 20),
-            if (!largeText)
-              Align(alignment: AlignmentDirectional.centerStart, child: start),
-            const SizedBox(height: 24),
-            Stack(
-              key: _heroKey,
+    final caption = Semantics(
+      button: true,
+      label: artwork.title,
+      onTap: openArtwork,
+      child: ImmersiveSurface(
+        padding: EdgeInsets.zero,
+        radius: 16,
+        child: InkWell(
+          onTap: openArtwork,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                PositionedDirectional(
-                  start: 30,
-                  bottom: 8,
-                  child: TickerMode(
-                    enabled: _heroVisible,
-                    child: Opacity(
-                      opacity: .12,
-                      child: const SketchMark(size: 150, animated: true),
-                    ),
+                Text(
+                  saved
+                      ? context.strings.keepDrawing
+                      : context.strings.tryAStartingPoint,
+                  maxLines: large ? null : 1,
+                  overflow: large ? null : TextOverflow.ellipsis,
+                  style: type.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
                   ),
                 ),
-                openArtwork(),
+                const SizedBox(height: 6),
+                Text(
+                  artwork.title,
+                  maxLines: large ? null : 2,
+                  overflow: large ? null : TextOverflow.ellipsis,
+                  style: type.titleMedium?.copyWith(
+                    color: colors.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                DoodimoIcon(
+                  DoodimoGlyph.arrowUpRight,
+                  color: colors.secondary,
+                  size: 20,
+                ),
               ],
             ),
-            const SizedBox(height: 28),
-            const TemplateGallery(),
+          ),
+        ),
+      ),
+    );
+    final scene = ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? const [Color(0xff171a38), Color(0xff0c1126)]
+                : const [Color(0xffe3e5ff), Color(0xffe7f8ff)],
+          ),
+          border: Border.all(color: colors.primary.withValues(alpha: .22)),
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: large
+            ? Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    create,
+                    const SizedBox(height: 20),
+                    Text(
+                      context.strings.drawYourMelody,
+                      style: type.titleLarge,
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 230,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: TickerMode(
+                              enabled: _heroVisible,
+                              child: const AuroraScene(),
+                            ),
+                          ),
+                          PositionedDirectional(
+                            end: 12,
+                            top: 12,
+                            child: SizedBox(width: 132, child: preview),
+                          ),
+                        ],
+                      ),
+                    ),
+                    caption,
+                  ],
+                ),
+              )
+            : SizedBox(
+                height: 390,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: TickerMode(
+                        enabled: _heroVisible,
+                        child: const AuroraScene(),
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                colors.surface.withValues(alpha: .94),
+                                colors.surface.withValues(alpha: .82),
+                                colors.surface.withValues(alpha: 0),
+                              ],
+                              stops: const [0, .26, .55],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    PositionedDirectional(
+                      start: 22,
+                      end: 22,
+                      top: 24,
+                      child: FadeTransition(
+                        opacity: _entry.drive(
+                          CurveTween(
+                            curve: const Interval(
+                              0,
+                              .65,
+                              curve: Curves.easeOut,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          context.strings.aLittleLineALittleMusic,
+                          style: type.headlineMedium?.copyWith(
+                            color: colors.onSurface,
+                          ),
+                        ),
+                      ),
+                    ),
+                    PositionedDirectional(
+                      end: 22,
+                      top: 108,
+                      child: SizedBox(
+                        width: 154,
+                        child: AnimatedBuilder(
+                          animation: _entry,
+                          child: preview,
+                          builder: (context, child) => Transform.translate(
+                            offset: Offset(
+                              0,
+                              (1 - Curves.easeOut.transform(_entry.value)) * 10,
+                            ),
+                            child: child,
+                          ),
+                        ),
+                      ),
+                    ),
+                    PositionedDirectional(
+                      start: 22,
+                      end: 176,
+                      top: 190,
+                      child: caption,
+                    ),
+                    PositionedDirectional(
+                      start: 20,
+                      end: 20,
+                      bottom: 20,
+                      child: create,
+                    ),
+                  ],
+                ),
+              ),
+      ),
+    );
+    return SceneBackdrop(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          toolbarHeight: headerHeight,
+          title: Row(
+            children: [
+              const SketchMark(size: 42),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  AppBrand.displayName,
+                  maxLines: 2,
+                  style: type.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              tooltip: context.strings.replayCreationGuide,
+              onPressed: () => context.push('/help'),
+              icon: const DoodimoIcon(DoodimoGlyph.help),
+            ),
+            const SizedBox(width: 12),
           ],
+        ),
+        body: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification.depth == 0) {
+              final box =
+                  _heroKey.currentContext?.findRenderObject() as RenderBox?;
+              if (box != null && box.hasSize) {
+                final visible =
+                    box.localToGlobal(Offset(0, box.size.height)).dy >
+                    MediaQuery.paddingOf(context).top + headerHeight;
+                if (visible != _heroVisible) {
+                  setState(() => _heroVisible = visible);
+                }
+              }
+            }
+            return false;
+          },
+          child: ListView(
+            key: const PageStorageKey('home-scroll'),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+            children: [
+              KeyedSubtree(key: _heroKey, child: scene),
+              const SizedBox(height: 28),
+              const TemplateGallery(),
+            ],
+          ),
         ),
       ),
     );

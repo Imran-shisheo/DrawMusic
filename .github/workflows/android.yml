@@ -4,8 +4,9 @@ on:
     # Development branches run through pull_request, avoiding duplicate emulator jobs.
     branches: [main]
   pull_request:
-    # The redesign is stacked on the unmerged, verified review-fix branch.
-    branches: [main, codex/review-fixes-2026-10-27]
+    # Preserve the original main-bound full gate during the early stacked UI prototype.
+    # The dedicated source-pinned visual workflow validates the current slice.
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read

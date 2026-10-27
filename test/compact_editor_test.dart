@@ -216,6 +216,17 @@ void main() {
             );
             await Scrollable.ensureVisible(tester.element(menu), alignment: .1);
             await tester.pumpAndSettle();
+            final libraryViewport = tester.getRect(find.byType(ListView).first);
+            expect(libraryViewport.height, greaterThanOrEqualTo(48));
+            expect(
+              tester.getRect(menu).top,
+              greaterThanOrEqualTo(libraryViewport.top),
+            );
+            expect(
+              tester.getRect(menu).bottom,
+              lessThanOrEqualTo(libraryViewport.bottom),
+            );
+            expect(menu.hitTestable(), findsOneWidget);
             await tester.tap(menu);
             await tester.pumpAndSettle();
             await tester.tap(find.text('Rename'));

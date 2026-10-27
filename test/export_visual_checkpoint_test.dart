@@ -17,7 +17,7 @@ import 'package:scribblesong/l10n/generated/app_localizations.dart';
 const _enabled = bool.fromEnvironment('EXPORT_DESIGN_CAPTURE');
 void main() {
   testWidgets(
-    'render original export rail, selected detail and real published file ticket',
+    'render immersive output stage, focused settings and real published file',
     (tester) async {
       await tester.runAsync(() async {
         final sdk = Platform.environment['FLUTTER_ROOT'];
@@ -57,7 +57,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final directory = Directory('work/export-redesign-v2');
+      final directory = Directory('work/export-immersive-03');
       final root = (await tester.runAsync(
         () => Directory.systemTemp.createTemp('export-design-ready-'),
       ))!;
@@ -104,7 +104,7 @@ void main() {
           key: boundaryKey,
           child: ProviderScope(
             child: MaterialApp(
-              theme: buildTheme(),
+              theme: buildTheme(brightness: Brightness.dark),
               debugShowCheckedModeBanner: false,
               localizationsDelegates: AppLocalizations.localizationsDelegates,
               supportedLocales: AppLocalizations.supportedLocales,
@@ -168,7 +168,7 @@ void main() {
           fail('Real PNG export did not reach Ready');
         }
       }
-      await save('26-export-ready-ticket');
+      await save('26-export-ready-object');
       expect(
         await tester.runAsync(
           () =>

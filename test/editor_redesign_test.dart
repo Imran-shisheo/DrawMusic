@@ -80,66 +80,73 @@ void main() {
     const Size(1280, 800),
   ]) {
     for (final scale in [1.0, 2.0]) {
-      testWidgets(
-        'canvas-first editor $size text$scale remains reachable and chooser preserves state',
-        (tester) async {
-          await _mount(tester, size: size, scale: scale);
-          final semantics = tester.ensureSemantics();
-          try {
-            expect(tester.takeException(), isNull);
-            final finder = find.byKey(const ValueKey('drawing-canvas'));
-            final state = tester.state<DrawingCanvasState>(
-              find.byType(DrawingCanvas),
-            );
-            final original = _current(tester).encode();
-            final rect = tester.getRect(finder);
-            expect(rect.height, greaterThanOrEqualTo(48));
-            expect(rect.width, greaterThanOrEqualTo(48));
-            expect(rect.top, greaterThanOrEqualTo(24));
-            expect(rect.bottom, lessThanOrEqualTo(size.height - 24));
-            await expectLater(
+      for (final brightness in [Brightness.light, Brightness.dark]) {
+        testWidgets(
+          'canvas-first editor $size text$scale $brightness remains reachable and chooser preserves state',
+          (tester) async {
+            await _mount(
               tester,
-              meetsGuideline(labeledTapTargetGuideline),
+              size: size,
+              scale: scale,
+              brightness: brightness,
             );
-            await expectLater(
-              tester,
-              meetsGuideline(androidTapTargetGuideline),
-            );
-            await expectLater(tester, meetsGuideline(textContrastGuideline));
-            await chooseEditorVoice(tester, Instrument.saxophone);
-            expect(
-              identical(
-                tester.state<DrawingCanvasState>(find.byType(DrawingCanvas)),
-                state,
-              ),
-              isTrue,
-            );
-            expect(_current(tester).encode(), original);
-            expect(
-              tester
-                  .widget<DrawingCanvas>(find.byType(DrawingCanvas))
-                  .instrument,
-              Instrument.saxophone,
-            );
-            await openEditorMusic(tester);
-            expect(find.byType(DropdownButton<RootKey>), findsOneWidget);
-            await tester.binding.handlePopRoute();
-            await tester.pumpAndSettle();
-            expect(_current(tester).encode(), original);
-            expect(
-              identical(
-                tester.state<DrawingCanvasState>(find.byType(DrawingCanvas)),
-                state,
-              ),
-              isTrue,
-            );
-            expect(tester.takeException(), isNull);
-            await tester.pumpWidget(const SizedBox());
-          } finally {
-            semantics.dispose();
-          }
-        },
-      );
+            final semantics = tester.ensureSemantics();
+            try {
+              expect(tester.takeException(), isNull);
+              final finder = find.byKey(const ValueKey('drawing-canvas'));
+              final state = tester.state<DrawingCanvasState>(
+                find.byType(DrawingCanvas),
+              );
+              final original = _current(tester).encode();
+              final rect = tester.getRect(finder);
+              expect(rect.height, greaterThanOrEqualTo(48));
+              expect(rect.width, greaterThanOrEqualTo(48));
+              expect(rect.top, greaterThanOrEqualTo(24));
+              expect(rect.bottom, lessThanOrEqualTo(size.height - 24));
+              await expectLater(
+                tester,
+                meetsGuideline(labeledTapTargetGuideline),
+              );
+              await expectLater(
+                tester,
+                meetsGuideline(androidTapTargetGuideline),
+              );
+              await expectLater(tester, meetsGuideline(textContrastGuideline));
+              await chooseEditorVoice(tester, Instrument.saxophone);
+              expect(
+                identical(
+                  tester.state<DrawingCanvasState>(find.byType(DrawingCanvas)),
+                  state,
+                ),
+                isTrue,
+              );
+              expect(_current(tester).encode(), original);
+              expect(
+                tester
+                    .widget<DrawingCanvas>(find.byType(DrawingCanvas))
+                    .instrument,
+                Instrument.saxophone,
+              );
+              await openEditorMusic(tester);
+              expect(find.byType(DropdownButton<RootKey>), findsOneWidget);
+              await tester.binding.handlePopRoute();
+              await tester.pumpAndSettle();
+              expect(_current(tester).encode(), original);
+              expect(
+                identical(
+                  tester.state<DrawingCanvasState>(find.byType(DrawingCanvas)),
+                  state,
+                ),
+                isTrue,
+              );
+              expect(tester.takeException(), isNull);
+              await tester.pumpWidget(const SizedBox());
+            } finally {
+              semantics.dispose();
+            }
+          },
+        );
+      }
     }
   }
   testWidgets(

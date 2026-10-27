@@ -112,8 +112,23 @@ class _TemplateSleeveState extends State<_TemplateSleeve> {
                   const SizedBox(height: 10),
                   DecoratedBox(
                     decoration: BoxDecoration(
-                      color: sleeve,
-                      borderRadius: BorderRadius.circular(12),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          colors.surfaceContainerHigh,
+                          colors.surfaceContainerLow,
+                        ],
+                      ),
+                      border: Border.all(color: sleeve.withValues(alpha: .45)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: sleeve.withValues(alpha: .08),
+                          blurRadius: 14,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),

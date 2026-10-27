@@ -14,7 +14,8 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final stacked = MediaQuery.textScalerOf(context).scale(14) > 21;
+    final short = MediaQuery.sizeOf(context).height < 480;
+    final stacked = MediaQuery.textScalerOf(context).scale(14) > 21 && !short;
     Widget tab(bool exported, IconData icon, String label) {
       final selected = exported == exports;
       final contents = [
@@ -47,9 +48,9 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(minHeight: 52),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       horizontal: 12,
-                      vertical: 12,
+                      vertical: short ? 6 : 12,
                     ),
                     child: DefaultTextStyle(
                       style: Theme.of(context).textTheme.labelLarge!.copyWith(

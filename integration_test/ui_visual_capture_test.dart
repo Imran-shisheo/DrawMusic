@@ -316,6 +316,11 @@ void main() {
       isFalse,
     );
     await shot('01-home');
+    if (_label == 'after') {
+      // Record actual decorative motion before interacting. A still screenshot
+      // cannot establish the immersive Home sculpture's motion requirement.
+      await clip('00-home-ambient', () async => wait(18000));
+    }
     await clip('01-root-navigation', () async {
       await tab('Library');
       await shot('02-drafts');

@@ -1,11 +1,10 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import 'motion.dart';
 import 'layout.dart';
+import 'doodimo_mark_painter.dart';
 
-/// Original decorative line-to-wave. It never reads or paints a document.
+/// Original dimensional ribbon-D identity, separate from document rendering.
 class SketchMark extends StatefulWidget {
   const SketchMark({super.key, this.size = 64, this.animated = false});
   final double size;
@@ -72,52 +71,11 @@ class _SketchMarkState extends State<SketchMark>
       child: RepaintBoundary(
         child: SizedBox.square(
           dimension: widget.size,
-          child: CustomPaint(
-            painter: _SketchPainter(
-              _motion,
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.tertiary,
-            ),
-          ),
+          child: CustomPaint(painter: DoodimoMarkPainter(_motion)),
         ),
       ),
     ),
   );
-}
-
-class _SketchPainter extends CustomPainter {
-  _SketchPainter(this.motion, this.line, this.endpoint)
-    : super(repaint: motion);
-  final Animation<double> motion;
-  final Color line, endpoint;
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.scale(size.width / 100, size.height / 100);
-    final drift = math.sin(motion.value * math.pi * 2) * 3;
-    final path = Path()
-      ..moveTo(10, 62)
-      ..cubicTo(23, 25 + drift, 46, 23, 47, 48)
-      ..cubicTo(48, 75, 18, 74, 26, 51)
-      ..cubicTo(34, 30, 48, 83 + drift, 60, 55)
-      ..cubicTo(66, 35 + drift, 69, 27, 75, 51)
-      ..cubicTo(80, 75, 85, 63, 91, 40);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = line
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 5
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round,
-    );
-    canvas.drawCircle(const Offset(91, 40), 3.6, Paint()..color = endpoint);
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_SketchPainter oldDelegate) =>
-      oldDelegate.line != line || oldDelegate.endpoint != endpoint;
 }
 
 class CreativeEmptyState extends StatelessWidget {

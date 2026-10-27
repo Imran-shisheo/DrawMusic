@@ -6,7 +6,7 @@ import 'brand_colors.dart';
 import 'doodimo_icon.dart';
 import 'motion.dart';
 
-/// A compact four-key studio dock. It does not own or recreate branch content.
+/// A layered navigation instrument. Branch navigators belong to the router.
 class CreativeDock extends StatelessWidget {
   const CreativeDock({
     super.key,
@@ -15,69 +15,53 @@ class CreativeDock extends StatelessWidget {
     required this.onCreate,
     required this.labels,
     required this.createLabel,
+    this.rail = false,
+    this.compactCreateLabel,
   });
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final VoidCallback onCreate;
   final List<String> labels;
   final String createLabel;
+  final bool rail;
+  final String? compactCreateLabel;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
+      final colors = Theme.of(context).colorScheme;
+      final dark = Theme.of(context).brightness == Brightness.dark;
+      final style = Theme.of(context).textTheme.labelMedium!
+          .copyWith(fontWeight: FontWeight.w700, height: 1.2);
       final large =
           MediaQuery.textScalerOf(context).scale(12) > 18 &&
           constraints.maxWidth < 520;
-      final cellWidth = (constraints.maxWidth - 20) / 2;
-      final slotWidth = (constraints.maxWidth - 18) / 4;
-      final style = Theme.of(context).textTheme.labelMedium!
-          .copyWith(fontWeight: FontWeight.w700, height: 1.15);
-      var height = 76.0;
-      for (final label in [...labels, createLabel]) {
-        final painter = TextPainter(
-          text: TextSpan(text: label, style: style),
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-        )..layout(maxWidth: math.max(1, (large ? cellWidth : slotWidth) - 8));
-        height = math.max(height, 56 + painter.height);
-        painter.dispose();
-      }
-      var longestWord = 0.0;
-      for (final label in [...labels, createLabel]) {
-        for (final word in label.split(RegExp(r'\s+'))) {
-          final painter = TextPainter(
-            text: TextSpan(text: word, style: style),
-            textDirection: Directionality.of(context),
-            textScaler: MediaQuery.textScalerOf(context),
-          )..layout();
-          longestWord = math.max(longestWord, painter.width);
-          painter.dispose();
-        }
-      }
-      if (large && longestWord > cellWidth - 8) {
-        var rowHeight = 48.0;
-        for (final label in [...labels, createLabel]) {
-          final painter = TextPainter(
-            text: TextSpan(text: label, style: style),
-            textDirection: Directionality.of(context),
-            textScaler: MediaQuery.textScalerOf(context),
-          )..layout(maxWidth: math.max(1, constraints.maxWidth - 72));
-          rowHeight = math.max(rowHeight, painter.height + 16);
-          painter.dispose();
-        }
+      const order = [
+        0,
+        1,
+        3,
+        2,
+      ]; // Create is physically between Library and Settings.
+      final allLabels = [...labels, createLabel];
+      if (rail) {
         return DecoratedBox(
           decoration: BoxDecoration(
-            color: DoodimoColors.ink,
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: dark
+                  ? const [Color(0xff1b2440), Color(0xff0e1429)]
+                  : const [Color(0xfffafbff), Color(0xffe5edff)],
+            ),
+            border: Border.all(color: colors.primary.withValues(alpha: .4)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(6),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                for (var i = 0; i < 4; i++)
-                  SizedBox(
-                    height: rowHeight,
+                for (final role in order)
+                  Expanded(
                     child: _DockKey(
                       key: ValueKey(
                         [
@@ -85,20 +69,27 @@ class CreativeDock extends StatelessWidget {
                           'nav-library',
                           'nav-settings',
                           'root-new-drawing',
-                        ][i],
+                        ][role],
                       ),
-                      label: i == 3 ? createLabel : labels[i],
+                      label: role == 3
+                          ? compactCreateLabel ?? createLabel
+                          : labels[role],
+                      semanticLabel: role == 3 ? createLabel : null,
                       glyph: [
                         DoodimoGlyph.home,
                         DoodimoGlyph.library,
                         DoodimoGlyph.settings,
                         DoodimoGlyph.add,
-                      ][i],
-                      selected: selectedIndex == i,
-                      create: i == 3,
+                      ][role],
+                      selected: role == selectedIndex,
+                      create: role == 3,
                       horizontal: true,
-                      onTap: i == 3 ? onCreate : () => onDestinationSelected(i),
+                      raised: false,
+                      rail: true,
                       style: style,
+                      onTap: role == 3
+                          ? onCreate
+                          : () => onDestinationSelected(role),
                     ),
                   ),
               ],
@@ -106,140 +97,153 @@ class CreativeDock extends StatelessWidget {
           ),
         );
       }
-      if (large) {
-        final rowHeight = height;
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            color: DoodimoColors.ink,
-            borderRadius: BorderRadius.circular(26),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(6),
-            child: Column(
+
+      final cellWidth = (constraints.maxWidth - 20) / 2;
+      var longest = 0.0;
+      for (final label in allLabels) {
+        for (final word in label.split(RegExp(r'\s+'))) {
+          final text = TextPainter(
+            text: TextSpan(text: word, style: style),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+          )..layout();
+          longest = math.max(longest, text.width);
+          text.dispose();
+        }
+      }
+      final fullRows = large && longest > cellWidth - 8;
+      final columns = fullRows
+          ? 1
+          : large
+          ? 2
+          : 4;
+      final slot = (constraints.maxWidth - 12) / columns;
+      var keyHeight = large ? 64.0 : 78.0;
+      for (final label in allLabels) {
+        final text = TextPainter(
+          text: TextSpan(text: label, style: style),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: math.max(1, slot - (fullRows ? 64 : 8)));
+        keyHeight = math.max(keyHeight, text.height + (fullRows ? 16 : 60));
+        text.dispose();
+      }
+      Widget tile(int role) => _DockKey(
+        key: ValueKey(
+          ['nav-home', 'nav-library', 'nav-settings', 'root-new-drawing'][role],
+        ),
+        label: allLabels[role],
+        glyph: [
+          DoodimoGlyph.home,
+          DoodimoGlyph.library,
+          DoodimoGlyph.settings,
+          DoodimoGlyph.add,
+        ][role],
+        selected: role == selectedIndex,
+        create: role == 3,
+        horizontal: fullRows,
+        raised: !large && role == 3,
+        style: style,
+        onTap: role == 3 ? onCreate : () => onDestinationSelected(role),
+      );
+      final activeSlot = selectedIndex == 2 ? 3 : selectedIndex;
+      final keys = large
+          ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                for (var row = 0; row < 2; row++)
+                for (var row = 0; row < (4 / columns).ceil(); row++)
                   SizedBox(
-                    height: rowHeight,
+                    height: keyHeight,
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        for (var column = 0; column < 2; column++)
-                          Expanded(
-                            child: _DockKey(
-                              key: ValueKey(
-                                [
-                                  'nav-home',
-                                  'nav-library',
-                                  'nav-settings',
-                                  'root-new-drawing',
-                                ][row * 2 + column],
-                              ),
-                              label: row * 2 + column == 3
-                                  ? createLabel
-                                  : labels[row * 2 + column],
-                              glyph: [
-                                DoodimoGlyph.home,
-                                DoodimoGlyph.library,
-                                DoodimoGlyph.settings,
-                                DoodimoGlyph.add,
-                              ][row * 2 + column],
-                              selected: selectedIndex == row * 2 + column,
-                              create: row * 2 + column == 3,
-                              onTap: row * 2 + column == 3
-                                  ? onCreate
-                                  : () =>
-                                        onDestinationSelected(row * 2 + column),
-                              style: style,
-                            ),
-                          ),
+                        for (var col = 0; col < columns; col++)
+                          Expanded(child: tile(order[row * columns + col])),
                       ],
                     ),
                   ),
               ],
-            ),
-          ),
-        );
-      }
+            )
+          : SizedBox(
+              height: keyHeight,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AnimatedPositionedDirectional(
+                    duration: CreativeMotion.duration(
+                      context,
+                      CreativeMotion.branch,
+                    ),
+                    curve: CreativeMotion.curve,
+                    start: slot * activeSlot + 3,
+                    top: 3,
+                    bottom: 3,
+                    width: slot - 6,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: dark
+                                ? const [Color(0x455f4ba7), Color(0x2226b7d3)]
+                                : const [Color(0xffe1d8ff), Color(0xffd8f5ff)],
+                          ),
+                          border: Border.all(
+                            color: colors.primary.withValues(alpha: .3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final role in order) Expanded(child: tile(role)),
+                    ],
+                  ),
+                ],
+              ),
+            );
       return DecoratedBox(
         decoration: BoxDecoration(
-          color: DoodimoColors.ink,
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(28),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colors.primary.withValues(alpha: .65),
+              colors.secondary.withValues(alpha: .35),
+              colors.outlineVariant.withValues(alpha: .6),
+            ],
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: .12),
+              color: Colors.black.withValues(alpha: dark ? .35 : .12),
               blurRadius: 20,
-              offset: const Offset(0, 6),
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: DoodimoColors.violet.withValues(alpha: dark ? .12 : .06),
+              blurRadius: 22,
             ),
           ],
         ),
-        child: SizedBox(
-          height: height,
-          child: Padding(
-            padding: const EdgeInsets.all(6),
-            child: Stack(
-              children: [
-                AnimatedPositionedDirectional(
-                  duration: CreativeMotion.duration(
-                    context,
-                    CreativeMotion.branch,
-                  ),
-                  curve: CreativeMotion.curve,
-                  start: slotWidth * selectedIndex + (slotWidth - 20) / 2,
-                  bottom: 0,
-                  width: 20,
-                  height: 3,
-                  child: const ExcludeSemantics(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: DoodimoColors.lime,
-                        borderRadius: BorderRadius.all(Radius.circular(3)),
-                      ),
-                    ),
-                  ),
-                ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (var i = 0; i < 3; i++)
-                      Expanded(
-                        child: _DockKey(
-                          key: ValueKey(
-                            ['nav-home', 'nav-library', 'nav-settings'][i],
-                          ),
-                          label: labels[i],
-                          glyph: [
-                            DoodimoGlyph.home,
-                            DoodimoGlyph.library,
-                            DoodimoGlyph.settings,
-                          ][i],
-                          selected: selectedIndex == i,
-                          onTap: () => onDestinationSelected(i),
-                          style: style,
-                        ),
-                      ),
-                    Center(
-                      child: Container(
-                        width: 1,
-                        height: 30,
-                        color: DoodimoColors.paper.withValues(alpha: .24),
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: _DockKey(
-                        key: const ValueKey('root-new-drawing'),
-                        label: createLabel,
-                        glyph: DoodimoGlyph.add,
-                        create: true,
-                        onTap: onCreate,
-                        style: style,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+        child: Padding(
+          padding: const EdgeInsets.all(1),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(27),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: dark
+                    ? const [Color(0xff1b2440), Color(0xff0e1429)]
+                    : const [Color(0xfffafbff), Color(0xffe5edff)],
+              ),
             ),
+            child: Padding(padding: const EdgeInsets.all(5), child: keys),
           ),
         ),
       );
@@ -247,96 +251,162 @@ class CreativeDock extends StatelessWidget {
   );
 }
 
-class _DockKey extends StatelessWidget {
+class _DockKey extends StatefulWidget {
   const _DockKey({
     super.key,
     required this.label,
     required this.glyph,
     required this.onTap,
     required this.style,
-    this.selected = false,
-    this.create = false,
-    this.horizontal = false,
+    required this.selected,
+    required this.create,
+    required this.horizontal,
+    required this.raised,
+    this.rail = false,
+    this.semanticLabel,
   });
   final String label;
   final DoodimoGlyph glyph;
   final VoidCallback onTap;
   final TextStyle style;
-  final bool selected, create, horizontal;
+  final bool selected, create, horizontal, raised, rail;
+  final String? semanticLabel;
+  @override
+  State<_DockKey> createState() => _DockKeyState();
+}
 
+class _DockKeyState extends State<_DockKey> {
+  bool _pressed = false;
   @override
   Widget build(BuildContext context) {
-    final symbol = DecoratedBox(
-      decoration: BoxDecoration(
-        color: create ? DoodimoColors.lime : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(create ? 3 : 0),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            DoodimoIcon(
-              glyph,
-              size: create ? 20 : 24,
-              color: create
-                  ? DoodimoColors.ink
-                  : selected
-                  ? DoodimoColors.lime
-                  : DoodimoColors.paper,
-            ),
-            if (selected)
-              const PositionedDirectional(
-                end: -4,
-                top: -2,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: DoodimoColors.lime,
-                    shape: BoxShape.circle,
-                  ),
-                  child: SizedBox.square(dimension: 4),
-                ),
+    final colors = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final icon = Container(
+      width: widget.rail
+          ? 24
+          : widget.create
+          ? 42
+          : 32,
+      height: widget.rail
+          ? 24
+          : widget.create
+          ? 42
+          : 32,
+      decoration: widget.create
+          ? BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xffbda4ff), Color(0xff77e7ff)],
               ),
-          ],
+              border: Border.all(
+                color: const Color(0xffe7e2ff).withValues(alpha: .7),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: DoodimoColors.violet.withValues(alpha: .3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            )
+          : null,
+      child: Center(
+        child: DoodimoIcon(
+          widget.glyph,
+          size: widget.rail
+              ? 21
+              : widget.create
+              ? 28
+              : 27,
+          color: widget.create
+              ? DoodimoColors.ink
+              : widget.selected
+              ? (dark ? DoodimoColors.cyan : colors.primary)
+              : colors.onSurfaceVariant,
         ),
       ),
     );
     final title = Text(
-      label,
-      textAlign: horizontal ? TextAlign.start : TextAlign.center,
-      style: style.copyWith(
-        color: selected ? DoodimoColors.lime : DoodimoColors.paper,
+      widget.label,
+      textAlign: widget.horizontal ? TextAlign.start : TextAlign.center,
+      style: widget.style.copyWith(
+        color: widget.selected ? colors.onSurface : colors.onSurfaceVariant,
       ),
     );
+    Widget content = widget.horizontal
+        ? Row(
+            children: [
+              icon,
+              SizedBox(width: widget.rail ? 8 : 14),
+              Expanded(child: title),
+              if (widget.selected)
+                DoodimoIcon(
+                  DoodimoGlyph.check,
+                  size: 18,
+                  color: colors.secondary,
+                ),
+            ],
+          )
+        : Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              icon,
+              const SizedBox(height: 4),
+              title,
+              const SizedBox(height: 3),
+              SizedBox(
+                height: 2,
+                width: 16,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: widget.selected
+                        ? colors.secondary
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ],
+          );
+    if (widget.raised) {
+      content = Transform.translate(
+        offset: const Offset(0, -5),
+        child: content,
+      );
+    }
     return Semantics(
       button: true,
-      selected: selected,
-      label: label,
-      onTap: onTap,
+      selected: widget.selected,
+      label: widget.semanticLabel ?? widget.label,
+      onTap: widget.onTap,
       child: ExcludeSemantics(
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
-            onTap: onTap,
+            onTap: widget.onTap,
+            onHighlightChanged: (value) => setState(() => _pressed = value),
             borderRadius: BorderRadius.circular(20),
-            splashColor: DoodimoColors.lime.withValues(alpha: .2),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontal ? 12 : 4,
-                vertical: 6,
+            child: AnimatedScale(
+              scale: _pressed ? .96 : 1,
+              duration: CreativeMotion.duration(context, CreativeMotion.press),
+              curve: CreativeMotion.curve,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.rail
+                      ? 6
+                      : widget.horizontal
+                      ? 12
+                      : 4,
+                  vertical: widget.rail
+                      ? 3
+                      : widget.horizontal
+                      ? 6
+                      : 3,
+                ),
+                child: content,
               ),
-              child: horizontal
-                  ? Row(
-                      children: [
-                        symbol,
-                        const SizedBox(width: 12),
-                        Expanded(child: title),
-                      ],
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [symbol, const SizedBox(height: 4), title],
-                    ),
             ),
           ),
         ),

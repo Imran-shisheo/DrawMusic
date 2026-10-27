@@ -10,81 +10,131 @@ import math
 import re
 import plistlib
 import xml.etree.ElementTree as ET
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageChops
 
 ROOT = Path(__file__).resolve().parents[1]
 SVG = ROOT / 'assets/branding/mark.svg'
-PAPER, DARK, IVORY = '#F8F7F3', '#172622', '#F1F0EA'
+PAPER, DARK, IVORY = '#090B18', '#090B18', '#F2EBFF'
 ANDROID = ROOT / 'android/app/src/main/res'
 IOS = ROOT / 'ios/Runner/Assets.xcassets'
 NS = '{http://www.w3.org/2000/svg}'
 ANDROID_NS = 'http://schemas.android.com/apk/res/android'
 
 
-def identity():
-    svg = ET.parse(SVG).getroot()
-    assert svg.attrib['viewBox'] == '0 0 100 100'
-    path, dot = svg.find(f'{NS}path'), svg.find(f'{NS}circle')
-    assert path is not None and dot is not None
-    values = re.findall(r'[A-Za-z]|-?(?:\d*\.)?\d+', path.attrib['d'])
-    assert values.pop(0) == 'M'
-    start = (float(values.pop(0)), float(values.pop(0)))
-    points = [start]
-    while values:
-        assert values.pop(0) == 'C', 'Only the authored M/C cubic path is accepted'
-        numbers = [float(values.pop(0)) for _ in range(6)]
-        a, b, c = tuple(numbers[:2]), tuple(numbers[2:4]), tuple(numbers[4:])
-        for i in range(1, 161):
-            t = i / 160
-            points.append(tuple((1-t)**3*start[j] + 3*(1-t)**2*t*a[j] + 3*(1-t)*t*t*b[j] + t**3*c[j] for j in range(2)))
-        start = c
-    return path.attrib['d'], points, float(path.attrib['stroke-width']), path.attrib['stroke'], tuple(float(dot.attrib[k]) for k in ('cx', 'cy', 'r')), dot.attrib['fill']
+def polygons(path):
+    tokens = re.findall(r'[A-Za-z]|-?(?:\d*\.)?\d+', path)
+    paths, points, cursor = [], [], (0., 0.)
+    while tokens:
+        command = tokens.pop(0)
+        if command in ('M', 'L'):
+            cursor = tuple(float(tokens.pop(0)) for _ in range(2))
+            if command == 'M':
+                if points: paths.append(points)
+                points = []
+            points.append(cursor)
+        elif command == 'C':
+            values = [float(tokens.pop(0)) for _ in range(6)]
+            a, b, end = tuple(values[:2]), tuple(values[2:4]), tuple(values[4:])
+            start = cursor
+            for i in range(1, 101):
+                t = i / 100
+                points.append(tuple((1-t)**3*start[j] + 3*(1-t)**2*t*a[j] + 3*(1-t)*t*t*b[j] + t**3*end[j] for j in range(2)))
+            cursor = end
+        elif command == 'Z':
+            paths.append(points); points = []
+        else: raise ValueError('Only authored absolute M/L/C/Z paths accepted')
+    if points: paths.append(points)
+    return paths
 
 
-PATH, POINTS, WIDTH, FOREST, DOT, CORAL = identity()
+SVG_ROOT = ET.parse(SVG).getroot()
+assert SVG_ROOT.attrib['viewBox'] == '0 0 100 100'
+PLANES = list(SVG_ROOT.findall(f'{NS}path'))
+GRADIENTS = {g.attrib['id']: g for g in SVG_ROOT.findall(f'{NS}defs/{NS}linearGradient')}
+POINTS = [point for plane in PLANES for polygon in polygons(plane.attrib['d']) for point in polygon]
 NAME = re.search(r"displayName\s*=\s*'([^']+)'", (ROOT / 'lib/design_system/brand.dart').read_text()).group(1)
 assert NAME == 'Doodimo', 'Brand changes need an explicit owner decision'
+
+
+def gradient(plane):
+    return GRADIENTS[plane.attrib['fill'][5:-1]]
+
+
+def rgba(stop, opacity=1):
+    color = stop.attrib['stop-color']
+    return tuple(int(color[index:index+2], 16) for index in (1, 3, 5)) + (round(255 * float(stop.attrib.get('stop-opacity', '1')) * opacity),)
 
 
 def raster(size, *, transparent=False, dark=False, content_scale=.9):
     supersample = 4 if size <= 256 else 2
     edge = size * supersample
-    image = Image.new('RGBA' if transparent else 'RGB', (edge, edge), (0, 0, 0, 0) if transparent else PAPER)
-    draw = ImageDraw.Draw(image)
+    image = Image.new('RGBA', (edge, edge), (0, 0, 0, 0) if transparent else PAPER)
     scale = edge / 100 * content_scale
     padding = edge * (1 - content_scale) / 2
-    at = lambda p: (round(p[0] * scale + padding), round(p[1] * scale + padding))
-    color = IVORY if dark else FOREST
-    line = max(1, round(WIDTH * scale))
-    draw.line([at(p) for p in POINTS], fill=color, width=line, joint='curve')
-    radius = line / 2
-    for point in POINTS:
-        x, y = at(point)
-        draw.ellipse((x-radius, y-radius, x+radius, y+radius), fill=color)
-    x, y = at(DOT)
-    radius = DOT[2] * scale
-    draw.ellipse((x-radius, y-radius, x+radius, y+radius), fill=CORAL)
-    return image.resize((size, size), Image.Resampling.LANCZOS)
-
-
-def circle_path():
-    x, y, r = DOT
-    return f'M{x+r:g},{y:g}a{r:g},{r:g} 0,1 1,{-2*r:g},0a{r:g},{r:g} 0,1 1,{2*r:g},0'
+    at = lambda p: (p[0] * scale + padding, p[1] * scale + padding)
+    for plane in PLANES:
+        mask = Image.new('1', (edge, edge))
+        for polygon in polygons(plane.attrib['d']):
+            part = Image.new('1', (edge, edge))
+            ImageDraw.Draw(part).polygon([at(point) for point in polygon], fill=1)
+            mask = ImageChops.logical_xor(mask, part)
+        g = gradient(plane); stops = list(g)
+        x1, y1, x2, y2 = (float(g.attrib[k]) for k in ('x1', 'y1', 'x2', 'y2'))
+        dx, dy = x2-x1, y2-y1; length = dx*dx+dy*dy
+        # A narrow sampled ramp transformed by the exact SVG gradient equation.
+        ramp = Image.new('RGBA', (1, 4096))
+        colors = []
+        for row in range(4096):
+            t = min(1., max(0., (row - 2048) / 1024))
+            left, right = stops[0], stops[-1]
+            for low, high in zip(stops, stops[1:]):
+                if float(low.attrib['offset']) <= t <= float(high.attrib['offset']):
+                    left, right = low, high; break
+            lo, hi = float(left.attrib['offset']), float(right.attrib['offset'])
+            mix = 0 if lo == hi else (t-lo)/(hi-lo)
+            c1, c2 = rgba(left, float(plane.attrib.get('opacity', '1'))), rgba(right, float(plane.attrib.get('opacity', '1')))
+            colors.append(tuple(round(a+(b-a)*mix) for a,b in zip(c1,c2)))
+        ramp.putdata(colors)
+        a, b = 1024*dx/scale/length, 1024*dy/scale/length
+        c = 2048 - 1024*((padding/scale+x1)*dx+(padding/scale+y1)*dy)/length
+        fill = ramp.transform((edge,edge), Image.Transform.AFFINE, (0,0,0,a,b,c), Image.Resampling.BILINEAR)
+        fill.putalpha(ImageChops.multiply(fill.getchannel('A'), mask.convert('L')))
+        image.alpha_composite(fill)
+    image = image.resize((size,size), Image.Resampling.LANCZOS)
+    return image if transparent else image.convert('RGB')
 
 
 def vector(*, background=False, monochrome=False, launch=False, round_background=False):
-    stroke = '#000000' if monochrome else ('@color/doodimo_launch_ink' if launch else FOREST)
-    endpoint = '#000000' if monochrome else CORAL
     base = ''
     if background:
         shape = 'M54,0a54,54 0,1 1,0 108a54,54 0,1 1,0 -108' if round_background else 'M0,0h108v108H0z'
         base = f'    <path android:fillColor="{PAPER}" android:pathData="{shape}"/>\n'
+    items = []
+    for plane in PLANES:
+        if monochrome and plane.attrib['id'] == 'edge-light': continue
+        path = plane.attrib['d']
+        if monochrome:
+            items.append(f'        <path android:pathData="{path}" android:fillType="evenOdd" android:fillColor="#000000"/>')
+            continue
+        g = gradient(plane)
+        stops = []
+        for stop in g:
+            color = rgba(stop)
+            encoded = '#' + ''.join(f'{v:02X}' for v in (color[3], *color[:3]))
+            stops.append(f'                    <item android:offset="{stop.attrib["offset"]}" android:color="{encoded}"/>')
+        attrs = ' '.join(f'android:{android}="{g.attrib[svg]}"' for android,svg in [('startX','x1'),('startY','y1'),('endX','x2'),('endY','y2')])
+        items.append(f'''        <path android:pathData="{path}" android:fillType="evenOdd" android:fillAlpha="{plane.attrib.get('opacity', '1')}">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" {attrs}>
+{chr(10).join(stops)}
+                </gradient>
+            </aapt:attr>
+        </path>''')
     return f'''<?xml version="1.0" encoding="utf-8"?>
-<!-- Generated from assets/branding/mark.svg. Critical content fits the 66dp safe circle. -->
-<vector xmlns:android="{ANDROID_NS}" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+<!-- Generated original filled dimensional D/sound ribbon. Critical glyph fits the 66dp safe circle. -->
+<vector xmlns:android="{ANDROID_NS}" xmlns:aapt="http://schemas.android.com/aapt" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
 {base}    <group android:translateX="20" android:translateY="20" android:scaleX="0.68" android:scaleY="0.68">
-        <path android:pathData="{PATH}" android:fillColor="@android:color/transparent" android:strokeColor="{stroke}" android:strokeWidth="{WIDTH:g}" android:strokeLineCap="round" android:strokeLineJoin="round"/>
-        <path android:pathData="{circle_path()}" android:fillColor="{endpoint}"/>
+{chr(10).join(items)}
     </group>
 </vector>
 '''
@@ -97,7 +147,7 @@ def put(relative, text):
 
 
 def main():
-    put('values/brand_colors.xml', f'<resources>\n    <color name="doodimo_icon_background">{PAPER}</color>\n    <color name="doodimo_launch_background">{PAPER}</color>\n    <color name="doodimo_launch_ink">{FOREST}</color>\n</resources>\n')
+    put('values/brand_colors.xml', f'<resources>\n    <color name="doodimo_icon_background">{PAPER}</color>\n    <color name="doodimo_launch_background">{PAPER}</color>\n    <color name="doodimo_launch_ink">#8B5CF6</color>\n</resources>\n')
     put('values-night/brand_colors.xml', f'<resources>\n    <color name="doodimo_launch_background">{DARK}</color>\n    <color name="doodimo_launch_ink">{IVORY}</color>\n</resources>\n')
     put('drawable/app_icon.xml', vector(background=True))
     put('drawable/doodimo_icon_foreground.xml', vector())
@@ -176,12 +226,13 @@ def main():
     source = storyboard.read_text()
     source = re.sub(r'<color key="backgroundColor"[^>]*/>', '<color key="backgroundColor" name="DoodimoLaunchBackground"/>', source)
     if '<namedColor name="DoodimoLaunchBackground">' not in source:
-        source = source.replace('    </resources>', '        <namedColor name="DoodimoLaunchBackground">\n            <color red="0.972549" green="0.968627" blue="0.952941" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>\n        </namedColor>\n    </resources>')
+        source = source.replace('    </resources>', '        <namedColor name="DoodimoLaunchBackground">\n            <color red="0.035294" green="0.043137" blue="0.094118" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>\n        </namedColor>\n    </resources>')
+    source = re.sub(r'(<namedColor name="DoodimoLaunchBackground">\s*)<color[^>]*/>', r'\1<color red="0.035294" green="0.043137" blue="0.094118" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>', source)
     storyboard.write_text(source)
     native = ROOT / 'ios/Runner/DrawMusicBackgrounds.swift'
     native.write_text(native.read_text().replace('Enable Camera for DrawMusic in iOS Settings', f'Enable Camera for {NAME} in iOS Settings'))
-    radius = max(math.hypot(20 + .68*x - 54, 20 + .68*y - 54) + WIDTH*.68/2 for x, y in POINTS)
-    radius = max(radius, math.hypot(20+.68*DOT[0]-54, 20+.68*DOT[1]-54)+.68*DOT[2])
+    radius = max(math.hypot(20 + .68*x - 54, 20 + .68*y - 54) for x, y in POINTS)
+
     assert radius < 33, 'Critical glyph must fit Android adaptive 66dp safe circle'
     report = {'brand': NAME, 'source': 'assets/branding/mark.svg', 'sourceSha256': hashlib.sha256(SVG.read_bytes()).hexdigest(), 'packageIdentifierUnchanged': 'com.imranshisheo.scribblesong', 'androidAdaptiveViewportDp': 108, 'androidCriticalSafeCircleDiameterDp': 66, 'androidCriticalGlyphMaxRadiusDp': radius, 'iosAppIconContentScale': .9, 'background': PAPER, 'generatedPngs': {str(file.relative_to(ROOT)): {'sha256': hashlib.sha256(file.read_bytes()).hexdigest(), 'size': list(Image.open(file).size), 'mode': Image.open(file).mode} for file in sorted(set(generated))}, 'scope': 'Original SVG-derived assets and source checks; not iOS compilation or physical launcher validation'}
     (ROOT / 'assets/branding/native-icon-manifest.json').write_text(json.dumps(report, indent=2) + '\n')

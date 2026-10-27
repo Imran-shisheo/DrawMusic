@@ -14,6 +14,7 @@ Future<Uint8List> _pixels(
   WidgetTester tester,
   DoodimoGlyph glyph, {
   bool rtl = false,
+  int size = 24,
   IconThemeData? iconTheme,
 }) async {
   await tester.pumpWidget(
@@ -24,8 +25,8 @@ Future<Uint8List> _pixels(
           child: RepaintBoundary(
             key: _paintKey,
             child: IconTheme(
-              data: iconTheme ?? const IconThemeData(color: Color(0xff223c35)),
-              child: DoodimoIcon(glyph),
+              data: iconTheme ?? const IconThemeData(color: Color(0xff8b5cf6)),
+              child: DoodimoIcon(glyph, size: size.toDouble()),
             ),
           ),
         ),
@@ -50,33 +51,36 @@ Future<Uint8List> _pixels(
 
 void main() {
   testWidgets(
-    'all original glyphs contain bounded visible ink at their actual 24px optical size',
+    'all filled glyphs retain visible optical insets at actual 24, 28 and 32px sizes',
     (tester) async {
-      for (final glyph in DoodimoGlyph.values) {
-        final pixels = await _pixels(tester, glyph);
-        var ink = 0;
-        for (var y = 0; y < 24; y++) {
-          for (var x = 0; x < 24; x++) {
-            if (pixels[(y * 24 + x) * 4 + 3] > 0) {
-              ink++;
-              expect(
-                x,
-                inInclusiveRange(1, 22),
-                reason: '${glyph.name} horizontal optical inset',
-              );
-              expect(
-                y,
-                inInclusiveRange(1, 22),
-                reason: '${glyph.name} vertical optical inset',
-              );
+      for (final size in [24, 28, 32]) {
+        for (final glyph in DoodimoGlyph.values) {
+          final pixels = await _pixels(tester, glyph, size: size);
+          expect(pixels.length, size * size * 4);
+          var ink = 0;
+          for (var y = 0; y < size; y++) {
+            for (var x = 0; x < size; x++) {
+              if (pixels[(y * size + x) * 4 + 3] > 0) {
+                ink++;
+                expect(
+                  x,
+                  inInclusiveRange(1, size - 2),
+                  reason: '${glyph.name} $size px horizontal inset',
+                );
+                expect(
+                  y,
+                  inInclusiveRange(1, size - 2),
+                  reason: '${glyph.name} $size px vertical inset',
+                );
+              }
             }
           }
+          expect(
+            ink,
+            greaterThan(30 * size * size / 576),
+            reason: '${glyph.name} $size px cannot be empty',
+          );
         }
-        expect(
-          ink,
-          greaterThan(30),
-          reason: '${glyph.name} cannot be an empty decorative control',
-        );
       }
     },
   );
@@ -140,7 +144,7 @@ void main() {
     final data = await _pixels(
       tester,
       DoodimoGlyph.play,
-      iconTheme: const IconThemeData(color: Color(0x80223c35), opacity: .5),
+      iconTheme: const IconThemeData(color: Color(0x808b5cf6), opacity: .5),
     );
     final alphas = [for (var i = 3; i < data.length; i += 4) data[i]];
     expect(alphas.reduce((a, b) => a > b ? a : b), inInclusiveRange(63, 65));
@@ -204,13 +208,23 @@ void main() {
         );
       await loader.load();
     });
-    tester.view.physicalSize = const Size(640, 740);
+    tester.view.physicalSize = const Size(640, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       MaterialApp(
-        theme: buildTheme(),
+        theme: ThemeData(
+          fontFamily: 'NunitoSans',
+          scaffoldBackgroundColor: const Color(0xff090b18),
+          iconTheme: const IconThemeData(color: Color(0xff55dff5)),
+          colorScheme: const ColorScheme.dark(
+            primary: Color(0xff8b5cf6),
+            secondary: Color(0xff55dff5),
+            surface: Color(0xff090b18),
+            onSurface: Color(0xffeaf0ff),
+          ),
+        ),
         home: RepaintBoundary(
           key: _paintKey,
           child: Scaffold(
@@ -220,11 +234,11 @@ void main() {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Doodimo · original line glyphs',
+                    'Doodimo · dimensional duotone',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                   ),
                   const Text(
-                    '24 px · round 1.85-unit strokes · no icon font',
+                    'Original filled planes · 24 px · host-selected materials',
                     style: TextStyle(fontSize: 13),
                   ),
                   const SizedBox(height: 24),
@@ -269,6 +283,37 @@ void main() {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 30),
+                  const Text(
+                    '24 / 28 / 32 px · violet selected · disabled material',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  const SizedBox(height: 14),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      DoodimoIcon(DoodimoGlyph.home, size: 24),
+                      DoodimoIcon(DoodimoGlyph.home, size: 28),
+                      DoodimoIcon(DoodimoGlyph.home, size: 32),
+                      DoodimoIcon(
+                        DoodimoGlyph.home,
+                        size: 32,
+                        color: Color(0xff8b5cf6),
+                      ),
+                      IconTheme(
+                        data: IconThemeData(
+                          color: Color(0xff55dff5),
+                          opacity: .38,
+                        ),
+                        child: DoodimoIcon(DoodimoGlyph.home, size: 32),
+                      ),
+                      DoodimoIcon(
+                        DoodimoGlyph.help,
+                        size: 32,
+                        color: Color(0xffeaf0ff),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -283,7 +328,7 @@ void main() {
           .toImage(pixelRatio: 1);
       try {
         final data = (await image.toByteData(format: ui.ImageByteFormat.png))!;
-        final folder = Directory('work/ui-icons');
+        final folder = Directory('work/ui-icons-immersive');
         await folder.create(recursive: true);
         await File('${folder.path}/contact-sheet.png').writeAsBytes(
           data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),

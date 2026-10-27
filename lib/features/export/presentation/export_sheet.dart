@@ -2,9 +2,8 @@ import '../../rating/application/rating_provider.dart';
 import '../../../design_system/creative_panel.dart';
 import '../../../design_system/motion.dart';
 import '../../../design_system/doodimo_icon.dart';
-import '../../backgrounds/presentation/background_surface.dart';
-import '../../editor/presentation/canvas.dart';
-import 'export_format_art.dart';
+import 'export_preview_stage.dart';
+import '../../../design_system/immersive_surface.dart';
 
 import 'package:scribblesong/l10n/strings.dart';
 
@@ -311,87 +310,41 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     ExportFormat.midi => 'MIDI',
   };
   Color _formatTint(ExportFormat format) => switch (format) {
-    ExportFormat.png => const Color(0xffdceaab),
-    ExportFormat.wav => const Color(0xffd8d0ed),
-    ExportFormat.mp4 => const Color(0xffefc3b0),
-    ExportFormat.midi => const Color(0xffdfd9ba),
+    ExportFormat.png => const Color(0xff55dff5),
+    ExportFormat.wav => const Color(0xffb29aff),
+    ExportFormat.mp4 => const Color(0xfff19bda),
+    ExportFormat.midi => const Color(0xff80b5ff),
   };
-  Widget _medallion(
-    ExportFormat format, {
-    double size = 56,
-    bool selected = false,
-    bool illustrated = false,
-  }) {
-    final colors = Theme.of(context).colorScheme;
-    return AnimatedContainer(
-      duration: CreativeMotion.duration(context, CreativeMotion.selection),
-      curve: CreativeMotion.curve,
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: selected ? colors.primary : _formatTint(format),
-        borderRadius: BorderRadius.circular(size * .34),
-      ),
-      child: Center(
-        child: illustrated
-            ? ExportFormatArt(
-                format: format,
-                size: size * .68,
-                ink: selected ? colors.onPrimary : const Color(0xff243c32),
-                accent: selected
-                    ? _formatTint(format)
-                    : Colors.white.withValues(alpha: .62),
-              )
-            : DoodimoIcon(
-                switch (format) {
-                  ExportFormat.png => DoodimoGlyph.image,
-                  ExportFormat.wav => DoodimoGlyph.sound,
-                  ExportFormat.mp4 => DoodimoGlyph.video,
-                  ExportFormat.midi => DoodimoGlyph.notes,
-                },
-                size: size * .5,
-                color: selected ? colors.onPrimary : const Color(0xff243c32),
-              ),
-      ),
-    );
-  }
+  DoodimoGlyph _glyph(ExportFormat format) => switch (format) {
+    ExportFormat.png => DoodimoGlyph.image,
+    ExportFormat.wav => DoodimoGlyph.sound,
+    ExportFormat.mp4 => DoodimoGlyph.video,
+    ExportFormat.midi => DoodimoGlyph.notes,
+  };
 
   Widget _intent(ExportFormat format, double width) {
     final selected = _selectedFormat == format;
     final colors = Theme.of(context).colorScheme;
     final short = MediaQuery.sizeOf(context).height < 480;
-    final disc = Stack(
-      clipBehavior: Clip.none,
-      children: [
-        _medallion(format, size: short ? 32 : 56, selected: selected),
-        if (selected)
-          PositionedDirectional(
-            end: -4,
-            bottom: -4,
-            child: Container(
-              width: short ? 18 : 22,
-              height: short ? 18 : 22,
-              decoration: BoxDecoration(
-                color: colors.onSurface,
-                shape: BoxShape.circle,
-                border: Border.all(color: colors.surface, width: 2),
-              ),
-              child: DoodimoIcon(
-                DoodimoGlyph.check,
-                size: short ? 11 : 13,
-                color: colors.surface,
-              ),
-            ),
-          ),
-      ],
+    final accent = _formatTint(format);
+    final icon = SizedBox(
+      width: short ? 32 : 46,
+      height: short ? 32 : 46,
+      child: Center(
+        child: DoodimoIcon(
+          _glyph(format),
+          size: short ? 23 : 30,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? accent
+              : colors.primary,
+        ),
+      ),
     );
     final label = Text(
       _label(format),
       textAlign: short ? TextAlign.start : TextAlign.center,
-      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-        fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-        color: colors.onSurface,
-      ),
+      style: Theme.of(context).textTheme.labelLarge
+          ?.copyWith(fontWeight: selected ? FontWeight.w800 : FontWeight.w500),
     );
     return SizedBox(
       width: width,
@@ -405,19 +358,38 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
             color: Colors.transparent,
             child: InkWell(
               key: ValueKey('export-intent-${format.name}'),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(18),
               onTap: () => _choose(format),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  vertical: short ? 4 : 8,
-                  horizontal: 4,
+              child: AnimatedContainer(
+                duration: CreativeMotion.duration(
+                  context,
+                  CreativeMotion.selection,
                 ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  gradient: selected
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            accent.withValues(alpha: .22),
+                            const Color(0xff8b5cf6).withValues(alpha: .12),
+                          ],
+                        )
+                      : null,
+                  border: Border.all(
+                    color: selected
+                        ? accent.withValues(alpha: .45)
+                        : Colors.transparent,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 child: short
                     ? ConstrainedBox(
                         constraints: const BoxConstraints(minHeight: 48),
                         child: Row(
                           children: [
-                            disc,
+                            icon,
                             const SizedBox(width: 8),
                             Expanded(child: label),
                           ],
@@ -426,17 +398,17 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
                     : Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          disc,
-                          const SizedBox(height: 10),
+                          icon,
+                          const SizedBox(height: 8),
                           label,
-                          const SizedBox(height: 3),
-                          Text(
-                            _extension(format),
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: colors.onSurfaceVariant,
-                                  letterSpacing: 1,
-                                ),
+                          const SizedBox(height: 6),
+                          Container(
+                            height: 3,
+                            width: 18,
+                            decoration: BoxDecoration(
+                              color: selected ? accent : Colors.transparent,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
                           ),
                         ],
                       ),
@@ -448,93 +420,49 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     );
   }
 
+  Widget _preview({bool ready = false}) => ExportPreviewStage(
+    document: widget.snapshot,
+    accent: _formatTint(_selectedFormat),
+    extension: _extension(_selectedFormat),
+    ready: ready,
+  );
+
   Widget _detail() {
-    final colors = Theme.of(context).colorScheme;
-    final preview =
-        MediaQuery.textScalerOf(context).scale(14) <= 21 &&
-        MediaQuery.sizeOf(context).height >= 480;
-    return Container(
+    final preview = MediaQuery.sizeOf(context).height >= 480;
+    return Column(
       key: ValueKey('export-settings-${_selectedFormat.name}'),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (preview) ...[_preview(), const SizedBox(height: 22)],
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _formatTint(_selectedFormat),
-                          borderRadius: BorderRadius.circular(7),
-                        ),
-                        child: Text(
-                          _extension(_selectedFormat),
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(
-                                color: const Color(0xff243c32),
-                                letterSpacing: 1.4,
-                                fontWeight: FontWeight.w800,
-                              ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        _label(_selectedFormat),
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -.6,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _description(_selectedFormat),
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                ),
-                if (preview) ...[
-                  const SizedBox(width: 20),
-                  ExcludeSemantics(
-                    child: SizedBox(
-                      width: 76,
-                      height: 95,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: BackgroundSurface(
-                          paper: widget.snapshot.effectiveBackground,
-                          maxWidth: 112,
-                          maxHeight: 140,
-                          child: CustomPaint(
-                            painter: DrawingPainter(widget.snapshot),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+            Expanded(
+              child: Text(
+                _label(_selectedFormat),
+                style: Theme.of(context).textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
             ),
-            const SizedBox(height: 20),
-            _settings(),
+            const SizedBox(width: 12),
+            Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child: Text(
+                _extension(_selectedFormat),
+                style: Theme.of(context).textTheme.labelLarge
+                    ?.copyWith(letterSpacing: 1.5),
+              ),
+            ),
           ],
         ),
-      ),
+        const SizedBox(height: 7),
+        Text(
+          _description(_selectedFormat),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 18),
+        Material(type: MaterialType.transparency, child: _settings()),
+      ],
     );
   }
 
@@ -672,30 +600,33 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     key: const ValueKey('export-selection'),
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Text(
-        context.strings.exportChooseFormat,
-        style: Theme.of(context).textTheme.titleMedium,
-      ),
-      const SizedBox(height: 16),
-      LayoutBuilder(
-        builder: (context, constraints) {
-          final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
-          final columns = largeText && constraints.maxWidth < 440 ? 2 : 4;
-          final width = (constraints.maxWidth - (columns - 1) * 12) / columns;
-          return Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              for (final format in [
-                ExportFormat.png,
-                ExportFormat.wav,
-                ExportFormat.mp4,
-                ExportFormat.midi,
-              ])
-                _intent(format, width),
-            ],
-          );
-        },
+      Semantics(
+        label: context.strings.exportChooseFormat,
+        child: ImmersiveSurface(
+          padding: const EdgeInsets.all(5),
+          radius: 24,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+              final columns = largeText && constraints.maxWidth < 440 ? 2 : 4;
+              final width =
+                  (constraints.maxWidth - (columns - 1) * 4) / columns;
+              return Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: [
+                  for (final format in [
+                    ExportFormat.png,
+                    ExportFormat.wav,
+                    ExportFormat.mp4,
+                    ExportFormat.midi,
+                  ])
+                    _intent(format, width),
+                ],
+              );
+            },
+          ),
+        ),
       ),
       const SizedBox(height: 20),
       if (MediaQuery.disableAnimationsOf(context))
@@ -732,7 +663,7 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     padding: const EdgeInsets.symmetric(vertical: 28),
     child: Column(
       children: [
-        _medallion(_format!, size: 80, selected: true, illustrated: true),
+        _preview(),
         const SizedBox(height: 24),
         Text(
           _finalizing
@@ -768,94 +699,38 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
   );
   Widget _ready() {
     final artifact = _artifact!;
-    final colors = Theme.of(context).colorScheme;
     return Column(
       key: const ValueKey('export-ready'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ClipPath(
-          clipper: const ExportTicketClipper(),
-          child: ColoredBox(
-            color: colors.surfaceContainerLow,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      _medallion(
-                        _format!,
-                        size: 76,
-                        selected: true,
-                        illustrated: true,
-                      ),
-                      PositionedDirectional(
-                        end: -5,
-                        bottom: -5,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            color: const Color(0xffdceaab),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: colors.surfaceContainerLow,
-                              width: 3,
-                            ),
-                          ),
-                          child: const DoodimoIcon(
-                            DoodimoGlyph.check,
-                            size: 18,
-                            color: Color(0xff243c32),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 22),
-                  Text(
-                    context.strings.exportReadyTitle,
-                    style: Theme.of(context).textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    artifact.name,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 18),
-                  ExportTicketRule(color: colors.outlineVariant),
-                  const SizedBox(height: 18),
-                  if (artifact.width != null && artifact.height != null)
-                    Text(
-                      '${context.formatNumber(artifact.width!)} × ${context.formatNumber(artifact.height!)}',
-                      style: Theme.of(context).textTheme.labelLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                  if (_message != null) ...[
-                    const SizedBox(height: 10),
-                    Semantics(
-                      liveRegion: true,
-                      child: Text(
-                        _message!,
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+        _preview(ready: true),
+        const SizedBox(height: 22),
+        Text(
+          context.strings.exportReadyTitle,
+          style: Theme.of(context).textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w800),
         ),
+        const SizedBox(height: 10),
+        SelectableText(
+          artifact.name,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        if (artifact.width != null && artifact.height != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            '${context.formatNumber(artifact.width!)} × ${context.formatNumber(artifact.height!)}',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ],
+        if (_message != null) ...[
+          const SizedBox(height: 12),
+          Semantics(liveRegion: true, child: Text(_message!)),
+        ],
         const SizedBox(height: 20),
-        FilledButton.icon(
+        PrismAction(
           onPressed: _fileActionBusy ? null : _share,
           icon: const DoodimoIcon(DoodimoGlyph.export),
-          label: Text(context.strings.shareExportedFile),
+          label: context.strings.shareExportedFile,
         ),
         const SizedBox(height: 8),
         OutlinedButton.icon(
@@ -892,7 +767,7 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
           : [
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
+                child: PrismAction(
                   key: const ValueKey('export-start'),
                   onPressed: _busy
                       ? _finalizing
@@ -905,13 +780,11 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
                   icon: DoodimoIcon(
                     _busy ? DoodimoGlyph.close : DoodimoGlyph.arrowUpRight,
                   ),
-                  label: Text(
-                    _busy
-                        ? (_finalizing
-                              ? context.strings.finishingLibraryEntry
-                              : context.strings.cancelExport)
-                        : _actionLabel(),
-                  ),
+                  label: _busy
+                      ? (_finalizing
+                            ? context.strings.finishingLibraryEntry
+                            : context.strings.cancelExport)
+                      : _actionLabel(),
                 ),
               ),
             ],

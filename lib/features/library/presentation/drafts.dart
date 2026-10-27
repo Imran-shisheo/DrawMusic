@@ -171,7 +171,12 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              MediaQuery.sizeOf(context).height < 480 ? 8 : 16,
+              20,
+              0,
+            ),
             child: LibraryTabs(exports: false),
           ),
           Expanded(
