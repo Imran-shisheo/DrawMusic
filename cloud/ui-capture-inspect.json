@@ -1,9 +1,10 @@
 {
-  "runId": 40542168730,
-  "artifactName": "drawmusic-ui-visuals-9847b12f7f1b26ecf6eaec9a06d40089cae26515",
+  "runId": 40550097229,
+  "artifactName": "drawmusic-ui-visuals-de6fc14b875385099993558cd719808074c83c16",
   "screenshots": [
     "01-home.png",
-    "02-drafts.png"
+    "20-rename-native-ime.png",
+    "21-rename-focus-restored.png"
   ],
   "ambientMotionDiagnostic": true
 }

@@ -258,18 +258,7 @@ void main() {
 
     bool renderedAnchor(Finder finder) {
       if (finder.evaluate().isEmpty) return false;
-      final context = tester.element(finder.first);
-      final route = ModalRoute.of(context);
-      if (route != null &&
-          (!route.isCurrent ||
-              (route.animation != null && route.animation!.value < 1))) {
-        return false;
-      }
-      final box = context.findRenderObject();
-      return box is RenderBox &&
-          box.attached &&
-          box.hasSize &&
-          !box.size.isEmpty;
+      return uiRenderedRouteAnchor(tester.element(finder.first));
     }
 
     UiTextScaleWitness textScaleWitness(BuildContext context) =>
@@ -314,10 +303,12 @@ void main() {
       final context = tester.element(find.byType(Scaffold).first);
       final width = MediaQuery.sizeOf(context).width;
       bool editor(String title) =>
-          uri.startsWith('/editor/') &&
-          !hasPanel &&
-          find.text(title).evaluate().isNotEmpty &&
-          renderedAnchor(canvas);
+          canvas.evaluate().isNotEmpty &&
+          uiRenderedEditorAnchor(
+            tester.element(canvas.first),
+            hasPanel: hasPanel,
+          ) &&
+          find.text(title).evaluate().isNotEmpty;
       return switch (name) {
         '01-home' => uri == '/home' && !hasPanel && renderedAnchor(home),
         '02-drafts' =>

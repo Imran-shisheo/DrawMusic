@@ -2,7 +2,29 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/painting.dart';
+import 'package:flutter/widgets.dart';
+import 'package:go_router/go_router.dart';
+
+bool uiRenderedRouteAnchor(BuildContext context) {
+  final route = ModalRoute.of(context);
+  if (route != null &&
+      (!route.isCurrent ||
+          (route.animation != null && route.animation!.value < 1))) {
+    return false;
+  }
+  final box = context.findRenderObject();
+  return box is RenderBox && box.attached && box.hasSize && !box.size.isEmpty;
+}
+
+/// Imperative context.push does not update the browser-style URL by default.
+/// Inspect the actual canvas route, while excluding hidden/outgoing/modal state.
+bool uiRenderedEditorAnchor(
+  BuildContext canvasContext, {
+  required bool hasPanel,
+}) =>
+    !hasPanel &&
+    uiRenderedRouteAnchor(canvasContext) &&
+    GoRouterState.of(canvasContext).uri.path.startsWith('/editor/');
 
 /// Real platform insets and current laid-out controls must agree. Native IME
 /// metrics can arrive before the framework has laid out the resized panel.

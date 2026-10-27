@@ -1,7 +1,18 @@
 import 'dart:async';
 import 'dart:ui';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:scribblesong/app/app.dart';
+import 'package:scribblesong/app/providers.dart';
+import 'package:scribblesong/creative_document/document.dart';
+import 'package:scribblesong/features/settings/application/settings_controller.dart';
+import 'package:scribblesong/features/settings/domain/preferences.dart';
+
+import 'support/memory_preferences.dart';
+import 'widget_test.dart' show MemoryRepository, TestAudio;
+
 import 'package:flutter_test/flutter_test.dart';
 
 import '../integration_test/support/ui_presentation_fence.dart';
@@ -25,6 +36,92 @@ class _DiagnosticNonlinearScaler extends TextScaler {
 }
 
 void main() {
+  testWidgets(
+    'product imperative editor route differs from URL; hidden outgoing and modal canvases reject',
+    (tester) async {
+      tester.view.physicalSize = const Size(411, 891);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final repo = MemoryRepository();
+      await repo.save(ProjectDocument(id: 'route-proof', title: 'Route proof'));
+      await repo.save(ProjectDocument(id: 'other-route', title: 'Other route'));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            preferencesStoreProvider.overrideWith(
+              (ref) async => MemoryPreferencesStore(
+                const UserPreferences(reduceMotion: false),
+              ),
+            ),
+            repositoryProvider.overrideWith((ref) async => repo),
+            audioEngineProvider.overrideWithValue(TestAudio()),
+          ],
+          child: const ScribbleSongApp(),
+        ),
+      );
+      Future<void> frames() async {
+        for (var i = 0; i < 12; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+      }
+
+      await frames();
+      final homeContext = tester.element(find.byType(HomePage));
+      final router = GoRouter.of(homeContext);
+      expect(GoRouter.optionURLReflectsImperativeAPIs, isFalse);
+      expect(router.routeInformationProvider.value.uri.path, '/home');
+      // Use the production buildRouter mounted by ScribbleSongApp. The same
+      // context.push API opens templates; no routing mock or URL override.
+      homeContext.push('/editor/route-proof');
+      await frames();
+      final canvas = find.byKey(const ValueKey('drawing-canvas'));
+      expect(canvas, findsOneWidget);
+      final firstContext = tester.element(canvas);
+      expect(router.routeInformationProvider.value.uri.path, '/home');
+      expect(GoRouterState.of(firstContext).uri.path, '/editor/route-proof');
+      expect(uiRenderedEditorAnchor(firstContext, hasPanel: false), isTrue);
+      showDialog<void>(
+        context: firstContext,
+        builder: (_) => const AlertDialog(title: Text('Blocking route')),
+      );
+      await frames();
+      expect(uiRenderedEditorAnchor(firstContext, hasPanel: true), isFalse);
+      expect(
+        uiRenderedEditorAnchor(firstContext, hasPanel: false),
+        isFalse,
+        reason: 'Actual canvas ModalRoute is not current below a root modal',
+      );
+      Navigator.of(firstContext, rootNavigator: true).pop();
+      await frames();
+      expect(uiRenderedEditorAnchor(firstContext, hasPanel: false), isTrue);
+      firstContext.push('/editor/other-route');
+      await frames();
+      expect(
+        uiRenderedEditorAnchor(firstContext, hasPanel: false),
+        isFalse,
+        reason: 'The retained hidden editor cannot qualify a screenshot',
+      );
+      final secondContext = tester.element(canvas);
+      expect(GoRouterState.of(secondContext).uri.path, '/editor/other-route');
+      expect(uiRenderedEditorAnchor(secondContext, hasPanel: false), isTrue);
+      final outgoingRoute = ModalRoute.of(secondContext)!;
+      router.pop();
+      await tester.pump();
+      expect(outgoingRoute.isCurrent, isFalse);
+      expect(
+        find.byElementPredicate((element) => identical(element, secondContext)),
+        findsNothing,
+        reason: 'The outgoing canvas cannot pass the guarded finder; never look up deactivated ancestors',
+      );
+      await frames();
+      expect(uiRenderedEditorAnchor(firstContext, hasPanel: false), isTrue);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   UiImeOcclusionWitness ime({
     double fieldBottom = 500,
     double cancelBottom = 550,
