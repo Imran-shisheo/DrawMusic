@@ -1,5 +1,8 @@
 {
-  "runId": 40599296616,
-  "artifactName": "drawmusic-ui-visuals-b5d5379d8d46a37d22a623256e1236af94b9d086",
-  "screenshots": []
+  "runId": 40600807250,
+  "artifactName": "drawmusic-ui-visuals-a0b0e4bab62b00b85d86e2338c897b14f2afc102",
+  "screenshots": [
+    "18-home-tablet.png",
+    "19-editor-tablet.png"
+  ]
 }

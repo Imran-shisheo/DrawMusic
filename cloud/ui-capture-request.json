@@ -1,6 +1,6 @@
 {
   "schema": 1,
   "label": "after",
-  "sourceRef": "9af0d6f329ba17b4e8dac55fca4a5cb529b4753f",
-  "responsivePreset": "tablet"
+  "sourceRef": "2bd12e0b8347ec8875884075162cd67598b2d3ad",
+  "homeProfileOnly": true
 }
