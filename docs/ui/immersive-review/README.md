@@ -6,7 +6,7 @@ repository/audio fixtures and reduced motion for deterministic pixels. They are
 not mockups, native audio demonstrations or proof of runtime smoothness.
 
 The subsequent bounded static-art cache preserves this composition. Its complete
-local gate passed355Flutter tests and rerendered76states against the same eight
+local gate at shipping app f9fc4ba / capture-only harness efcac58 passed356Flutter tests and rerendered76states against the same eight
 strict references, without regenerating them. Enabled-motion cache continuity
 and resource lifetime have separate tests; native performance and IME evidence
 remain tied to their exact cloud capture source, as recorded in DEVELOPMENT-STATUS.

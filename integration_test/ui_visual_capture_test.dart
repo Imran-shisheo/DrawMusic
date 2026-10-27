@@ -747,7 +747,8 @@ void main() {
         );
         await tap(actions);
         await tap(find.text('Rename'));
-        await tap(find.byType(TextField));
+        // The production field autofocuses and requests the real IME. A second
+        // tap races the platform resize; observe actual focus/insets instead.
         await until(
           () =>
               tester.view.viewInsets.bottom > initialInset + 100 &&
