@@ -1,4 +1,6 @@
-# Doodimo — corrective visual proposal
+# Rejected second UI iteration — retained for comparison
+
+The owner rejected this second iteration as still too basic and explicitly rejected its palette and icons. It is historical evidence, not the active aesthetic or accepted design. The active replacement is the immersive audiovisual-playground brief.
 
 27 October 2026. Actual implemented Flutter widgets at 411 × 850, light theme, normal text. Bundled Space Grotesk display type, Nunito UI text and original vector glyphs are loaded. Repository/audio fixtures are declared in the manifest; these are deterministic reduced-motion stills, not emulator screenshots or native-audio/performance acceptance.
 

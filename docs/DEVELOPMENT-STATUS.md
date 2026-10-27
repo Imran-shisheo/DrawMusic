@@ -1,5 +1,11 @@
 # Development status
 
+## Active replacement: immersive audiovisual playground
+
+The owner rejected BOTH previous visual iterations, including progress-02 palette/icons. Follow [the active replacement brief](requests/IMMERSIVE-REDESIGN-2026-10-27.md): navy/indigo/violet/cyan scene, polished duotone icons, prominent original bounded motion, immersive Home/editor/export with real emulator recording before wider propagation. Earlier visual claims below are historical/rejected proposals, not acceptance. Functional fixes remain preserved.
+
+The product gate started before this latest rejection completed successfully on the preceding working tree: formatter/analyzer, 289 Flutter tests, three strict pixel references in a separate capture test, 24 JVM tests, lint, real debug APK and twelve Linux interrupted-save recovery cases. These prove correctness/buildability of that source only; its aesthetics are rejected and it is not the immersive implementation. No additional expensive acceptance is being started on the superseded look.
+
 ## Active Doodimo UI/UX redesign — 27 October 2026 / 2.1.0+24
 
 **Design correction in progress:** the owner rejected the initial pale-card Home/editor/export preview as too basic. Its images/goldens are historical iteration evidence, not an approved redesign. The active revision materially changes composition, custom dock/glyphs, display type, editor console and format rail; fresh previews precede exhaustive visual acceptance. Functional fixes remain preserved.

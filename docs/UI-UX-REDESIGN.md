@@ -1,5 +1,7 @@
 # UI/UX redesign implementation and acceptance
 
+**ACTIVE REPLACEMENT:** [immersive audiovisual-playground brief](requests/IMMERSIVE-REDESIGN-2026-10-27.md). The owner rejected BOTH earlier iterations, including the editorial-mixtape palette/icons. The historical design directions below do not constrain the new aesthetic. Preserve their verified functional/a11y fixes. Next milestone: radically different implemented Home/editor/export, inspected pixels and actual emulator motion recording; then propagate the coherent system and complete final-source acceptance.
+
 27 October 2026. Source: [complete owner brief](requests/UI-UX-REDESIGN-2026-10-27.txt), supplemented by the owner's naming authorization. This is an implementation ledger, not a completion claim.
 
 ## Baseline and dependency
