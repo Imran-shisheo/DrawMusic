@@ -1,0 +1,21 @@
+{
+  "captureRun": 40605481853,
+  "artifactId": 12781300465,
+  "artifactZipSha256": "d87606f7e4faf55dcaa5b5072858e69457a7169d86b147a99ac3dd0cd5b7a8e8",
+  "readerRun": 40606941645,
+  "product": "979c59657f8c0b3656f02f91cb572fda63176392",
+  "harness": "3bca6ae4f34beaff936f26df5e08a37e2e12b69f",
+  "scope": "Actual light-theme two-shot subset; not full23 or performance acceptance",
+  "images": [
+    {
+      "name": "22-home-light.png",
+      "sha": "78dbeb65d40fe37659ec4d6c131026f7f4cb72bc72d8987586672144311fd57f",
+      "bytes": 290274
+    },
+    {
+      "name": "23-editor-light.png",
+      "sha": "4bea6dadc579dc36c6bcbd47e2f3c7e33966dbd27b57fcb370a18fe106837ff2",
+      "bytes": 126532
+    }
+  ]
+}

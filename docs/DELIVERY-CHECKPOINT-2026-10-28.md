@@ -28,7 +28,7 @@ The final local `bash scripts/check-android.sh` passed formatter (193 Dart files
 
 The600049ms audio soak sampled2397 times/150 loops with no progress stall. HD1080×1350/60 encoded317 samples in38.748s; peak-sampled native process PSS75923KB. Five complete MP4 streams independently decoded, audio offset0ms and A/V duration differences12.403–32.063ms. These measure the API35 emulator and encoded outputs, not actual display FPS, maximum memory or physical thermal behavior.
 
-Current capture/core head is `3bca6ae4f34beaff936f26df5e08a37e2e12b69f`. Final current-core verification remains queued; final chosen-source light capture40605481853 passed, including a normal lib/main.dart APK/v2 signature (artifact12781655455). Independent original-PNG inspection follows. The native reuse proof remains fail-closed against the accepted B5 source/run; current core/JVM/lint/APK checks are still required.
+Current capture/core head is `3bca6ae4f34beaff936f26df5e08a37e2e12b69f`. Final current-core verification remains queued. Chosen-source light capture40605481853 and reader40606941645 passed; both original Home/editor PNGs were visually inspected. Its normal lib/main.dart APK/v2 signature passed (artifact12781655455). [Original cool-light images and provenance](ui/public-native-checkpoint/light/README.md). The native reuse proof remains fail-closed against the accepted B5 source/run; current core/JVM/lint/APK checks are still required.
 
 ## Actual images and recordings
 
@@ -42,6 +42,6 @@ Current capture/core head is `3bca6ae4f34beaff936f26df5e08a37e2e12b69f`. Final c
 
 The remaining diagnosis needs an attributed raster trace and actual presentation-pacing evidence against unchanged normal content before any further optimization is accepted. Android HWUI zero-frame/sentinel values cannot supply that evidence. Do not pad/retime recordings, lower the budget, infer smoothness from export FPS, or dismiss the result because emulation is software-rendered.
 
-Final chosen-source light capture passed; independent pixel inspection and current-core delivery remain. Physical Android audio/latency/routes, screen readers, recipient apps, stylus/vendor media, storage/thermal behavior, human language quality and Mac/iOS build/runtime remain separately unperformed. No owner action is required to interpret the existing cloud evidence; these limits are explicit rather than reported as passes.
+Final chosen-source light pixels passed independent integrity checks and visual inspection. Current-core delivery remains queued. Physical Android audio/latency/routes, screen readers, recipient apps, stylus/vendor media, storage/thermal behavior, human language quality and Mac/iOS build/runtime remain separately unperformed. No owner action is required to interpret the existing cloud evidence; these limits are explicit rather than reported as passes.
 
 Only bounded free standard `ubuntu-24.04` runners on the verified-public repository are authorized. No paid usage, billing/credential changes, merge, force-push, history/media cleanup, store publication, personal-device operation or scheduled continuation.
