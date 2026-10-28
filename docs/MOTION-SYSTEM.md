@@ -1,11 +1,11 @@
 # Motion system
 
-27 October 2026. Implemented motion tokens; final visual and profile acceptance pending.
+28 October 2026. Transition continuity correction in verification; GPU performance acceptance remains separate.
 
 | Motion | Purpose and trigger | Duration / curve | Interruption and reduced motion |
 |---|---|---|---|
 | Press/selection | Immediate touch/selected feedback | 120 / 180 ms, ease-out | Retarget from current state; static selection under reduced motion |
-| Root branch | Explain destination change without losing branch state | 260 ms, ease-out cubic, at most 12 dp | Keep navigator children mounted; rapid switches retarget; reduced motion changes immediately |
+| Root and Library sections | Change destination without a blank frame or loss of branch state |260ms, ease-out cubic, continuous opacity only | Sample the current blend on every retarget; keep navigators mounted, outgoing input/focus/semantics/tickers disabled; reduced motion completes immediately |
 | Forward/back | Establish page hierarchy | 320 / 240 ms, ease-out cubic | Reverse with route; no large translation under reduced motion |
 | Sheet | Focused controls over the current project | 300 ms forward / 240 ms reverse | Native modal ownership and Back remain authoritative; immediate under reduced motion |
 | Format/state change | Reveal relevant export options or real job state | 180 ms, ease-out | Preserve job owner, no fake progress; immediate layout/state under reduced motion |
@@ -15,6 +15,16 @@
 Keep animation state local to presentation widgets. Use repaint listeners for decorative paths, separate from document, canvas/pointer and cursor repaint boundaries. No geometry serialization, project mutations or full editor rebuilds per animation tick. Do not animate canvas constraints, pointer targets or readable content during drawing. Avoid unconditional entrance cascades on branch return.
 
 Test rapid switching, Back during transitions, retained scroll/dialog/language/editor/audio state, hidden/background ticker suspension and reduced-motion semantics. Use bounded deterministic pumps for looping decoration. Actual cloud emulator recordings and profile UI/raster timings must substantiate runtime claims; debug rendering alone is not a smoothness measurement.
+
+## Continuous navigation and export handoffs — 28 October
+
+The reported Library Drafts↔Exports discontinuity had a concrete cause: the old root container immediately offstaged the departing navigator, then started the arriving page at opacity0. Rapid taps restarted that blank interval; its12dp translation also used an LTR-only index sign. The correction retains the current painted mixture and interpolates it toward the next destination over260ms. Opaque full-page branches use conditional source-over alphas so their cumulative coverage stays opaque, including first/interrupted frames. There is no translation or canvas geometry animation. Each branch keeps its navigator/controller/scroll state at a stable slot; only the selected branch owns input, semantics, focus, heroes and tickers. A third destination blends from the actual current mixture rather than snapping to an endpoint.
+
+A shared Library frame keeps a single measured selector outside the section blend. Its180ms directional indicator retargets continuously in LTR/RTL, with stable font/border metrics. Drafts and Exports retain separate lists and scroll offsets. Under260dp local height the existing all-content-scrolls fallback remains reachable rather than forcing a fixed large-text header into the keyboard/landscape viewport.
+
+Export settings/status previously used switchers whose layout discarded all outgoing content, producing the same empty handoff. `ContinuitySwitcher` keeps a finite, explicitly named set of states only for the blend. Transparent fragments use their raw fade weights, so outgoing labels actually fade; they must not use the opaque-page compositing formula. Only the selected child defines natural size. Height changes use the same180ms clock and retarget from the currently displayed size. Transition painting stays within animated bounds to protect the fixed footer; settled content retains normal shadows. Outgoing controls cannot be focused, tapped, announced or ticked. Export jobs remain owned by the sheet's existing state, with no fake progress or change to cancellation/publication semantics.
+
+Reduced motion snaps both blend and height to the selected state, including when toggled during a transition. Pixel regressions inspect first/reversal/third-state frames, transparent outgoing labels and footer isolation; actual UI tests exercise retained independent scroll,200%/French/RTL selector geometry, modal/editor Back during entrance, real export completion/error/cancel/retry and focus/ticker ownership. The new export compositing changes only3,632preview-edge antialias/shadow pixels in one settled411×850reference; after inspection that single reference is updated, with all other strict references/threshold unchanged. These prove functional transition continuity, not physical60FPS. Source-pinned original before/after emulator clips and native/full gates are tracked in DEVELOPMENT-STATUS.md. Existing software-raster UI-PERF-01 remains open; independent device QA is coordinated separately.
 
 ## Immersive sculpture implementation
 

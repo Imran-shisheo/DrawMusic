@@ -1,5 +1,15 @@
 # Development status
 
+## Active Library and transition correction — 28 October 2026
+
+User report: Library Drafts↔Exports switches abruptly. Reproduced in source: the outgoing root branch disappears immediately and incoming opacity starts at0; every rapid retarget repeats the gap. A new retained continuous blend, one persistent Library selector and bounded export-content handoff are implemented locally. Read [motion behavior and interruption contracts](MOTION-SYSTEM.md#continuous-navigation-and-export-handoffs--28-october).
+
+Verification is running, not yet accepted. Targeted pixel/interaction checks cover first-frame coverage, reversal/third destination, independent scroll, normal/200% text, RTL indicator geometry, Back during route/panel entrance, outgoing semantics/focus/tickers, transparent fragments, growing-panel footer isolation and real export job ownership. The full product gate is being rerun after correcting transient/footer and settled-shadow clipping. Exactly one affected export preview reference was updated for3,632antialias/shadow-edge pixels within[104,289,364,585] at411×850 after pixel inspection; geometry/text are unchanged. Its old image and diagnostic diff are preserved in Git/review artifacts; the other seven references and strict threshold are unchanged. Baseline original transition capture40652396927 pins accepted product7dada74 with separate harness505776b. The after capture will pin the final fixed product commit. Footage integrity and transition correctness remain distinct from GPU frame-pacing acceptance.
+
+GitHub reports PR22 merged to main at2184307 and PR23 merged into its stacked review-fixes base at9dadc5a. These merges were observed externally; this task did not execute or undo them. PR23 is closed/merged and cannot be updated as a draft; a follow-up draft PR will carry the transition fix and merged stacked redesign toward main without auto-merging. Physical QA on the owner-authorized device/Mac is coordinated by the parent task; this executor does not operate them.
+
+The sections below retain their exact earlier source/checkpoint evidence. No earlier smoothness pass is implied by these functional corrections.
+
 ## Active Doodimo immersive redesign — 27 October 2026 / 2.1.0+24
 
 ### Current verification checkpoint — 28 October 2026

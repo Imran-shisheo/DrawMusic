@@ -1,5 +1,6 @@
 import '../../rating/application/rating_provider.dart';
 import '../../../design_system/creative_panel.dart';
+import '../../../design_system/continuity_switcher.dart';
 import '../../../design_system/motion.dart';
 import '../../../design_system/doodimo_icon.dart';
 import 'export_preview_stage.dart';
@@ -631,19 +632,15 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
         ),
       ),
       const SizedBox(height: 20),
-      if (MediaQuery.disableAnimationsOf(context))
-        _detail()
-      else
-        AnimatedSize(
-          duration: CreativeMotion.selection,
-          curve: CreativeMotion.curve,
-          alignment: Alignment.topCenter,
-          child: AnimatedSwitcher(
-            duration: CreativeMotion.selection,
-            layoutBuilder: (current, previous) => current ?? const SizedBox(),
-            child: _detail(),
-          ),
-        ),
+      ContinuitySwitcher(
+        stateKeys: const [
+          ValueKey('export-settings-png'),
+          ValueKey('export-settings-wav'),
+          ValueKey('export-settings-mp4'),
+          ValueKey('export-settings-midi'),
+        ],
+        child: _detail(),
+      ),
       if (_message != null)
         Padding(
           padding: const EdgeInsets.only(top: 16),
@@ -790,10 +787,13 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
                 ),
               ),
             ],
-      child: AnimatedSwitcher(
-        duration: CreativeMotion.duration(context, CreativeMotion.selection),
-        switchInCurve: CreativeMotion.curve,
-        layoutBuilder: (current, previous) => current ?? const SizedBox(),
+      child: ContinuitySwitcher(
+        stateKeys: const [
+          ValueKey('export-selection'),
+          ValueKey('export-working'),
+          ValueKey('export-finalizing'),
+          ValueKey('export-ready'),
+        ],
         child: _busy
             ? _working()
             : _artifact != null

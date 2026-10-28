@@ -29,63 +29,38 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
         child: Semantics(
           selected: selected,
           button: true,
-          child: AnimatedContainer(
-            duration: CreativeMotion.duration(
-              context,
-              CreativeMotion.selection,
-            ),
-            curve: CreativeMotion.curve,
-            decoration: BoxDecoration(
-              gradient: selected
-                  ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colors.secondary.withValues(alpha: .22),
-                        colors.primary.withValues(alpha: .09),
-                      ],
-                    )
-                  : null,
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              border: selected
-                  ? Border.all(color: colors.secondary.withValues(alpha: .4))
-                  : null,
-            ),
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => context.go(exported ? '/exports' : '/drafts'),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 52),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: short ? 6 : 12,
+              onTap: () => context.go(exported ? '/exports' : '/drafts'),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 52),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: short ? 6 : 12,
+                  ),
+                  child: DefaultTextStyle(
+                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                      color: selected
+                          ? colors.primary
+                          : colors.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
                     ),
-                    child: DefaultTextStyle(
-                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                        color: selected
-                            ? colors.primary
-                            : colors.onSurfaceVariant,
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                      ),
-                      child: stacked
-                          ? Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                DoodimoIcon(icon, size: 24),
-                                const SizedBox(height: 6),
-                                Text(label, textAlign: TextAlign.center),
-                              ],
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: contents,
-                            ),
-                    ),
+                    child: stacked
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              DoodimoIcon(icon, size: 24),
+                              const SizedBox(height: 6),
+                              Text(label, textAlign: TextAlign.center),
+                            ],
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: contents,
+                          ),
                   ),
                 ),
               ),
@@ -98,12 +73,47 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
     return ImmersiveSurface(
       padding: const EdgeInsets.all(5),
       radius: 21,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          tab(false, DoodimoGlyph.draw, context.strings.drafts),
-          const SizedBox(width: 6),
-          tab(true, DoodimoGlyph.export, context.strings.exports),
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, bounds) => AnimatedAlign(
+                duration: CreativeMotion.duration(
+                  context,
+                  CreativeMotion.selection,
+                ),
+                curve: CreativeMotion.curve,
+                alignment: exports
+                    ? AlignmentDirectional.centerEnd
+                    : AlignmentDirectional.centerStart,
+                child: Container(
+                  width: (bounds.maxWidth - 6) / 2,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        colors.secondary.withValues(alpha: .22),
+                        colors.primary.withValues(alpha: .09),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: colors.secondary.withValues(alpha: .4),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              tab(false, DoodimoGlyph.draw, context.strings.drafts),
+              const SizedBox(width: 6),
+              tab(true, DoodimoGlyph.export, context.strings.exports),
+            ],
+          ),
         ],
       ),
     );

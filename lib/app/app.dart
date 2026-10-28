@@ -18,13 +18,16 @@ import '../design_system/doodimo_icon.dart';
 import '../design_system/immersive_surface.dart';
 import '../design_system/aurora_scene.dart';
 import '../features/home/domain/template_catalog.dart';
-import '../design_system/motion.dart';
 import '../design_system/creative_components.dart';
 import '../features/editor/presentation/canvas.dart';
 import '../features/backgrounds/presentation/background_surface.dart';
 import 'providers.dart';
 import '../features/editor/presentation/editor.dart';
 import '../features/library/presentation/drafts.dart';
+import '../features/library/presentation/library_branch_frame.dart';
+import '../design_system/retained_transition.dart';
+
+export '../design_system/retained_transition.dart';
 import '../features/export_library/presentation/exports_page.dart';
 import '../features/home/presentation/templates.dart';
 
@@ -34,8 +37,23 @@ GoRouter buildRouter({bool offerEditorTips = false}) => GoRouter(
     StatefulShellRoute(
       navigatorContainerBuilder: (context, shell, children) =>
           RetainedBranchContainer(
-            index: shell.currentIndex,
-            children: children,
+            index: switch (shell.currentIndex) {
+              0 => 0,
+              3 => 2,
+              _ => 1,
+            },
+            children: [
+              children[0],
+              LibraryBranchFrame(
+                section: switch (shell.currentIndex) {
+                  1 => 0,
+                  2 => 1,
+                  _ => null,
+                },
+                children: [children[1], children[2]],
+              ),
+              children[3],
+            ],
           ),
       builder: (_, _, shell) => _RootTabs(shell: shell),
       branches: [
@@ -223,98 +241,6 @@ class _ScribbleSongAppState extends ConsumerState<ScribbleSongApp> {
         ),
       );
     },
-  );
-}
-
-/// Only the selected navigator paints, receives input/semantics and ticks.
-/// Every child stays mounted at its original index, even during rapid switches.
-class RetainedBranchContainer extends StatefulWidget {
-  const RetainedBranchContainer({
-    super.key,
-    required this.index,
-    required this.children,
-  });
-  final int index;
-  final List<Widget> children;
-  @override
-  State<RetainedBranchContainer> createState() =>
-      _RetainedBranchContainerState();
-}
-
-class _RetainedBranchContainerState extends State<RetainedBranchContainer>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _arrival = AnimationController(
-    vsync: this,
-    duration: CreativeMotion.branch,
-    value: 1,
-  );
-  double _direction = 1;
-  @override
-  void didUpdateWidget(RetainedBranchContainer oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.index != widget.index) {
-      _direction = widget.index > oldWidget.index ? 1 : -1;
-      if (MediaQuery.disableAnimationsOf(context)) {
-        _arrival.value = 1;
-      } else {
-        _arrival.forward(from: 0);
-      }
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) _arrival.value = 1;
-  }
-
-  @override
-  void dispose() {
-    _arrival.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => Stack(
-    fit: StackFit.expand,
-    children: [
-      for (var i = 0; i < widget.children.length; i++)
-        Offstage(
-          offstage: i != widget.index,
-          child: ExcludeFocus(
-            excluding: i != widget.index,
-            child: TickerMode(
-              enabled: i == widget.index,
-              child: HeroMode(
-                enabled: i == widget.index,
-                child: FadeTransition(
-                  opacity: i == widget.index
-                      ? _arrival.drive(CurveTween(curve: CreativeMotion.curve))
-                      : const AlwaysStoppedAnimation(1),
-                  child: AnimatedBuilder(
-                    animation: _arrival,
-                    child: widget.children[i],
-                    builder: (context, child) => Transform.translate(
-                      offset: Offset(
-                        i == widget.index
-                            ? 12 *
-                                  _direction *
-                                  (1 -
-                                      CreativeMotion.curve.transform(
-                                        _arrival.value,
-                                      ))
-                            : 0,
-                        0,
-                      ),
-                      child: child,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-    ],
   );
 }
 
