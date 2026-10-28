@@ -1,17 +1,8 @@
 {
-  "runId": 40560035660,
-  "artifactName": "drawmusic-ui-visuals-5c4a7be7a643dd7a88ffc9c10d7679443367a32f",
+  "runId": 40605481853,
+  "artifactName": "drawmusic-ui-visuals-3bca6ae4f34beaff936f26df5e08a37e2e12b69f",
   "screenshots": [
-    "03-exports.png",
-    "04-settings.png",
-    "07-photo-crop-panel.png",
-    "08-instruments.png",
-    "11-export-ready.png"
-  ],
-  "ambientMotionDiagnostic": true,
-  "interactionMotionDiagnostic": true,
-  "interactionContactNames": [
-    "01-root-navigation",
-    "05-export-ready"
+    "22-home-light.png",
+    "23-editor-light.png"
   ]
 }
