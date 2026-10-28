@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../design_system/brand_colors.dart';
+import '../../../creative_document/document.dart';
 import '../../../design_system/doodimo_icon.dart';
 import '../../../design_system/motion.dart';
 import '../../../l10n/strings.dart';
@@ -10,8 +11,48 @@ import '../../backgrounds/presentation/background_surface.dart';
 import '../../editor/presentation/canvas.dart';
 import '../domain/template_catalog.dart';
 
-class TemplateGallery extends StatelessWidget {
+class TemplateGallery extends StatefulWidget {
   const TemplateGallery({super.key});
+  @override
+  State<TemplateGallery> createState() => _TemplateGalleryState();
+}
+
+class _TemplateGalleryState extends State<TemplateGallery> {
+  int? _columns;
+  Widget? _rows;
+
+  Widget _rowsFor(int columns) {
+    if (_columns == columns) return _rows!;
+    _columns = columns;
+    // Sliver constraints also change on every scroll pixel. Only a column-count
+    // change needs a new delegate; retained rows still react to inherited theme,
+    // text-scale and locale changes through their own element dependencies.
+    return _rows = SliverList.builder(
+      itemCount: (originalTemplates.length / columns).ceil(),
+      itemBuilder: (context, row) => Padding(
+        padding: const EdgeInsets.only(bottom: 24),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var column = 0; column < columns; column++) ...[
+              if (column > 0) const SizedBox(width: 16),
+              Expanded(
+                child: row * columns + column < originalTemplates.length
+                    ? _TemplateSleeve(
+                        key: ValueKey(
+                          originalTemplates[row * columns + column].id,
+                        ),
+                        index: row * columns + column,
+                      )
+                    : const SizedBox(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => SliverMainAxisGroup(
     slivers: [
@@ -32,39 +73,15 @@ class TemplateGallery extends StatelessWidget {
         ),
       ),
       SliverLayoutBuilder(
-        builder: (context, constraints) {
-          final columns = (constraints.crossAxisExtent / 170).floor().clamp(
-            1,
-            4,
-          );
-          final rows = (originalTemplates.length / columns).ceil();
-          return SliverList.builder(
-            itemCount: rows,
-            itemBuilder: (context, row) => Padding(
-              padding: const EdgeInsets.only(bottom: 24),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var column = 0; column < columns; column++) ...[
-                    if (column > 0) const SizedBox(width: 16),
-                    Expanded(
-                      child: row * columns + column < originalTemplates.length
-                          ? _TemplateSleeve(index: row * columns + column)
-                          : const SizedBox(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          );
-        },
+        builder: (context, constraints) =>
+            _rowsFor((constraints.crossAxisExtent / 170).floor().clamp(1, 4)),
       ),
     ],
   );
 }
 
 class _TemplateSleeve extends StatefulWidget {
-  const _TemplateSleeve({required this.index});
+  const _TemplateSleeve({super.key, required this.index});
   final int index;
   @override
   State<_TemplateSleeve> createState() => _TemplateSleeveState();
@@ -72,11 +89,28 @@ class _TemplateSleeve extends StatefulWidget {
 
 class _TemplateSleeveState extends State<_TemplateSleeve> {
   bool _pressed = false;
+  late ProjectDocument _document;
+
+  @override
+  void initState() {
+    super.initState();
+    _document = originalTemplates[widget.index].create();
+  }
+
+  @override
+  void didUpdateWidget(_TemplateSleeve oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index != widget.index) {
+      _document = originalTemplates[widget.index].create();
+      _pressed = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final template = originalTemplates[widget.index];
     final colors = Theme.of(context).colorScheme;
-    final document = template.create();
+    final document = _document;
     final sleeve = [
       DoodimoColors.lavender,
       DoodimoColors.lime,

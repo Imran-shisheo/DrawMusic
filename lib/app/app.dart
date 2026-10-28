@@ -331,11 +331,14 @@ class _HomePageState extends ConsumerState<HomePage>
               borderRadius: BorderRadius.circular(12),
               child: AspectRatio(
                 aspectRatio: 4 / 5,
-                child: BackgroundSurface(
-                  paper: artwork.effectiveBackground,
-                  maxWidth: 320,
-                  maxHeight: 400,
-                  child: CustomPaint(painter: DrawingPainter(artwork)),
+                child: RepaintBoundary(
+                  key: const ValueKey('home-artwork-paint'),
+                  child: BackgroundSurface(
+                    paper: artwork.effectiveBackground,
+                    maxWidth: 320,
+                    maxHeight: 400,
+                    child: CustomPaint(painter: DrawingPainter(artwork)),
+                  ),
                 ),
               ),
             ),
