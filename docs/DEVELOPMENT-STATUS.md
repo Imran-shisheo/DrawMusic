@@ -1,5 +1,15 @@
 # Development status
 
+## Approved graphite redesign — input access blocked, 28 October 2026
+
+The owner approved the original reference-led graphite redesign and cloud implementation. Remote maina7a8e595d96735c9b5db607c8d03d785937edf15 includes verified75e708d; the user merged PR22/23/24. New branch: `codex/graphite-redesign-2026-10-28`. [Current inventory, motion contracts, exact input identities and implementation sequence](GRAPHITE-IMPLEMENTATION-PLAN.md).
+
+The approved Graphite Review PNG, Motion Storyboard PNG and complete Motion Plan Markdown have not been received or inspected here. This cloud session exposes no Library skill/tools/materialization helper; both cloud catalog pages and executor catalog were checked. Files are absent locally and the project Page has no exact references to them. Supported access to their exact authorized bytes is required before visual implementation. No authenticated URL, Mac path, generic Sediment downloader or replacement mockup was used. No new product code/APK/test pass is claimed; prior accepted checks below remain source-specific.
+
+The current-main baseline fixture capture passed and rendered76 real-font states; Home, Drafts, Editor and Export PNGs were visually inspected and [retained with hashes](ui/graphite-baseline-2026-10-28/README.md). This is actual baseline widget evidence, not redesigned or native-device evidence.
+
+Environment runtime/proxy refresh and latest-main/source inventory are complete; the pinned UI UX Pro Max skill was explicitly read and relevant offline motion/Flutter guidance reviewed. Independent planning continues, but visual code is blocked until the actual approved pixels and full motion plan can be viewed. No hosted run or personal-device action has been started for this blocked phase.
+
 ## Home scroll and reviewed design tools — 28 October 2026
 
 Final evidence/reference core [40666591179](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40666591179) PASSED on head `94ab7fa358b08118cf6c4871e591a0a92b59d05b`, merge `d675bd8e43aa1bbf50109be5aba4f628463f3a3e`; both share tree `b31a4513c21f032167b92c18fe1832910483663c`. Product/native/assets/dependencies and tests are unchanged from accepted6f80572. Core formatter/analyzer/383Flutter tests/three skips, visual references, JVM/lint/APK/v2/recovery and portable Swift ran again. Native acceptance was explicitly reused from verified6f80572/run40662060004 after exact protected-input/API checks; it was not executed anew. The final documentation-only update records these results and the parent-reported QA preparation without changing product or gate source.
