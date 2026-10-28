@@ -1,0 +1,20 @@
+{
+  "captureRun": 40597917801,
+  "captureArtifact": 12777104697,
+  "readerRun": 40599296606,
+  "product": "f9fc4baad071cf5a61e857898a1609c4cc3b9996",
+  "harness": "2fcfea098a7721b2867544ae3bc2612c27b38760",
+  "scope": "Two actual compact320dp 200percent screenshots, not full23 or performance acceptance",
+  "images": [
+    {
+      "name": "16-home-compact-large-text.png",
+      "sha": "bb5e25570a451484ee94e24923c89dc81d2c7ae425c6ea1ea581764bc7d44e45",
+      "bytes": 136910
+    },
+    {
+      "name": "17-editor-compact-large-text.png",
+      "sha": "0604dd1147955bdc930fcfd6d643179e22e044ac4e27469813910658078a115f",
+      "bytes": 98764
+    }
+  ]
+}

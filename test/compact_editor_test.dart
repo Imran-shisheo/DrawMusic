@@ -1,9 +1,13 @@
+import 'support/editor_controls.dart';
+
 import 'package:flutter/material.dart';
+import 'package:scribblesong/design_system/creative_dock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/app/providers.dart';
 import 'package:scribblesong/app/app.dart';
 import 'package:scribblesong/features/export_library/data/export_actions.dart';
+import 'package:scribblesong/features/export/presentation/export_sheet.dart';
 import 'package:scribblesong/features/export_library/domain/export_library.dart';
 import 'package:scribblesong/creative_document/document.dart';
 import 'package:scribblesong/design_system/theme.dart';
@@ -78,12 +82,16 @@ void main() {
               find.textContaining('Could not save this drawing'),
               findsOneWidget,
             );
-            expect(tester, meetsGuideline(labeledTapTargetGuideline));
-            expect(tester, meetsGuideline(androidTapTargetGuideline));
-            expect(tester, meetsGuideline(textContrastGuideline));
-            await tester.ensureVisible(find.text('120 BPM'));
-            await tester.tap(find.text('120 BPM'));
-            await tester.pumpAndSettle();
+            await expectLater(
+              tester,
+              meetsGuideline(labeledTapTargetGuideline),
+            );
+            await expectLater(
+              tester,
+              meetsGuideline(androidTapTargetGuideline),
+            );
+            await expectLater(tester, meetsGuideline(textContrastGuideline));
+            await openEditorMusic(tester);
             await tester.ensureVisible(find.text('Cancel'));
             await tester.tap(find.text('Cancel'));
             await tester.pumpAndSettle();
@@ -96,19 +104,32 @@ void main() {
             );
             await tester.tap(find.byTooltip('Export loop'));
             await tester.pumpAndSettle();
-            for (final label in [
-              'Export MIDI',
-              'Export WAV',
-              'Export MP4',
-              'Close',
+            for (final (format, label) in [
+              ('png', 'Export PNG'),
+              ('midi', 'Export MIDI'),
+              ('wav', 'Export WAV'),
+              ('mp4', 'Export MP4'),
             ]) {
-              await tester.ensureVisible(find.text(label));
+              final intent = find.byKey(ValueKey('export-intent-$format'));
+              await tester.ensureVisible(intent);
               await tester.pumpAndSettle();
-              expect(find.text(label).hitTestable(), findsOneWidget);
+              await tester.tap(intent);
+              await tester.pumpAndSettle();
+              expect(
+                find.byKey(const ValueKey('export-start')).hitTestable(),
+                findsOneWidget,
+              );
+              expect(find.text(label), findsOneWidget);
             }
-            expect(tester, meetsGuideline(labeledTapTargetGuideline));
-            await tester.tap(find.text('Close'));
+            await expectLater(
+              tester,
+              meetsGuideline(labeledTapTargetGuideline),
+            );
+            final closeExport = find.byTooltip('Close');
+            expect(closeExport.hitTestable(), findsOneWidget);
+            await tester.tap(closeExport);
             await tester.pumpAndSettle();
+            expect(find.byType(ExportSheet), findsNothing);
             expect(tester.takeException(), isNull);
             await tester.pumpWidget(const SizedBox());
           } finally {
@@ -171,21 +192,45 @@ void main() {
             Future<void> tab(String name) async {
               await tester.tap(
                 find.descendant(
-                  of: find.byType(NavigationBar),
+                  of: find.byType(CreativeDock),
                   matching: find.text(name),
                 ),
               );
               await tester.pumpAndSettle();
               expect(tester.takeException(), isNull);
-              expect(tester, meetsGuideline(labeledTapTargetGuideline));
+              await expectLater(
+                tester,
+                meetsGuideline(labeledTapTargetGuideline),
+              );
             }
 
             await tab('Library');
-            final menu = find
-                .byWidgetPredicate((widget) => widget is PopupMenuButton)
-                .first;
+            final menu = find.byWidgetPredicate(
+              (widget) => widget is PopupMenuButton,
+            );
+            await tester.scrollUntilVisible(
+              menu,
+              240,
+              scrollable: find
+                  .descendant(
+                    of: find.byType(ListView),
+                    matching: find.byType(Scrollable),
+                  )
+                  .first,
+            );
             await Scrollable.ensureVisible(tester.element(menu), alignment: .1);
             await tester.pumpAndSettle();
+            final libraryViewport = tester.getRect(find.byType(ListView).first);
+            expect(libraryViewport.height, greaterThanOrEqualTo(48));
+            expect(
+              tester.getRect(menu).top,
+              greaterThanOrEqualTo(libraryViewport.top),
+            );
+            expect(
+              tester.getRect(menu).bottom,
+              lessThanOrEqualTo(libraryViewport.bottom),
+            );
+            expect(menu.hitTestable(), findsOneWidget);
             await tester.tap(menu);
             await tester.pumpAndSettle();
             await tester.tap(find.text('Rename'));
@@ -206,6 +251,16 @@ void main() {
             expect(repo.documents[doc.id]!.title, doc.title);
             await tester.tap(find.text('Exports'));
             await tester.pumpAndSettle();
+            await tester.scrollUntilVisible(
+              find.textContaining('Completed exports will appear here'),
+              200,
+              scrollable: find
+                  .descendant(
+                    of: find.byType(ListView),
+                    matching: find.byType(Scrollable),
+                  )
+                  .first,
+            );
             expect(
               find.textContaining('Completed exports will appear here'),
               findsOneWidget,

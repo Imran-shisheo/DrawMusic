@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "label": "after",
+  "sourceRef": "c965431b171607db1f0ee556764016800f0b48ab",
+  "transitionCaptureOnly": true,
+  "transitionComparison": "after-fix"
+}

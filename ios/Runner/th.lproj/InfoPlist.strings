@@ -1,1 +1,4 @@
 "NSCameraUsageDescription" = "ใช้กล้องเมื่อคุณเลือกถ่ายภาพพื้นหลังเท่านั้น ภาพจะอยู่ในอุปกรณ์นี้";
+
+"CFBundleDisplayName" = "Doodimo";
+"CFBundleName" = "Doodimo";

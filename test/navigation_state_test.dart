@@ -1,4 +1,8 @@
+import 'support/editor_controls.dart';
+
 import 'package:flutter/material.dart';
+import 'package:scribblesong/design_system/creative_dock.dart';
+import 'package:scribblesong/design_system/creative_panel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/app/app.dart';
@@ -42,14 +46,14 @@ void main() {
       Future<void> tab(String name) async {
         await tester.tap(
           find.descendant(
-            of: find.byType(NavigationBar),
+            of: find.byType(CreativeDock),
             matching: find.text(name),
           ),
         );
         await tester.pumpAndSettle();
       }
 
-      await tester.drag(find.byType(ListView), const Offset(0, -240));
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -240));
       await tester.pumpAndSettle();
       final homeScroll = tester
           .state<ScrollableState>(find.byType(Scrollable).first)
@@ -96,12 +100,14 @@ void main() {
         const Offset(40, 30),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Clear drawing'));
+      await openEditorTool(tester, 'clear');
       await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('Clear this drawing?'), findsOneWidget);
+      expect(find.byType(CreativePanel), findsOneWidget);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Clear this drawing?'), findsNothing);
+      expect(find.byType(CreativePanel), findsNothing);
       expect(find.byTooltip('Play'), findsOneWidget);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
@@ -109,7 +115,7 @@ void main() {
         find.textContaining('Completed exports will appear here.'),
         findsOneWidget,
       );
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(CreativeDock), findsOneWidget);
     },
   );
 }

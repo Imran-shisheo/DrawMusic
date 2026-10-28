@@ -26,7 +26,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settings => 'Ajustes';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic =>
@@ -441,7 +441,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments =>
-      'Cada instrumento original tiene un nombre. Los trazos nuevos usan el sonido seleccionado; los anteriores conservan el suyo.';
+      'Hay trece sonidos originales. Elige uno para los trazos nuevos; los anteriores conservan el suyo.';
 
   @override
   String get setThePace => 'Ajustar el ritmo';
@@ -455,7 +455,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo =>
-      'Elige tonalidad y escala. La misma partitura se usa para escuchar y exportar.';
+      'Elige entre doce tónicas y once escalas. La misma partitura se usa para escuchar y exportar.';
 
   @override
   String get warmPaper => 'Papel cálido';
@@ -616,7 +616,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get creationGuide => 'Guía de creación';
 
   @override
-  String get welcomeToScribbleSong => 'Bienvenido a ScribbleSong';
+  String get welcomeToScribbleSong => 'Bienvenido a Doodimo';
 
   @override
   String get howToCreateALoop => 'Cómo crear un bucle';
@@ -1144,4 +1144,137 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get erasureLimitRejected =>
       'No se borró porque se superaría el límite del dibujo. Deshaz algunos trazos o guarda este dibujo y empieza otro.';
+
+  @override
+  String get exportIntentImage => 'Imagen';
+
+  @override
+  String get exportIntentSound => 'Sonido';
+
+  @override
+  String get exportIntentVideo => 'Vídeo';
+
+  @override
+  String get exportIntentNotes => 'Notas';
+
+  @override
+  String get exportIntentImageDescription =>
+      'Tu dibujo con su papel o un fondo transparente.';
+
+  @override
+  String get exportIntentSoundDescription =>
+      'Una copia para escuchar con tus sonidos originales.';
+
+  @override
+  String get exportIntentVideoDescription =>
+      'Tu dibujo y su música, en movimiento.';
+
+  @override
+  String get exportIntentNotesDescription =>
+      'Notas editables para otra aplicación musical.';
+
+  @override
+  String get exportChooseFormat => 'Elige qué guardar';
+
+  @override
+  String get exportPreparing => 'Preparando la exportación';
+
+  @override
+  String get exportFinalizing => 'Añadiendo a tu biblioteca';
+
+  @override
+  String get exportReadyTitle => 'Listo para guardar';
+
+  @override
+  String get exportTryAgain => 'Reintentar exportación';
+
+  @override
+  String get exportAnotherFormat => 'Elegir otro formato';
+
+  @override
+  String get libraryEditable => 'Dibujo editable';
+
+  @override
+  String get libraryDrawingsSubtitle =>
+      'Tus bocetos, listos para la próxima nota.';
+
+  @override
+  String get libraryExportsSubtitle =>
+      'Archivos terminados, guardados en este dispositivo.';
+
+  @override
+  String get libraryNewDrawing => 'Empezar un dibujo';
+
+  @override
+  String get uiAppearance => 'Apariencia';
+
+  @override
+  String get uiSoundFeedback => 'Sonido y respuesta';
+
+  @override
+  String get uiAccessibilityMotion => 'Accesibilidad y movimiento';
+
+  @override
+  String get uiHelpInfo => 'Ayuda e información';
+
+  @override
+  String get uiComfortPreferences => 'Haz tuyo este espacio.';
+
+  @override
+  String get uiSoundDetails => 'Sobre reproducción y respuesta';
+
+  @override
+  String get uiMotionDetails => 'Sobre las preferencias de movimiento';
+
+  @override
+  String get uiWelcomeSummary =>
+      'Dibuja una línea. Dale voz. Pulsa reproducir.';
+
+  @override
+  String get uiOpenSourceLicenses => 'Licencias de código abierto';
+
+  @override
+  String get backgroundColorTab => 'Color';
+
+  @override
+  String get backgroundGradientTab => 'Degradado';
+
+  @override
+  String get cropWorkspace => 'Recortar imagen';
+
+  @override
+  String get cropMoveHint =>
+      'Arrastra para mover la foto. Pellizca para ampliar o usa los controles para encuadrar con precisión.';
+
+  @override
+  String get backgroundPresets => 'Paletas de papel';
+
+  @override
+  String get backgroundCustomColors => 'Colores personalizados';
+
+  @override
+  String get editorTools => 'Herramientas de dibujo';
+
+  @override
+  String get musicSettings => 'Ajustes musicales';
+
+  @override
+  String get voiceChooserHint =>
+      'Elige el sonido de tus próximos trazos. Los anteriores conservan su voz.';
+
+  @override
+  String welcomeToBrand(String name) {
+    return 'Bienvenido a $name';
+  }
+
+  @override
+  String get backgroundPanelTitle => 'Papel y foto';
+
+  @override
+  String exportFpsChoice(String fps) {
+    return '$fps FPS';
+  }
+
+  @override
+  String get editorToolsShort => 'Herramientas';
 }

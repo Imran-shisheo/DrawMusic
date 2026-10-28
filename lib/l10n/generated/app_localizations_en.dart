@@ -25,7 +25,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => 'A little line.\nA little music.';
@@ -436,7 +436,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments =>
-      'Cloud keys, Wood drops and Glass stars are named original instruments. Each new stroke uses the selected voice; existing strokes keep theirs.';
+      'Thirteen original voices are available. Choose a sound for new marks; existing strokes keep theirs.';
 
   @override
   String get setThePace => 'Set the pace';
@@ -450,7 +450,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo =>
-      'Choose any root key and scale to change the mood. The same score drives preview and exports.';
+      'Choose any of twelve root keys and eleven scale families. The same score drives preview and exports.';
 
   @override
   String get warmPaper => 'Warm paper';
@@ -611,7 +611,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get creationGuide => 'Creation guide';
 
   @override
-  String get welcomeToScribbleSong => 'Welcome to ScribbleSong';
+  String get welcomeToScribbleSong => 'Welcome to Doodimo';
 
   @override
   String get howToCreateALoop => 'How to create a loop';
@@ -1130,4 +1130,135 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get erasureLimitRejected =>
       'Erasure was not applied because it would exceed the drawing limit. Undo some ink, or save this drawing and start a new one.';
+
+  @override
+  String get exportIntentImage => 'Image';
+
+  @override
+  String get exportIntentSound => 'Sound';
+
+  @override
+  String get exportIntentVideo => 'Video';
+
+  @override
+  String get exportIntentNotes => 'Notes';
+
+  @override
+  String get exportIntentImageDescription =>
+      'Artwork with your paper or a transparent background.';
+
+  @override
+  String get exportIntentSoundDescription =>
+      'A listening copy with your original sounds.';
+
+  @override
+  String get exportIntentVideoDescription =>
+      'Your drawing and music, moving together.';
+
+  @override
+  String get exportIntentNotesDescription =>
+      'Editable notes for another music app.';
+
+  @override
+  String get exportChooseFormat => 'Choose what to keep';
+
+  @override
+  String get exportPreparing => 'Preparing your export';
+
+  @override
+  String get exportFinalizing => 'Adding to your library';
+
+  @override
+  String get exportReadyTitle => 'Ready to keep';
+
+  @override
+  String get exportTryAgain => 'Try export again';
+
+  @override
+  String get exportAnotherFormat => 'Choose another format';
+
+  @override
+  String get libraryEditable => 'Editable drawing';
+
+  @override
+  String get libraryDrawingsSubtitle =>
+      'Your sketches, ready for their next note.';
+
+  @override
+  String get libraryExportsSubtitle => 'Finished files, kept on this device.';
+
+  @override
+  String get libraryNewDrawing => 'Start a drawing';
+
+  @override
+  String get uiAppearance => 'Appearance';
+
+  @override
+  String get uiSoundFeedback => 'Sound & feedback';
+
+  @override
+  String get uiAccessibilityMotion => 'Accessibility & motion';
+
+  @override
+  String get uiHelpInfo => 'Help & app information';
+
+  @override
+  String get uiComfortPreferences => 'Make this space your own.';
+
+  @override
+  String get uiSoundDetails => 'About playback & feedback';
+
+  @override
+  String get uiMotionDetails => 'About motion preferences';
+
+  @override
+  String get uiWelcomeSummary => 'Draw a line. Give it a voice. Press play.';
+
+  @override
+  String get uiOpenSourceLicenses => 'Open-source licenses';
+
+  @override
+  String get backgroundColorTab => 'Color';
+
+  @override
+  String get backgroundGradientTab => 'Gradient';
+
+  @override
+  String get cropWorkspace => 'Crop image';
+
+  @override
+  String get cropMoveHint =>
+      'Drag to move the photo. Pinch to zoom, or use the controls for precise framing.';
+
+  @override
+  String get backgroundPresets => 'Paper palettes';
+
+  @override
+  String get backgroundCustomColors => 'Custom colors';
+
+  @override
+  String get editorTools => 'Sketch tools';
+
+  @override
+  String get musicSettings => 'Music settings';
+
+  @override
+  String get voiceChooserHint =>
+      'Choose a sound for your next marks. Existing strokes keep their voice.';
+
+  @override
+  String welcomeToBrand(String name) {
+    return 'Welcome to $name';
+  }
+
+  @override
+  String get backgroundPanelTitle => 'Paper & photo';
+
+  @override
+  String exportFpsChoice(String fps) {
+    return '$fps FPS';
+  }
+
+  @override
+  String get editorToolsShort => 'Tools';
 }

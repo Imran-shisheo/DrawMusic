@@ -12,6 +12,8 @@ import re
 import subprocess
 import time
 
+from runtime_transport_diagnostics import safe_snapshot
+
 PACKAGE = 'com.imranshisheo.scribblesong'
 DEVICE = 'emulator-5554'
 OUTPUT = Path('work/runtime-output')
@@ -46,14 +48,16 @@ def main():
     if adb('shell', 'getprop', 'ro.kernel.qemu').stdout.strip() != '1':
         raise RuntimeError('QEMU identity check failed; refusing device operation.')
     OUTPUT.mkdir(parents=True, exist_ok=True)
+    safe_snapshot('before', verified_qemu=True)
     if adb('shell', 'pm', 'path', PACKAGE, required=False).stdout.strip():
         adb('shell', 'run-as', PACKAGE, 'rm', '-f', 'cache/qa-hd-background.json')
-    process = subprocess.Popen(['flutter', 'test', 'integration_test/creation_loop_test.dart',
-                                '--no-uninstall', '-d', DEVICE, '--timeout', '10m'])
+    process = None
     report = {'passed': False, 'scope': 'Actual API35 emulator HOME/foreground during HD60 encoding; not physical-device acceptance.'}
     handled = False
     deadline = time.monotonic() + 720
     try:
+        process = subprocess.Popen(['flutter', 'test', 'integration_test/creation_loop_test.dart',
+                                '--no-uninstall', '-d', DEVICE, '--timeout', '10m'])
         while process.poll() is None:
             if time.monotonic() > deadline:
                 raise TimeoutError('Android UI driver exceeded its bounded deadline.')
@@ -107,10 +111,11 @@ def main():
         report.update(passed=True, ui=marker)
         print('Real Android HD60 HOME/background cancellation and same-process foreground retry passed.', flush=True)
     except Exception as error:
+        safe_snapshot('failure', verified_qemu=True)
         report['error'] = str(error)
         raise
     finally:
-        if process.poll() is None:
+        if process is not None and process.poll() is None:
             process.terminate()
             try:
                 process.wait(timeout=15)

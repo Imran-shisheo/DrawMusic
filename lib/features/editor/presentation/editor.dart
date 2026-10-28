@@ -1,6 +1,7 @@
 import 'package:scribblesong/l10n/strings.dart';
 
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
@@ -18,6 +19,16 @@ import '../../settings/application/settings_controller.dart';
 import '../../../creative_document/document.dart';
 import 'accompaniment_panel.dart';
 import 'responsive_workspace.dart';
+import 'editor_voice_panel.dart';
+import 'editor_music_panel.dart';
+import 'editor_tools_panel.dart';
+import '../../../design_system/motion.dart';
+import '../../../design_system/doodimo_icon.dart';
+import '../../../design_system/brand_colors.dart';
+import '../../../design_system/immersive_surface.dart';
+import '../../../design_system/creative_panel.dart';
+import 'studio_control.dart';
+import 'instrument_glyph.dart';
 import '../../rating/application/rating_provider.dart';
 import '../../rating/presentation/rating_offer.dart';
 import '../../../design_system/paper_panel.dart';
@@ -232,6 +243,7 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       !_preparing &&
       !_leaving &&
       !_tipsShowing &&
+      !_panelShowing &&
       !ref.read(editorProvider).saving &&
       _canvas.currentState?.hasActiveGesture != true &&
       ModalRoute.of(context)?.isCurrent == true;
@@ -517,42 +529,86 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
     }
   }
 
-  Future<void> _tempoPanel() async {
-    var tempo = ref.read(editorProvider).document.tempo;
-    final chosen = await showDialog<int>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialog) => AlertDialog(
-          title: Text(context.strings.loopTempo),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(context.strings.tempoValue(context.formatNumber(tempo))),
-              Slider(
-                min: 60,
-                max: 200,
-                divisions: 140,
-                value: tempo.toDouble(),
-                label: context.strings.tempoValue(context.formatNumber(tempo)),
-                onChanged: (value) => setDialog(() => tempo = value.round()),
+  bool _panelShowing = false;
+
+  Future<void> _chooseVoice() async {
+    if (_panelShowing) return;
+    _panelShowing = true;
+    _canvas.currentState?.finish();
+    try {
+      final chosen = await showEditorVoicePanel(context, _instrument);
+      if (chosen != null && mounted) {
+        _selectionFeedback();
+        setState(() {
+          _instrument = chosen;
+          _eraser = false;
+        });
+      }
+    } finally {
+      _panelShowing = false;
+    }
+  }
+
+  Future<void> _musicSettings() async {
+    if (_panelShowing) return;
+    _panelShowing = true;
+    _canvas.currentState?.finish();
+    try {
+      final chosen = await showEditorMusicPanel(
+        context,
+        ref.read(editorProvider).document,
+      );
+      if (chosen != null && mounted) {
+        _edit(
+          ref
+              .read(editorProvider)
+              .document
+              .copyWith(
+                tempo: chosen.tempo,
+                root: chosen.rootChanged ? chosen.root : null,
+                scale: chosen.scaleChanged ? chosen.scale : null,
+                expressionMode: chosen.expression,
+                mix: chosen.mix,
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(context.strings.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, tempo),
-              child: Text(context.strings.apply),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (chosen != null && mounted) {
-      _edit(ref.read(editorProvider).document.copyWith(tempo: chosen));
+        );
+      }
+    } finally {
+      _panelShowing = false;
+    }
+  }
+
+  Future<void> _tools() async {
+    if (_panelShowing) return;
+    _panelShowing = true;
+    _canvas.currentState?.finish();
+    try {
+      final action = await showEditorToolsPanel(
+        context,
+        ref.read(editorProvider).document,
+      );
+      if (!mounted || action == null) return;
+      switch (action) {
+        case EditorToolAction.paper:
+          await _background();
+        case EditorToolAction.style:
+          await _drawingStyle();
+        case EditorToolAction.mix:
+          final mix = await showAccompanimentPanel(
+            context,
+            ref.read(editorProvider).document.mix,
+          );
+          if (mix != null && mounted) {
+            _edit(ref.read(editorProvider).document.copyWith(mix: mix));
+          }
+        case EditorToolAction.score:
+          await _describe();
+        case EditorToolAction.clear:
+          await _clear();
+        case EditorToolAction.tips:
+          await _showTips();
+      }
+    } finally {
+      _panelShowing = false;
     }
   }
 
@@ -605,26 +661,29 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       final doc = ref.read(editorProvider).document;
       final score = await compute(compileScore, doc);
       if (!mounted) return;
-      await showDialog<void>(
+      await showCreativePanel<void>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text(context.strings.yourLoopInNotes),
-          content: SingleChildScrollView(
-            child: Text(
-              '${context.strings.scoreSummary(doc.root.label, context.formatNumber(score.notes.length), context.formatNumber(doc.tempo), scaleName(context, doc.scale))}\n\n${score.notes.take(80).map((n) => context.strings.scoreEvent(n.percussion ? switch (n.pitch) {
-                      36 => context.strings.kick,
-                      38 => context.strings.snare,
-                      39 => context.strings.clap,
-                      _ => context.strings.hiHat,
-                    } : instrumentName(context, n.instrument), context.formatNumber(n.pitch), context.formatDecimal(n.startBeat + 1), context.formatDecimal(n.durationBeat))).join('\n')}${score.notes.length > 80 ? '\n${context.strings.showingFirst80Events}' : ''}',
-            ),
-          ),
+        builder: (context) => CreativePanel(
+          title: context.strings.yourLoopInNotes,
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(context.strings.close),
             ),
           ],
+          child: ImmersiveSurface(
+            accent: DoodimoColors.cyan,
+            child: SelectionArea(
+              child: Text(
+                '${context.strings.scoreSummary(doc.root.label, context.formatNumber(score.notes.length), context.formatNumber(doc.tempo), scaleName(context, doc.scale))}\n\n${score.notes.take(80).map((n) => context.strings.scoreEvent(n.percussion ? switch (n.pitch) {
+                        36 => context.strings.kick,
+                        38 => context.strings.snare,
+                        39 => context.strings.clap,
+                        _ => context.strings.hiHat,
+                      } : instrumentName(context, n.instrument), context.formatNumber(n.pitch), context.formatDecimal(n.startBeat + 1), context.formatDecimal(n.durationBeat))).join('\n')}${score.notes.length > 80 ? '\n${context.strings.showingFirst80Events}' : ''}',
+              ),
+            ),
+          ),
         ),
       );
     } catch (e) {
@@ -641,11 +700,10 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
   }
 
   Future<void> _clear() async {
-    final yes = await showDialog<bool>(
+    final yes = await showCreativePanel<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.strings.clearThisDrawing),
-        content: Text(context.strings.youCanRestoreItWithUndo),
+      builder: (context) => CreativePanel(
+        title: context.strings.clearThisDrawing,
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -656,6 +714,18 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
             child: Text(context.strings.clear),
           ),
         ],
+        child: ImmersiveSurface(
+          accent: DoodimoColors.pink,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const DoodimoIcon(DoodimoGlyph.erase, size: 36),
+              const SizedBox(height: 16),
+              Text(context.strings.youCanRestoreItWithUndo),
+            ],
+          ),
+        ),
       ),
     );
     if (yes == true && mounted) {
@@ -693,6 +763,547 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         );
       }
     });
+    final colors = Theme.of(context).colorScheme;
+    final type = Theme.of(context).textTheme;
+    final textScale = MediaQuery.textScalerOf(context);
+    final largeText = textScale.scale(14) > 21;
+    final media = MediaQuery.of(context);
+    final viewport = media.size;
+    final bodyWidth =
+        viewport.width -
+        math.max(media.padding.left, media.viewPadding.left) -
+        math.max(media.padding.right, media.viewPadding.right) -
+        32;
+    final bodyHeight =
+        viewport.height -
+        media.viewPadding.vertical -
+        (largeText ? 160 : 64) -
+        10;
+    final rail = bodyWidth >= 900 || (bodyWidth >= 520 && bodyHeight < 440);
+    final paletteWidth = rail
+        ? (bodyHeight < 440 ? 330.0 : 304.0) - 4
+        : bodyWidth;
+    final modeStyle = type.labelLarge?.copyWith(fontWeight: FontWeight.w600);
+    final drawMetrics = _labelWordMetrics(
+      context,
+      context.strings.draw,
+      modeStyle,
+    );
+    final eraseMetrics = _labelWordMetrics(
+      context,
+      context.strings.erase,
+      modeStyle,
+    );
+    final twoColumnTextWidth =
+        (paletteWidth - (largeText ? 0 : 104) - 20) / 2 -
+        20 -
+        (!largeText && viewport.width >= 380 ? 24 : 0);
+    final stackModes =
+        math.max(drawMetrics.width, eraseMetrics.width) > twoColumnTextWidth;
+    final stackedToolbarHeight = stackModes
+        ? 2.0 *
+                  math.max(
+                    48.0,
+                    math.max(drawMetrics.height, eraseMetrics.height) + 20,
+                  ) +
+              20
+        : 0.0;
+    final fullWidthTools =
+        _labelWordMetrics(
+              context,
+              context.strings.editorToolsShort,
+              type.labelLarge,
+            ).width +
+            50 >
+        paletteWidth - 96;
+    final saveStatus = state.saving
+        ? context.strings.saving
+        : state.dirty
+        ? context.strings.changesPending
+        : context.strings.savedOnThisDevice;
+    final hasMusic = doc.strokes.isNotEmpty || doc.mix.isActive;
+    final pending = _prepared && _wantedRevision != _heardRevision;
+    final pendingStatus = pending
+        ? (_pendingBoundary == UpdateBoundary.beat
+              ? context.strings.updatesNextBeat
+              : context.strings.updatesNextLoop)
+        : (!hasMusic ? context.strings.drawSomethingToHearIt : '');
+
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final showModeGlyph = !largeText && MediaQuery.sizeOf(context).width >= 380;
+    final toolbar = ImmersiveSurface(
+      padding: const EdgeInsets.all(4),
+      radius: 22,
+      accent: DoodimoColors.cyan,
+      child: Row(
+        children: [
+          Expanded(
+            child: Material(
+              color: colors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(24),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Flex(
+                  direction: stackModes ? Axis.vertical : Axis.horizontal,
+                  crossAxisAlignment: stackModes
+                      ? CrossAxisAlignment.stretch
+                      : CrossAxisAlignment.center,
+                  children: [
+                    _ModeSlot(
+                      stacked: stackModes,
+                      child: _EditorModeButton(
+                        label: context.strings.draw,
+                        glyph: DoodimoGlyph.draw,
+                        showGlyph: showModeGlyph,
+                        selected: !_eraser,
+                        onPressed: () {
+                          _canvas.currentState?.finish();
+                          setState(() => _eraser = false);
+                        },
+                      ),
+                    ),
+                    SizedBox(
+                      width: stackModes ? 0 : 4,
+                      height: stackModes ? 4 : 0,
+                    ),
+                    _ModeSlot(
+                      stacked: stackModes,
+                      child: _EditorModeButton(
+                        label: context.strings.erase,
+                        glyph: DoodimoGlyph.erase,
+                        showGlyph: showModeGlyph,
+                        selected: _eraser,
+                        onPressed: () {
+                          _canvas.currentState?.finish();
+                          setState(() => _eraser = true);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (!largeText) ...[
+            const SizedBox(width: 8),
+            IconButton(
+              tooltip: context.strings.undo,
+              onPressed: controller.canUndo
+                  ? () => _historyEdit(redo: false)
+                  : null,
+              icon: const DoodimoIcon(DoodimoGlyph.undo),
+            ),
+            IconButton(
+              tooltip: context.strings.redo,
+              onPressed: controller.canRedo
+                  ? () => _historyEdit(redo: true)
+                  : null,
+              icon: const DoodimoIcon(DoodimoGlyph.redo),
+            ),
+          ],
+        ],
+      ),
+    );
+    final voice = StudioControl(
+      key: _voiceTarget,
+      interactionKey: const ValueKey('current-voice'),
+      label:
+          '${context.strings.chooseAVoice}: ${instrumentName(context, _instrument)}',
+      onPressed: _chooseVoice,
+      fill: Colors.transparent,
+      foreground: colors.onSurface,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      radius: 22,
+      child: Row(
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: instrumentColors[_instrument.index],
+                  width: 3,
+                ),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 3),
+              child: InstrumentGlyph(_instrument, size: largeText ? 32 : 42),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              instrumentName(context, _instrument),
+              style: type.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(width: 6),
+          const DoodimoIcon(DoodimoGlyph.chevronDown, size: 18),
+        ],
+      ),
+    );
+    final summary = LayoutBuilder(
+      builder: (context, constraints) {
+        if (!largeText && constraints.maxWidth < 200) {
+          return StudioControl(
+            key: const ValueKey('music-settings'),
+            label:
+                '${context.strings.musicSettings}: ${context.strings.tempoValue(context.formatNumber(doc.tempo))}, ${doc.root.label} ${scaleName(context, doc.scale)}',
+            onPressed: _musicSettings,
+            fill: Colors.transparent,
+            foreground: colors.onSurface,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    key: _scaleTarget,
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${context.strings.tempoValue(context.formatNumber(doc.tempo))} · ${doc.root.label} ${scaleName(context, doc.scale)}',
+                        key: _tempoTarget,
+                        style: type.labelMedium,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const DoodimoIcon(DoodimoGlyph.chevronDown, size: 18),
+              ],
+            ),
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            children: [
+              if (!largeText)
+                RepeatingIconButton(
+                  tooltip: context.strings.slower,
+                  onStep: doc.tempo > 60 ? () => _changeTempo(-1) : null,
+                  icon: Icons.remove_rounded,
+                ),
+              Expanded(
+                child: StudioControl(
+                  key: const ValueKey('music-settings'),
+                  label:
+                      '${context.strings.musicSettings}: ${context.strings.tempoValue(context.formatNumber(doc.tempo))}, ${doc.root.label} ${scaleName(context, doc.scale)}',
+                  onPressed: _musicSettings,
+                  fill: Colors.transparent,
+                  foreground: colors.onSurface,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  radius: 16,
+                  child: Row(
+                    children: [
+                      if (largeText)
+                        Expanded(
+                          key: _scaleTarget,
+                          child: Text(
+                            '${context.strings.tempoValue(context.formatNumber(doc.tempo))} · ${doc.root.label} ${scaleName(context, doc.scale)}',
+                            key: _tempoTarget,
+                            style: type.labelMedium?.copyWith(
+                              color: colors.onSurface,
+                            ),
+                          ),
+                        )
+                      else ...[
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                context.strings.tempoValue(
+                                  context.formatNumber(doc.tempo),
+                                ),
+                                key: _tempoTarget,
+                                style: type.labelLarge?.copyWith(
+                                  color: colors.onSurface,
+                                ),
+                              ),
+                              Text(
+                                '${doc.root.label} ${scaleName(context, doc.scale)}',
+                                key: _scaleTarget,
+                                style: type.labelSmall?.copyWith(
+                                  color: colors.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        DoodimoIcon(
+                          DoodimoGlyph.chevronDown,
+                          color: colors.onSurface,
+                          size: 18,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              if (!largeText)
+                RepeatingIconButton(
+                  tooltip: context.strings.faster,
+                  onStep: doc.tempo < 200 ? () => _changeTempo(1) : null,
+                  icon: Icons.add_rounded,
+                ),
+            ],
+          ),
+        );
+      },
+    );
+    final play = DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: hasMusic
+              ? const [Color(0xffb9a1ff), Color(0xff71e2f5)]
+              : const [Color(0xff606d94), Color(0xff46577e)],
+        ),
+        border: Border.all(
+          color: const Color(0xffd1d9ff).withValues(alpha: .7),
+        ),
+        boxShadow: hasMusic
+            ? [
+                BoxShadow(
+                  color: DoodimoColors.violet.withValues(
+                    alpha: dark ? .24 : .12,
+                  ),
+                  blurRadius: 22,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : const [],
+      ),
+      child: SizedBox.square(
+        dimension: 72,
+        child: IconButton(
+          key: _playTarget,
+          style: IconButton.styleFrom(
+            foregroundColor: DoodimoColors.ink,
+            disabledForegroundColor: const Color(0xffd6def6),
+          ),
+          tooltip: _playing ? context.strings.pause : context.strings.play,
+          onPressed: (!_playing && !hasMusic) || _preparing
+              ? null
+              : () => _play(),
+          icon: SizedBox.square(
+            dimension: 32,
+            child: _preparing
+                ? const Padding(
+                    padding: EdgeInsets.all(3),
+                    child: CircularProgressIndicator(
+                      color: DoodimoColors.ink,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : AnimatedSwitcher(
+                    duration: CreativeMotion.duration(
+                      context,
+                      CreativeMotion.selection,
+                    ),
+                    child: DoodimoIcon(
+                      _playing ? DoodimoGlyph.pause : DoodimoGlyph.play,
+                      key: ValueKey(_playing),
+                      size: 32,
+                      color: hasMusic
+                          ? DoodimoColors.ink
+                          : const Color(0xffd6def6),
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+    final replay = IconButton(
+      tooltip: context.strings.replay,
+      onPressed: hasMusic ? () => _play(replay: true) : null,
+      icon: const DoodimoIcon(DoodimoGlyph.replay),
+    );
+    final tools = StudioControl(
+      interactionKey: const ValueKey('editor-tools'),
+      label: context.strings.editorTools,
+      onPressed: _tools,
+      fill: colors.surfaceContainerHighest,
+      foreground: colors.onSurface,
+      radius: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const DoodimoIcon(DoodimoGlyph.more, size: 20),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              context.strings.editorToolsShort,
+              style: type.labelLarge,
+            ),
+          ),
+        ],
+      ),
+    );
+    final history = <Widget>[
+      if (largeText) ...[
+        IconButton(
+          tooltip: context.strings.undo,
+          onPressed: controller.canUndo
+              ? () => _historyEdit(redo: false)
+              : null,
+          icon: const DoodimoIcon(DoodimoGlyph.undo),
+        ),
+        IconButton(
+          tooltip: context.strings.redo,
+          onPressed: controller.canRedo ? () => _historyEdit(redo: true) : null,
+          icon: const DoodimoIcon(DoodimoGlyph.redo),
+        ),
+      ],
+      replay,
+    ];
+    final compactDeck =
+        largeText || viewport.width < 380 || viewport.width >= 900;
+    final transport = ImmersiveSurface(
+      key: const ValueKey('editor-instrument-console'),
+      padding: const EdgeInsets.all(8),
+      radius: 28,
+      accent: DoodimoColors.violet,
+      glow: true,
+      child: compactDeck
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                voice,
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    play,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Wrap(
+                        alignment: WrapAlignment.end,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 4,
+                        runSpacing: 4,
+                        children: [...history, if (!fullWidthTools) tools],
+                      ),
+                    ),
+                  ],
+                ),
+                if (fullWidthTools) ...[const SizedBox(height: 4), tools],
+                const SizedBox(height: 4),
+                summary,
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: voice),
+                    const SizedBox(width: 4),
+                    tools,
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    play,
+                    const SizedBox(width: 8),
+                    Expanded(child: summary),
+                    replay,
+                  ],
+                ),
+              ],
+            ),
+    );
+    final alerts = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (doc.hasCompatibilityFallbacks)
+          Text(context.strings.compatibilityFallback),
+        if (widget.recovered)
+          Text(
+            context
+                .strings
+                .recoveredThePreviousCompleteRevisionTheDamagedFileIsPreser,
+          ),
+        if (repo.hasError)
+          Text(
+            context.strings.storageUnavailableRetryFromDraftsBeforeLeaving,
+            style: TextStyle(color: colors.error),
+          ),
+        if (state.error != null)
+          TextButton(
+            onPressed: () => controller.save(),
+            child: Text(context.strings.drawingSaveRetry),
+          ),
+      ],
+    );
+    final canvas = Center(
+      child: AspectRatio(
+        aspectRatio: .8,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: DoodimoColors.violet.withValues(alpha: dark ? .13 : .07),
+                blurRadius: 20,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: DrawingCanvas(
+            key: _canvas,
+            document: doc,
+            instrument: _instrument,
+            eraser: _eraser,
+            cursor: _cursor,
+            onCommit: (strokes) => _edit(
+              ref.read(editorProvider).document.copyWith(strokes: strokes),
+            ),
+            onSimplified: (before, after) =>
+                _message(context.strings.geometrySimplified),
+            onLimit: () => _message(context.strings.drawingPointLimit),
+            onEraseRejected: () =>
+                _message(context.strings.erasureLimitRejected),
+          ),
+        ),
+      ),
+    );
+    final exportAction = Tooltip(
+      message: context.strings.exportLoop,
+      child: TextButton.icon(
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          minimumSize: const Size(48, 48),
+        ),
+        label: Text(
+          context.strings.exportLoop,
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          style: type.labelLarge?.copyWith(height: 1.15),
+        ),
+        onPressed: () async {
+          _canvas.currentState?.finish();
+          await _pause();
+          if (context.mounted) {
+            await showExportSheet(context, ref.read(editorProvider).document);
+            if (mounted) await _offerRating();
+          }
+        },
+        icon: const DoodimoIcon(DoodimoGlyph.export),
+      ),
+    );
     return PopScope(
       canPop: _allowPop,
       onPopInvokedWithResult: (didPop, result) {
@@ -700,420 +1311,172 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
       },
       child: Scaffold(
         appBar: AppBar(
+          toolbarHeight: textScale.scale(14) > 21 ? 80 : 64,
           leading: IconButton(
             tooltip: context.strings.backToGallery,
             onPressed: _leaving ? null : _leave,
-            icon: const Icon(Icons.arrow_back),
+            icon: const DoodimoIcon(DoodimoGlyph.back),
           ),
-          title: Semantics(
-            button: true,
-            label: context.strings.renameDrawingLabel(doc.title),
-            child: ExcludeSemantics(
-              child: InkWell(
-                onTap: _rename,
-                child: Text(
-                  doc.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            IconButton(
-              tooltip: context.strings.editorTips,
-              onPressed: _showTips,
-              icon: const Icon(Icons.help_outline),
-            ),
-            IconButton(
-              tooltip: context.strings.exportLoop,
-              onPressed: _leaving
-                  ? null
-                  : () async {
-                      _canvas.currentState?.finish();
-                      await _pause();
-                      if (context.mounted) {
-                        await showExportSheet(
-                          context,
-                          ref.read(editorProvider).document,
-                        );
-                        if (mounted) await _offerRating();
-                      }
-                    },
-              icon: const Icon(Icons.ios_share),
-            ),
-            IconButton(
-              tooltip: context.strings.saveDrawing,
-              onPressed: state.saving ? null : _explicitSave,
-              icon: const Icon(Icons.save_outlined),
-            ),
-          ],
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: LayoutBuilder(
-              builder: (context, constraints) => ResponsiveEditorLayout(
-                width: constraints.maxWidth,
-                children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: constraints.maxHeight * .32,
+          titleSpacing: 0,
+          bottom: largeText
+              ? PreferredSize(
+                  preferredSize: const Size.fromHeight(80),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
                     ),
-                    child: SingleChildScrollView(
-                      key: const ValueKey('editor-tools-scroll'),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (doc.hasCompatibilityFallbacks)
-                            Text(context.strings.compatibilityFallback),
-                          if (widget.recovered)
-                            Text(
-                              context
-                                  .strings
-                                  .recoveredThePreviousCompleteRevisionTheDamagedFileIsPreser,
-                            ),
-                          if (repo.hasError)
-                            Text(
-                              context
-                                  .strings
-                                  .storageUnavailableRetryFromDraftsBeforeLeaving,
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          if (state.error != null)
-                            TextButton(
-                              onPressed: () => controller.save(),
-                              child: Text(context.strings.drawingSaveRetry),
-                            ),
-                          Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              RepeatingIconButton(
-                                tooltip: context.strings.slower,
-                                onStep: doc.tempo > 60
-                                    ? () => _changeTempo(-1)
-                                    : null,
-                                icon: Icons.remove,
-                              ),
-                              TextButton(
-                                key: _tempoTarget,
-                                onPressed: _tempoPanel,
-                                child: Text(
-                                  context.strings.tempoValue(
-                                    context.formatNumber(doc.tempo),
-                                  ),
-                                ),
-                              ),
-                              RepeatingIconButton(
-                                tooltip: context.strings.faster,
-                                onStep: doc.tempo < 200
-                                    ? () => _changeTempo(1)
-                                    : null,
-                                icon: Icons.add,
-                              ),
-                              IconButton(
-                                tooltip: context.strings.drawingStyle,
-                                onPressed: _drawingStyle,
-                                icon: Icon(
-                                  doc.style == DrawingStyle.smooth
-                                      ? Icons.gesture
-                                      : Icons.grid_on,
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: context.strings.paperColor,
-                                onPressed: _background,
-                                icon: const Icon(Icons.palette_outlined),
-                              ),
-                              Tooltip(
-                                message: context.strings.expressiveModeHelp,
-                                child: FilterChip(
-                                  label: Text(context.strings.expressiveMode),
-                                  selected:
-                                      doc.expressionMode ==
-                                      ExpressionMode.expressive,
-                                  onSelected: (enabled) {
-                                    _canvas.currentState?.finish();
-                                    _edit(
-                                      ref
-                                          .read(editorProvider)
-                                          .document
-                                          .copyWith(
-                                            expressionMode: enabled
-                                                ? ExpressionMode.expressive
-                                                : ExpressionMode.geometry,
-                                          ),
-                                    );
-                                  },
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: context.strings.clearDrawing,
-                                onPressed: doc.strokes.isEmpty ? null : _clear,
-                                icon: const Icon(Icons.delete_sweep_outlined),
-                              ),
-                            ],
-                          ),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                ChoiceChip(
-                                  label: Text(context.strings.draw),
-                                  selected: !_eraser,
-                                  onSelected: (_) {
-                                    _canvas.currentState?.finish();
-                                    setState(() => _eraser = false);
-                                  },
-                                ),
-                                const SizedBox(width: 8),
-                                ChoiceChip(
-                                  label: Text(context.strings.erase),
-                                  selected: _eraser,
-                                  onSelected: (_) {
-                                    _canvas.currentState?.finish();
-                                    setState(() => _eraser = true);
-                                  },
-                                ),
-                                const SizedBox(width: 12),
-                                IconButton(
-                                  tooltip: context.strings.describeScore,
-                                  onPressed: _describing ? null : _describe,
-                                  icon: const Icon(Icons.list_alt),
-                                ),
-                                Semantics(
-                                  label: context.strings.rootKey,
-                                  child: DropdownButton<RootKey>(
-                                    value: doc.root,
-                                    items: [
-                                      for (final root in RootKey.values)
-                                        DropdownMenuItem(
-                                          value: root,
-                                          child: Text(root.label),
-                                        ),
-                                    ],
-                                    onChanged: (root) {
-                                      if (root != null) {
-                                        _canvas.currentState?.finish();
-                                        _edit(
-                                          ref
-                                              .read(editorProvider)
-                                              .document
-                                              .copyWith(root: root),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                                IconButton(
-                                  tooltip: context.strings.accompaniment,
-                                  icon: const Icon(Icons.queue_music),
-                                  onPressed: () async {
-                                    _canvas.currentState?.finish();
-                                    final mix = await showAccompanimentPanel(
-                                      context,
-                                      ref.read(editorProvider).document.mix,
-                                    );
-                                    if (mix != null && mounted) {
-                                      _edit(
-                                        ref
-                                            .read(editorProvider)
-                                            .document
-                                            .copyWith(mix: mix),
-                                      );
-                                    }
-                                  },
-                                ),
-                                DropdownButton<MusicalScale>(
-                                  key: _scaleTarget,
-                                  value: doc.scale,
-                                  items: [
-                                    for (final scale in MusicalScale.values)
-                                      DropdownMenuItem(
-                                        value: scale,
-                                        child: Text(
-                                          doc.root == RootKey.c &&
-                                                  scale == MusicalScale.major
-                                              ? context.strings.cMajorPentatonic
-                                              : doc.root == RootKey.c &&
-                                                    scale == MusicalScale.minor
-                                              ? context.strings.cMinorPentatonic
-                                              : '${doc.root.label} ${scaleName(context, scale)}',
-                                        ),
-                                      ),
-                                  ],
-                                  onChanged: (scale) {
-                                    if (scale != null) {
-                                      _edit(
-                                        ref
-                                            .read(editorProvider)
-                                            .document
-                                            .copyWith(scale: scale),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: exportAction,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: Center(
-                      child: AspectRatio(
-                        aspectRatio: .8,
-                        child: DrawingCanvas(
-                          key: _canvas,
-                          document: doc,
-                          instrument: _instrument,
-                          eraser: _eraser,
-                          cursor: _cursor,
-                          onCommit: (strokes) => _edit(
-                            ref
-                                .read(editorProvider)
-                                .document
-                                .copyWith(strokes: strokes),
-                          ),
-                          onSimplified: (before, after) =>
-                              _message(context.strings.geometrySimplified),
-                          onLimit: () =>
-                              _message(context.strings.drawingPointLimit),
-                          onEraseRejected: () =>
-                              _message(context.strings.erasureLimitRejected),
+                )
+              : null,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Semantics(
+                button: true,
+                label: context.strings.renameDrawingLabel(doc.title),
+                onTap: _rename,
+                child: ExcludeSemantics(
+                  child: InkWell(
+                    onTap: _rename,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          doc.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: type.titleMedium,
                         ),
                       ),
                     ),
                   ),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: constraints.maxHeight * .32,
-                    ),
-                    child: SingleChildScrollView(
-                      key: const ValueKey('editor-transport-scroll'),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              IconButton(
-                                tooltip: context.strings.undo,
-                                onPressed: controller.canUndo
-                                    ? () {
-                                        _historyEdit(redo: false);
-                                      }
-                                    : null,
-                                icon: const Icon(Icons.undo),
-                              ),
-                              IconButton(
-                                tooltip: context.strings.redo,
-                                onPressed: controller.canRedo
-                                    ? () {
-                                        _historyEdit(redo: true);
-                                      }
-                                    : null,
-                                icon: const Icon(Icons.redo),
-                              ),
-                              IconButton.filled(
-                                key: _playTarget,
-                                tooltip: _playing
-                                    ? context.strings.pause
-                                    : context.strings.play,
-                                onPressed:
-                                    (!_playing &&
-                                            doc.strokes.isEmpty &&
-                                            !doc.mix.isActive) ||
-                                        _preparing
-                                    ? null
-                                    : () => _play(),
-                                icon: _preparing
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(),
-                                      )
-                                    : Icon(
-                                        _playing
-                                            ? Icons.pause
-                                            : Icons.play_arrow,
-                                      ),
-                                iconSize: 36,
-                              ),
-                              IconButton(
-                                tooltip: context.strings.replay,
-                                onPressed:
-                                    doc.strokes.isEmpty && !doc.mix.isActive
-                                    ? null
-                                    : () => _play(replay: true),
-                                icon: const Icon(Icons.replay),
-                              ),
-                            ],
-                          ),
-                          if (_prepared && _wantedRevision != _heardRevision)
-                            Text(
-                              _pendingBoundary == UpdateBoundary.beat
-                                  ? context.strings.updatesNextBeat
-                                  : context.strings.updatesNextLoop,
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          Text(
-                            doc.strokes.isEmpty && !doc.mix.isActive
-                                ? context.strings.drawSomethingToHearIt
-                                : state.saving
-                                ? context.strings.saving
-                                : state.dirty
-                                ? context.strings.changesPending
-                                : context.strings.savedOnThisDevice,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 4),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                for (final instrument in Instrument.values)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
-                                    ),
-                                    child: ChoiceChip(
-                                      key: instrument == Instrument.keys
-                                          ? _voiceTarget
-                                          : null,
-                                      avatar: Icon(
-                                        instrumentIcons[instrument.index],
-                                        color:
-                                            instrumentColors[instrument.index],
-                                      ),
-                                      label: Text(
-                                        instrumentName(context, instrument),
-                                      ),
-                                      selected: _instrument == instrument,
-                                      onSelected: (_) {
-                                        _canvas.currentState?.finish();
-                                        _selectionFeedback();
-                                        setState(() {
-                                          _instrument = instrument;
-                                          _eraser = false;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
+              ),
+              Text(
+                pending ? pendingStatus : saveStatus,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: type.labelSmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              tooltip: context.strings.saveDrawing,
+              onPressed: state.saving ? null : _explicitSave,
+              icon: const DoodimoIcon(DoodimoGlyph.save),
+            ),
+            if (!largeText) exportAction,
+          ],
+        ),
+        body: SceneBackdrop(
+          child: SafeArea(
+            minimum: EdgeInsets.only(
+              left: MediaQuery.viewPaddingOf(context).left,
+              right: MediaQuery.viewPaddingOf(context).right,
+              bottom: MediaQuery.viewPaddingOf(context).bottom,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: ResponsiveEditorLayout(
+                toolbar: toolbar,
+                toolbarNaturalHeight: stackedToolbarHeight,
+                summary: const SizedBox.shrink(),
+                transport: transport,
+                canvas: canvas,
+                alerts: alerts,
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+Size _labelWordMetrics(BuildContext context, String label, TextStyle? style) {
+  var width = 0.0, height = 0.0;
+  for (final word
+      in label.split(RegExp(r'\s+')).where((word) => word.isNotEmpty)) {
+    final painter = TextPainter(
+      text: TextSpan(text: word, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      locale: Localizations.maybeLocaleOf(context),
+    )..layout();
+    width = math.max(width, painter.width);
+    height = math.max(height, painter.height);
+    painter.dispose();
+  }
+  return Size(width, height);
+}
+
+class _ModeSlot extends StatelessWidget {
+  const _ModeSlot({required this.stacked, required this.child});
+  final bool stacked;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) =>
+      stacked ? child : Expanded(child: child);
+}
+
+class _EditorModeButton extends StatelessWidget {
+  const _EditorModeButton({
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+    required this.glyph,
+    required this.showGlyph,
+  });
+  final String label;
+  final bool selected, showGlyph;
+  final VoidCallback onPressed;
+  final DoodimoGlyph glyph;
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return StudioControl(
+      label: label,
+      selected: selected,
+      onPressed: onPressed,
+      fill: selected ? colors.primary : Colors.transparent,
+      foreground: selected ? colors.onPrimary : colors.onSurface,
+      radius: 20,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (showGlyph) ...[
+            DoodimoIcon(
+              glyph,
+              size: 18,
+              color: selected ? colors.onPrimary : colors.onSurface,
+            ),
+            const SizedBox(width: 6),
+          ],
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: selected ? colors.onPrimary : colors.onSurface,
+                fontWeight: FontWeight.w600,
+                decoration: selected
+                    ? TextDecoration.underline
+                    : TextDecoration.none,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

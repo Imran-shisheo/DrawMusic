@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Doodimo folded sound ribbon">
+  <defs>
+    <linearGradient id="orbit" x1="25" y1="25" x2="79" y2="76" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B7A0FF"/>
+      <stop offset="0.45" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#EF81C7"/>
+    </linearGradient>
+    <linearGradient id="fold" x1="29" y1="73" x2="64" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6672F5"/>
+      <stop offset="0.48" stop-color="#55DFF5"/>
+      <stop offset="1" stop-color="#C6F8FF"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="36" y1="22" x2="70" y2="71" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F2EBFF"/>
+      <stop offset="1" stop-color="#F2EBFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <path id="orbit-plane" fill="url(#orbit)" d="M31 18 C57 10 83 25 83 49 C83 73 61 88 36 81 L25 71 L25 31 C25 25 26 20 31 18 Z M39 31 L39 59 L41 68 C56 73 68 63 68 49 C68 34 52 24 39 31 Z" fill-rule="evenodd"/>
+  <path id="fold-plane" fill="url(#fold)" d="M25 71 L39 59 L58 39 C61 36 66 37 68 40 L51 60 C45 67 38 73 36 81 Z"/>
+  <path id="edge-light" fill="url(#edge)" opacity="0.42" d="M38 24 C61 17 77 32 78 48 C78 69 59 82 39 76 L41 73 C60 77 74 64 74 48 C74 33 56 23 39 28 Z"/>
+</svg>

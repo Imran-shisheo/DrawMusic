@@ -25,7 +25,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings => '設定';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => '小さな線から。\n小さな音楽へ。';
@@ -430,7 +430,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments =>
-      '独自の楽器には名前があります。新しい線は選択中の音色を使い、既存の線は元の音色を保ちます。';
+      '13の独自音色を使えます。新しい線の音色を選びます。既存の線は元の音色を保ちます。';
 
   @override
   String get setThePace => '速さを決める';
@@ -444,7 +444,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo =>
-      'キーと音階を選びます。試聴と書き出しには同じ楽譜を使います。';
+      '12の主音と11の音階から選べます。試聴と書き出しには同じ楽譜を使います。';
 
   @override
   String get warmPaper => '暖かな紙';
@@ -602,7 +602,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get creationGuide => '制作ガイド';
 
   @override
-  String get welcomeToScribbleSong => 'ScribbleSongへようこそ';
+  String get welcomeToScribbleSong => 'Doodimoへようこそ';
 
   @override
   String get howToCreateALoop => 'ループの作り方';
@@ -1078,4 +1078,128 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get erasureLimitRejected =>
       '描画の上限を超えるため、消去を適用しませんでした。一部の線を元に戻すか、この絵を保存して新しい絵を始めてください。';
+
+  @override
+  String get exportIntentImage => '画像';
+
+  @override
+  String get exportIntentSound => '音声';
+
+  @override
+  String get exportIntentVideo => '動画';
+
+  @override
+  String get exportIntentNotes => '音符';
+
+  @override
+  String get exportIntentImageDescription => '紙付き、または透明な背景の作品。';
+
+  @override
+  String get exportIntentSoundDescription => '独自の音色を聴くためのコピー。';
+
+  @override
+  String get exportIntentVideoDescription => '絵と音楽が一緒に動く動画。';
+
+  @override
+  String get exportIntentNotesDescription => '別の音楽アプリで編集できる音符。';
+
+  @override
+  String get exportChooseFormat => '残したい形を選ぶ';
+
+  @override
+  String get exportPreparing => '書き出しを準備中';
+
+  @override
+  String get exportFinalizing => 'ライブラリに追加中';
+
+  @override
+  String get exportReadyTitle => '保存する準備ができました';
+
+  @override
+  String get exportTryAgain => '書き出しを再試行';
+
+  @override
+  String get exportAnotherFormat => '別の形式を選ぶ';
+
+  @override
+  String get libraryEditable => '編集できる絵';
+
+  @override
+  String get libraryDrawingsSubtitle => '次の音を待つ、あなたのスケッチ。';
+
+  @override
+  String get libraryExportsSubtitle => '完成したファイルはこの端末に保存されます。';
+
+  @override
+  String get libraryNewDrawing => '絵を描き始める';
+
+  @override
+  String get uiAppearance => '外観';
+
+  @override
+  String get uiSoundFeedback => '音とフィードバック';
+
+  @override
+  String get uiAccessibilityMotion => 'アクセシビリティと動き';
+
+  @override
+  String get uiHelpInfo => 'ヘルプとアプリ情報';
+
+  @override
+  String get uiComfortPreferences => 'この空間を自分らしく。';
+
+  @override
+  String get uiSoundDetails => '再生とフィードバックについて';
+
+  @override
+  String get uiMotionDetails => '動きの設定について';
+
+  @override
+  String get uiWelcomeSummary => '線を描く。音色を付ける。再生する。';
+
+  @override
+  String get uiOpenSourceLicenses => 'オープンソースライセンス';
+
+  @override
+  String get backgroundColorTab => '色';
+
+  @override
+  String get backgroundGradientTab => 'グラデーション';
+
+  @override
+  String get cropWorkspace => '画像を切り抜く';
+
+  @override
+  String get cropMoveHint => 'ドラッグで写真を移動、ピンチで拡大できます。細かな調整には操作部を使ってください。';
+
+  @override
+  String get backgroundPresets => '紙のパレット';
+
+  @override
+  String get backgroundCustomColors => 'カスタム色';
+
+  @override
+  String get editorTools => '描画ツール';
+
+  @override
+  String get musicSettings => '音楽の設定';
+
+  @override
+  String get voiceChooserHint => '次の線の音色を選びます。既存の線の音色は変わりません。';
+
+  @override
+  String welcomeToBrand(String name) {
+    return '$nameへようこそ';
+  }
+
+  @override
+  String get backgroundPanelTitle => '紙と写真';
+
+  @override
+  String exportFpsChoice(String fps) {
+    return '$fps FPS';
+  }
+
+  @override
+  String get editorToolsShort => 'ツール';
 }

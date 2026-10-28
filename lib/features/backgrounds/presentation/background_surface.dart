@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+import '../../../design_system/brand_colors.dart';
 import '../../../l10n/strings.dart';
 import '../data/background_assets.dart';
 import '../domain/background.dart';
@@ -96,7 +97,27 @@ class _BackgroundSurfaceState extends State<BackgroundSurface> {
             child: IgnorePointer(
               child: Semantics(
                 label: context.strings.imageUnavailable,
-                child: const Icon(Icons.broken_image_outlined),
+                image: true,
+                excludeSemantics: true,
+                // Document paper is independent of chrome brightness. Keep the
+                // essential image silhouette legible on every fallback color.
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: DoodimoColors.indigo,
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(4),
+                    child: IconTheme(
+                      data: IconThemeData(
+                        color: Colors.white,
+                        opacity: 1,
+                        size: 24,
+                      ),
+                      child: Icon(Icons.broken_image_outlined),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),

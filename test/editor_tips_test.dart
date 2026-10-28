@@ -8,6 +8,7 @@ import 'package:scribblesong/features/settings/application/settings_controller.d
 import 'package:scribblesong/features/settings/domain/preferences.dart';
 
 import 'support/memory_preferences.dart';
+import 'support/editor_controls.dart';
 import 'widget_test.dart' show MemoryRepository, TestAudio;
 
 void main() {
@@ -59,7 +60,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(store.preferences.editorTipsCompleted, isFalse);
       expect(find.byTooltip('Play'), findsOneWidget);
-      await tester.tap(find.byTooltip('Editor tips'));
+      await openEditorTool(tester, 'tips');
       await tester.pumpAndSettle();
       for (final title in [
         'Listen and pause',
@@ -80,7 +81,7 @@ void main() {
       await tester.tap(find.text('New drawing'));
       await tester.pumpAndSettle();
       expect(find.text('Skip tips'), findsNothing);
-      await tester.tap(find.byTooltip('Editor tips'));
+      await openEditorTool(tester, 'tips');
       await tester.pumpAndSettle();
       expect(find.text('Draw a melody'), findsOneWidget);
       await tester.tap(find.text('Skip tips'));

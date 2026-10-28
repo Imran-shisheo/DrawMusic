@@ -25,7 +25,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get settings => 'सेटिंग';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => 'छोटी सी रेखा।\nथोड़ा सा संगीत।';
@@ -435,7 +435,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments =>
-      'हर मौलिक वाद्य का नाम है। नई रेखाएँ चुनी आवाज़ लेती हैं; पुरानी अपनी आवाज़ रखती हैं।';
+      'तेरह मूल आवाज़ें उपलब्ध हैं। नई रेखाओं के लिए चुनें; पुरानी अपनी आवाज़ रखती हैं।';
 
   @override
   String get setThePace => 'लय तय करें';
@@ -449,7 +449,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo =>
-      'आधार सुर और स्केल चुनें। सुनने और निर्यात में एक ही स्वरलिपि है।';
+      'बारह आधार सुर और ग्यारह स्केल में चुनें। सुनने और निर्यात में एक ही स्वरलिपि है।';
 
   @override
   String get warmPaper => 'गर्म कागज़';
@@ -610,7 +610,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get creationGuide => 'रचना मार्गदर्शिका';
 
   @override
-  String get welcomeToScribbleSong => 'ScribbleSong में स्वागत है';
+  String get welcomeToScribbleSong => 'Doodimo में स्वागत है';
 
   @override
   String get howToCreateALoop => 'दोहराती धुन कैसे बनाएँ';
@@ -1121,4 +1121,134 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get erasureLimitRejected =>
       'मिटाना लागू नहीं किया गया क्योंकि इससे चित्र की सीमा पार हो जाती। कुछ रेखाएँ पूर्ववत करें या यह चित्र सहेजकर नया चित्र शुरू करें।';
+
+  @override
+  String get exportIntentImage => 'चित्र';
+
+  @override
+  String get exportIntentSound => 'ध्वनि';
+
+  @override
+  String get exportIntentVideo => 'वीडियो';
+
+  @override
+  String get exportIntentNotes => 'स्वर';
+
+  @override
+  String get exportIntentImageDescription =>
+      'कागज़ या पारदर्शी पृष्ठभूमि के साथ आपकी कलाकृति।';
+
+  @override
+  String get exportIntentSoundDescription =>
+      'आपकी मूल आवाज़ों वाली सुनने की प्रति।';
+
+  @override
+  String get exportIntentVideoDescription =>
+      'आपका चित्र और संगीत, साथ चलते हुए।';
+
+  @override
+  String get exportIntentNotesDescription =>
+      'दूसरे संगीत ऐप के लिए संपादन योग्य स्वर।';
+
+  @override
+  String get exportChooseFormat => 'चुनें क्या सहेजना है';
+
+  @override
+  String get exportPreparing => 'निर्यात तैयार हो रहा है';
+
+  @override
+  String get exportFinalizing => 'संग्रह में जोड़ा जा रहा है';
+
+  @override
+  String get exportReadyTitle => 'सहेजने के लिए तैयार';
+
+  @override
+  String get exportTryAgain => 'निर्यात फिर आज़माएँ';
+
+  @override
+  String get exportAnotherFormat => 'दूसरा प्रारूप चुनें';
+
+  @override
+  String get libraryEditable => 'संपादन योग्य चित्र';
+
+  @override
+  String get libraryDrawingsSubtitle => 'आपकी रेखाएँ, अगली धुन के लिए तैयार।';
+
+  @override
+  String get libraryExportsSubtitle => 'तैयार फ़ाइलें, इसी डिवाइस पर सुरक्षित।';
+
+  @override
+  String get libraryNewDrawing => 'चित्र शुरू करें';
+
+  @override
+  String get uiAppearance => 'रूप';
+
+  @override
+  String get uiSoundFeedback => 'ध्वनि और प्रतिक्रिया';
+
+  @override
+  String get uiAccessibilityMotion => 'सुलभता और गति';
+
+  @override
+  String get uiHelpInfo => 'सहायता और ऐप जानकारी';
+
+  @override
+  String get uiComfortPreferences => 'इस जगह को अपना बनाएँ।';
+
+  @override
+  String get uiSoundDetails => 'संगीत और प्रतिक्रिया के बारे में';
+
+  @override
+  String get uiMotionDetails => 'गति की प्राथमिकताओं के बारे में';
+
+  @override
+  String get uiWelcomeSummary => 'रेखा बनाएँ। आवाज़ दें। बजाएँ दबाएँ।';
+
+  @override
+  String get uiOpenSourceLicenses => 'मुक्त स्रोत लाइसेंस';
+
+  @override
+  String get backgroundColorTab => 'रंग';
+
+  @override
+  String get backgroundGradientTab => 'रंग ढलान';
+
+  @override
+  String get cropWorkspace => 'चित्र काटें';
+
+  @override
+  String get cropMoveHint =>
+      'फ़ोटो हिलाने को खींचें। बड़ा करने को दो उँगलियों से फैलाएँ या सटीक कटाई के लिए नियंत्रण लें।';
+
+  @override
+  String get backgroundPresets => 'कागज़ के रंग';
+
+  @override
+  String get backgroundCustomColors => 'पसंद के रंग';
+
+  @override
+  String get editorTools => 'चित्र उपकरण';
+
+  @override
+  String get musicSettings => 'संगीत सेटिंग';
+
+  @override
+  String get voiceChooserHint =>
+      'अगली रेखाओं की आवाज़ चुनें। पुरानी रेखाएँ अपनी आवाज़ रखेंगी।';
+
+  @override
+  String welcomeToBrand(String name) {
+    return '$name में स्वागत है';
+  }
+
+  @override
+  String get backgroundPanelTitle => 'कागज़ और फ़ोटो';
+
+  @override
+  String exportFpsChoice(String fps) {
+    return '$fps FPS';
+  }
+
+  @override
+  String get editorToolsShort => 'उपकरण';
 }

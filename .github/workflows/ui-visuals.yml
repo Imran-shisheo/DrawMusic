@@ -1,0 +1,107 @@
+name: UI visual capture (owned profile emulator)
+on:
+  push:
+    branches: [codex/ui-redesign-2026-10-27]
+    paths:
+      - cloud/ui-capture-request.json
+      - integration_test/ui_visual_capture_test.dart
+      - integration_test/support/ui_capture_metrics.dart
+      - integration_test/support/ui_frame_clock.dart
+      - integration_test/support/ui_static_backdrop_probe.dart
+      - test/ui_static_backdrop_probe_test.dart
+      - test/ui_frame_clock_test.dart
+      - integration_test/support/ui_presentation_fence.dart
+      - test/ui_presentation_fence_test.dart
+      - test_driver/ui_visual_capture_driver.dart
+      - scripts/capture-android-ui.py
+      - scripts/prepare-ui-capture-source.py
+      - scripts/check-android-visuals.sh
+      - scripts/test-ui-capture-host.py
+      - scripts/ui_capture_mp4.py
+      - scripts/test-ui-capture-mp4.py
+      - scripts/prepare-runtime-inspectors.sh
+      - .github/workflows/ui-visuals.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: drawmusic-ui-visuals-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  visual-capture:
+    name: Actual profile UI screenshots, recordings and timings
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Pin product source independently of diagnostic instrumentation
+        id: pin-source
+        run: python3 scripts/prepare-ui-capture-source.py
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Make room on disposable capture runner
+        run: bash scripts/free-hosted-runner-space.sh
+      - name: Prepare required video inspectors and verify capture host before emulator
+        timeout-minutes: 8
+        run: |
+          bash scripts/prepare-runtime-inspectors.sh --video-only
+          python3 scripts/test-ui-capture-host.py
+          python3 scripts/test-ui-capture-mp4.py
+      - name: Prepare pinned Flutter and Android SDK
+        run: bash scripts/setup-cloud-android.sh
+      - name: Resolve pinned product dependencies and validate diagnostic sources
+        run: |
+          source cloud/env.sh
+          export DASH__SUPPRESS_ANALYTICS=true
+          flutter pub get
+          dart format --output=none --set-exit-if-changed integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart test/ui_frame_clock_test.dart integration_test/support/ui_presentation_fence.dart test/ui_presentation_fence_test.dart test_driver/ui_visual_capture_driver.dart
+          flutter analyze --no-pub integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart test/ui_frame_clock_test.dart integration_test/support/ui_presentation_fence.dart test/ui_presentation_fence_test.dart test_driver/ui_visual_capture_driver.dart
+          dart format --output=none --set-exit-if-changed integration_test/support/ui_static_backdrop_probe.dart test/ui_static_backdrop_probe_test.dart
+          flutter analyze --no-pub integration_test/support/ui_static_backdrop_probe.dart test/ui_static_backdrop_probe_test.dart
+          flutter test --no-pub test/ui_frame_clock_test.dart test/ui_presentation_fence_test.dart test/ui_static_backdrop_probe_test.dart
+          python3 -m py_compile scripts/capture-android-ui.py scripts/ui_capture_mp4.py scripts/test-ui-capture-mp4.py
+      - name: Enable disposable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Record actual animated profile app and measure engine frames
+        timeout-minutes: 24
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: bash scripts/check-android-visuals.sh
+      - name: Upload real UI evidence immediately
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: drawmusic-ui-visuals-${{ github.sha }}
+          path: work/ui-capture/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Build normal installable product debug APK from the pinned source
+        if: steps.pin-source.outputs.product_apk_required != 'false'
+        run: |
+          source cloud/env.sh
+          flutter build apk --debug --target lib/main.dart
+          "$ANDROID_HOME/build-tools/$DRAWMUSIC_ANDROID_BUILD_TOOLS/apksigner" verify --verbose build/app/outputs/flutter-apk/app-debug.apk
+      - name: Upload pinned-source normal debug APK
+        if: success() && steps.pin-source.outputs.product_apk_required != 'false'
+        uses: actions/upload-artifact@v7
+        with:
+          name: drawmusic-ui-product-apk-${{ github.sha }}
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            work/ui-capture/source-provenance.json
+          if-no-files-found: error
+          retention-days: 7

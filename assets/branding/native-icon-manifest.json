@@ -1,0 +1,182 @@
+{
+  "brand": "Doodimo",
+  "source": "assets/branding/mark.svg",
+  "sourceSha256": "7e2b3fd2a0f1d0191417213a83a8251e03a7f1ba74bba4d943e16bc783519925",
+  "packageIdentifierUnchanged": "com.imranshisheo.scribblesong",
+  "androidAdaptiveViewportDp": 108,
+  "androidCriticalSafeCircleDiameterDp": 66,
+  "androidCriticalGlyphMaxRadiusDp": 25.409244485030825,
+  "iosAppIconContentScale": 0.9,
+  "background": "#090B18",
+  "generatedPngs": {
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png": {
+      "sha256": "b4d42e56dedbc18beb6238d587c2685683c241de3cb4ca518fe974456429c225",
+      "size": [
+        1024,
+        1024
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png": {
+      "sha256": "6144caf8d4d3fd6a446a841f076f1c8c63a0f83c2608ca39bbb235d7d5fb1d52",
+      "size": [
+        20,
+        20
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png": {
+      "sha256": "389621ba2a3ac825f2dfc7d0202d785ed6df9e3ce87ed2f5c8222242ed6f7f5f",
+      "size": [
+        40,
+        40
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png": {
+      "sha256": "17940c26e7b856714fb887d23f578569ce1988066a36ee6590aa7aa7fa8cbddc",
+      "size": [
+        60,
+        60
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png": {
+      "sha256": "c6a9f6bb911af64cabe7368166f8e843b100ec510df88a569d9fa4c85a9a6aee",
+      "size": [
+        29,
+        29
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png": {
+      "sha256": "b63baac268c23a583b227afd270f8e3451e28434b0590a983e6b484a2d11bf18",
+      "size": [
+        58,
+        58
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png": {
+      "sha256": "8122903355c4fef808ee2ed64e5dc3794a309a01fde037e3ca54b2933f685779",
+      "size": [
+        87,
+        87
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png": {
+      "sha256": "389621ba2a3ac825f2dfc7d0202d785ed6df9e3ce87ed2f5c8222242ed6f7f5f",
+      "size": [
+        40,
+        40
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png": {
+      "sha256": "f38ec512ab59fe65b2db34b0c9933a6ec457439bc945bdde02fd15c699878d67",
+      "size": [
+        80,
+        80
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png": {
+      "sha256": "520ab6141ff7149e2b791eb50dabbb18000ad4edb61beed64e16fc1bcd7c45a4",
+      "size": [
+        120,
+        120
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png": {
+      "sha256": "520ab6141ff7149e2b791eb50dabbb18000ad4edb61beed64e16fc1bcd7c45a4",
+      "size": [
+        120,
+        120
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png": {
+      "sha256": "d90b836820738b6ae4f26eaa84b94f98ef7d98011f779e544505acfcd0c1203e",
+      "size": [
+        180,
+        180
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png": {
+      "sha256": "ed9acc4b8ee7508aa53c4acfa095106ddfed7323e04110c4dd00fffe3843b00e",
+      "size": [
+        76,
+        76
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png": {
+      "sha256": "c21f8861c02d8ad1f59837636521ab9d315828395732dbd999c3b46fc8b1a804",
+      "size": [
+        152,
+        152
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png": {
+      "sha256": "bb914bf04d33b4d3df873239d763f484e2496064a9c3c66e40228aaf61b5a535",
+      "size": [
+        167,
+        167
+      ],
+      "mode": "RGB"
+    },
+    "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage-dark.png": {
+      "sha256": "88a863ddca6fb12a367527e291af8cf9153dd8d705fcd957a9f2236f3e7df6bc",
+      "size": [
+        84,
+        84
+      ],
+      "mode": "RGBA"
+    },
+    "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage-dark@2x.png": {
+      "sha256": "9c51a5a8b281c0096b6612b462ef0c25ea6e88f5df5ec238034f70bfc6afb259",
+      "size": [
+        168,
+        168
+      ],
+      "mode": "RGBA"
+    },
+    "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage-dark@3x.png": {
+      "sha256": "756de47ca108531336f14894a9f97fa8619d36c704f355c4fecafe0ff36a4a80",
+      "size": [
+        252,
+        252
+      ],
+      "mode": "RGBA"
+    },
+    "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png": {
+      "sha256": "88a863ddca6fb12a367527e291af8cf9153dd8d705fcd957a9f2236f3e7df6bc",
+      "size": [
+        84,
+        84
+      ],
+      "mode": "RGBA"
+    },
+    "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png": {
+      "sha256": "9c51a5a8b281c0096b6612b462ef0c25ea6e88f5df5ec238034f70bfc6afb259",
+      "size": [
+        168,
+        168
+      ],
+      "mode": "RGBA"
+    },
+    "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png": {
+      "sha256": "756de47ca108531336f14894a9f97fa8619d36c704f355c4fecafe0ff36a4a80",
+      "size": [
+        252,
+        252
+      ],
+      "mode": "RGBA"
+    }
+  },
+  "scope": "Original SVG-derived assets and source checks; not iOS compilation or physical launcher validation"
+}

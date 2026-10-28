@@ -2,6 +2,8 @@ import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 
 import '../creative_document/document.dart';
+import 'creative_panel.dart';
+import 'doodimo_icon.dart';
 
 export '../features/backgrounds/presentation/background_panel.dart';
 
@@ -15,12 +17,22 @@ Future<int?> showPaperPanel(BuildContext context, int background) {
     (0xffeeee, context.strings.rosePaper),
   ];
   int selected() => (opacity * 255).round() << 24 | rgb;
-  return showDialog<int>(
+  return showCreativePanel<int>(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, update) => AlertDialog(
-        title: Text(context.strings.paperColor),
-        content: SingleChildScrollView(
+      builder: (context, update) => CreativePanel(
+        title: context.strings.backgroundPanelTitle,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(context.strings.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, selected()),
+            child: Text(context.strings.apply),
+          ),
+        ],
+        child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -35,8 +47,8 @@ Future<int?> showPaperPanel(BuildContext context, int background) {
                       style: IconButton.styleFrom(
                         backgroundColor: Color(0xff000000 | color),
                       ),
-                      icon: Icon(
-                        rgb == color ? Icons.check : Icons.circle_outlined,
+                      icon: DoodimoIcon(
+                        rgb == color ? DoodimoGlyph.check : DoodimoGlyph.paper,
                       ),
                     ),
                 ],
@@ -83,16 +95,6 @@ Future<int?> showPaperPanel(BuildContext context, int background) {
             ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(context.strings.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, selected()),
-            child: Text(context.strings.apply),
-          ),
-        ],
       ),
     ),
   );

@@ -23,5 +23,6 @@ done
 if [[ "$runtime_result" == 0 ]]; then
   python3 scripts/check-android-force-stop.py || runtime_result=$?
 fi
-adb -s "$runtime_device" logcat -d -s TestRunner AndroidRuntime MediaCodec CCodec ACodec > work/runtime-output/android.log || true
+python3 scripts/runtime_transport_diagnostics.py || true
+timeout 5s adb -s "$runtime_device" logcat -d -t 1000 -s TestRunner AndroidRuntime MediaCodec CCodec ACodec > work/runtime-output/android.log || true
 exit "$runtime_result"
