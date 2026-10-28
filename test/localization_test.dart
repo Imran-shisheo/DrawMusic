@@ -90,6 +90,12 @@ void main() {
       expect(find.text(drawing.title), findsOneWidget);
       await tester.tap(find.text('Settings'));
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Language'), 180);
+      await Scrollable.ensureVisible(
+        tester.element(find.text('Language')),
+        alignment: .2,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Language'));
       await tester.pumpAndSettle();
       expect(find.text('Choose language'), findsOneWidget);
@@ -104,6 +110,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(preferences.writes, 0);
       expect(find.text('Settings & help'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Language'), 180);
+      await Scrollable.ensureVisible(
+        tester.element(find.text('Language')),
+        alignment: .2,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Language'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Apply'));

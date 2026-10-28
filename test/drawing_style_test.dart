@@ -1,3 +1,5 @@
+import 'support/editor_controls.dart';
+
 import 'dart:io';
 import 'dart:convert';
 import 'dart:ui' as ui;
@@ -141,12 +143,12 @@ void main() {
       ProjectDocument doc() =>
           tester.widget<DrawingCanvas>(find.byType(DrawingCanvas)).document;
       final original = doc().strokes.single.toJson();
-      await tester.tap(find.byTooltip('Drawing style'));
+      await openEditorTool(tester, 'style');
       await tester.pumpAndSettle();
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(doc().style, DrawingStyle.smooth);
-      await tester.tap(find.byTooltip('Drawing style'));
+      await openEditorTool(tester, 'style');
       await tester.pumpAndSettle();
       await tester.tap(find.text('Pixel'));
       await tester.pumpAndSettle();

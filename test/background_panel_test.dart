@@ -50,9 +50,7 @@ void main() {
     (tester) async {
       BackgroundDefinition? result;
       await open(tester, (value) => result = value);
-      await tester.tap(find.byType(DropdownButtonFormField<BackgroundKind>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Linear gradient').last);
+      await tester.tap(find.byKey(const ValueKey('background-mode-gradient')));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Cancel'));
       await tester.tap(find.text('Cancel'));
@@ -60,9 +58,14 @@ void main() {
       expect(result, isNull);
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byType(DropdownButtonFormField<BackgroundKind>));
+      await tester.tap(find.byKey(const ValueKey('background-mode-gradient')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Radial gradient').last);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('background-gradient-radial')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('background-gradient-radial')),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('Apply'));
       await tester.pumpAndSettle();
@@ -82,6 +85,11 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       BackgroundDefinition? result;
       await open(tester, (value) => result = value);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('background-mode-photo')),
+      );
+      await tester.tap(find.byKey(const ValueKey('background-mode-photo')));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Take photo'));
       await tester.tap(find.text('Take photo'));
       await tester.pumpAndSettle();
@@ -91,6 +99,11 @@ void main() {
         ),
         findsOneWidget,
       );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('background-mode-photo')),
+      );
+      await tester.tap(find.byKey(const ValueKey('background-mode-photo')));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('Choose photo'));
       await tester.tap(find.text('Choose photo'));
       await tester.pumpAndSettle();

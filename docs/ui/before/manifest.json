@@ -1,0 +1,162 @@
+{
+  "scope": "Actual Flutter product widgets with fixture repository/preferences/audio/export metadata. Not Android emulator screenshots, native audio proof or physical acceptance.",
+  "font": "Explicit pinned SDK Roboto regular/medium/bold and MaterialIcons; available Noto script fallbacks. No Ahem screenshots.",
+  "motion": "Reduced motion enabled for deterministic still evidence; playback position is test audio fixture, not measured native timing.",
+  "screens": [
+    {
+      "file": "01-home-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "02-drafts-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "03-exports-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "04-settings-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "05-editor-empty-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "06-editor-drawn-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "07-editor-playing-fixture-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "08-background-panel-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "09-export-panel-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "10-home-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "11-editor-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "12-home-compact-fr-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "13-editor-compact-fr-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "14-home-tablet.png",
+      "size": [
+        1024.0,
+        768.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "15-editor-tablet.png",
+      "size": [
+        1024.0,
+        768.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "16-help-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "17-language-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    }
+  ],
+  "productSource": "cddebbd56bf5b4d53b7774fcdf7718e562720c06",
+  "captureMethod": "test/ui_visual_capture_test.dart before product presentation edits"
+}

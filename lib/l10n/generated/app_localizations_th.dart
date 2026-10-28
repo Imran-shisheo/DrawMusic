@@ -25,7 +25,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get settings => 'การตั้งค่า';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => 'เส้นเล็กน้อย\nเสียงเพลงเล็กน้อย';
@@ -433,7 +433,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments =>
-      'เครื่องดนตรีต้นฉบับแต่ละชนิดมีชื่อ เส้นใหม่ใช้เสียงที่เลือก เส้นเดิมคงเสียงเดิม';
+      'มีเสียงต้นฉบับสิบสามเสียง เลือกให้เส้นใหม่ ส่วนเส้นเดิมยังใช้เสียงเดิม';
 
   @override
   String get setThePace => 'กำหนดความเร็ว';
@@ -447,7 +447,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo =>
-      'เลือกคีย์และบันไดเสียง ใช้โน้ตชุดเดียวกันสำหรับฟังและส่งออก';
+      'เลือกจากสิบสองคีย์และสิบเอ็ดบันไดเสียง ใช้โน้ตเดียวกันสำหรับฟังและส่งออก';
 
   @override
   String get warmPaper => 'กระดาษโทนอุ่น';
@@ -606,7 +606,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get creationGuide => 'คู่มือสร้างเพลง';
 
   @override
-  String get welcomeToScribbleSong => 'ยินดีต้อนรับสู่ ScribbleSong';
+  String get welcomeToScribbleSong => 'ยินดีต้อนรับสู่ Doodimo';
 
   @override
   String get howToCreateALoop => 'วิธีสร้างเพลงวน';
@@ -1102,4 +1102,133 @@ class AppLocalizationsTh extends AppLocalizations {
   @override
   String get erasureLimitRejected =>
       'ไม่ได้ใช้การลบเนื่องจากจะเกินขีดจำกัดของภาพ ย้อนกลับบางเส้น หรือบันทึกภาพนี้แล้วเริ่มภาพใหม่';
+
+  @override
+  String get exportIntentImage => 'รูปภาพ';
+
+  @override
+  String get exportIntentSound => 'เสียง';
+
+  @override
+  String get exportIntentVideo => 'วิดีโอ';
+
+  @override
+  String get exportIntentNotes => 'โน้ต';
+
+  @override
+  String get exportIntentImageDescription =>
+      'ภาพวาดพร้อมกระดาษหรือพื้นหลังโปร่งใส';
+
+  @override
+  String get exportIntentSoundDescription =>
+      'สำเนาสำหรับฟังด้วยเสียงต้นฉบับของคุณ';
+
+  @override
+  String get exportIntentVideoDescription =>
+      'ภาพวาดและเสียงเพลงเคลื่อนไปด้วยกัน';
+
+  @override
+  String get exportIntentNotesDescription => 'โน้ตที่แก้ไขได้สำหรับแอปเพลงอื่น';
+
+  @override
+  String get exportChooseFormat => 'เลือกสิ่งที่จะเก็บ';
+
+  @override
+  String get exportPreparing => 'กำลังเตรียมส่งออก';
+
+  @override
+  String get exportFinalizing => 'กำลังเพิ่มลงคลัง';
+
+  @override
+  String get exportReadyTitle => 'พร้อมเก็บแล้ว';
+
+  @override
+  String get exportTryAgain => 'ลองส่งออกอีกครั้ง';
+
+  @override
+  String get exportAnotherFormat => 'เลือกอีกรูปแบบ';
+
+  @override
+  String get libraryEditable => 'ภาพวาดที่แก้ไขได้';
+
+  @override
+  String get libraryDrawingsSubtitle => 'ภาพร่างของคุณ พร้อมสำหรับโน้ตถัดไป';
+
+  @override
+  String get libraryExportsSubtitle => 'ไฟล์ที่เสร็จแล้ว เก็บบนอุปกรณ์นี้';
+
+  @override
+  String get libraryNewDrawing => 'เริ่มภาพวาด';
+
+  @override
+  String get uiAppearance => 'รูปลักษณ์';
+
+  @override
+  String get uiSoundFeedback => 'เสียงและการตอบสนอง';
+
+  @override
+  String get uiAccessibilityMotion => 'การเข้าถึงและการเคลื่อนไหว';
+
+  @override
+  String get uiHelpInfo => 'ช่วยเหลือและข้อมูลแอป';
+
+  @override
+  String get uiComfortPreferences => 'ทำพื้นที่นี้ให้เป็นของคุณ';
+
+  @override
+  String get uiSoundDetails => 'เกี่ยวกับการเล่นและการตอบสนอง';
+
+  @override
+  String get uiMotionDetails => 'เกี่ยวกับค่าการเคลื่อนไหว';
+
+  @override
+  String get uiWelcomeSummary => 'วาดเส้น ใส่เสียง กดเล่น';
+
+  @override
+  String get uiOpenSourceLicenses => 'ใบอนุญาตโอเพนซอร์ส';
+
+  @override
+  String get backgroundColorTab => 'สี';
+
+  @override
+  String get backgroundGradientTab => 'ไล่สี';
+
+  @override
+  String get cropWorkspace => 'ครอปภาพ';
+
+  @override
+  String get cropMoveHint =>
+      'ลากเพื่อย้ายภาพ จีบนิ้วเพื่อซูม หรือใช้ตัวควบคุมเพื่อจัดกรอบอย่างแม่นยำ';
+
+  @override
+  String get backgroundPresets => 'ชุดสีกระดาษ';
+
+  @override
+  String get backgroundCustomColors => 'สีที่กำหนดเอง';
+
+  @override
+  String get editorTools => 'เครื่องมือวาด';
+
+  @override
+  String get musicSettings => 'ตั้งค่าดนตรี';
+
+  @override
+  String get voiceChooserHint =>
+      'เลือกเสียงสำหรับเส้นถัดไป เส้นเดิมยังใช้เสียงเดิม';
+
+  @override
+  String welcomeToBrand(String name) {
+    return 'ยินดีต้อนรับสู่ $name';
+  }
+
+  @override
+  String get backgroundPanelTitle => 'กระดาษและภาพถ่าย';
+
+  @override
+  String exportFpsChoice(String fps) {
+    return '$fps FPS';
+  }
+
+  @override
+  String get editorToolsShort => 'เครื่องมือ';
 }

@@ -1,0 +1,34 @@
+{
+  "scope": "Actual Flutter product widgets with fixture repository/preferences/audio/export metadata. Not Android emulator screenshots, native audio proof or physical acceptance.",
+  "font": "Bundled Nunito Sans weights and Noto script fallbacks loaded explicitly, plus MaterialIcons. SDK Roboto is also loaded for legacy comparison. No Ahem screenshots.",
+  "motion": "Reduced motion enabled for deterministic still evidence; playback position is test audio fixture, not measured native timing.",
+  "screens": [
+    {
+      "file": "01-home-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "06-editor-drawn-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "09-export-panel-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "renderExceptions": []
+    }
+  ]
+}

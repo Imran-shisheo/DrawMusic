@@ -1,0 +1,118 @@
+{
+  "nunitoMaster": {
+    "url": "https://raw.githubusercontent.com/google/fonts/e7db6ca603fd4862010383ff17ffd6cc4ffac1c0/ofl/nunitosans/NunitoSans%5BYTLC%2Copsz%2Cwdth%2Cwght%5D.ttf",
+    "sha256": "f934d7142fb4784bf828da485b7dcbd90c0c80d514e9d49a5da0ed3a1ae2491d",
+    "licenseUrl": "https://raw.githubusercontent.com/google/fonts/e7db6ca603fd4862010383ff17ffd6cc4ffac1c0/ofl/nunitosans/OFL.txt",
+    "transformation": "fontTools instantiateVariableFont(updateFontNames=True), wdth100 opsz12 YTLC500 wght400/500/600/700; no outlines redrawn",
+    "upstreamCommit": "e7db6ca603fd4862010383ff17ffd6cc4ffac1c0"
+  },
+  "notoSource": {
+    "core": "Debian fonts-noto-core 20201225-2; original upstream https://github.com/notofonts/noto-fonts",
+    "cjk": "Debian fonts-noto-cjk 1:20240730+repack1-1; original upstream https://github.com/notofonts/noto-cjk",
+    "transformation": "None: bundled files byte-identical to reviewed installed fonts; CJK collection defaultface JP includes Korean/Hangul coverage."
+  },
+  "totalBundledBytes": 21181072,
+  "files": [
+    {
+      "path": "assets/fonts/NotoSansArabic/NotoSansArabic-Bold.ttf",
+      "bytes": 252940,
+      "sha256": "ded6fc7359ca36d15d7aab9ef0c066e21ce48b26a069994d6602fa2cb9a1b952"
+    },
+    {
+      "path": "assets/fonts/NotoSansArabic/NotoSansArabic-Regular.ttf",
+      "bytes": 244072,
+      "sha256": "504d7407d86875acf7d04dfaa0fd7524d0b8797723bc4aa18022f29db25b0b6e"
+    },
+    {
+      "path": "assets/fonts/NotoSansArabic/OFL.txt",
+      "bytes": 4261,
+      "sha256": "7a3176fb242b5ff7161e655ba5a58aee1190f5f1fa03d56c6c584db8189e4955"
+    },
+    {
+      "path": "assets/fonts/NotoSansCJK/NotoSansCJK-Regular.ttc",
+      "bytes": 19484784,
+      "sha256": "b76b0433203017ca80401b2ee0dd69350349871c4b19d504c34dbdd80541690a"
+    },
+    {
+      "path": "assets/fonts/NotoSansCJK/OFL.txt",
+      "bytes": 4259,
+      "sha256": "8ce5a3716d84228c2f952dce9769e94a8077f485cb40d0fc1eb9b3d7c0c78063"
+    },
+    {
+      "path": "assets/fonts/NotoSansDevanagari/NotoSansDevanagari-Bold.ttf",
+      "bytes": 237660,
+      "sha256": "77ad688cfe1dc55185bf4edb4db3c614202c65dd23a1463ad0e23fc52bcc9a5c"
+    },
+    {
+      "path": "assets/fonts/NotoSansDevanagari/NotoSansDevanagari-Regular.ttf",
+      "bytes": 229336,
+      "sha256": "79a470365ccb210fa3c7d8d8ff2e005ef9d983cfd067f735a0caf7e15070ca9f"
+    },
+    {
+      "path": "assets/fonts/NotoSansDevanagari/OFL.txt",
+      "bytes": 4256,
+      "sha256": "a318b4ccd3330be91102c66db2a1c3971d5bb0ff016bff093b831b3fb9d41795"
+    },
+    {
+      "path": "assets/fonts/NotoSansThai/NotoSansThai-Bold.ttf",
+      "bytes": 37788,
+      "sha256": "97bbc8ea98328325285f2f552228c7aac1db39d8f38f0096a61ba7df1f1f780e"
+    },
+    {
+      "path": "assets/fonts/NotoSansThai/NotoSansThai-Regular.ttf",
+      "bytes": 37744,
+      "sha256": "dfbd5ed0f1e68c3cbc51aa08f646d1ab0e68e7c4ceab70a69e465225ff701f93"
+    },
+    {
+      "path": "assets/fonts/NotoSansThai/OFL.txt",
+      "bytes": 4256,
+      "sha256": "c8313ca02ac23a41f32120c497f91905983194c05cf6e4bc4fbb33e66db70ac0"
+    },
+    {
+      "path": "assets/fonts/NunitoSans/NunitoSans-Bold.ttf",
+      "bytes": 113608,
+      "sha256": "5ee407544cd6e9da1480f83fd94ee28f1626d3ae0c1ac6e11ca72a7e0f78756a"
+    },
+    {
+      "path": "assets/fonts/NunitoSans/NunitoSans-Medium.ttf",
+      "bytes": 113548,
+      "sha256": "7244aa5c02c72dc9895c2d733d2c8bb77838794d25e775872b660e7b71767eb7"
+    },
+    {
+      "path": "assets/fonts/NunitoSans/NunitoSans-Regular.ttf",
+      "bytes": 113424,
+      "sha256": "6dcfd135eb447ccfc6ec0367d7a6a72a7214903c47b7fdd6c06fada407b88ee7"
+    },
+    {
+      "path": "assets/fonts/NunitoSans/NunitoSans-SemiBold.ttf",
+      "bytes": 113596,
+      "sha256": "a6d937dac9c0ee4a3a4ab221746a82fe8c89ef240c37d284e8ac97ec565ca13d"
+    },
+    {
+      "path": "assets/fonts/NunitoSans/OFL.txt",
+      "bytes": 4393,
+      "sha256": "efbb0c9e864cef973982d9a17567e6be5c3d1759695574586f3f18c7ecca064b"
+    },
+    {
+      "path": "assets/fonts/SpaceGrotesk/OFL.txt",
+      "bytes": 4495,
+      "sha256": "564ce565c371c5e5bbf286006565a7c9aa55a9f56e7ca58d56e05d649dd61a72"
+    },
+    {
+      "path": "assets/fonts/SpaceGrotesk/SpaceGrotesk-Bold.ttf",
+      "bytes": 88328,
+      "sha256": "38f27369a1991913855dd9772d69323e99b46e6dd35437cf0a0e0d450d536953"
+    },
+    {
+      "path": "assets/fonts/SpaceGrotesk/SpaceGrotesk-SemiBold.ttf",
+      "bytes": 88324,
+      "sha256": "e00d1120c80befdffcfd817a671448d262ee8cbc0907e916470ae9fd78de8729"
+    }
+  ],
+  "spaceGroteskMaster": {
+    "url": "https://raw.githubusercontent.com/google/fonts/e7db6ca603fd4862010383ff17ffd6cc4ffac1c0/ofl/spacegrotesk/SpaceGrotesk%5Bwght%5D.ttf",
+    "sha256": "acad6de1fc93436f5c0f1f4137751ef04f1aea3063e7036535970ffcfbd79f72",
+    "licenseUrl": "https://raw.githubusercontent.com/google/fonts/e7db6ca603fd4862010383ff17ffd6cc4ffac1c0/ofl/spacegrotesk/OFL.txt",
+    "transformation": "fontTools static wght600/700 instances. STAT lacks600name: explicit static name/weight/style metadata assigned, original outlines/OFL/copyright retained; recalcTimestamp=False."
+  }
+}

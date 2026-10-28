@@ -151,7 +151,7 @@ abstract class AppLocalizations {
   /// No description provided for @scribblesong.
   ///
   /// In en, this message translates to:
-  /// **'ScribbleSong'**
+  /// **'Doodimo'**
   String get scribblesong;
 
   /// No description provided for @aLittleLineALittleMusic.
@@ -895,7 +895,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments.
   ///
   /// In en, this message translates to:
-  /// **'Cloud keys, Wood drops and Glass stars are named original instruments. Each new stroke uses the selected voice; existing strokes keep theirs.'**
+  /// **'Thirteen original voices are available. Choose a sound for new marks; existing strokes keep theirs.'**
   String get cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments;
 
   /// No description provided for @setThePace.
@@ -919,7 +919,7 @@ abstract class AppLocalizations {
   /// No description provided for @thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo.
   ///
   /// In en, this message translates to:
-  /// **'Choose any root key and scale to change the mood. The same score drives preview and exports.'**
+  /// **'Choose any of twelve root keys and eleven scale families. The same score drives preview and exports.'**
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo;
 
   /// No description provided for @warmPaper.
@@ -1183,7 +1183,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeToScribbleSong.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to ScribbleSong'**
+  /// **'Welcome to Doodimo'**
   String get welcomeToScribbleSong;
 
   /// No description provided for @howToCreateALoop.
@@ -2103,6 +2103,246 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Erasure was not applied because it would exceed the drawing limit. Undo some ink, or save this drawing and start a new one.'**
   String get erasureLimitRejected;
+
+  /// No description provided for @exportIntentImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get exportIntentImage;
+
+  /// No description provided for @exportIntentSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get exportIntentSound;
+
+  /// No description provided for @exportIntentVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get exportIntentVideo;
+
+  /// No description provided for @exportIntentNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get exportIntentNotes;
+
+  /// No description provided for @exportIntentImageDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Artwork with your paper or a transparent background.'**
+  String get exportIntentImageDescription;
+
+  /// No description provided for @exportIntentSoundDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A listening copy with your original sounds.'**
+  String get exportIntentSoundDescription;
+
+  /// No description provided for @exportIntentVideoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your drawing and music, moving together.'**
+  String get exportIntentVideoDescription;
+
+  /// No description provided for @exportIntentNotesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Editable notes for another music app.'**
+  String get exportIntentNotesDescription;
+
+  /// No description provided for @exportChooseFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what to keep'**
+  String get exportChooseFormat;
+
+  /// No description provided for @exportPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing your export'**
+  String get exportPreparing;
+
+  /// No description provided for @exportFinalizing.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding to your library'**
+  String get exportFinalizing;
+
+  /// No description provided for @exportReadyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to keep'**
+  String get exportReadyTitle;
+
+  /// No description provided for @exportTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Try export again'**
+  String get exportTryAgain;
+
+  /// No description provided for @exportAnotherFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another format'**
+  String get exportAnotherFormat;
+
+  /// No description provided for @libraryEditable.
+  ///
+  /// In en, this message translates to:
+  /// **'Editable drawing'**
+  String get libraryEditable;
+
+  /// No description provided for @libraryDrawingsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sketches, ready for their next note.'**
+  String get libraryDrawingsSubtitle;
+
+  /// No description provided for @libraryExportsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished files, kept on this device.'**
+  String get libraryExportsSubtitle;
+
+  /// No description provided for @libraryNewDrawing.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a drawing'**
+  String get libraryNewDrawing;
+
+  /// No description provided for @uiAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get uiAppearance;
+
+  /// No description provided for @uiSoundFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound & feedback'**
+  String get uiSoundFeedback;
+
+  /// No description provided for @uiAccessibilityMotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Accessibility & motion'**
+  String get uiAccessibilityMotion;
+
+  /// No description provided for @uiHelpInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Help & app information'**
+  String get uiHelpInfo;
+
+  /// No description provided for @uiComfortPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Make this space your own.'**
+  String get uiComfortPreferences;
+
+  /// No description provided for @uiSoundDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'About playback & feedback'**
+  String get uiSoundDetails;
+
+  /// No description provided for @uiMotionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'About motion preferences'**
+  String get uiMotionDetails;
+
+  /// No description provided for @uiWelcomeSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Draw a line. Give it a voice. Press play.'**
+  String get uiWelcomeSummary;
+
+  /// No description provided for @uiOpenSourceLicenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source licenses'**
+  String get uiOpenSourceLicenses;
+
+  /// No description provided for @backgroundColorTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get backgroundColorTab;
+
+  /// No description provided for @backgroundGradientTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradient'**
+  String get backgroundGradientTab;
+
+  /// No description provided for @cropWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop image'**
+  String get cropWorkspace;
+
+  /// No description provided for @cropMoveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag to move the photo. Pinch to zoom, or use the controls for precise framing.'**
+  String get cropMoveHint;
+
+  /// No description provided for @backgroundPresets.
+  ///
+  /// In en, this message translates to:
+  /// **'Paper palettes'**
+  String get backgroundPresets;
+
+  /// No description provided for @backgroundCustomColors.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom colors'**
+  String get backgroundCustomColors;
+
+  /// No description provided for @editorTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Sketch tools'**
+  String get editorTools;
+
+  /// No description provided for @musicSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Music settings'**
+  String get musicSettings;
+
+  /// No description provided for @voiceChooserHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a sound for your next marks. Existing strokes keep their voice.'**
+  String get voiceChooserHint;
+
+  /// No description provided for @welcomeToBrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to {name}'**
+  String welcomeToBrand(String name);
+
+  /// No description provided for @backgroundPanelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paper & photo'**
+  String get backgroundPanelTitle;
+
+  /// Compact video frame-rate choice; full 60 FPS performance warning is displayed separately. FPS is frames per second.
+  ///
+  /// In en, this message translates to:
+  /// **'{fps} FPS'**
+  String exportFpsChoice(String fps);
+
+  /// No description provided for @editorToolsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Tools'**
+  String get editorToolsShort;
 }
 
 class _AppLocalizationsDelegate

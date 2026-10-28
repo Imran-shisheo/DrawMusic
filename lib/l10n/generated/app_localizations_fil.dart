@@ -26,7 +26,7 @@ class AppLocalizationsFil extends AppLocalizations {
   String get settings => 'Mga setting';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => 'Kaunting linya.\nKaunting musika.';
@@ -439,7 +439,7 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get cloudKeysWoodDropsAndGlassStarsAreNamedOriginalInstruments =>
-      'May pangalan ang bawat orihinal na instrumento. Bagong guhit lang ang gumagamit ng napiling tunog; hindi nagbabago ang dating guhit.';
+      'May labintatlong orihinal na tunog. Pumili para sa bagong guhit; hindi nagbabago ang mga dating guhit.';
 
   @override
   String get setThePace => 'Itakda ang ritmo';
@@ -453,7 +453,7 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get thisVersionUsesTheKeyOfCChooseMajorOrMinorPentatonicHereTo =>
-      'Pumili ng tono at iskala. Iisang mga nota ang ginagamit sa pakikinig at export.';
+      'Pumili sa labindalawang tono at labing-isang iskala. Iisang mga nota ang gamit sa pakikinig at export.';
 
   @override
   String get warmPaper => 'Mainit na papel';
@@ -614,7 +614,7 @@ class AppLocalizationsFil extends AppLocalizations {
   String get creationGuide => 'Gabay sa paglikha';
 
   @override
-  String get welcomeToScribbleSong => 'Maligayang pagdating sa ScribbleSong';
+  String get welcomeToScribbleSong => 'Maligayang pagdating sa Doodimo';
 
   @override
   String get howToCreateALoop => 'Paano gumawa ng paulit-ulit na tugtugin';
@@ -1140,4 +1140,137 @@ class AppLocalizationsFil extends AppLocalizations {
   @override
   String get erasureLimitRejected =>
       'Hindi inilapat ang pagbura dahil lalampas ito sa limitasyon ng drawing. I-undo ang ilang guhit, o i-save ang drawing na ito at magsimula ng bago.';
+
+  @override
+  String get exportIntentImage => 'Larawan';
+
+  @override
+  String get exportIntentSound => 'Tunog';
+
+  @override
+  String get exportIntentVideo => 'Video';
+
+  @override
+  String get exportIntentNotes => 'Mga nota';
+
+  @override
+  String get exportIntentImageDescription =>
+      'Guhit na may papel o transparent na likuran.';
+
+  @override
+  String get exportIntentSoundDescription =>
+      'Kopyang mapakikinggan gamit ang iyong orihinal na tunog.';
+
+  @override
+  String get exportIntentVideoDescription =>
+      'Ang iyong guhit at musika, gumagalaw nang magkasama.';
+
+  @override
+  String get exportIntentNotesDescription =>
+      'Mga nae-edit na nota para sa ibang music app.';
+
+  @override
+  String get exportChooseFormat => 'Piliin ang itatago';
+
+  @override
+  String get exportPreparing => 'Inihahanda ang export';
+
+  @override
+  String get exportFinalizing => 'Idinadagdag sa aklatan';
+
+  @override
+  String get exportReadyTitle => 'Handa nang itago';
+
+  @override
+  String get exportTryAgain => 'Subukang i-export muli';
+
+  @override
+  String get exportAnotherFormat => 'Pumili ng ibang format';
+
+  @override
+  String get libraryEditable => 'Nae-edit na guhit';
+
+  @override
+  String get libraryDrawingsSubtitle =>
+      'Iyong mga guhit, handa sa susunod na nota.';
+
+  @override
+  String get libraryExportsSubtitle =>
+      'Mga tapos na file, itinatago sa device na ito.';
+
+  @override
+  String get libraryNewDrawing => 'Magsimula ng guhit';
+
+  @override
+  String get uiAppearance => 'Hitsura';
+
+  @override
+  String get uiSoundFeedback => 'Tunog at tugon';
+
+  @override
+  String get uiAccessibilityMotion => 'Accessibility at galaw';
+
+  @override
+  String get uiHelpInfo => 'Tulong at impormasyon';
+
+  @override
+  String get uiComfortPreferences => 'Gawing sarili mo ang lugar na ito.';
+
+  @override
+  String get uiSoundDetails => 'Tungkol sa pagtugtog at tugon';
+
+  @override
+  String get uiMotionDetails => 'Tungkol sa mga kagustuhan sa galaw';
+
+  @override
+  String get uiWelcomeSummary =>
+      'Gumuhit ng linya. Bigyan ng tinig. Pindutin ang Patugtugin.';
+
+  @override
+  String get uiOpenSourceLicenses => 'Mga lisensiya ng open source';
+
+  @override
+  String get backgroundColorTab => 'Kulay';
+
+  @override
+  String get backgroundGradientTab => 'Gradient';
+
+  @override
+  String get cropWorkspace => 'Tabasin ang larawan';
+
+  @override
+  String get cropMoveHint =>
+      'I-drag para ilipat ang larawan. Kurutin para i-zoom o gamitin ang mga kontrol para sa tumpak na pagtabas.';
+
+  @override
+  String get backgroundPresets => 'Mga paleta ng papel';
+
+  @override
+  String get backgroundCustomColors => 'Pasadyang mga kulay';
+
+  @override
+  String get editorTools => 'Mga gamit sa pagguhit';
+
+  @override
+  String get musicSettings => 'Mga setting ng musika';
+
+  @override
+  String get voiceChooserHint =>
+      'Pumili ng tunog para sa susunod na guhit. Nananatili ang tinig ng mga dating guhit.';
+
+  @override
+  String welcomeToBrand(String name) {
+    return 'Maligayang pagdating sa $name';
+  }
+
+  @override
+  String get backgroundPanelTitle => 'Papel at larawan';
+
+  @override
+  String exportFpsChoice(String fps) {
+    return '$fps FPS';
+  }
+
+  @override
+  String get editorToolsShort => 'Mga tool';
 }

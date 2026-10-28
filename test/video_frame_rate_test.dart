@@ -72,15 +72,21 @@ void main() {
           ),
         ),
       );
-      final selector = find.byKey(const ValueKey('video-output-fps'));
-      await tester.ensureVisible(selector);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('export-intent-mp4')),
+      );
+      await tester.tap(find.byKey(const ValueKey('export-intent-mp4')));
       await tester.pumpAndSettle();
-      expect(tester.widget<DropdownButton<int>>(selector).value, 30);
-      await tester.tap(selector);
+      final standard = find.byKey(const ValueKey('video-fps-30'));
+      final smooth = find.byKey(const ValueKey('video-fps-60'));
+      await tester.ensureVisible(standard);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('60 FPS — smoother, slower export').last);
+      expect(tester.widget<Semantics>(standard).properties.selected, isTrue);
+      await tester.ensureVisible(smooth);
+      await tester.tap(smooth);
       await tester.pumpAndSettle();
-      expect(tester.widget<DropdownButton<int>>(selector).value, 60);
+      expect(tester.widget<Semantics>(smooth).properties.selected, isTrue);
+      expect(tester.widget<Semantics>(standard).properties.selected, isFalse);
       expect(document.encode(), before);
       expect(tester.takeException(), isNull);
     },

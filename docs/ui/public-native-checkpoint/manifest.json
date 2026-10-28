@@ -1,0 +1,28 @@
+{
+  "productSource": "f9fc4baad071cf5a61e857898a1609c4cc3b9996",
+  "captureHarness": "5c4a7be7a643dd7a88ffc9c10d7679443367a32f",
+  "run": 40560035660,
+  "attempt": 3,
+  "artifact": 12775775164,
+  "independentReader": 40594654948,
+  "originalManifest": "capture-progress.json",
+  "originalCapturePassed": false,
+  "scope": "Original actual ADB profile screenshots, unchanged bytes, declared repository fixtures; partial capture, not full visual/performance/physical/iOS acceptance.",
+  "images": [
+    {
+      "file": "01-home.png",
+      "bytes": 314551,
+      "sha256": "cd2c3bd4b57db0e038983395f536d4e76316ea8fd4ee50e298b4bed339f34895"
+    },
+    {
+      "file": "05-editor-drawn.png",
+      "bytes": 148636,
+      "sha256": "caafd7c27444a17141682e99f353e88061f0ace241b61998da04aa26a4588569"
+    },
+    {
+      "file": "10-export-selection.png",
+      "bytes": 275685,
+      "sha256": "b4127e37c8f3f6995a42d71c26cdb2231b1d1fff761c78d386950a95350e4093"
+    }
+  ]
+}

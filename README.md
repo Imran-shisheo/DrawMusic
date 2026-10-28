@@ -1,16 +1,22 @@
-# DrawMusic / ScribbleSong
+# Doodimo — DrawMusic repository
 
-An original Flutter drawing-to-music application. DrawMusic is the repository name; ScribbleSong is the PRD's provisional original brand. Android development runs in Codex Cloud. The owner will build and test iOS on a local Mac.
+An original Flutter drawing-to-music application. Doodimo is the owner-selected display name; DrawMusic remains the repository name. The historical PRD uses the provisional ScribbleSong name, and the package ID remains com.imranshisheo.scribblesong. Android development runs in Codex Cloud. The owner will build and test iOS on a local Mac.
 
 ## Start here
 
 - [Product requirements](PRD.md)
 - [Research gallery](research/index.html) and [evidence guide](research/README.md)
-- [Development roadmap](docs/ROADMAP.md) and [current status](docs/DEVELOPMENT-STATUS.md)
+- [Development roadmap](docs/ROADMAP.md), [current status](docs/DEVELOPMENT-STATUS.md) and [implemented-versus-verified delivery checkpoint](docs/DELIVERY-CHECKPOINT-2026-10-28.md)
 - [Android cloud setup](cloud/SETUP.md) and [first cloud task](cloud/FIRST-TASK.md)
 - [Agent instructions](AGENTS.md)
 
 ## Current state
+
+**Doodimo immersive UI redesign in progress (2.1.0+24):** [stacked draft PR #23](https://github.com/Imran-shisheo/DrawMusic/pull/23), [actual native Home/editor/export](docs/ui/public-native-checkpoint/README.md), [320 dp at 200% text](docs/ui/public-native-checkpoint/compact/README.md), [actual tablet layouts](docs/ui/public-native-checkpoint/tablet/README.md), and [chosen-source cool-light pixels](docs/ui/public-native-checkpoint/light/README.md). Home, retained navigation, canvas/transport, libraries, export, background/crop, Settings and help share original ribbon branding, duotone icons and bundled fonts. Both PRs remain draft/unmerged.
+
+The restored accepted app passes the complete local Android gate: 368 Flutter tests, analyzer/formatter, unchanged visual references, JVM/lint, normal APK/v2 signing and interrupted-save recovery. A cache-layer experiment was removed after its actual raster p95 remained183.802ms; the16.67ms target and presentation pacing remain unaccepted. No smoothness claim follows from a successful video decode. Compact and tablet subset captures passed; they are not a single full capture or physical-device acceptance. See the [implementation ledger](docs/UI-UX-REDESIGN.md) and [exact source/check status](docs/DEVELOPMENT-STATUS.md).
+
+The [contrast-fix checkpoint APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40599305866/artifacts/12778736866) passed the complete hosted product/native gate40599305866, including independent real-file decoding and portable Swift checks. The unsuccessful static-lighting experiment was rolled back to this accepted application. [Final chosen-source normal APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40605481853/artifacts/12781655455) was built from lib/main.dart and v2-verified during the successful light capture; [current core40606948730](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40606948730) subsequently passed on the same chosen application. [Fresh normal APK12781157114](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40606948730/artifacts/12781157114) includes exact merge/head mapping in the delivery checkpoint. The preceding accepted immersive app `f9fc4ba` was tested by [40555672797](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40555672797): [normal debug APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40555672797/artifacts/12758462920) and [runtime reports/real exports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40555672797/artifacts/12762965938). Each download retains its own source and acceptance scope.
 
 The merged creative expansion (PR #21, main a7c3670, 2.0.0+22) provides 13 original instruments, 12 keys/11 scales, accompaniment, 20 original templates, photo/camera/gradient backgrounds, PNG/MIDI/WAV/MP4, 12 locales and expressive/stylus/dark/tablet features. All creative tools remain free; no reference media ships.
 
@@ -27,13 +33,13 @@ source cloud/env.sh
 bash scripts/check-android.sh
 ```
 
-Use the [accepted 2.0.1+23 debug APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40482959273/artifacts/12725075870) and [runtime reports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40482959273/artifacts/12725956006). Sign into GitHub, download the artifact ZIP and unzip app-debug.apk. This is a development build; the exact source above passed the complete current Android gate. Physical-device and Apple-native validation remain separate.
+Use the source-labelled APK links above. Download the Actions artifact ZIP and unzip `app-debug.apk`; the capture profile APK is not the installable product offered here. These are development builds. Physical-device and Apple-native validation remain separate. The public repository uses bounded free standard `ubuntu-24.04` runners; no paid runner or billing change is authorized.
 
 The product script also runs the [Linux process-recovery probe](docs/PROCESS-RECOVERY.md). Hosted runtime evidence includes the [Android force-stop and ten-minute soak reports](docs/ANDROID-CLOUD-RECOVERY.md). [Compact layout coverage](docs/COMPACT-LAYOUT.md) describes the new accessibility scenarios. [Display-style policy](docs/DISPLAY-STYLES.md) and [Localization coverage](docs/LOCALIZATION.md) document the current behavior.
 
 ## iOS on your Mac
 
-Pull `codex/review-fixes-2026-10-27` and use Flutter 3.47.2. The reviewed iOS project and native ports are already present; do not regenerate them with `flutter create`. Run `flutter pub get`, `flutter analyze`, `flutter test` and `flutter build ios --simulator --debug`, then follow the [exact Xcode/signing/native-test and file-inspection commands](docs/IOS-IMPLEMENTATION.md). Configure development signing locally for a physical iPhone/iPad. Linux checks validate portable Dart and channel contracts only; Swift compilation, AVFoundation output and all iOS runtime behavior remain unverified.
+Pull `codex/ui-redesign-2026-10-27` for the full redesigned app (stacked on all unmerged review fixes) and use Flutter 3.47.2. The reviewed iOS project and native ports are already present; do not regenerate them with `flutter create`. Run `flutter pub get`, `flutter analyze`, `flutter test` and `flutter build ios --simulator --debug`, then follow the [exact Xcode/signing/native-test and file-inspection commands](docs/IOS-IMPLEMENTATION.md). Configure development signing locally for a physical iPhone/iPad. Linux checks validate portable Dart and channel contracts only; Swift compilation, AVFoundation output and all iOS runtime behavior remain unverified.
 
 ## Research and asset ownership
 

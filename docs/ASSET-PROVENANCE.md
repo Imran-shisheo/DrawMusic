@@ -5,7 +5,7 @@ Version 1, 2026-10-24.
 - **Cloud keys / Wood drops / Glass stars**: original additive synthesis equations and envelopes authored for DrawMusic in `lib/features/composition/domain/audio_renderer.dart`. No sample recordings or reference-app audio are used. Engine version 1. Preview and WAV share this renderer; MIDI programs are piano (0), marimba (12), music box (10), channels 1–3, SMF format 0 / 480 PPQ.
 - **Paper hills / Little rain**: original normalized geometry authored in `lib/app/providers.dart`. Catalog originals are copied into new project IDs on open.
 - **Application mark**: original vector line-and-note symbol authored in `android/app/src/main/res/drawable/app_icon.xml`.
-- **Control icons**: Material Icons bundled by Flutter (`uses-material-design`), Apache License 2.0. System font fallback; no extracted fonts or brand artwork.
+- **Control icons**: Material Icons bundled by Flutter (`uses-material-design`), Apache License 2.0. Bundled offline Nunito/Noto typography is described below; no competitor fonts or brand artwork.
 - Research images/audio/video and `.archify` files remain research-only. `pubspec.yaml` bundles no research directories or competitor assets.
 
 No store branding decision or commissioned mascot is implied by this development icon/name. Dependency licenses are available through Flutter's standard license registry.
@@ -18,9 +18,80 @@ No store branding decision or commissioned mascot is implied by this development
 - **Thirteen original voices:** first three synthesis equations retain exact v1 output; Amber tide, Seed pluck, Reed breeze, Velvet bow, Silver rain, Deep pebble, Bit lantern, Copper pulse, Cedar strings and Brass ember add distinct original excitation/spectrum/envelope combinations. No competitor recording/sample is packaged. See MUSIC-CATALOG.md and v1 fixture hashes. GM substitutes document MIDI interoperability, not acoustic identity.
 - **Original accompaniment:** eight-beat bass/arpeggio and kick/snare/clap/closed-hat patterns and deterministic synthesized drum excitations authored in accompaniment_score.dart/audio_renderer.dart. Melodic accompaniment uses MIDI channels15/16 (zero-based14/15), percussion channel10 (zero-based9), separate from thirteen drawing voices.
 - **Twenty original editable templates:** lib/features/home/domain/template_catalog.dart contains authored normalized waves, steps, dots, chords, ellipses and multi-voice ribbons, including bass/drum examples. Reference screenshots were not traced. Original titles remain catalog document data; accessibility descriptions use translations.
-- **Original gradients:** authored portable color stops and linear/radial geometry in the backgrounds feature; no bundled photo presets. Photos/camera media are user-chosen private imports and are never uploaded. Immutable SHA256 assets remain local; no destructive asset GC is enabled.
+- **Original gradients:** authored portable color stops and linear/radial geometry in the backgrounds feature; no bundled photo presets. Photos/camera media are user-chosen private imports and are never uploaded. Immutable SHA256 assets remain local. Coordinated safe cleanup protects durable/recoverable/pending/unknown references, stages only true orphans after seven days and reclaims after seven additional staged days plus revalidation; see BACKGROUND-CLEANUP.md.
 - **Original iOS icon/launch glyph:** ios/generate_original_icons.py rasterizes the existing original wave/note vector identity into platform sizes. It uses no research artwork; script/source and generated PNGs are included.
 - **Translations:** English plus eleven authored machine-assisted language resources; no competitor strings copied. Linguistic review is pending, as described in TRANSLATIONS.md.
 - **Optional review adapter:** in_app_review 2.0.12, MIT, primary package documentation https://pub.dev/packages/in_app_review/versions/2.0.12; uses official native availability/review requests only. No store listing URL, review submission or paid service is invented. Transitive url_launcher is not used to add unverified external links. Standard Flutter license registry includes dependencies.
 
 - **AndroidX ExifInterface 1.4.2:** Apache-2.0, pinned stable Android photo-orientation reader from official Google Maven metadata/POM (linked in BACKGROUNDS.md); replaces platform ExifInterface. No reference-app media or additional runtime permission is introduced.
+
+## UI redesign typography — 27 October 2026
+
+Bundled Nunito Sans static instances and original Noto script fallback fonts replace reliance on system-only UI fonts. Every face is SIL OFL1.1, with source/copyright, transformation, hashes, actual glyph coverage, raw asset-size scope and remaining human review documented in [FONT-PROVENANCE.md](FONT-PROVENANCE.md) / [FONT-MANIFEST.json](FONT-MANIFEST.json). License texts ship in assets and Flutter's license registry. No runtime network font service or competitor asset is used. Instrument/document colors and document exports are unaffected by UI typography.
+
+## Doodimo identity — owner confirmed 27 October 2026
+
+The owner selected **Doodimo** as the display name, with **Doodimo: Draw Music** as the planned store title. This records a name decision, not store publication. `lib/design_system/brand.dart` is the app's display-name definition. Package/application identifiers remain `com.imranshisheo.scribblesong`; document IDs, schema/engine versions, private storage and historical `Downloads/DrawMusic` copies/preference keys stay intact. User drawing titles and export snapshots are data and are not renamed.
+
+Historical rejected first identity: the earlier `assets/branding/mark.svg` used one continuous forest line becomes a musical wave and ends in a dusty-coral point. The authored SVG is shared with the Flutter mark at its resting pose; no competitor artwork, icon, recording or template was extracted. It supersedes the earlier development line-and-note glyph above. Native assets are generated by `tool/generate_brand_icons.py` (the older `ios/generate_original_icons.py` remains a compatibility entry point). Pillow is a developer rasterizer only, not a shipping or runtime dependency.
+
+Android includes a legacy vector, round legacy fallback, API26 adaptive foreground/background and API33 monochrome treatment. The rejected thin glyph fit a **31.145 dp radius inside the 33 dp adaptive safe circle**, including stroke and endpoint; source-sized 108 dp layers are not cropped to the outer animation area. In that rejected iteration launcher foreground colors were forest/coral on warm paper; monochrome coloring belongs to Android. Native launch decoration is static, uses semantic light/dark colors and adds no splash timer or mandatory delay.
+
+iOS includes all 15 unique opaque RGB app-icon sizes required by the existing catalog, plus three normal and three dark transparent launch images and a light/dark named launch background. The 12 native localized bundles use the same Doodimo display name. `assets/branding/native-icon-manifest.json` records SVG/output SHA256 values, dimensions and the safe-area calculation; `python3 scripts/check-brand-icons.py` validates source identity, native resource wiring, real PNG headers/CRCs/sizes/opacity format and unchanged package identifiers without Pillow. Native iOS compilation and physical launcher/splash appearance remain separate Mac/device checks.
+
+### Historical rejected Doodimo line control glyphs
+
+At the rejected checkpoint 9d71f43, `lib/design_system/doodimo_icon.dart` contained 31 project-authored geometric glyphs on a 24-unit grid, drawn with rounded 1.85-unit strokes and filled transport marks. Paths are authored in source; no Material/Cupertino glyph, SVG path, commercial icon pack or icon font is copied into this family. Common action metaphors remain recognizable while the Home arch, folded musical sheet and voice line carry the drawing-to-music motif. Parent controls supply localized labels and at least 48 dp targets. Four directional actions mirror for RTL; music/play symbols keep their orientation. Widget tests inspect actual 24 px ink bounds, reflected coverage, disabled opacity and Android labeled-target guidelines; this is not physical screen-reader certification. A real-font optical contact sheet is generated explicitly under work/ui-icons.
+
+### Corrective display face
+
+Space Grotesk 600/700 adds a distinct editorial heading voice while Nunito Sans remains the body/control face and all script fallbacks remain bundled. Its official Google Fonts master and original SIL OFL1.1 are pinned to upstream commit e7db6ca603fd4862010383ff17ffd6cc4ffac1c0 and hashed in FONT-MANIFEST.json. The master STAT table lacks a named 600 instance, so static instance name/weight/style metadata is set explicitly; no glyph outlines are redesigned. Latin and Vietnamese example glyphs are present, with Nunito/Noto display fallbacks for other scripts. This is offline typography, not a runtime font download or a new Flutter dependency.
+
+### Immersive Doodimo ribbon identity — 27 October 2026 replacement
+
+The owner rejected both warm-paper/forest visual iterations, including their thin
+loop mark. Those sections are historical evidence, not the current shipping
+identity. The active original identity is `assets/branding/mark.svg`: a broad
+filled D-shaped sound orbit, a cyan diagonal folded ribbon and a restrained
+curved edge highlight. This is newly authored absolute cubic/line geometry,
+without reference-app media or a stock icon source.
+
+The SVG is authoritative for all three planes and their gradients. The outer
+orbit moves from #B7A0FF through #8B5CF6 to #EF81C7; the front folded plane moves
+from #6672F5 through #55DFF5 to #C6F8FF; the edge uses #F2EBFF with bounded alpha.
+The icon and native launch background are ink navy #090B18. No old forest,
+warm-ivory, coral-endpoint or thin-loop glyph is used by the generated assets.
+`tool/generate_brand_icons.py` parses these exact filled paths/linear gradients,
+rasterizes the iOS icons with developer-only Pillow, and writes corresponding
+Android vector gradient planes. Android monochrome intentionally combines the
+two solid material planes without a decorative highlight.
+
+The Android adaptive foreground uses the existing 108dp viewport and
+20dp translation/0.68 scale; the entire critical filled silhouette measures
+25.409dp from center, inside the 33dp safe radius. The required legacy, round,
+adaptive and Android 13 monochrome resources remain wired. All 15 opaque RGB
+iOS app-icon sizes and six transparent launch-size/light-dark variants were
+regenerated. The authored raster was inspected at 1024px and actual 24/48/96px,
+with a nearest-neighbor enlargement for small-size edge review. These are asset
+inspections, not an observed device launcher or Apple compilation.
+The in-app `DoodimoMarkPainter` uses the same three checked SVG path constants
+and gradient family. Its actual Flutter-engine 24/48/256px raster output was
+also generated and inspected on Linux; its only optional motion shifts the
+edge reflection by at most 1.4 viewport units without changing the silhouette.
+
+Validation: `python3 scripts/check-brand-icons.py` checks shared SVG/output
+hashes, exact filled path order, gradients, native labels, adaptive bounds,
+PNG headers/sizes/opaque app-icon format and unchanged application identifiers.
+The pinned Android AAPT2 compiled the complete updated resource tree. Product
+Android build and actual redesigned UI/emulator validation are recorded
+separately. iOS remains uncompiled until a Mac executes the documented checks.
+The approved Doodimo display name, package/bundle identifier
+`com.imranshisheo.scribblesong`, storage locations, existing `DrawMusic` public
+paths and saved project titles remain unchanged by this visual replacement.
+
+
+## Active immersive duotone symbols — replaces both rejected icon iterations
+
+Following the second owner rejection on 27 October 2026, all 31 action/navigation compositions in `lib/design_system/doodimo_icon.dart` were reauthored as original rounded filled planes, solid foreground silhouettes, tonal depth faces and restrained highlights. These are not recolored prior line paths, stock icons or an icon font. The stable public action enum preserves function and localized host labels. Theme-selected color and secondary accent inform the material; one outer opacity group applies disabled alpha once to prevent overlapping faces appearing enabled. Directional actions mirror while music/transport orientation stays stable. The actual 24 px raster contact study includes 28/32 px examples, a selected violet state, disabled state and white help-symbol contrast, at `work/ui-icons-immersive/contact-sheet.png`. It is an icon-material study, not proof of accepted overall product design. Prior warm/forest line-family evidence is retained only as rejected historical work.
+
+The active duotone family also appends four matching camera/rotate/mirror/crop utility compositions for background framing, preserving the first 31 public enum values and their order. All 35 symbols are exercised at 24/28/32 px in the optical-inset tests, and the actual contact sheet includes the new utilities.

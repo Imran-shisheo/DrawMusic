@@ -1,0 +1,39 @@
+{
+  "scope": "Actual Flutter product widgets with fixture repository/preferences/audio/export metadata. Not Android emulator screenshots, native audio proof or physical acceptance.",
+  "font": "Bundled Space Grotesk display, Nunito Sans body weights and Noto script fallbacks loaded explicitly, plus MaterialIcons for legacy controls. Original Doodimo glyphs are CustomPaint geometry. SDK Roboto is also loaded for legacy comparison. No Ahem screenshots.",
+  "motion": "Reduced motion enabled for deterministic still evidence; playback position is test audio fixture, not measured native timing.",
+  "designStatus": "Immersive replacement proposal; neither prior rejected iteration is acceptance. Motion evidence remains separate.",
+  "theme": "First three fixtures explicitly dark; cool-light variants are separately named in the full matrix.",
+  "screens": [
+    {
+      "file": "01-home-immersive-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "renderExceptions": []
+    },
+    {
+      "file": "06-editor-immersive-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "renderExceptions": []
+    },
+    {
+      "file": "09-export-immersive-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "renderExceptions": []
+    }
+  ]
+}

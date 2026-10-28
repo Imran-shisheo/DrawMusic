@@ -1,0 +1,52 @@
+{
+  "readerRun": 40605481897,
+  "captureRun": 40560035660,
+  "capturePassed": false,
+  "product": "f9fc4baad071cf5a61e857898a1609c4cc3b9996",
+  "harness": "5c4a7be7a643dd7a88ffc9c10d7679443367a32f",
+  "scope": "Original partial baseline stills; contacts are actual resized decoded first/mid/last frames, not smoothness evidence",
+  "images": [
+    {
+      "name": "01-root-navigation-contact.png",
+      "sha": "32cc98bab4beded5d001b7f6285a583b11fbd6c9768c91207d9c1cb6630ecfc0",
+      "bytes": 156807,
+      "kind": "contact"
+    },
+    {
+      "name": "05-export-ready-contact.png",
+      "sha": "bdc4f9b118f443ca1699ac976ba891bf2456d6de8b5ef3b759e948a5e2a0d578",
+      "bytes": 147925,
+      "kind": "contact"
+    },
+    {
+      "name": "03-exports.png",
+      "sha": "ae63a506f4ef6714a28d6c9b69e5b5ee916c1a79b876a4cc3cccec73c7a67341",
+      "bytes": 295086,
+      "kind": "screen"
+    },
+    {
+      "name": "04-settings.png",
+      "sha": "a377cbad167f99798eca7223cf1d4c92244268bb2db85f33902d6a02518b5ff7",
+      "bytes": 272911,
+      "kind": "screen"
+    },
+    {
+      "name": "07-photo-crop-panel.png",
+      "sha": "2b3112d8659d8b5f188593dae49c7c374396c1a9130f864b0aca7dc27b32bc11",
+      "bytes": 209764,
+      "kind": "screen"
+    },
+    {
+      "name": "08-instruments.png",
+      "sha": "d367f46bbad23c24c546e5345585dd1e3fb8d466dc21775493b93a32cd68af67",
+      "bytes": 275528,
+      "kind": "screen"
+    },
+    {
+      "name": "11-export-ready.png",
+      "sha": "0040e2c538a29c1834f4ea1ce046deb453defedf8f2e27ab342bd17b377682c9",
+      "bytes": 282853,
+      "kind": "screen"
+    }
+  ]
+}

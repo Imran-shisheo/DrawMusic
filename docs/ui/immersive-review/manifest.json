@@ -1,0 +1,997 @@
+{
+  "scope": "Actual Flutter product widgets with fixture repository/preferences/audio/export metadata. Not Android emulator screenshots, native audio proof or physical acceptance.",
+  "font": "Bundled Space Grotesk display, Nunito Sans body weights and Noto script fallbacks loaded explicitly, plus MaterialIcons for legacy controls. Original Doodimo glyphs are CustomPaint geometry. SDK Roboto is also loaded for legacy comparison. No Ahem screenshots.",
+  "keyboard": "Keyboard variants simulate viewInsets; the native system IME is not rendered by this widget harness.",
+  "motion": "Reduced motion enabled for deterministic still evidence; playback position is test audio fixture, not measured native timing.",
+  "designStatus": "Immersive replacement proposal; neither prior rejected iteration is acceptance. Motion evidence remains separate.",
+  "theme": "First three fixtures explicitly dark; cool-light variants are separately named in the full matrix.",
+  "screens": [
+    {
+      "file": "01-home-immersive-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "02-drafts-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "03-exports-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "04-settings-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "05-editor-empty-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "06-editor-immersive-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "07-editor-playing-fixture-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "08-background-panel-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "09-export-immersive-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "10-home-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "11-editor-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "10b-home-cool-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "light",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "11b-editor-cool-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "light",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "12-home-compact-fr-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "13-editor-compact-fr-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "14-home-tablet.png",
+      "size": [
+        1024.0,
+        768.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "15-editor-tablet.png",
+      "size": [
+        1024.0,
+        768.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "16-help-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "17-language-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "18-instrument-chooser-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "19-music-panel-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "20-sketch-tools-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "21-editor-landscape.png",
+      "size": [
+        640.0,
+        360.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "22-editor-forced-rtl-arabic-title.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "23-voice-chooser-compact-fr-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "24-music-panel-compact-ja-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "25-export-preparing-real-png.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "26-export-ready-real-png.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "27-export-error-real-write-failure.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "28-welcome-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "29-optional-rating-offer-fixture.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "30-settings-error-compact-rtl-dark-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "02b-drafts-cool-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "light",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "03b-exports-cool-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "light",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "04b-settings-cool-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "light",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "16b-help-cool-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "light",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "17b-language-cool-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "light",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "17c-language-compact-rtl-dark-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "29b-optional-rating-cool-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "light",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "29c-optional-rating-compact-fr-dark-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "09b-export-cool-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "light",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "34-export-transparency-setting.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "34b-export-transparent-preview.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "35-score-panel.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "36-accompaniment-panel.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "37-clear-confirmation.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "38-coach-canvas-actual-target.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "38b-coach-play-actual-target.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "38c-coach-compact-fr-large-actual-target.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "31-editor-rename-keyboard-inset.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 300.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "32-editor-rename-compact-fr-large-keyboard-inset.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 220.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "33-instrument-objects-optical-study.png",
+      "size": [
+        800.0,
+        840.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-en-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-en-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-fr-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-fr-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-es-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-es-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-it-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-it-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-ko-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-ko-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-ja-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-ja-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-vi-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-vi-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-hi-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-hi-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-pt-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-pt-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-th-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-th-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-fil-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-fil-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-id-home-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "locale-id-editor-compact-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    }
+  ],
+  "selectedForRepositoryReview": [
+    {
+      "file": "home.png",
+      "originalCapture": "01-home-immersive-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "editor.png",
+      "originalCapture": "06-editor-immersive-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "export.png",
+      "originalCapture": "09-export-immersive-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "drafts.png",
+      "originalCapture": "02-drafts-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "exports.png",
+      "originalCapture": "03-exports-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "settings.png",
+      "originalCapture": "04-settings-dark-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "background.png",
+      "originalCapture": "08-background-panel-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "cool-light-home.png",
+      "originalCapture": "10b-home-cool-light-phone.png",
+      "size": [
+        411.0,
+        850.0
+      ],
+      "textScale": 1.0,
+      "brightness": "light",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "compact-editor.png",
+      "originalCapture": "13-editor-compact-fr-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "landscape-editor.png",
+      "originalCapture": "21-editor-landscape.png",
+      "size": [
+        640.0,
+        360.0
+      ],
+      "textScale": 1.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "language-large-rtl.png",
+      "originalCapture": "17c-language-compact-rtl-dark-large.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    },
+    {
+      "file": "coach-large.png",
+      "originalCapture": "38c-coach-compact-fr-large-actual-target.png",
+      "size": [
+        320.0,
+        640.0
+      ],
+      "textScale": 2.0,
+      "brightness": "dark",
+      "simulatedKeyboardInset": 0.0,
+      "renderExceptions": []
+    }
+  ],
+  "productSourceSha": "73bb548a221a4b1626e2516f5958d0141043c4ae",
+  "scopeOfSourcePin": "Exact product source; this metadata-only commit does not change app/native/tests/assets.",
+  "applicationTreeUnchangedThrough": "42e2d12acdeb73da1e67ff01ee41223aae264890",
+  "optimizedReferenceRecheckSource": "f9fc4baad071cf5a61e857898a1609c4cc3b9996",
+  "scopeOfOptimizedRecheck": "355-test local suite and separate76-state/eight-reference check passed without regenerated references; content-measured compact layouts, system-chrome styles and enabled cache have additional actual-font/resource tests. Native acceptance remains source-specific."
+}

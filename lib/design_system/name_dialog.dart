@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/strings.dart';
+import 'creative_panel.dart';
+import 'doodimo_icon.dart';
+import 'immersive_surface.dart';
 
 Future<String?> askDrawingName(
   BuildContext context,
   String title, {
   String? heading,
-}) => showDialog<String>(
+}) => showCreativePanel<String>(
   context: context,
   builder: (_) => _NameDialog(
     title: title,
@@ -33,36 +36,40 @@ class _NameDialogState extends State<_NameDialog> {
   Widget build(BuildContext context) {
     final name = controller.text.trim();
     final valid = name.isNotEmpty && name.length <= 60;
-    return AlertDialog(
-      scrollable: true,
-      title: Text(widget.heading),
-      content: TextField(
+    void apply() {
+      final current = controller.text.trim();
+      if (current.isNotEmpty && current.length <= 60) {
+        Navigator.pop(context, current);
+      }
+    }
+
+    return CreativePanel(
+      title: widget.heading,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(context.strings.cancel),
+        ),
+        PrismAction(
+          onPressed: valid ? apply : null,
+          label: context.strings.apply,
+          icon: const DoodimoIcon(DoodimoGlyph.check),
+        ),
+      ],
+      child: TextField(
         controller: controller,
         autofocus: true,
         maxLength: 60,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) {
+          if (valid) apply();
+        },
         decoration: InputDecoration(
           labelText: context.strings.title,
           errorText: valid ? null : context.strings.nameLengthError,
         ),
         onChanged: (_) => setState(() {}),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(context.strings.cancel),
-        ),
-        FilledButton(
-          onPressed: valid
-              ? () {
-                  final current = controller.text.trim();
-                  if (current.isNotEmpty && current.length <= 60) {
-                    Navigator.pop(context, current);
-                  }
-                }
-              : null,
-          child: Text(context.strings.apply),
-        ),
-      ],
     );
   }
 }

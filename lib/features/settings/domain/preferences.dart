@@ -6,7 +6,7 @@ class UserPreferences {
     this.tutorialCompleted = false,
     this.editorTipsCompleted = false,
     this.languageCode = 'en',
-    this.darkTheme = false,
+    this.darkTheme = true,
   });
   final bool darkTheme;
   final double previewVolume;

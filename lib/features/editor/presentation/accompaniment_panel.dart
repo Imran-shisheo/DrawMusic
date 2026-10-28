@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../creative_document/accompaniment.dart';
 import '../../../l10n/strings.dart';
+import '../../../design_system/creative_panel.dart';
+import '../../../design_system/immersive_surface.dart';
+import '../../../design_system/doodimo_icon.dart';
 
 String layerName(BuildContext context, AccompanimentLayer layer) =>
     switch (layer) {
@@ -16,9 +19,8 @@ String layerName(BuildContext context, AccompanimentLayer layer) =>
 Future<AccompanimentMix?> showAccompanimentPanel(
   BuildContext context,
   AccompanimentMix initial,
-) => showModalBottomSheet<AccompanimentMix>(
+) => showCreativePanel<AccompanimentMix>(
   context: context,
-  isScrollControlled: true,
   builder: (context) => _MixPanel(initial),
 );
 
@@ -32,107 +34,102 @@ class _MixPanel extends StatefulWidget {
 class _MixPanelState extends State<_MixPanel> {
   late AccompanimentMix mix = widget.initial;
   @override
-  Widget build(BuildContext context) => SafeArea(
-    child: ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * .85,
+  Widget build(BuildContext context) => CreativePanel(
+    title: context.strings.accompaniment,
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: Text(context.strings.cancel),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              context.strings.accompaniment,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  for (final layer in AccompanimentLayer.values)
-                    Column(
-                      children: [
-                        SwitchListTile(
-                          title: Text(layerName(context, layer)),
-                          value: mix[layer].enabled,
-                          onChanged: (v) => setState(
-                            () => mix = mix.withLayer(
-                              layer,
-                              mix[layer].copyWith(enabled: v),
+      PrismAction(
+        label: context.strings.apply,
+        icon: const DoodimoIcon(DoodimoGlyph.check),
+        onPressed: () => Navigator.pop(context, mix),
+      ),
+    ],
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final layer in AccompanimentLayer.values) ...[
+          ImmersiveSurface(
+            padding: const EdgeInsets.all(8),
+            radius: 20,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  secondary: const DoodimoIcon(DoodimoGlyph.sound),
+                  title: Text(layerName(context, layer)),
+                  value: mix[layer].enabled,
+                  onChanged: (enabled) => setState(
+                    () => mix = mix.withLayer(
+                      layer,
+                      mix[layer].copyWith(enabled: enabled),
+                    ),
+                  ),
+                ),
+                if (mix[layer].enabled)
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: mix[layer].muted
+                            ? context.strings.unmuteLayer
+                            : context.strings.muteLayer,
+                        isSelected: mix[layer].muted,
+                        onPressed: () => setState(
+                          () => mix = mix.withLayer(
+                            layer,
+                            mix[layer].copyWith(muted: !mix[layer].muted),
+                          ),
+                        ),
+                        icon: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const DoodimoIcon(DoodimoGlyph.sound),
+                            if (mix[layer].muted)
+                              Transform.rotate(
+                                angle: -.65,
+                                child: Container(
+                                  width: 28,
+                                  height: 2,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        child: Semantics(
+                          label:
+                              '${layerName(context, layer)} ${context.strings.layerLevel}',
+                          child: Slider(
+                            value: mix[layer].level,
+                            divisions: 20,
+                            label: context.strings.percentValue(
+                              context.formatNumber(
+                                (mix[layer].level * 100).round(),
+                              ),
+                            ),
+                            onChanged: (value) => setState(
+                              () => mix = mix.withLayer(
+                                layer,
+                                mix[layer].copyWith(level: value),
+                              ),
                             ),
                           ),
                         ),
-                        if (mix[layer].enabled)
-                          Row(
-                            children: [
-                              IconButton(
-                                tooltip: mix[layer].muted
-                                    ? context.strings.unmuteLayer
-                                    : context.strings.muteLayer,
-                                isSelected: mix[layer].muted,
-                                onPressed: () => setState(
-                                  () => mix = mix.withLayer(
-                                    layer,
-                                    mix[layer].copyWith(
-                                      muted: !mix[layer].muted,
-                                    ),
-                                  ),
-                                ),
-                                icon: Icon(
-                                  mix[layer].muted
-                                      ? Icons.volume_off
-                                      : Icons.volume_up,
-                                ),
-                              ),
-                              Expanded(
-                                child: Semantics(
-                                  label:
-                                      '${layerName(context, layer)} ${context.strings.layerLevel}',
-                                  child: Slider(
-                                    value: mix[layer].level,
-                                    divisions: 20,
-                                    label: context.strings.percentValue(
-                                      context.formatNumber(
-                                        (mix[layer].level * 100).round(),
-                                      ),
-                                    ),
-                                    onChanged: (v) => setState(
-                                      () => mix = mix.withLayer(
-                                        layer,
-                                        mix[layer].copyWith(level: v),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Wrap(
-              spacing: 12,
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(context.strings.cancel),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, mix),
-                  child: Text(context.strings.apply),
-                ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
+          const SizedBox(height: 10),
         ],
-      ),
+      ],
     ),
   );
 }

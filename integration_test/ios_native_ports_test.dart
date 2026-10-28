@@ -13,6 +13,8 @@ import 'package:scribblesong/features/transport/data/ios_audio_engine.dart';
 import 'package:scribblesong/features/transport/domain/audio_engine.dart';
 import 'package:scribblesong/main.dart' as app;
 
+import 'support/functional_motion.dart';
+
 /// Source-only on Linux. Execute explicitly on an iOS simulator from a Mac;
 /// native completion still requires independent file inspection/device QA.
 void main() {
@@ -20,6 +22,7 @@ void main() {
   testWidgets('iOS native clock, boundaries, pause and real H264/AAC files', (
     tester,
   ) async {
+    await prepareFunctionalMotion();
     await app.main();
     await tester.pumpAndSettle();
     final document = ProjectDocument(
