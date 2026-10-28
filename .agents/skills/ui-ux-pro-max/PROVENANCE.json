@@ -1,0 +1,352 @@
+{
+  "repository": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+  "commit": "28b3b8dee8c976df4fa3e94aed4e092ad43fcb03",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2024 Next Level Builder",
+  "retrievedUtcDate": "2026-10-28",
+  "archiveSha256": "1f1046c5d8c72ac224f43c60389ce9e16f4cfc8ecb899e5fdb3589ab0fc3091b",
+  "installation": "Manual source copies and reproduction of reviewed Codex template rendering; no upstream CLI/npm/installer executed",
+  "renderInputs": [
+    {
+      "path": "src/ui-ux-pro-max/templates/platforms/codex.json",
+      "sha256": "97ca4be26361548521c2ce4f72a7daea335903b7ccb4e64240e9d18b18e9751c"
+    },
+    {
+      "path": "src/ui-ux-pro-max/templates/base/skill-content.md",
+      "sha256": "4956ab03fcf850fbd05ea658cb694cea767ff8e42aaf59ccf59fef0172271394"
+    },
+    {
+      "path": "src/ui-ux-pro-max/templates/base/quick-reference.md",
+      "sha256": "0a6da6ef08190792fa2d55eaa44ddaac0c071ff2cf9a087d372924c2a99e942f"
+    },
+    {
+      "path": "cli/src/utils/template.ts",
+      "sha256": "3feadb7a8fa0a5129eadd594847b9884cfab03fbf12b4e61810fb6fc4254b43e"
+    }
+  ],
+  "excluded": "Upstream CLI, update/auth/configuration machinery, tests requiring upstream fixtures, optional sibling subskills, screenshots/gallery, and root maintenance/catalog-refresh scripts are not installed. All five canonical runtime Python files and complete canonical data tree are present.",
+  "files": [
+    {
+      "installedPath": "LICENSE",
+      "upstreamPath": "LICENSE",
+      "bytes": 1075,
+      "sha256": "738f69dfa83db5c347c678fb9d90e560877059f0de93a327c39001bff92dc014",
+      "gitBlobSha1": "1e71cbf26660f31903807d099fe902c098fc7e4c"
+    },
+    {
+      "installedPath": "SKILL.md",
+      "upstreamPath": "GENERATED_FROM_PINNED_CODEX_TEMPLATES",
+      "bytes": 55451,
+      "sha256": "e5baf9400d4347e5ed3eb1f6b99cd0b9ba545b8b0e507aabb2b87397bbf73ea1",
+      "gitBlobSha1": "b31974d1afba697bc685a74f0fb6e904e9614d73"
+    },
+    {
+      "installedPath": "data/app-interface.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/app-interface.csv",
+      "bytes": 11046,
+      "sha256": "331e7cf2c0b222d80c566c5f255c63cb339f65bfd02e471a720f28e4864a9f08",
+      "gitBlobSha1": "95e328c807a23be02c9c32c736d0fa19109c6076"
+    },
+    {
+      "installedPath": "data/catalog-summary.json",
+      "upstreamPath": "src/ui-ux-pro-max/data/catalog-summary.json",
+      "bytes": 2392,
+      "sha256": "6638da97231c07fb5cef3cd9d3ce483ca7b2f9748980f8c27490eb03968d8894",
+      "gitBlobSha1": "f911c3ae48fac5863a5a5e210866ec5cabece164"
+    },
+    {
+      "installedPath": "data/charts.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/charts.csv",
+      "bytes": 23365,
+      "sha256": "4115cf1120680f2cedef0676cb648f30c7ef4699e2a947535d4113e71ed3b12a",
+      "gitBlobSha1": "c6f4f875fd5b34379f24dbb541539492366a1058"
+    },
+    {
+      "installedPath": "data/colors.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/colors.csv",
+      "bytes": 37940,
+      "sha256": "8162429222bce22df62b564085946a30d07cc9722c58d0a3a494bd0d1d00841c",
+      "gitBlobSha1": "5d2bf7389105f8a824b504b57cc93c00dc1d7e0a"
+    },
+    {
+      "installedPath": "data/data-provenance.json",
+      "upstreamPath": "src/ui-ux-pro-max/data/data-provenance.json",
+      "bytes": 36686,
+      "sha256": "e82fb33ed49375a300e93d9c11ccd1c1493c999e84ee7ee295e527634786e2e0",
+      "gitBlobSha1": "e41d2e553bdc7e5a8e6d16f5daab565faf372188"
+    },
+    {
+      "installedPath": "data/google-font-licenses.json",
+      "upstreamPath": "src/ui-ux-pro-max/data/google-font-licenses.json",
+      "bytes": 433127,
+      "sha256": "35688523f2955795caa1a47c53b83099e60c1708461476f9cc3a050cf3b0148a",
+      "gitBlobSha1": "3ac2c34e80665bc902e265c52ab6c27b1654524c"
+    },
+    {
+      "installedPath": "data/google-fonts.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/google-fonts.csv",
+      "bytes": 747241,
+      "sha256": "1c8c3b2ea1faf6a1012da463756def8b3889db33f2226f0343bb4daa80307d03",
+      "gitBlobSha1": "d7f87e3e0159b1caba083b9954793d9852256aa0"
+    },
+    {
+      "installedPath": "data/icons.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/icons.csv",
+      "bytes": 57945,
+      "sha256": "50816c6012030178195a16ee481ebf58b47bd985d70e8ec58886cc83f6eddafc",
+      "gitBlobSha1": "cfc3f1eccd7e5aee15d8d70f86d8fa17ba737958"
+    },
+    {
+      "installedPath": "data/landing.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/landing.csv",
+      "bytes": 25449,
+      "sha256": "9a2edd3bb676c2a58f00ade7a062e285222d4297bfd847c8d5b056f0dbbf52d0",
+      "gitBlobSha1": "34858160aa2789c49dca274d48bb116d51dd3f0a"
+    },
+    {
+      "installedPath": "data/motion.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/motion.csv",
+      "bytes": 14679,
+      "sha256": "381affe8df8ea1f66fbbda2598827f9f54299107bbe6a1b4e9b68f6b62091ceb",
+      "gitBlobSha1": "8e0ca9ceb0e4cd4832aee60ac74713e1e1830de8"
+    },
+    {
+      "installedPath": "data/phosphor-icons-upstream.json",
+      "upstreamPath": "src/ui-ux-pro-max/data/phosphor-icons-upstream.json",
+      "bytes": 823933,
+      "sha256": "2399325233b277b5c97a80e6a5e8941154f5d057beee4e7613db87c87d700236",
+      "gitBlobSha1": "ec1d76b8117ccbfdce5df214bf0d993e41a75318"
+    },
+    {
+      "installedPath": "data/products.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/products.csv",
+      "bytes": 75623,
+      "sha256": "42473f75e8dde5987bdf89ce55d8c168091b80a356cae691dd60247d80720b70",
+      "gitBlobSha1": "9f40f1d1f9743c4a81603076dfbfd115bbb55246"
+    },
+    {
+      "installedPath": "data/react-performance.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/react-performance.csv",
+      "bytes": 15080,
+      "sha256": "3d925802539abac5afeb63ae8aa1960b7229ad271b3a47caed40ab2d97ad0734",
+      "gitBlobSha1": "425a8e76c6b3bae40e8c633ffbf7ad6222c9f73a"
+    },
+    {
+      "installedPath": "data/stacks/angular.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/angular.csv",
+      "bytes": 19863,
+      "sha256": "704be83f2bad30c7e6de01afb113ffa01e0c458762f48b7102f31ba2367b5553",
+      "gitBlobSha1": "5a1878dbee2b3c55c6468cbb18699b84d1a8c4d2"
+    },
+    {
+      "installedPath": "data/stacks/astro.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/astro.csv",
+      "bytes": 14591,
+      "sha256": "2c2f55fadaafc05e04cc321c8194a1a28b656e6757fe2ba316f41b16428299c6",
+      "gitBlobSha1": "1fd2492420b20a0b311295ab883597fadb8245a6"
+    },
+    {
+      "installedPath": "data/stacks/avalonia.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/avalonia.csv",
+      "bytes": 27327,
+      "sha256": "442fca14675a020683473e7e49f08abb27b9df0765c80efe54aef61f1a4ac258",
+      "gitBlobSha1": "c67f4117105865587eda9020c57d8c209f3a929a"
+    },
+    {
+      "installedPath": "data/stacks/flutter.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/flutter.csv",
+      "bytes": 14192,
+      "sha256": "64dba0ac17349f28bce517a0f5f48c54d9ed2e487ec0c0258303463b382f41a0",
+      "gitBlobSha1": "731805c4076bd9f2755ca4bd7def5be6f6df7e9c"
+    },
+    {
+      "installedPath": "data/stacks/html-tailwind.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/html-tailwind.csv",
+      "bytes": 16551,
+      "sha256": "d05a581d20af57b8ca0104a6d31d90a07c437d500662a96c3029fc2f9a4678ee",
+      "gitBlobSha1": "9089eb0fc821ff0c8d135f8ee503be345e8fcb84"
+    },
+    {
+      "installedPath": "data/stacks/javafx.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/javafx.csv",
+      "bytes": 33577,
+      "sha256": "2e819b8d5abdd23ad4dae0991650fdb57af497aabd68b37463aa9c442944c869",
+      "gitBlobSha1": "744bd80f437f12bfb5bb9c84630a58022604675a"
+    },
+    {
+      "installedPath": "data/stacks/jetpack-compose.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/jetpack-compose.csv",
+      "bytes": 12295,
+      "sha256": "699de218b286948eaec7d15767b6e1350ee299167e49bf476d82e3ff58724e0a",
+      "gitBlobSha1": "8daa0b8f9a2ca3f0f1711664d9d677cd1c38dd9e"
+    },
+    {
+      "installedPath": "data/stacks/laravel.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/laravel.csv",
+      "bytes": 20163,
+      "sha256": "854ea4daa5fc61292d22235ad33b49ba3fe22423c3de8d3cb03758ffed3b59f9",
+      "gitBlobSha1": "ed11b0fba457e02857f996d1542fb0b8e1271756"
+    },
+    {
+      "installedPath": "data/stacks/nextjs.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/nextjs.csv",
+      "bytes": 18687,
+      "sha256": "ecd2c27b2ea0127d203ae726060efcdd7335b5e83f96b99e4f3befbbfeebd5a4",
+      "gitBlobSha1": "acdaf097dff26ba0d3b22ab4544bf6169c87afd4"
+    },
+    {
+      "installedPath": "data/stacks/nuxt-ui.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/nuxt-ui.csv",
+      "bytes": 28700,
+      "sha256": "fce682a338cfcdbf35d318d20e5befbe7b5d81b05abc37f87677a6d9cde84dc6",
+      "gitBlobSha1": "e2aaeca45faa8b987bf94010162b14d458811dde"
+    },
+    {
+      "installedPath": "data/stacks/nuxtjs.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/nuxtjs.csv",
+      "bytes": 23014,
+      "sha256": "3d9b54ed2d151bd9c86e9e5609b8a6f88a00c4c52fa601a30af96c49b2c4d176",
+      "gitBlobSha1": "ceab9cf3358d2788af0bd7dc14cb3fab769740d0"
+    },
+    {
+      "installedPath": "data/stacks/react-native.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/react-native.csv",
+      "bytes": 14049,
+      "sha256": "ba31dd9c0c04da6bc02a74448bf121f9c0728ae5ba3b4d47b487778b0a1135b5",
+      "gitBlobSha1": "a5aea45dc1d0341b11ee42076a86db842d4d2a19"
+    },
+    {
+      "installedPath": "data/stacks/react.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/react.csv",
+      "bytes": 21166,
+      "sha256": "4dd176a9787e5c6306b5df94158d75955adcdc6edab41ce5286641a5842303c1",
+      "gitBlobSha1": "fe8f001e695a978733449e04e99d7135af0f1bf3"
+    },
+    {
+      "installedPath": "data/stacks/shadcn.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/shadcn.csv",
+      "bytes": 23184,
+      "sha256": "e56cfde5b74907836ac3582a4779d5b7f3d206a702ab81b8669a1b668c3eeb51",
+      "gitBlobSha1": "0e8bedf3084e7a40d6310bcd3011c437efcb1700"
+    },
+    {
+      "installedPath": "data/stacks/svelte.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/svelte.csv",
+      "bytes": 15078,
+      "sha256": "f6e379ba802941ba26b01d4ffbe3cd39120f2587659a1d93851c707f66bc13db",
+      "gitBlobSha1": "51684fe70448e15333cd16207db7da8aea0508e6"
+    },
+    {
+      "installedPath": "data/stacks/swiftui.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/swiftui.csv",
+      "bytes": 15323,
+      "sha256": "bdd9231ff3ad658f4e7c063e1eb49df2fd09ac8d90631a86df899b39833b9623",
+      "gitBlobSha1": "ea9b95e8922e663b2adf27a7346e2c2f44c7a215"
+    },
+    {
+      "installedPath": "data/stacks/threejs.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/threejs.csv",
+      "bytes": 46769,
+      "sha256": "155d583b9c64da0df4b6c6cb060c02eab222505e0734d6353da02c9e2b5d982b",
+      "gitBlobSha1": "f62286320038beabbdc5e11e07ca2818d8e959a4"
+    },
+    {
+      "installedPath": "data/stacks/uno.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/uno.csv",
+      "bytes": 30091,
+      "sha256": "a0474363e4225b5367214d5675fd3e075f137026f9500f0d04357882ef4f6d48",
+      "gitBlobSha1": "9cab32326b4ad3a3cf43451a3c24553a41126cc1"
+    },
+    {
+      "installedPath": "data/stacks/uwp.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/uwp.csv",
+      "bytes": 24692,
+      "sha256": "c409f08c1fbba1f1029f1acaa554e7b4471cc85517a5751c9f2e62465badcd5c",
+      "gitBlobSha1": "04a84ea092a7657fef11e5daa97982be52dc6f59"
+    },
+    {
+      "installedPath": "data/stacks/vue.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/vue.csv",
+      "bytes": 12813,
+      "sha256": "b655f1ebb9dff2652d15981f31b1784c8a6d4759efd2815a14f3088257569f95",
+      "gitBlobSha1": "83997c515775170f22b638635aae0a67a46dfc87"
+    },
+    {
+      "installedPath": "data/stacks/winui.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/winui.csv",
+      "bytes": 27890,
+      "sha256": "e676dc1c13ee6c205c40b0746f1335150a346c7a49a0616d2545bc3d2c930c85",
+      "gitBlobSha1": "107ecead11728a83ec0ea10d815a9d1f43a35792"
+    },
+    {
+      "installedPath": "data/stacks/wpf.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/stacks/wpf.csv",
+      "bytes": 24158,
+      "sha256": "9781a9950b20333637b30a02e498b7efca21b618a3eeb8665836f3ac6e974da7",
+      "gitBlobSha1": "4e88d6750833a74f85ba487cf2b8f4ff6ebd2f4a"
+    },
+    {
+      "installedPath": "data/styles.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/styles.csv",
+      "bytes": 149478,
+      "sha256": "a93a4d9d7025856575d7b7583bda020be9043013432c5af7c58af9dbdfb206b7",
+      "gitBlobSha1": "d1eb2c216e453005ffa8232ffb94491c183afe3c"
+    },
+    {
+      "installedPath": "data/typography.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/typography.csv",
+      "bytes": 49997,
+      "sha256": "321fc446e89024488ebae96dda93efc4d2307bd8bddb240857ad51364f6782c8",
+      "gitBlobSha1": "70d107d107de30150863c965767320ec33ef29ad"
+    },
+    {
+      "installedPath": "data/ui-reasoning.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/ui-reasoning.csv",
+      "bytes": 77360,
+      "sha256": "f0774dd741cecdad5eec842034bd6d5e9ea50e9f220a1910069748daa0bb8e9a",
+      "gitBlobSha1": "8931d4c809f8e22ddac00ce612ce0c35f34a59b6"
+    },
+    {
+      "installedPath": "data/ux-guidelines.csv",
+      "upstreamPath": "src/ui-ux-pro-max/data/ux-guidelines.csv",
+      "bytes": 27516,
+      "sha256": "ff81ec613f70ba9fc3fcce52dbe4ae35d44b2079dbe6dc066d2d6e38c28facd5",
+      "gitBlobSha1": "4e7d52b296537a03513b18b2c3f2b946cc802051"
+    },
+    {
+      "installedPath": "scripts/core.py",
+      "upstreamPath": "src/ui-ux-pro-max/scripts/core.py",
+      "bytes": 41242,
+      "sha256": "dfb34cbca66a704a5bfae48c1ab5f82d2a6573b9509c5accceb3d248715a18f6",
+      "gitBlobSha1": "80319d689460ae23aaea2309be03319878ec3f2b"
+    },
+    {
+      "installedPath": "scripts/design_system.py",
+      "upstreamPath": "src/ui-ux-pro-max/scripts/design_system.py",
+      "bytes": 71537,
+      "sha256": "e7d1c94c4b2eada17c5551157668362659ccf9626d34dbd58e68142410f90103",
+      "gitBlobSha1": "d5fe1575f00d839f919603bd09b44fe7e9def4fb"
+    },
+    {
+      "installedPath": "scripts/reasoning_contract.py",
+      "upstreamPath": "src/ui-ux-pro-max/scripts/reasoning_contract.py",
+      "bytes": 5824,
+      "sha256": "b8bac1af82aa280d3e06f00aabaeac4337e632996b07fed874e2b6ee6e9c5913",
+      "gitBlobSha1": "63652a666b130c249ea1e2954316f1ac8a5a73d5"
+    },
+    {
+      "installedPath": "scripts/search.py",
+      "upstreamPath": "src/ui-ux-pro-max/scripts/search.py",
+      "bytes": 9373,
+      "sha256": "d54e648fe0ec2932cac66684220cc17be4bd4b4eba1d23d3195d509d398db374",
+      "gitBlobSha1": "5038aa875a0d39f24dea803a4c73b38f8f56915f"
+    },
+    {
+      "installedPath": "scripts/validate_data.py",
+      "upstreamPath": "src/ui-ux-pro-max/scripts/validate_data.py",
+      "bytes": 52230,
+      "sha256": "a599aa256049cf30954d1f164721b99e453eb7e4cb8241bcab2d5573e6cf58b8",
+      "gitBlobSha1": "8b6c7941f6ad3e51cb9d412b11185133e7763001"
+    }
+  ]
+}

@@ -1,5 +1,17 @@
 # Development status
 
+## Home scroll and reviewed design tools — 28 October 2026
+
+Home product checkpoint `9f152e6d05800dd31c3b62f2145f8e39a0a1e1d2` retains template documents and the sliver delegate while the column count is unchanged. A narrow artwork repaint boundary prevents unchanged dense previews repainting on every scroll step. Theme, locale, text scale, real document updates and template navigation remain live. See [Home evidence and acceptance limits](HOME-SCROLL-PERFORMANCE.md).
+
+The final local gate passes: 201 Dart files formatted, analyzer zero issues, 383 Flutter tests/three explicit skips, 76 real-font states/eight strict references, JVM tests, Android lint, actual debug APK/v2 signature and 12 interrupted writers with complete recovery. No additional golden was updated for Home. Local APK SHA256: `81bdb2a29dd713908ff1d7ce78d8f0ee1d4f3796f55fa460fdfdab131f9dffd4`. Fresh hosted native verification of this Home source is pending; the earlier Library gate does not verify this new source.
+
+Library source `c965431` / head `15eb9a8` passed fresh full hosted Android/native/media and portable Swift checks in [40655638868](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40655638868). Tested merge `12eaabbe3f114699236eb5a68aa6d977c6d1b661` and head share tree `89252b2da9e782ca38bf7882fcceb5d7adb824d2`. [Accepted Library APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40655638868/artifacts/12801693961) and [runtime evidence](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40655638868/artifacts/12802927991) remain source-specific. After-motion capture [40655572848](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40655572848) passed with two original normal/reduced clips and 44 hit-tested actions; independent after-contact inspection is requested next. Before contact inspection shows a blank Library-body frame. Neither clip decoding nor functional continuity proves physical frame pacing.
+
+[Draft PR24](https://github.com/Imran-shisheo/DrawMusic/pull/24) is the active unmerged follow-up. PR22 and PR23 were merged externally; this task did not merge or undo them. PR23's stacked-base merge did not itself place that UI on main.
+
+The approved [UI UX Pro Max setup](UI-UX-TOOLS.md) is installed at `.agents/skills/ui-ux-pro-max/`, pinned to `28b3b8dee8c976df4fa3e94aed4e092ad43fcb03`, MIT. Its full skill was explicitly read and relevant Flutter rebuild guidance applied. All 46 payload integrity checks, five Python compilations, 35 CSV/4,319 rows and four JSON parses passed; offline search ran without dependencies or network. No installer was executed. [Mac Stitch handoff](../design/handoff/README.md) is documented, not an executed design export or direct cloud MCP connection. No credentials are committed.
+
 ## Active Library and transition correction — 28 October 2026
 
 User report: Library Drafts↔Exports switches abruptly. Reproduced in source: the outgoing root branch disappears immediately and incoming opacity starts at0; every rapid retarget repeats the gap. A new retained continuous blend, one persistent Library selector and bounded export-content handoff are implemented locally. Read [motion behavior and interruption contracts](MOTION-SYSTEM.md#continuous-navigation-and-export-handoffs--28-october).
