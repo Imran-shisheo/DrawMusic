@@ -56,29 +56,30 @@ def interaction_contact_names(request):
     return names
 
 
-def interaction_contact(clip, name, frame_count, remaining_bytes):
-    if frame_count < 3:
-        raise ValueError('Three distinct original decoded frames required for contact')
+def interaction_contact(clip, name, frame_count, remaining_bytes, *, dense=False):
+    count = 9 if dense else 3
+    if frame_count < count:
+        raise ValueError('Not enough distinct original decoded frames for contact')
     # Decoded-frame ordinals span the actual clip. showinfo reports the actual
     # PTS for each selected frame, rather than assigning synthetic timestamps.
-    indices = [0, (frame_count - 1) // 2, frame_count - 1]
+    indices = [(frame_count - 1) * index // (count - 1) for index in range(count)]
     selection = '+'.join(f'eq(n\\,{index})' for index in indices)
     result = subprocess.run([
         'ffmpeg', '-nostdin', '-v', 'info', '-xerror', '-err_detect', 'explode',
         '-i', str(clip), '-map', '0:v:0', '-an', '-sn', '-dn',
-        '-vf', f'select={selection},showinfo,scale=220:-2,tile=3x1:padding=2:color=navy',
+        '-vf', f'select={selection},showinfo,scale=220:-2,tile=3x{3 if dense else 1}:padding=2:color=navy',
         '-frames:v', '1', '-f', 'image2pipe', '-vcodec', 'png', 'pipe:1',
     ], check=True, capture_output=True, timeout=30)
     data = result.stdout
     times = [float(value) for value in re.findall(r'\bn:\s*\d+.*?\bpts_time:([-+0-9.eE]+)', result.stderr.decode(errors='replace'))]
-    if len(times) != 3 or not all(math.isfinite(value) for value in times) or any(b <= a for a, b in zip(times, times[1:])):
+    if len(times) != count or not all(math.isfinite(value) for value in times) or any(b <= a for a, b in zip(times, times[1:])):
         raise ValueError('Original decoded contact timestamps missing or not distinct')
     if not data.startswith(b'\x89PNG\r\n\x1a\n') or len(data) > remaining_bytes:
         raise ValueError('Contact PNG signature/combined byte bound rejected')
     print('UI_INTERACTION_CONTACT_SCOPE ' + json.dumps({
         'name': name, 'status': 'UNACCEPTED_DIAGNOSTIC_ONLY',
         'decodedFrameIndices': indices, 'actualDecodedPtsSeconds': times,
-        'scope': 'Three actual decoded original frames at first/middle/last frame; resized only for this contact PNG. Original MP4 unchanged; not smoothness or complete scene acceptance.',
+        'scope': f'{count} actual decoded original frames evenly spanning frame ordinals; resized only for this contact PNG. Original MP4 unchanged; not smoothness or complete scene acceptance.',
     }), flush=True)
     emit_png(name + '-contact.png', data, motion=True)
     return len(data)
@@ -168,7 +169,8 @@ def inspect_interaction_recordings(request, report):
             frame_count = int(stream['nb_read_frames'])
             if frame_count != len(values):
                 raise ValueError('Contact original decoded-frame/packet count mismatch: ' + name)
-            contact_bytes += interaction_contact(clip, name, frame_count, 1_500_000 - contact_bytes)
+            contact_bytes += interaction_contact(clip, name, frame_count, 1_500_000 - contact_bytes,
+                                                 dense=report.get('transitionCaptureOnly') is True)
 
 
 def load_capture_report(request):

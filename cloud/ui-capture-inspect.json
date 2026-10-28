@@ -1,8 +1,16 @@
 {
-  "runId": 40605481853,
-  "artifactName": "drawmusic-ui-visuals-3bca6ae4f34beaff936f26df5e08a37e2e12b69f",
+  "runId": 40652396927,
+  "artifactName": "drawmusic-ui-visuals-505776bb794583a3b4d9f250735b5a714c295e01",
   "screenshots": [
-    "22-home-light.png",
-    "23-editor-light.png"
+    "01-home.png"
+  ],
+  "interactionMotionDiagnostic": true,
+  "interactionRecordingNames": [
+    "01-root-navigation",
+    "06-reduced-motion"
+  ],
+  "interactionContactNames": [
+    "01-root-navigation",
+    "06-reduced-motion"
   ]
 }

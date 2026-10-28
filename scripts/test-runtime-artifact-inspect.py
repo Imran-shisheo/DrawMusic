@@ -298,6 +298,26 @@ class OriginalInteractionInspection(unittest.TestCase):
                 with self.assertRaises(ValueError): ui.interaction_contact(self.folder / '01-root-navigation.mp4', '01-root-navigation', frames, remaining)
                 emit.assert_not_called()
 
+    def test_dense_contact_samples_nine_real_ordinals_with_actual_pts_in_three_by_three(self):
+        png = b'\x89PNG\r\n\x1a\nfixture'
+        stderr = ''.join(f'n:{i} pts_time:{i / 2}\n' for i in range(9)).encode()
+        with patch.object(ui.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, png, stderr)) as run, patch.object(ui, 'emit_png'), contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(ui.interaction_contact(self.folder / '01-root-navigation.mp4', '01-root-navigation', 18, 100, dense=True), len(png))
+        command = run.call_args.args[0]
+        self.assertIn('tile=3x3', command[command.index('-vf') + 1])
+        self.assertIn('"decodedFrameIndices": [0, 2, 4, 6, 8, 10, 12, 14, 17]', output.getvalue())
+        self.assertIn('"actualDecodedPtsSeconds": [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]', output.getvalue())
+        self.assertNotIn('-r', command)
+        self.assertNotIn('-ss', command)
+
+    def test_dense_contact_rejects_too_few_frames_and_missing_nine_distinct_pts(self):
+        png = b'\x89PNG\r\n\x1a\nfixture'
+        for frame_count, stderr in ((8, b''), (18, b'n:0 pts_time:0\nn:1 pts_time:1\nn:2 pts_time:2\n')):
+            with patch.object(ui.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0, png, stderr)), patch.object(ui, 'emit_png') as emit:
+                with self.assertRaises(ValueError):
+                    ui.interaction_contact(self.folder / '01-root-navigation.mp4', '01-root-navigation', frame_count, 100, dense=True)
+                emit.assert_not_called()
+
     def test_contact_is_never_sampled_after_failed_original_whole_decode(self):
         def run(command, **kwargs):
             if command[0] == 'ffmpeg': raise subprocess.CalledProcessError(1, command, stderr='corrupt AVC')
