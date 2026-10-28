@@ -490,4 +490,64 @@ class HomeProfileSubsetProtocol(unittest.TestCase):
             self.assertFalse(capture.complete)
 
 
+class TransitionSubsetProtocol(unittest.TestCase):
+    """Protocol fixtures, not Android or motion-validation evidence."""
+    def emit(self, capture, operation, name, **extra):
+        return capture.event({'token': capture.token, 'sequence': capture.sequence + 1,
+                              'operation': operation, 'name': name, **extra})
+
+    def trace(self, reduced):
+        return {'actions': [{'action': tag, 'tapElapsedUs': i + 1, 'reducedMotion': reduced}
+                            for i, tag in enumerate(host.TRANSITION_ACTIONS)],
+                'reducedMotion': reduced, 'actualElapsedUs': 1000, 'finalHomeRendered': True}
+
+    def test_two_original_clips_and_traces_complete_only_subset(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(host, 'OUTPUT', Path(tmp)):
+            (Path(tmp)/'screenshots').mkdir()
+            def adb(*args, **kwargs):
+                return SimpleNamespace(stdout=b'\x89PNG\r\n\x1a\nfixture' if kwargs.get('binary') else '')
+            with patch.object(host, 'adb', adb):
+                c = host.Capture(transition_capture_only=True)
+                self.emit(c, 'metadata', 'session', buildMode='profile', animationsDisabled=False,
+                          captureMode='transition-capture-only', label='after')
+                self.emit(c, 'snapshot', '01-home')
+                for i, name in enumerate(host.TRANSITION_CLIPS):
+                    with patch.object(c, 'record_start', return_value={}): self.emit(c, 'record_start', name)
+                    c.recording = (name,)
+                    with patch.object(c, 'record_stop', return_value={'wholeVideoDecode': {'passed': True}}): self.emit(c, 'record_stop', name)
+                    c.recording = None
+                    self.emit(c, 'transition_trace', name, **self.trace(bool(i)))
+                self.emit(c, 'transition_complete', 'transitions', passed=True, subsetOnly=True, normalFullCapturePassed=False)
+                self.assertTrue(c.complete)
+                self.assertTrue(c.report['transitionSubsetPassed'])
+                self.assertFalse(c.report['normalFullCapturePassed'])
+                self.assertEqual([(e['operation'], e['name']) for e in c.report['events']], list(host.TRANSITION_EVENTS))
+
+    def test_strict_mode_rejects_other_subsets_and_after_label_mismatch(self):
+        for options in ({'transition_capture_only': 1}, {'transition_capture_only': True, 'home_profile_only': True},
+                        {'transition_capture_only': True, 'responsive_preset': 'tablet'}, {'transition_capture_only': True, 'static_backdrop_probe': True}):
+            with self.assertRaises(ValueError): host.Capture(**options)
+        with self.assertRaises(ValueError): self.emit(host.Capture(transition_capture_only=True), 'metadata', 'session',
+            buildMode='profile', animationsDisabled=False, captureMode='transition-capture-only', label='before')
+
+    def test_cannot_record_wrong_clip_profile_live_display_or_full_completion(self):
+        for operation, name in (('record_start', '00-home-ambient'), ('perf_start', 'home-ambient-visible'),
+                                ('display', 'compact'), ('complete', 'capture'), ('transition_complete', 'transitions')):
+            c = host.Capture(transition_capture_only=True)
+            with self.assertRaises(ValueError): self.emit(c, operation, name)
+            self.assertFalse(c.complete)
+
+    def test_missing_reordered_reduced_or_failed_decode_evidence_cannot_qualify(self):
+        for change in ('missing', 'reordered', 'reduced', 'decode'):
+            c = host.Capture(transition_capture_only=True)
+            c.report['events'] = [{'operation': op, 'name': name} for op, name in host.TRANSITION_EVENTS[:4]]
+            c.report['events'][-1]['wholeVideoDecode'] = {'passed': change != 'decode'}
+            trace = self.trace(False)
+            if change == 'missing': trace['actions'].pop()
+            if change == 'reordered': trace['actions'].reverse()
+            if change == 'reduced': trace['actions'][0]['reducedMotion'] = True
+            with self.assertRaises(ValueError): self.emit(c, 'transition_trace', host.TRANSITION_CLIPS[0], **trace)
+            self.assertFalse(c.complete)
+
+
 if __name__ == '__main__': unittest.main()

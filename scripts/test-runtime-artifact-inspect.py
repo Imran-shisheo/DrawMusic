@@ -362,5 +362,38 @@ class NativeProfileResourceInspection(unittest.TestCase):
         self.assertTrue(all(not result['available'] for result in self.inspect()))
 
 
+class TransitionRecordingSelection(unittest.TestCase):
+    setUp = OriginalInteractionInspection.setUp
+    result = OriginalInteractionInspection.result
+
+    def subset(self):
+        names = ['01-root-navigation', '06-reduced-motion']
+        self.report.update(transitionCaptureOnly=True, normalFullCapturePassed=False)
+        self.report['events'] = [item for item in self.report['events'] if item['name'] in names]
+        return {'interactionMotionDiagnostic': True, 'interactionRecordingNames': names}
+
+    def test_exact_declared_subset_decodes_only_original_two_recordings(self):
+        request = self.subset()
+        def run(command, **kwargs):
+            return self.result({} if command[0] == 'ffmpeg' else self.packets if '-show_packets' in command else self.metadata)
+        with patch.object(ui.subprocess, 'run', side_effect=run), contextlib.redirect_stdout(io.StringIO()) as output:
+            ui.inspect_interaction_recordings(request, self.report)
+        self.assertEqual(output.getvalue().count('"wholeVideoDecodePassed": true'), 2)
+        self.assertIn('UNACCEPTED_DIAGNOSTIC_ONLY', output.getvalue())
+
+    def test_wrong_selection_or_undeclared_full_capture_cannot_narrow_inspection(self):
+        request = self.subset()
+        for names in ([], ['01-root-navigation'], ['../private', '06-reduced-motion'], ['06-reduced-motion', '01-root-navigation']):
+            with self.assertRaises(ValueError): ui.inspect_interaction_recordings(request | {'interactionRecordingNames': names}, self.report)
+        self.report['transitionCaptureOnly'] = False
+        with self.assertRaises(ValueError): ui.inspect_interaction_recordings(request, self.report)
+
+    def test_contact_for_uninspected_clip_is_rejected_before_any_probe(self):
+        request = self.subset() | {'interactionContactNames': ['03-paper-sheet']}
+        with patch.object(ui.subprocess, 'run') as run:
+            with self.assertRaises(ValueError): ui.inspect_interaction_recordings(request, self.report)
+            run.assert_not_called()
+
+
 if __name__ == '__main__':
     unittest.main()

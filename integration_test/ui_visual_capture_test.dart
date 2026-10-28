@@ -36,6 +36,9 @@ import 'support/ui_presentation_fence.dart';
 const _staticBackdropProbe = bool.fromEnvironment('UI_STATIC_BACKDROP_PROBE');
 const _responsivePreset = String.fromEnvironment('UI_RESPONSIVE_PRESET');
 const _homeProfileOnly = bool.fromEnvironment('UI_HOME_PROFILE_ONLY');
+const _transitionCaptureOnly = bool.fromEnvironment(
+  'UI_TRANSITION_CAPTURE_ONLY',
+);
 const _responsiveShots = {
   'compact': ['16-home-compact-large-text', '17-editor-compact-large-text'],
   'tablet': ['18-home-tablet', '19-editor-tablet'],
@@ -233,6 +236,14 @@ void main() {
       isTrue,
     );
     expect(!(_staticBackdropProbe && _responsivePreset.isNotEmpty), isTrue);
+    expect(
+      !_transitionCaptureOnly ||
+          (_label == 'after' &&
+              !_staticBackdropProbe &&
+              _responsivePreset.isEmpty &&
+              !_homeProfileOnly),
+      isTrue,
+    );
     expect(
       !_homeProfileOnly ||
           (_label == 'after' &&
@@ -672,7 +683,9 @@ void main() {
     }
 
     Map<String, Object?>? subsetHomeReadiness;
-    if (_responsivePreset.isNotEmpty || _homeProfileOnly) {
+    if (_responsivePreset.isNotEmpty ||
+        _homeProfileOnly ||
+        _transitionCaptureOnly) {
       await until(() {
         final home = find.byWidgetPredicate(
           (widget) => widget.runtimeType.toString() == 'HomePage',
@@ -731,7 +744,9 @@ void main() {
                 ? 'diagnostic-static-backdrop-only'
                 : (_homeProfileOnly
                       ? 'home-profile-only'
-                      : 'normal-product-ui-capture')),
+                      : (_transitionCaptureOnly
+                            ? 'transition-capture-only'
+                            : 'normal-product-ui-capture'))),
       'physicalSize': [
         tester.view.physicalSize.width,
         tester.view.physicalSize.height,
@@ -966,6 +981,116 @@ void main() {
         'diagnosticOnly': true,
         'normalProductCapturePassed': false,
         'normalFootageProduced': false,
+      };
+      expect(tester.takeException(), isNull);
+      return;
+    }
+    if (_transitionCaptureOnly) {
+      await shot('01-home');
+      Future<void> transitionPhase(String name, bool reduced) async {
+        await preference(dark: true, reduce: reduced);
+        final actions = <Map<String, Object?>>[];
+        final clock = Stopwatch();
+        Future<void> action(String tag, Finder target, int settleMs) async {
+          await until(() => target.hitTestable().evaluate().isNotEmpty);
+          final actual = target.hitTestable().last;
+          final bounds = tester.getRect(actual);
+          final disabled = MediaQuery.disableAnimationsOf(
+            tester.element(actual),
+          );
+          expect(disabled, reduced);
+          final elapsed = clock.elapsedMicroseconds;
+          await tester.tap(actual); // Fatal missed-hit policy remains enabled.
+          actions.add({
+            'action': tag,
+            'tapElapsedUs': elapsed,
+            'reducedMotion': disabled,
+            'engineFrameNumber':
+                binding.platformDispatcher.frameData.frameNumber,
+            'targetBounds': [
+              bounds.left,
+              bounds.top,
+              bounds.width,
+              bounds.height,
+            ],
+            'requestedPostTapWaitMs': settleMs,
+          });
+          await wait(settleMs); // Real wall time under benchmarkLive policy.
+        }
+
+        Finder libraryTab(String label) => find.descendant(
+          of: find.byWidgetPredicate(
+            (widget) => widget.runtimeType.toString() == 'LibraryTabs',
+          ),
+          matching: find.text(label),
+        );
+        await clip(name, () async {
+          clock.start();
+          await action('root-library', key('nav-library'), 700);
+          await until(
+            () => libraryTab('Exports').hitTestable().evaluate().isNotEmpty,
+          );
+          for (var i = 0; i < 4; i++) {
+            await action(
+              'library-normal-$i',
+              libraryTab(i.isEven ? 'Exports' : 'Drafts'),
+              700,
+            );
+          }
+          for (var i = 0; i < 6; i++) {
+            await action(
+              'library-rapid-$i',
+              libraryTab(i.isEven ? 'Exports' : 'Drafts'),
+              80,
+            );
+          }
+          await until(() => expectedShot('02-drafts'));
+          await action('root-settings', key('nav-settings'), 700);
+          await action('root-home', key('nav-home'), 700);
+          await action('root-library-return', key('nav-library'), 700);
+          await action('root-home-editor', key('nav-home'), 700);
+          await action('editor-open', find.text('Paper hills'), 1000);
+          await until(() => expectedShot('05-editor-drawn'));
+          await action('editor-back', find.byTooltip('Back to gallery'), 700);
+          await until(() => expectedShot('01-home'));
+          await action('sheet-editor-open', find.text('Paper hills'), 1000);
+          await until(() => expectedShot('05-editor-drawn'));
+          await action('sheet-tools-open', key('editor-tools'), 700);
+          await action('sheet-paper-open', key('editor-tool-paper'), 700);
+          await until(
+            () => find.text('Cancel').hitTestable().evaluate().isNotEmpty,
+          );
+          await action('sheet-close', find.text('Cancel'), 700);
+          await until(() => find.byType(BottomSheet).evaluate().isEmpty);
+          await action(
+            'sheet-editor-back',
+            find.byTooltip('Back to gallery'),
+            700,
+          );
+          await until(() => expectedShot('01-home'));
+          clock.stop();
+        });
+        debugPrint(
+          'UI_TRANSITION_TRACE ${jsonEncode({'name': name, 'actions': actions, 'actualElapsedUs': clock.elapsedMicroseconds, 'scope': 'Actual hit-tested taps and wall-clock waits; rapid80ms is requested spacing, actual elapsed times are reported. No synthetic animation clock, padding, retiming or smoothness claim.'})}',
+        );
+        await host.event('transition_trace', name, {
+          'actions': actions,
+          'reducedMotion': reduced,
+          'actualElapsedUs': clock.elapsedMicroseconds,
+          'finalHomeRendered': true,
+        });
+      }
+
+      await transitionPhase('01-root-navigation', false);
+      await transitionPhase('06-reduced-motion', true);
+      await host.event('transition_complete', 'transitions', {
+        'passed': true,
+        'subsetOnly': true,
+        'normalFullCapturePassed': false,
+      });
+      binding.reportData = {
+        'transitionSubsetPassed': true,
+        'normalFullCapturePassed': false,
       };
       expect(tester.takeException(), isNull);
       return;

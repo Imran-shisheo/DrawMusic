@@ -124,10 +124,23 @@ HOME_PROFILE_EVENTS = (
     ('perf_finish', 'home-ambient-visible'), ('record_start', '00-home-ambient'),
     ('record_stop', '00-home-ambient'), ('home_profile_complete', 'home-profile'),
 )
+TRANSITION_CLIPS = ('01-root-navigation', '06-reduced-motion')
+TRANSITION_EVENTS = (('metadata', 'session'), ('snapshot', '01-home'),
+    ('record_start', TRANSITION_CLIPS[0]), ('record_stop', TRANSITION_CLIPS[0]), ('transition_trace', TRANSITION_CLIPS[0]),
+    ('record_start', TRANSITION_CLIPS[1]), ('record_stop', TRANSITION_CLIPS[1]), ('transition_trace', TRANSITION_CLIPS[1]),
+    ('transition_complete', 'transitions'))
+TRANSITION_ACTIONS = ('root-library', *('library-normal-' + str(i) for i in range(4)),
+    *('library-rapid-' + str(i) for i in range(6)), 'root-settings', 'root-home',
+    'root-library-return', 'root-home-editor', 'editor-open', 'editor-back',
+    'sheet-editor-open', 'sheet-tools-open', 'sheet-paper-open', 'sheet-close', 'sheet-editor-back')
 
 
 class Capture:
-    def __init__(self, *, static_backdrop_probe=False, responsive_preset=None, home_profile_only=False):
+    def __init__(self, *, static_backdrop_probe=False, responsive_preset=None, home_profile_only=False, transition_capture_only=False):
+        if type(transition_capture_only) is not bool or (transition_capture_only and (static_backdrop_probe or responsive_preset is not None or home_profile_only)):
+            raise ValueError('Unknown or conflicting transition subset mode')
+        self.transition_capture_only = transition_capture_only
+        self.transition_traces = []
         if type(home_profile_only) is not bool or (home_profile_only and (static_backdrop_probe or responsive_preset is not None)):
             raise ValueError('Unknown or conflicting Home profile subset mode')
         if responsive_preset not in (None, *RESPONSIVE_SHOTS) or (static_backdrop_probe and responsive_preset is not None):
@@ -146,6 +159,9 @@ class Capture:
         self.probe_restored = False
         self.probe_cache_size = None
         self.report = {'passed': False, 'scope': 'Owned API35 QEMU profile-build screenshots, silent interaction recordings and real engine timings; not phone/iOS acceptance', 'events': [], 'recordingsHaveAudio': False}
+        if transition_capture_only:
+            self.report.update(scope='Actual normal/reduced transition recordings with real taps, not full23 capture, profiling, smoothness or physical/iOS acceptance',
+                transitionCaptureOnly=True, transitionSubsetPassed=False, normalFullCapturePassed=False)
         if home_profile_only:
             self.report.update(scope='Normal unchanged Home screenshot, unrecorded engine profile and actual ambient video subset; not full23 capture, smoothness or physical/iOS acceptance',
                                homeProfileOnly=True, homeProfileSubsetPassed=False, normalFullCapturePassed=False)
@@ -332,6 +348,10 @@ class Capture:
             self.sequence += 1
             operation, name = body.get('operation'), slug(body.get('name'))
             item = {'sequence': self.sequence, 'operation': operation, 'name': name, 'hostMonotonicSeconds': time.monotonic()}
+            if self.transition_capture_only:
+                index = len(self.report['events'])
+                if index >= len(TRANSITION_EVENTS) or (operation, name) != TRANSITION_EVENTS[index]:
+                    raise ValueError('Transition subset requires exactly its ordered original operations')
             if self.home_profile_only:
                 index = len(self.report['events'])
                 if index >= len(HOME_PROFILE_EVENTS) or (operation, name) != HOME_PROFILE_EVENTS[index]:
@@ -477,6 +497,34 @@ class Capture:
                 adb('shell', 'wm', 'density', density)
                 adb('shell', 'settings', 'put', 'system', 'font_scale', scale)
                 item.update(physicalSize=size, densityDpi=density, systemFontScale=scale)
+            elif operation == 'transition_trace':
+                reduced = name == TRANSITION_CLIPS[1]
+                actions = body.get('actions')
+                stop = self.report['events'][-1] if self.report['events'] else {}
+                if (not self.transition_capture_only or self.recording or self.perf or
+                        stop.get('operation') != 'record_stop' or stop.get('name') != name or
+                        stop.get('wholeVideoDecode', {}).get('passed') is not True or
+                        body.get('reducedMotion') is not reduced or body.get('finalHomeRendered') is not True or
+                        not isinstance(actions, list) or len(actions) != len(TRANSITION_ACTIONS) or
+                        [action.get('action') for action in actions if isinstance(action, dict)] != list(TRANSITION_ACTIONS) or
+                        any(type(action.get('tapElapsedUs')) is not int or action['tapElapsedUs'] < 0 or
+                            action.get('reducedMotion') is not reduced for action in actions) or
+                        any(b['tapElapsedUs'] <= a['tapElapsedUs'] for a, b in zip(actions, actions[1:])) or
+                        type(body.get('actualElapsedUs')) is not int or body['actualElapsedUs'] <= actions[-1]['tapElapsedUs']):
+                    raise ValueError('Missing actual bounded transition action/decode evidence')
+                (OUTPUT / ('transition-' + name + '.json')).write_text(json.dumps({
+                    'scope': 'Actual hit-tested taps and wall-clock spacing; not presentation smoothness or animation correctness by itself',
+                    'actions': actions, 'actualElapsedUs': body['actualElapsedUs'], 'reducedMotion': reduced}, indent=2)+'\n')
+                self.transition_traces.append(name)
+                item.update(actionCount=len(actions), reducedMotion=reduced)
+            elif operation == 'transition_complete':
+                if (not self.transition_capture_only or self.recording or self.perf or
+                        self.transition_traces != list(TRANSITION_CLIPS) or
+                        body.get('passed') is not True or body.get('subsetOnly') is not True or
+                        body.get('normalFullCapturePassed') is not False):
+                    raise ValueError('Incomplete normal/reduced transition subset')
+                self.complete = True
+                self.report['transitionSubsetPassed'] = True
             elif operation == 'home_profile_complete':
                 if (not self.home_profile_only or self.recording or self.perf or
                         body.get('passed') is not True or body.get('subsetOnly') is not True or
@@ -521,6 +569,8 @@ class Capture:
                 self.report['diagnosticPassed'] = True
             elif operation == 'metadata':
                 mode = body.get('captureMode')
+                if (self.transition_capture_only and (mode != 'transition-capture-only' or body.get('label') != 'after')) or (not self.transition_capture_only and mode == 'transition-capture-only'):
+                    raise ValueError('Host/app transition mode or after-label mismatch')
                 if (self.home_profile_only and (mode != 'home-profile-only' or body.get('label') != 'after')) or (not self.home_profile_only and mode == 'home-profile-only'):
                     raise ValueError('Host/app Home profile mode or after-label mismatch')
                 if ((self.responsive_preset is not None and mode != 'responsive-' + self.responsive_preset) or
@@ -615,7 +665,10 @@ def main():
     home_only = provenance.get('homeProfileOnly', False)
     if home_only is True and provenance.get('label') != 'after':
         raise RuntimeError('Home profile subset requires after-source provenance')
-    capture = Capture(static_backdrop_probe=diagnostic == 'static-backdrop', responsive_preset=responsive, home_profile_only=home_only)
+    transitions = provenance.get('transitionCaptureOnly', False)
+    if transitions is True and (provenance.get('label') != 'after' or provenance.get('transitionComparison') not in ('before-fix', 'after-fix')):
+        raise RuntimeError('Transition subset requires explicit pinned after-source comparison role')
+    capture = Capture(static_backdrop_probe=diagnostic == 'static-backdrop', responsive_preset=responsive, home_profile_only=home_only, transition_capture_only=transitions)
     capture.report['source'] = provenance
     capture.report['hostCpuContext'] = host_cpu_context()
     capture.report['nativeImeWithHardwareKeyboard'] = True
@@ -673,6 +726,8 @@ def main():
         command.append('--dart-define=UI_RESPONSIVE_PRESET=' + responsive)
     if capture.home_profile_only:
         command.append('--dart-define=UI_HOME_PROFILE_ONLY=true')
+    if capture.transition_capture_only:
+        command.append('--dart-define=UI_TRANSITION_CAPTURE_ONLY=true')
     capture.report['profileProcessBudgetSeconds'] = PROFILE_PROCESS_TIMEOUT_SECONDS
     capture.report['profileProcessBudgetScope'] = 'Whole Flutter drive process, including cold profile compilation and runtime; all per-operation acceptance gates remain independent.'
     try:

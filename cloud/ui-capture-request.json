@@ -1,6 +1,7 @@
 {
   "schema": 1,
   "label": "after",
-  "sourceRef": "979c59657f8c0b3656f02f91cb572fda63176392",
-  "responsivePreset": "light"
+  "sourceRef": "7dada74e981a7352f71e5c37e13928556e3ab38a",
+  "transitionCaptureOnly": true,
+  "transitionComparison": "before-fix"
 }

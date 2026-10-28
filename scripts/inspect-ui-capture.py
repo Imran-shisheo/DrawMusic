@@ -92,10 +92,20 @@ def inspect_interaction_recordings(request, report):
         raise ValueError('Expected boolean interactionMotionDiagnostic')
     if not diagnostic:
         return
+    names = request.get('interactionRecordingNames')
+    if names is None:
+        names = INTERACTION_RECORDINGS
+    elif (names != ['01-root-navigation', '06-reduced-motion'] or
+            report.get('transitionCaptureOnly') is not True or
+            report.get('normalFullCapturePassed') is not False or
+            {item.get('name') for item in report['events'] if item.get('operation') in ('record_start', 'record_stop')} != set(names)):
+        raise ValueError('Only explicit exact original transition-subset recording selection is supported')
+    if any(name not in names for name in contacts):
+        raise ValueError('Requested contact must belong to inspected original recording selection')
     folder = ROOT / 'recordings'
     if folder.is_symlink() or not folder.is_dir():
         raise ValueError('Original recordings directory missing or unsafe')
-    for name in INTERACTION_RECORDINGS:
+    for name in names:
         starts = [item for item in report['events'] if item.get('operation') == 'record_start' and item.get('name') == name]
         stops = [item for item in report['events'] if item.get('operation') == 'record_stop' and item.get('name') == name]
         if len(starts) != 1 or len(stops) != 1:
