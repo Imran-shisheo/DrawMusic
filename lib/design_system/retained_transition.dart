@@ -9,10 +9,15 @@ class RetainedBranchContainer extends StatefulWidget {
     super.key,
     required this.index,
     required this.children,
+    this.opaquePages = true,
   });
 
   final int index;
   final List<Widget> children;
+
+  /// Full-page scaffolds preserve opaque coverage; fragments over shared chrome
+  /// fade their own ink without covering the persistent parent backdrop.
+  final bool opaquePages;
 
   @override
   State<RetainedBranchContainer> createState() =>
@@ -81,7 +86,11 @@ class _RetainedBranchContainerState extends State<RetainedBranchContainer>
       for (final weight in weights) {
         cumulative += weight;
         // Conditional source-over alpha keeps the painted blend opaque.
-        opacities.add(cumulative == 0 ? 0 : (weight / cumulative).clamp(0, 1));
+        opacities.add(
+          widget.opaquePages
+              ? (cumulative == 0 ? 0 : (weight / cumulative).clamp(0, 1))
+              : weight,
+        );
       }
       return Stack(
         fit: StackFit.expand,

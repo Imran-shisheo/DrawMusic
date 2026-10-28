@@ -85,6 +85,71 @@ void main() {
   );
 
   testWidgets(
+    'transparent library sections fade old ink over a stable shared backdrop',
+    (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures();
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      final selected = ValueNotifier(0);
+      addTearDown(selected.dispose);
+      final boundary = GlobalKey();
+      final children = [
+        const Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: ColoredBox(color: Colors.red),
+          ),
+        ),
+        const Align(
+          alignment: Alignment.bottomRight,
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: ColoredBox(color: Colors.blue),
+          ),
+        ),
+      ];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RepaintBoundary(
+            key: boundary,
+            child: ColoredBox(
+              color: Colors.black,
+              child: ValueListenableBuilder<int>(
+                valueListenable: selected,
+                builder: (_, index, _) => RetainedBranchContainer(
+                  index: index,
+                  opaquePages: false,
+                  children: children,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final original = await pixel(tester, boundary);
+      selected.value = 1;
+      await tester.pump();
+      expect(await pixel(tester, boundary), original);
+      await tester.pump(const Duration(milliseconds: 80));
+      final blend = await pixel(tester, boundary);
+      expect(blend[0], lessThan(original[0]));
+      expect(blend[0], greaterThan(0));
+      expect(blend[3], 255);
+      selected.value = 0;
+      await tester.pump();
+      expect(await pixel(tester, boundary), blend);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(await pixel(tester, boundary), original);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
     'departing content has no input or semantics and reduction completes an interrupted blend',
     (tester) async {
       tester.platformDispatcher.accessibilityFeaturesTestValue =

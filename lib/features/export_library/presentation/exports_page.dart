@@ -157,6 +157,7 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    backgroundColor: LibraryChromeScope.of(context) ? Colors.transparent : null,
     body: LibraryGalleryLayout(
       exports: true,
       scrollKey: 'exports-scroll',

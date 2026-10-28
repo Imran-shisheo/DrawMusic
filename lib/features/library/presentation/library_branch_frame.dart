@@ -50,6 +50,7 @@ class _LibraryBranchFrameState extends State<LibraryBranchFrame> {
                   shared: shared,
                   child: RetainedBranchContainer(
                     index: _section,
+                    opaquePages: !shared,
                     children: widget.children,
                   ),
                 ),

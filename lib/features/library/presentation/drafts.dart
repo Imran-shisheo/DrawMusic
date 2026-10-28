@@ -169,6 +169,7 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    backgroundColor: LibraryChromeScope.of(context) ? Colors.transparent : null,
     body: LibraryGalleryLayout(
       exports: false,
       scrollKey: 'drafts-scroll',
