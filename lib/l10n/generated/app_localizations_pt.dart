@@ -1138,4 +1138,8 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get recoveryExportFailed =>
       'Não foi possível exportar os dados de recuperação. Os arquivos originais foram preservados.';
+
+  @override
+  String get erasureLimitRejected =>
+      'A ação de apagar não foi aplicada porque excederia o limite do desenho. Desfaça alguns traços ou salve este desenho e comece outro.';
 }

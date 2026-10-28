@@ -5,18 +5,24 @@ import 'dart:math' as math;
 import 'package:crypto/crypto.dart';
 
 import '../../../creative_document/document.dart';
+import '../../backgrounds/data/background_cleanup_coordination.dart';
 import '../../export/domain/export_port.dart';
 import '../domain/export_library.dart';
 
 class FileExportLibrary implements ExportLibrary {
-  FileExportLibrary(this.root, {DateTime Function()? clock})
-    : clock = clock ?? DateTime.now;
+  FileExportLibrary(
+    this.root, {
+    DateTime Function()? clock,
+    BackgroundStorageCoordinator? coordinator,
+  }) : clock = clock ?? DateTime.now,
+       _coordinator = coordinator ?? BackgroundStorageCoordinator.application;
+  final BackgroundStorageCoordinator _coordinator;
   final Directory root;
   final DateTime Function() clock;
   static const undoWindow = Duration(seconds: 7);
   Future<void> _queue = Future.value();
   Future<T> _serialize<T>(Future<T> Function() action) {
-    final operation = _queue.then((_) => action());
+    final operation = _queue.then((_) => _coordinator.write(action));
     _queue = operation.then<void>((_) {}, onError: (Object _, StackTrace _) {});
     return operation;
   }

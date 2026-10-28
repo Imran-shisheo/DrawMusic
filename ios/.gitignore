@@ -32,3 +32,7 @@ Runner/GeneratedPluginRegistrant.*
 !default.mode2v3
 !default.pbxuser
 !default.perspectivev3
+
+# Portable Swift scheduler test state; native iOS remains a separate Mac gate.
+.build/
+.swiftpm/

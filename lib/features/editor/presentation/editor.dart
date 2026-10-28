@@ -981,6 +981,8 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
                               _message(context.strings.geometrySimplified),
                           onLimit: () =>
                               _message(context.strings.drawingPointLimit),
+                          onEraseRejected: () =>
+                              _message(context.strings.erasureLimitRejected),
                         ),
                       ),
                     ),

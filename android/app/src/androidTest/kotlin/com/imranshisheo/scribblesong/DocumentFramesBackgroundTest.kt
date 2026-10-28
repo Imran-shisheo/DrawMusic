@@ -90,4 +90,46 @@ class DocumentFramesBackgroundTest {
             try {DocumentFrames(doc,80,100,root);fail("Missing photo unexpectedly rendered")}catch(_:IllegalArgumentException){}
         }finally{root.deleteRecursively()}
     }
+    @Test fun stagedOnlyPhotoRemainsReadableForTransformedFramesWithoutMovingCleanupFiles() {
+        val context=InstrumentationRegistry.getInstrumentation().targetContext
+        val root=File(context.cacheDir,"staged-background-raster-${System.nanoTime()}").apply{mkdirs()}
+        val stage=File(root,".cleanup-staging").apply{mkdirs()}
+        val bitmap=Bitmap.createBitmap(40,40,Bitmap.Config.ARGB_8888)
+        try {
+            for(y in 0 until 40) for(x in 0 until 40) bitmap.setPixel(x,y,when {
+                y<20&&x<20->0xffff0000.toInt();y<20->0xff00ff00.toInt()
+                x<20->0xff0000ff.toInt();else->0xffffff00.toInt()
+            })
+            val temporary=File(stage,"source.png")
+            temporary.outputStream().use{check(bitmap.compress(Bitmap.CompressFormat.PNG,100,it))}
+            val original=temporary.readBytes()
+            val id=MessageDigest.getInstance("SHA-256").digest(original).joinToString(""){"%02x".format(it)}
+            val staged=File(stage,"$id.png");check(temporary.renameTo(staged))
+            val active=File(root,"$id.png")
+            assertFalse("Fixture must exist only in recoverable cleanup staging",active.exists())
+            fun sample(crop:JSONArray):IntArray {
+                val definition=paper("photo",.5).put("assetId",id).put("crop",crop)
+                    .put("quarterTurns",1).put("mirror",true)
+                val renderer=DocumentFrames(document().put("paper",definition),80,100,root)
+                return try {renderer.render(0.0).copyOf()} finally {renderer.close()}
+            }
+            // Mirror plus clockwise quarter-turn maps source bottom-right to
+            // output top-left; opacity composites each exact quadrant on white.
+            val whole=sample(JSONArray().put(0).put(0).put(1).put(1))
+            assertRgb(0xffffff7f.toInt(),whole[20*80+20],1)
+            assertRgb(0xff7fff7f.toInt(),whole[20*80+60],1)
+            assertRgb(0xff7f7fff.toInt(),whole[80*80+20],1)
+            assertRgb(0xffff7f7f.toInt(),whole[80*80+60],1)
+            // Cropping before the same transforms isolates source top-left red.
+            val cropped=sample(JSONArray().put(0).put(0).put(.5).put(.5))
+            for(index in intArrayOf(20*80+20,20*80+60,80*80+20,80*80+60)) {
+                assertRgb(0xffff7f7f.toInt(),cropped[index],1)
+            }
+            assertFalse("Rendering must not restore/move a staged asset",active.exists())
+            assertTrue(staged.isFile)
+            assertArrayEquals("Rendering must leave original staging bytes intact",original,staged.readBytes())
+            val files=root.walkTopDown().filter{it.isFile}.map{it.relativeTo(root).invariantSeparatorsPath}.toList()
+            assertEquals(listOf(".cleanup-staging/$id.png"),files)
+        } finally {bitmap.recycle();root.deleteRecursively()}
+    }
 }

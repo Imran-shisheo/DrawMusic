@@ -2097,6 +2097,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not export recovery data. The original files are preserved.'**
   String get recoveryExportFailed;
+
+  /// No description provided for @erasureLimitRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Erasure was not applied because it would exceed the drawing limit. Undo some ink, or save this drawing and start a new one.'**
+  String get erasureLimitRejected;
 }
 
 class _AppLocalizationsDelegate

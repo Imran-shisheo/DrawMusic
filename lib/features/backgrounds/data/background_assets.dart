@@ -14,9 +14,10 @@ class BackgroundAsset {
   final int width, height, bytes;
 }
 
-/// Committed imports are immutable content-addressed PNGs. There is deliberately
-/// no destructive GC: an old revision, Undo or another project's duplicate may
-/// still reference an asset. Native imports never overwrite another asset.
+/// Committed imports are immutable content-addressed PNGs. Startup-only cleanup
+/// pins all durable and pending references with two age-protected stages; it
+/// never runs while an editor/Undo state can exist. Native imports do not
+/// overwrite another asset. See BACKGROUND-CLEANUP.md.
 class BackgroundAssets {
   BackgroundAssets(this.root);
   final Directory root;
@@ -36,8 +37,8 @@ class BackgroundAssets {
     int maxHeight = 1350,
   }) async {
     if (paper.kind != BackgroundKind.photo) return null;
-    final source = file(paper.assetId!);
-    if (!await source.exists()) return null;
+    final source = await resolveBackgroundAssetFile(root, paper.assetId!);
+    if (source == null) return null;
     final size = await source.length();
     if (size == 0 || size > 32 * 1024 * 1024) {
       throw const FormatException('Invalid background image size');
@@ -76,6 +77,39 @@ class BackgroundAssets {
       buffer.dispose();
     }
   }
+}
+
+/// A deferred startup rollback may retain a PNG in private staging. Reads can
+/// use that same immutable ID without moving/deleting anything. Decode below
+/// still verifies size, SHA and dimensions; staging is not trusted as valid art.
+Future<File?> resolveBackgroundAssetFile(Directory root, String id) async {
+  if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(id)) {
+    throw const FormatException('Invalid background asset');
+  }
+  if (await FileSystemEntity.type(root.path, followLinks: false) !=
+      FileSystemEntityType.directory) {
+    return null;
+  }
+  final ownedRoot = await root.resolveSymbolicLinks();
+  for (final folder in [root, Directory('${root.path}/.cleanup-staging')]) {
+    if (await FileSystemEntity.type(folder.path, followLinks: false) !=
+        FileSystemEntityType.directory) {
+      continue;
+    }
+    final canonical = await folder.resolveSymbolicLinks();
+    if (canonical != ownedRoot && canonical != '$ownedRoot/.cleanup-staging') {
+      continue;
+    }
+    final source = File('${folder.path}/$id.png');
+    if (await FileSystemEntity.type(source.path, followLinks: false) !=
+        FileSystemEntityType.file) {
+      continue;
+    }
+    if (await source.resolveSymbolicLinks() == '$canonical/$id.png') {
+      return source;
+    }
+  }
+  return null;
 }
 
 class BackgroundPicker {

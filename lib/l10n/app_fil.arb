@@ -329,5 +329,6 @@
   "templateDescription18": "Pataas na mga hakbang ng kampana sa iskala.",
   "templateDescription19": "Apat na mainit na akorde ng synth na may baho at tambol.",
   "recoveryExport": "I-export ang datos para sa pagbawi",
-  "recoveryExportFailed": "Hindi ma-export ang datos para sa pagbawi. Napanatili ang mga orihinal na file."
+  "recoveryExportFailed": "Hindi ma-export ang datos para sa pagbawi. Napanatili ang mga orihinal na file.",
+  "erasureLimitRejected": "Hindi inilapat ang pagbura dahil lalampas ito sa limitasyon ng drawing. I-undo ang ilang guhit, o i-save ang drawing na ito at magsimula ng bago."
 }

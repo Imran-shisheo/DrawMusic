@@ -22,18 +22,48 @@ import java.util.concurrent.Executors
 import kotlin.math.max
 
 /** System-owned pickers, immutable normalized assets, no broad media permission. */
-internal class BackgroundFilesChannel(private val activity: Activity, messenger: BinaryMessenger) {
+internal class BackgroundFilesChannel(private val activity: Activity, messenger: BinaryMessenger,
+    private val restoredActivity: Boolean = false, private val canCleanup: () -> Boolean = { true }) {
     companion object { const val PHOTO = 2050; const val CAMERA = 2051; private const val LIMIT = 32L*1024*1024 }
     private val channel = MethodChannel(messenger,"scribblesong/backgrounds")
     private val preferences = activity.getSharedPreferences("background-picker",Context.MODE_PRIVATE)
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
+    private val cleanup = BackgroundCleanupGuard()
+    private var deferredResult: Triple<Int,Int,Intent?>? = null
     private var pending: MethodChannel.Result? = null
     private var busy = false
     private var closed = false
     init {
         channel.setMethodCallHandler { call,result ->
-            if(closed || busy) { result.error("image_busy","An image action is in progress",null);return@setMethodCallHandler }
+            if(call.method == "beginCleanup") {
+                val token=call.argument<String>("token")
+                if(token==null || !token.matches(Regex("[a-zA-Z0-9_-]{1,80}"))) {
+                    result.success(mapOf("allowed" to false));return@setMethodCallHandler
+                }
+                try {
+                    val ready=preferences.getString("ready",null)?.let { JSONObject(it) }
+                    val pins=if(ready==null) emptyList() else listOf(ready.getString("id"))
+                    val unknownReady=ready!=null && (ready.keys().asSequence().toSet()!=setOf("id","width","height","bytes") ||
+                        !ready.getString("id").matches(Regex("[a-f0-9]{64}")) ||
+                        ready.getInt("width") !in 1..2048 || ready.getInt("height") !in 1..2048 || ready.getLong("bytes") !in 1..LIMIT)
+                    val unknownPreferences=preferences.all.keys.any { it !in setOf("ready","source","capture","launch") }
+                    val unsafe=unknownPreferences || closed || busy || pending!=null || restoredActivity || !canCleanup() || unknownReady ||
+                        preferences.contains("source") || preferences.contains("capture") || preferences.getBoolean("launch",false)
+                    val allowed=cleanup.acquire(token,unsafe)
+                    result.success(mapOf("allowed" to allowed,"pins" to if(allowed) pins else emptyList<String>()))
+                } catch(_:Exception) { result.success(mapOf("allowed" to false)) }
+                return@setMethodCallHandler
+            }
+            if(call.method == "endCleanup") {
+                call.argument<String>("token")?.let { cleanup.release(it) }
+                result.success(null)
+                if(!cleanup.isLocked()) deferredResult?.let { value ->
+                    deferredResult=null;activityResult(value.first,value.second,value.third)
+                }
+                return@setMethodCallHandler
+            }
+            if(closed || busy || cleanup.isLocked()) { result.error("image_busy","An image action is in progress",null);return@setMethodCallHandler }
             when(call.method) {
                 "acknowledge" -> {preferences.edit().remove("ready").apply();result.success(null)}
                 "recover" -> {
@@ -56,6 +86,7 @@ internal class BackgroundFilesChannel(private val activity: Activity, messenger:
     private fun launch(camera: Boolean,result: MethodChannel.Result) {
         try {
             pending=result;busy=true
+            check(preferences.edit().putBoolean("launch",true).commit()) {"Could not retain picker state"}
             val intent=if(camera) {
                 val directory=File(activity.cacheDir,"background-import").apply {mkdirs()}
                 val target=File.createTempFile("capture-",".jpg",directory)
@@ -79,6 +110,7 @@ internal class BackgroundFilesChannel(private val activity: Activity, messenger:
     }
     fun activityResult(requestCode:Int,resultCode:Int,data:Intent?):Boolean {
         if(requestCode!=PHOTO && requestCode!=CAMERA) return false
+        if(cleanup.isLocked()) { deferredResult=Triple(requestCode,resultCode,data);return true }
         if(resultCode!=Activity.RESULT_OK) {
             cleanupCapture();busy=false;pending?.success(mapOf("cancelled" to true));pending=null;return true
         }
@@ -112,7 +144,7 @@ internal class BackgroundFilesChannel(private val activity: Activity, messenger:
                 val ready=BackgroundImageImporter.normalize(activity,sourceCopy)
                 // Persist synchronously on the worker before exposing completion.
                 // Only Dart's explicit acknowledge removes this recovery record.
-                check(preferences.edit().putString("ready",JSONObject(ready).toString()).remove("source").commit()) {
+                check(preferences.edit().putString("ready",JSONObject(ready).toString()).remove("source").remove("launch").commit()) {
                     "Could not retain completed image metadata"
                 }
                 main.post {
@@ -128,13 +160,13 @@ internal class BackgroundFilesChannel(private val activity: Activity, messenger:
         }
     }
     private fun finishError(code:String) {
-        busy=false;preferences.edit().remove("source").apply()
+        busy=false;preferences.edit().remove("source").remove("launch").apply()
         if(!closed) pending?.error(code,"Image import could not complete",null)
         pending=null
     }
     private fun cleanupCapture() {preferences.getString("capture",null)?.let {path ->
         val file=File(path);if(file.parentFile?.canonicalPath==File(activity.cacheDir,"background-import").canonicalPath) file.delete()
-    };preferences.edit().remove("capture").apply()}
+    };preferences.edit().remove("capture").remove("launch").apply()}
     fun close() {closed=true;pending?.error("activity_closed","Image activity was recreated; recover selection",null);pending=null;worker.shutdown();channel.setMethodCallHandler(null)}
 }
 

@@ -329,5 +329,6 @@
   "templateDescription18": "Degraus de sino sobem pela escala.",
   "templateDescription19": "Quatro acordes de sintetizador quente com baixo e bateria.",
   "recoveryExport": "Exportar dados de recuperação",
-  "recoveryExportFailed": "Não foi possível exportar os dados de recuperação. Os arquivos originais foram preservados."
+  "recoveryExportFailed": "Não foi possível exportar os dados de recuperação. Os arquivos originais foram preservados.",
+  "erasureLimitRejected": "A ação de apagar não foi aplicada porque excederia o limite do desenho. Desfaça alguns traços ou salve este desenho e comece outro."
 }

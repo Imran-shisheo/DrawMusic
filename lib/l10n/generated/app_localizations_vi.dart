@@ -1107,4 +1107,8 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get recoveryExportFailed =>
       'Không thể xuất dữ liệu khôi phục. Các tệp gốc vẫn được giữ.';
+
+  @override
+  String get erasureLimitRejected =>
+      'Chưa áp dụng thao tác xóa vì sẽ vượt giới hạn bản vẽ. Hoàn tác một số nét hoặc lưu bản vẽ này và bắt đầu bản vẽ mới.';
 }

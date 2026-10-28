@@ -518,5 +518,6 @@
   "templateDescription18": "Bell steps rise through the scale.",
   "templateDescription19": "Four warm synthesizer chords with bass and drum accompaniment.",
   "recoveryExport": "Export recovery data",
-  "recoveryExportFailed": "Could not export recovery data. The original files are preserved."
+  "recoveryExportFailed": "Could not export recovery data. The original files are preserved.",
+  "erasureLimitRejected": "Erasure was not applied because it would exceed the drawing limit. Undo some ink, or save this drawing and start a new one."
 }

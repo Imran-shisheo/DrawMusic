@@ -20,7 +20,7 @@ void main() {
   testWidgets('iOS native clock, boundaries, pause and real H264/AAC files', (
     tester,
   ) async {
-    app.main();
+    await app.main();
     await tester.pumpAndSettle();
     final document = ProjectDocument(
       id: 'ios-native-qa',

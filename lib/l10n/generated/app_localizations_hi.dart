@@ -1117,4 +1117,8 @@ class AppLocalizationsHi extends AppLocalizations {
   @override
   String get recoveryExportFailed =>
       'पुनर्प्राप्ति डेटा निर्यात नहीं हो सका। मूल फ़ाइलें सुरक्षित हैं।';
+
+  @override
+  String get erasureLimitRejected =>
+      'मिटाना लागू नहीं किया गया क्योंकि इससे चित्र की सीमा पार हो जाती। कुछ रेखाएँ पूर्ववत करें या यह चित्र सहेजकर नया चित्र शुरू करें।';
 }

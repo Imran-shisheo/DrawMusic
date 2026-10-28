@@ -21,6 +21,6 @@ import UIKit
     audio = DrawMusicAudio(messenger: messenger)
     video = DrawMusicVideo(messenger: messenger)
     files = DrawMusicFiles(messenger: messenger)
-    backgrounds = DrawMusicBackgrounds(messenger: messenger)
+    backgrounds = DrawMusicBackgrounds(messenger: messenger, canCleanup: { [weak self] in self?.video?.hasActiveJobs == false })
   }
 }

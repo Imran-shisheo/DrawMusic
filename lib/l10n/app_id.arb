@@ -329,5 +329,6 @@
   "templateDescription18": "Langkah lonceng naik melalui tangga nada.",
   "templateDescription19": "Empat akor synth hangat dengan bas dan drum.",
   "recoveryExport": "Ekspor data pemulihan",
-  "recoveryExportFailed": "Tidak dapat mengekspor data pemulihan. Berkas asli tetap disimpan."
+  "recoveryExportFailed": "Tidak dapat mengekspor data pemulihan. Berkas asli tetap disimpan.",
+  "erasureLimitRejected": "Penghapusan tidak diterapkan karena akan melampaui batas gambar. Urungkan beberapa goresan, atau simpan gambar ini dan mulai gambar baru."
 }
