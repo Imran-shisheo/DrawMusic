@@ -1,5 +1,13 @@
 # Android device acceptance — current development checkpoints
 
+## Latest Library/Home correction
+
+Library product `c965431` / head `15eb9a8` passed fresh full hosted Android/native/media gate40655638868 and portable Swift tests. [Library APK12801693961](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40655638868/artifacts/12801693961) predates Home correction `9f152e6`. Home head `6f80572` passes the full local gate; fresh hosted run40662060004 PASSED, including20native cases, full creation/media/recovery and15portable Swift tests. [Accepted Home APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40662060004/artifacts/12803953970) / [runtime reports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40662060004/artifacts/12805982855). Mergeeca789f and head6f80572 share tree0927ed77433354918dad9c0b096f59c3386f0678. Do not apply an older pass to this new source.
+
+[Original before/after motion evidence](ui/library-motion-2026-10-28/README.md) passed both bounded capture runs and independent complete-file readers. Sparse actual-frame contacts show the original blank Library body and retained after content; they do not establish smooth physical presentation.
+
+Parent-coordinated Nothing A059P/Android16/90Hz debug QA found scroll UI/layout cost and source churn. [Home correction and diagnostics](HOME-SCROLL-PERFORMANCE.md) eliminate retained-template regeneration and unchanged preview paints in meaningful widget regressions. Paired physical profile acceptance remains pending, including the separate QA installation/signing approval; this cloud executor does not operate the phone or Mac. Preserve the owner's existing installed app and data. All previous physical/iOS acceptance requirements below remain independent.
+
 Record device/Android version, APK source head, output route (speaker/wired/Bluetooth), observed result and any logs. These checks are pending unless a result is recorded in DEVELOPMENT-STATUS.md. The owner's successful playback report applies to 1.0.1+2.
 
 | PRD checks | Steps and expected result |

@@ -1,6 +1,18 @@
 # Doodimo delivery checkpoint — 28 October 2026
 
-Version **2.1.0+24**, package `com.imranshisheo.scribblesong`. [Draft PR23](https://github.com/Imran-shisheo/DrawMusic/pull/23) is stacked on [draft PR22](https://github.com/Imran-shisheo/DrawMusic/pull/22). Both remain unmerged. All creative features are free and work offline; no accounts, advertising, billing or server services were added.
+Version **2.1.0+24**, package `com.imranshisheo.scribblesong`. [Draft PR24](https://github.com/Imran-shisheo/DrawMusic/pull/24) is the active unmerged follow-up. PR22 and PR23 were merged externally, with PR23 targeting its stacked review-fixes base rather than main. This task did not execute or undo those merges. All creative features are free and work offline; no accounts, advertising, billing or server services were added.
+
+## Latest correction checkpoint
+
+Home product `9f152e6d05800dd31c3b62f2145f8e39a0a1e1d2` / head `6f80572a5432469ecbbb37059dc2a25bb2cc11e0` adds stable retained template documents/delegate and artwork paint isolation to the verified Library continuity correction. Full local gate:383 Flutter tests/three explicit skips, analyzer/formatter,76 real-font states/eight strict references, JVM/lint/debug APK/v2 and12 interrupted writers recovered. Fresh hosted40662060004 PASSED at09:42:24UTC, with20actual native cases, full creation/media/recovery, complete independent output inspection and15portable Swift tests; local APK SHA256 `81bdb2a29dd713908ff1d7ce78d8f0ee1d4f3796f55fa460fdfdab131f9dffd4` is not a ZIP digest.
+
+[Accepted Home-fix APK12803953970](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40662060004/artifacts/12803953970) and [actual runtime evidence12805982855](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40662060004/artifacts/12805982855) are built/tested from merge `eca789f92c38fde6d3a3dce735d4cb60c4aeab79`, sharing tree `0927ed77433354918dad9c0b096f59c3386f0678` with head6f80572. APK artifact ZIP SHA256 `a029058dfb78384e72cff6d6217dab11a195a6614999558725e094c1c6d78ebf`; runtime ZIP `5f57b92931437a759930376237d30fd61a7554133b1485e800569ef9ce3747f9`. Retained through4November. The native proof anchor now references only that completed successful run/head; exclusions/workflow hash and required actual-step checks are unchanged. Subsequent unchanged-source reuse must be labeled reuse, not fresh execution.
+
+Previous Library productc965431/head15eb9a8 passed fresh hosted40655638868. Merge12eaabbe3f114699236eb5a68aa6d977c6d1b661 and head share tree89252b2da9e782ca38bf7882fcceb5d7adb824d2. [Library APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40655638868/artifacts/12801693961) / [runtime reports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40655638868/artifacts/12802927991). This older pass does not accept Home changes. [Original before/after clips and inspected frames](ui/library-motion-2026-10-28/README.md) retain exact source/harness mapping and performance limitations.
+
+[Approved UI UX Pro Max setup](UI-UX-TOOLS.md) and [Mac Stitch handoff convention](../design/handoff/README.md) are committed6f80572. The full pinned skill was explicitly read and offline checks passed. No installer, secret or direct cloud Stitch connection was added. No selected design export/generation occurred.
+
+Physical Nothing debug evidence supports a UI/layout churn diagnosis; paired profile/display measurements remain pending. Physical audio, receiving apps, Apple frameworks and human translation acceptance remain separate. Earlier checkpoint sections below preserve their original source-specific scope.
 
 ## Implemented and functionally checked
 

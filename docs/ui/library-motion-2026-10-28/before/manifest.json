@@ -1,0 +1,28 @@
+{
+  "captureRun": 40652396927,
+  "artifactId": 12800174468,
+  "readerRun": 40655572642,
+  "product": "7dada74e981a7352f71e5c37e13928556e3ab38a",
+  "harness": "505776bb794583a3b4d9f250735b5a714c295e01",
+  "scope": "Original before-fix HomePNG and diagnostic nine-frame contacts from original normal/reducedMP4s; not smoothness acceptance",
+  "images": [
+    {
+      "name": "01-root-navigation-contact.png",
+      "sha": "268f7bab3e2b63a53cff33827db1b54706e96f444b398788435e1689e8caff1b",
+      "bytes": 409877,
+      "kind": "UI_MOTION_CONTACT_PNG"
+    },
+    {
+      "name": "06-reduced-motion-contact.png",
+      "sha": "a747dab1f313d6cbb31389baefaeae1c3819c41a3ba3b46bf294aa4f333f986a",
+      "bytes": 476191,
+      "kind": "UI_MOTION_CONTACT_PNG"
+    },
+    {
+      "name": "01-home.png",
+      "sha": "e85072e14032c715f921b63ae7f86e193fb41629bbbbfadcd8fa7a70a9693cfe",
+      "bytes": 311995,
+      "kind": "UI_CAPTURE_PNG"
+    }
+  ]
+}
