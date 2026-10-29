@@ -54,6 +54,9 @@ def main():
     fault_trace = request.get('emulatorFaultTrace', False)
     if type(fault_trace) is not bool or (fault_trace and (not graphite or os.environ.get('DRAWMUSIC_EMULATOR_TRACE_DIAGNOSTIC') != '1')):
         raise ValueError('Fault trace requires explicit diagnostic authorization and pinned Graphite source')
+    fault_revision = request.get('faultTraceRevision')
+    if fault_revision not in (None, 'owned-pc-map') or (fault_revision is not None and not fault_trace):
+        raise ValueError('Only the explicitly requested owned-PC diagnostic revision is supported')
     output = os.environ.get('GITHUB_OUTPUT')
     if output:
         with open(output, 'a') as stream:
@@ -79,7 +82,7 @@ def main():
         'label': label, 'productSourceSha': source, 'productTreeSha': tree,
         'captureHarnessSourceSha': harness, 'instrumentationFiles': FILES,
         'diagnosticOnly': 'emulator-fault-stack' if fault_trace else diagnostic,
-        'emulatorFaultTrace': fault_trace, 'acceptanceEligible': not fault_trace,
+        'emulatorFaultTrace': fault_trace, 'faultTraceRevision': fault_revision, 'acceptanceEligible': not fault_trace,
         'responsivePreset': responsive,
         'homeProfileOnly': home_only,
         'transitionCaptureOnly': transitions, 'transitionComparison': comparison,
