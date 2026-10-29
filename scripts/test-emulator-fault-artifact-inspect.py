@@ -21,6 +21,14 @@ class FaultReaderTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 module.validate_request(REQUEST | change)
 
+    def test_normal_transport_requires_its_own_explicit_mode_and_artifact_family(self):
+        normal = REQUEST | {'mode': 'ui-transport', 'artifactName': 'drawmusic-ui-visuals-' + 'f'*40}
+        module.validate_request(normal)
+        with self.assertRaises(ValueError):
+            module.validate_request(normal | {'artifactName': REQUEST['artifactName']})
+        with self.assertRaises(ValueError):
+            module.validate_request(normal | {'mode': 'emulator-fault'})
+
     def test_actual_fixed_metadata_does_not_dump_unknown_fields_or_console(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -1,6 +1,6 @@
 {
-  "mode": "emulator-fault",
-  "runId": 40898942507,
-  "artifactId": 12910095529,
-  "artifactName": "drawmusic-emulator-fault-trace-1a4d84f8bccdf318cb8be5b9671802c440f5106c"
+  "mode": "ui-transport",
+  "runId": 40900612376,
+  "artifactId": 12909678283,
+  "artifactName": "drawmusic-ui-visuals-fdb4668c501224e904e9f2bda6e59b03739b598c"
 }

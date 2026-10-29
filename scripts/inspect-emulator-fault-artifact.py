@@ -25,11 +25,12 @@ TOKENS = ('dynamic loader', 'rendezvous', 'link_map', 'failed to read', 'unable 
 
 
 def validate_request(request):
-    if set(request) != {'mode', 'runId', 'artifactId', 'artifactName'} or request.get('mode') != 'emulator-fault':
+    if set(request) != {'mode', 'runId', 'artifactId', 'artifactName'} or request.get('mode') not in ('emulator-fault', 'ui-transport'):
         raise ValueError('Explicit fixed-schema emulator-fault inspection required')
     if any(type(request.get(key)) is not int or request[key] <= 0 for key in ('runId', 'artifactId')):
         raise ValueError('Positive exact run and artifact IDs required')
-    if not isinstance(request.get('artifactName'), str) or not re.fullmatch(r'drawmusic-emulator-fault-trace-[0-9a-f]{40}', request['artifactName']):
+    prefix = 'drawmusic-emulator-fault-trace-' if request['mode'] == 'emulator-fault' else 'drawmusic-ui-visuals-'
+    if not isinstance(request.get('artifactName'), str) or not re.fullmatch(re.escape(prefix) + r'[0-9a-f]{40}', request['artifactName']):
         raise ValueError('Only explicitly unaccepted fault-trace artifacts allowed')
 
 
@@ -90,6 +91,15 @@ def inspect(root, request, emit=print):
     result = {'diagnosticOnly': True, 'acceptanceEligible': False, 'request': request, 'files': [], 'missing': [],
               'scope': 'Stored fixed-path owned debugger metadata only. Console bytes are hashed/classified, never printed. Numeric LLDB exit status is not a natural SDK signal.'}
     found = 0
+    if request['mode'] == 'ui-transport':
+        captured = []
+        observed = reader.inspect_observer(root / 'ui-capture', Path('emulator-process'), captured.append)
+        found += observed['files']
+        if captured:
+            original = json.loads(captured[0].split('EMULATOR_PROCESS_DIAGNOSTIC ', 1)[1])
+            for log in original.get('logs', []):
+                log.pop('boundedSignalAndTailLines', None)
+            result['normalSdkObserver'] = original
     for name, fields in FIELDS.items():
         relative = PREFIX / name
         if not (root / relative).exists():
