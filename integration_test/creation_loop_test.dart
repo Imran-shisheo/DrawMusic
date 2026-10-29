@@ -78,7 +78,12 @@ void main() {
       await tester.pumpAndSettle();
       if (find.text('Start creating').evaluate().isNotEmpty) {
         await tester.tap(find.text('Start creating'));
-        await until(() async => find.text('Paper hills').evaluate().isNotEmpty);
+        await until(
+          () async => find
+              .byKey(const PageStorageKey('home-scroll'))
+              .evaluate()
+              .isNotEmpty,
+        );
         await tester.pumpAndSettle();
       }
       await tester.tap(find.text('Settings'));
@@ -93,7 +98,18 @@ void main() {
       );
       await tester.tap(find.text('Home'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Paper hills'));
+      await tester.scrollUntilVisible(
+        find.text('Paper hills'),
+        300,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const PageStorageKey('home-scroll')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await reveal(find.text('Paper hills'));
+      await tester.tap(find.text('Paper hills').hitTestable());
       await tester.pumpAndSettle();
       if (find.text('Skip tips').evaluate().isNotEmpty) {
         await tester.tap(find.text('Skip tips'));
