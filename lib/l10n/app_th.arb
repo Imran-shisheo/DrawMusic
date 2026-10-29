@@ -371,5 +371,6 @@
   "backgroundPanelTitle": "กระดาษและภาพถ่าย",
   "exportFpsChoice": "{fps} FPS",
   "editorToolsShort": "เครื่องมือ",
-  "openingDrawing": "กำลังเปิดภาพวาด…"
+  "openingDrawing": "กำลังเปิดภาพวาด…",
+  "navigation": "การนำทาง"
 }

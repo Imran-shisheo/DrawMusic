@@ -1,3 +1,5 @@
+import 'support/root_navigation.dart';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -24,10 +26,14 @@ import 'package:scribblesong/features/settings/domain/preferences.dart';
 import 'support/memory_preferences.dart';
 import 'widget_test.dart' show MemoryRepository, TestAudio;
 
-Future<void> openApp(WidgetTester tester, {double scale = 1}) async {
+Future<void> openApp(
+  WidgetTester tester, {
+  double scale = 1,
+  Size size = const Size(411, 850),
+}) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures();
-  tester.view.physicalSize = const Size(411, 850);
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   tester.platformDispatcher.textScaleFactorTestValue = scale;
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
@@ -73,7 +79,7 @@ Future<void> openApp(WidgetTester tester, {double scale = 1}) async {
   await tester.pumpWidget(app);
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 800));
-  await tester.tap(find.byKey(const ValueKey('nav-library')));
+  await tapRootNavigation(tester, 'nav-library');
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 300));
 }
@@ -129,10 +135,10 @@ void main() {
         await tester.pump(const Duration(milliseconds: 300));
         expect(scroll(tester, 'drafts-scroll').position.pixels, draftOffset);
         expect(scroll(tester, 'exports-scroll').position.pixels, exportOffset);
-        await tester.tap(find.byKey(const ValueKey('nav-settings')));
+        await tapRootNavigation(tester, 'nav-settings');
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 50));
-        await tester.tap(find.byKey(const ValueKey('nav-library')));
+        await tapRootNavigation(tester, 'nav-library');
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
         expect(tester.state(find.byType(LibraryBranchFrame)), same(frame));
@@ -142,6 +148,91 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    '320x640 200 percent navigation frees gallery and preserves reachable draft actions and both scrolls',
+    (tester) async {
+      await tester.runAsync(() async {
+        final loader = FontLoader('NunitoSans');
+        for (final file in Directory(
+          'assets/fonts/NunitoSans',
+        ).listSync().whereType<File>()) {
+          if (file.path.endsWith('.ttf')) {
+            loader.addFont(file.readAsBytes().then(ByteData.sublistView));
+          }
+        }
+        await loader.load();
+      });
+      await openApp(tester, scale: 2, size: const Size(320, 640));
+      final strings = AppLocalizations.of(
+        tester.element(find.byType(LibraryTabs)),
+      )!;
+      final summary = find.byKey(const ValueKey('nav-summary'));
+      expect(
+        tester.getSize(find.byKey(const ValueKey('root-new-drawing'))),
+        const Size(48, 48),
+      );
+      expect(tester.getRect(summary).height, lessThanOrEqualTo(64));
+      final more = find.byTooltip(strings.manageDrawing('Drawing 20'));
+      await tester.scrollUntilVisible(
+        more,
+        250,
+        maxScrolls: 80,
+        scrollable: find.descendant(
+          of: find.byKey(const PageStorageKey('drafts-scroll')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(more.hitTestable(), findsOneWidget);
+      final draftOffset = scroll(tester, 'drafts-scroll').position.pixels;
+      await tester.tap(more);
+      await tester.pumpAndSettle();
+      for (final text in [
+        strings.rename,
+        strings.duplicate,
+        strings.exportShare,
+        strings.delete,
+      ]) {
+        await tester.ensureVisible(find.text(text));
+        await tester.pump();
+        expect(find.text(text).hitTestable(), findsOneWidget);
+      }
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await tester.tap(tab(1));
+      await tester.pumpAndSettle();
+      await tester.drag(
+        find.byKey(const PageStorageKey('exports-scroll')),
+        const Offset(0, -600),
+      );
+      await tester.pumpAndSettle();
+      final exportOffset = scroll(tester, 'exports-scroll').position.pixels;
+      expect(exportOffset, greaterThan(0));
+      // Two taps in the same frame must produce one panel and Back returns to
+      // the same retained export branch with its independent scroll untouched.
+      final point = tester.getCenter(summary);
+      await tester.tapAt(point);
+      await tester.tapAt(point);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('nav-menu')), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('nav-menu')), findsNothing);
+      expect(scroll(tester, 'exports-scroll').position.pixels, exportOffset);
+      await tapRootNavigation(tester, 'nav-settings');
+      await tester.pumpAndSettle();
+      await tapRootNavigation(tester, 'nav-library');
+      await tester.pumpAndSettle();
+      expect(scroll(tester, 'exports-scroll').position.pixels, exportOffset);
+      await tester.tap(tab(0));
+      await tester.pumpAndSettle();
+      expect(scroll(tester, 'drafts-scroll').position.pixels, draftOffset);
+      expect(more.hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   for (final width in [320.0, 640.0]) {
     testWidgets(

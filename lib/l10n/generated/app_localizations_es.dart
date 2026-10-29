@@ -1280,4 +1280,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get openingDrawing => 'Abriendo dibujo…';
+
+  @override
+  String get navigation => 'Navegación';
 }

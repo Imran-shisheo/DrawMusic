@@ -1246,4 +1246,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get openingDrawing => 'Đang mở bản vẽ…';
+
+  @override
+  String get navigation => 'Điều hướng';
 }

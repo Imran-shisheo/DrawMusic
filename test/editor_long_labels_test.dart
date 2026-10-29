@@ -10,6 +10,10 @@ import 'package:scribblesong/features/editor/presentation/editor.dart';
 import 'package:scribblesong/l10n/strings.dart';
 
 import 'creative_editor_test.dart' show current, mountEditor, waitFor;
+import 'widget_test.dart' show MemoryRepository;
+
+import 'package:scribblesong/features/export/presentation/export_sheet.dart';
+
 import 'support/editor_controls.dart';
 
 bool _fontsLoaded = false;
@@ -70,6 +74,169 @@ void _expectWholeWordsAndVisible(WidgetTester tester, Finder finder) {
   );
 }
 
+Future<void> _tapVisible(
+  WidgetTester tester,
+  Finder finder, {
+  bool playback = false,
+}) async {
+  await tester.ensureVisible(finder);
+  if (playback) {
+    await tester.pump(const Duration(milliseconds: 300));
+  } else {
+    await tester.pumpAndSettle();
+  }
+  expect(finder.hitTestable(), findsOneWidget);
+  await tester.tap(finder);
+  if (playback) {
+    await tester.pump();
+  } else {
+    await tester.pumpAndSettle();
+  }
+}
+
+Future<void> _exerciseFrenchCompact(
+  WidgetTester tester,
+  MemoryRepository repository,
+) async {
+  final strings = tester.element(find.byType(EditorWorkspace)).strings;
+  final canvas = find.byKey(const ValueKey('drawing-canvas'));
+  final state = tester.state<DrawingCanvasState>(find.byType(DrawingCanvas));
+  final rect = tester.getRect(canvas);
+  void stable() {
+    expect(
+      tester.state<DrawingCanvasState>(find.byType(DrawingCanvas)),
+      same(state),
+    );
+    expect(tester.getRect(canvas), rect);
+    expect(tester.takeException(), isNull);
+  }
+
+  for (final voice in Instrument.values) {
+    await chooseEditorVoice(tester, voice);
+    expect(
+      tester.widget<DrawingCanvas>(find.byType(DrawingCanvas)).instrument,
+      voice,
+    );
+    stable();
+  }
+  await _tapVisible(tester, find.text(strings.erase));
+  await _tapVisible(tester, find.text(strings.draw));
+  final oldCount = current(tester).strokes.length;
+  final gesture = await tester.startGesture(rect.center);
+  await gesture.moveTo(rect.center + const Offset(12, 9));
+  await gesture.up();
+  await tester.pumpAndSettle();
+  expect(current(tester).strokes.length, oldCount + 1);
+  await _tapVisible(tester, find.byTooltip(strings.undo));
+  expect(current(tester).strokes.length, oldCount);
+  await _tapVisible(tester, find.byTooltip(strings.redo));
+  expect(current(tester).strokes.length, oldCount + 1);
+  final tempo = current(tester).tempo;
+  await _tapVisible(tester, find.byTooltip(strings.faster));
+  expect(current(tester).tempo, tempo + 1);
+  await _tapVisible(tester, find.byTooltip(strings.slower));
+  expect(current(tester).tempo, tempo);
+  await _tapVisible(tester, find.byTooltip(strings.replay), playback: true);
+  await waitFor(
+    tester,
+    () => find.byTooltip(strings.pause).evaluate().isNotEmpty,
+  );
+  await _tapVisible(tester, find.byTooltip(strings.pause), playback: true);
+  await tester.pumpAndSettle();
+  stable();
+  await openEditorMusic(tester);
+  for (final selector in [
+    find.byType(DropdownButton<RootKey>),
+    find.byType(DropdownButton<MusicalScale>),
+  ]) {
+    await _tapVisible(tester, selector);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+  }
+  await _tapVisible(tester, find.text(strings.expressiveMode));
+  await _tapVisible(tester, find.text(strings.apply));
+  expect(current(tester).expressionMode, ExpressionMode.expressive);
+  final snapshot = current(tester).encode();
+  for (final tool in ['mix', 'paper', 'score']) {
+    await openEditorTool(tester, tool);
+    if (tool == 'mix') {
+      await _tapVisible(tester, find.byType(SwitchListTile).first);
+    }
+    if (tool == 'score') {
+      await waitFor(
+        tester,
+        () => find.text(strings.yourLoopInNotes).evaluate().isNotEmpty,
+      );
+    }
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(current(tester).encode(), snapshot);
+    stable();
+  }
+  await openEditorTool(tester, 'style');
+  await _tapVisible(tester, find.text(strings.pixel));
+  expect(current(tester).style, DrawingStyle.pixel);
+  await openEditorTool(tester, 'clear');
+  await _tapVisible(tester, find.text(strings.keepDrawing));
+  expect(current(tester).strokes.length, oldCount + 1);
+  await openEditorTool(tester, 'clear');
+  await _tapVisible(tester, find.text(strings.clear));
+  expect(current(tester).strokes, isEmpty);
+  await _tapVisible(tester, find.byTooltip(strings.undo));
+  expect(current(tester).strokes.length, oldCount + 1);
+  stable();
+  final title = current(tester).title;
+  await _tapVisible(tester, find.text(title));
+  expect(
+    tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+    isTrue,
+  );
+  final focusedField = tester.state<EditableTextState>(
+    find.byType(EditableText),
+  );
+  tester.view.viewInsets = const FakeViewPadding(bottom: 260);
+  addTearDown(tester.view.resetViewInsets);
+  await tester.pumpAndSettle();
+  expect(
+    tester.state<EditableTextState>(find.byType(EditableText)),
+    same(focusedField),
+  );
+  // The modal owns IME avoidance; live drawing coordinates stay fixed behind it.
+  expect(tester.getRect(canvas), rect);
+  expect(
+    tester.state<DrawingCanvasState>(find.byType(DrawingCanvas)),
+    same(state),
+  );
+  expect(
+    tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+    isTrue,
+  );
+  await tester.enterText(find.byType(TextField), 'Brouillon conservé');
+  await tester.ensureVisible(find.text(strings.apply));
+  await tester.pumpAndSettle();
+  expect(find.text(strings.apply).hitTestable(), findsOneWidget);
+  await tester.binding.handlePopRoute();
+  await tester.pumpAndSettle();
+  tester.view.resetViewInsets();
+  await tester.pumpAndSettle();
+  expect(current(tester).title, title);
+  await _tapVisible(tester, find.byTooltip(strings.saveDrawing));
+  final saved = (await repository.open(current(tester).id)).document;
+  expect(saved.encode(), current(tester).encode());
+  await _tapVisible(tester, find.byTooltip(strings.exportLoop));
+  expect(find.byType(ExportSheet), findsOneWidget);
+  for (final format in ['png', 'wav', 'mp4', 'midi']) {
+    await _tapVisible(tester, find.byKey(ValueKey('export-intent-$format')));
+    expect(
+      find.byKey(const ValueKey('export-start')).hitTestable(),
+      findsOneWidget,
+    );
+  }
+  await tester.binding.handlePopRoute();
+  await tester.pumpAndSettle();
+  stable();
+}
+
 void main() {
   for (final scale in [1.0, 2.0]) {
     testWidgets(
@@ -128,8 +295,10 @@ void main() {
         await tester.runAsync(_loadProductFonts);
         tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
         addTearDown(tester.view.resetPadding);
+        final repository = MemoryRepository();
         await mountEditor(
           tester,
+          repository: repository,
           locale: language,
           size: const Size(320, 640),
           scale: 2,
@@ -176,6 +345,7 @@ void main() {
           Instrument.saxophone,
         );
         expect(current(tester).encode(), original);
+        if (language == 'fr') await _exerciseFrenchCompact(tester, repository);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       },

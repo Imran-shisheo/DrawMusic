@@ -1,7 +1,9 @@
 import 'support/editor_controls.dart';
 
 import 'package:flutter/material.dart';
-import 'package:scribblesong/design_system/creative_dock.dart';
+
+import 'support/root_navigation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/app/providers.dart';
@@ -190,11 +192,9 @@ void main() {
             );
             await tester.pumpAndSettle();
             Future<void> tab(String name) async {
-              await tester.tap(
-                find.descendant(
-                  of: find.byType(CreativeDock),
-                  matching: find.text(name),
-                ),
+              await tapRootNavigation(
+                tester,
+                name == 'Library' ? 'nav-library' : 'nav-settings',
               );
               await tester.pumpAndSettle();
               expect(tester.takeException(), isNull);

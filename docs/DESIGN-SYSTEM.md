@@ -23,7 +23,7 @@ Theme roles govern control/text contrast and system bars; document paper never i
 
 ## Typography and layout
 
-Display headings use bundled Space Grotesk; UI text uses bundled Nunito Sans. Original licensed Noto Devanagari, Thai, Arabic and CJK fallbacks support non-Latin text offline. Arabic fallback/forced RTL tests do not mean an Arabic locale is shipped. All372localized resources cover English, French, Spanish, Italian, Korean, Japanese, Vietnamese, Hindi, Portuguese, Thai, Filipino and Indonesian. Human translation review remains pending. Sources, transformations, glyph checks, hashes and SIL OFL licenses are in FONT-PROVENANCE.md and FONT-MANIFEST.json; licenses ship in assets and Flutter's registry.
+Display headings use bundled Space Grotesk; UI text uses bundled Nunito Sans. Original licensed Noto Devanagari, Thai, Arabic and CJK fallbacks support non-Latin text offline. Arabic fallback/forced RTL tests do not mean an Arabic locale is shipped. All373localized resources cover English, French, Spanish, Italian, Korean, Japanese, Vietnamese, Hindi, Portuguese, Thai, Filipino and Indonesian. Human translation review remains pending. Sources, transformations, glyph checks, hashes and SIL OFL licenses are in FONT-PROVENANCE.md and FONT-MANIFEST.json; licenses ship in assets and Flutter's registry.
 
 | Role | Size / line height | Weight |
 |---|---|---|
@@ -49,3 +49,5 @@ Shared spacing is 4, 8, 12, 16, 20, 24 and 32 dp. Control/card/panel radii are 1
 All custom motion follows MOTION-SYSTEM.md and system/persisted reduced-motion preferences. Native branding provenance is in ASSET-PROVENANCE.md. Eight intended graphite pixel references were rendered and inspected before regeneration; the complete78-state matrix passes. The complete local strict product gate passes. Fixture pixels establish rendered layouts, not physical smoothness or iOS compilation.
 
 Graphite lighting is static bounded native/vector painting. The earlier navy/ribbon cache experiments and their software-renderer measurements remain historical in MOTION-SYSTEM.md; they are not runtime evidence for this source. Missing-photo status uses a fully opaque graphite badge and white silhouette, independently of user paper, with localized semantics and pointer-transparent behavior.
+
+Compact expanded-text root navigation measures all destination labels before reserving fixed summary geometry. Its persistent Create key and labelled current destination open the same full-role branded panel, rather than consuming four rows of the gallery viewport. Normal phone/tablet layouts retain the original graphite composition. The new Navigation resource is bundled in all12locales.

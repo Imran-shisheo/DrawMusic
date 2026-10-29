@@ -11,6 +11,7 @@ void main() {
     Size size = const Size(411, 850),
     bool reduced = false,
     bool compactKeyboard = false,
+    ValueNotifier<double>? keyboardInsets,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -24,14 +25,22 @@ void main() {
         locale: compactKeyboard ? const Locale('ar') : const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            disableAnimations: reduced,
-            textScaler: TextScaler.linear(compactKeyboard ? 2 : 1),
-            viewInsets: EdgeInsets.only(bottom: compactKeyboard ? 220 : 0),
-          ),
-          child: child!,
-        ),
+        builder: (context, child) {
+          Widget viewport(double inset) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              disableAnimations: reduced,
+              textScaler: TextScaler.linear(compactKeyboard ? 2 : 1),
+              viewInsets: EdgeInsets.only(bottom: inset),
+            ),
+            child: child!,
+          );
+          return keyboardInsets == null
+              ? viewport(compactKeyboard ? 220 : 0)
+              : ValueListenableBuilder<double>(
+                  valueListenable: keyboardInsets,
+                  builder: (context, inset, _) => viewport(inset),
+                );
+        },
         home: Builder(
           builder: (context) => Scaffold(
             body: Align(
@@ -134,6 +143,68 @@ void main() {
       expect(probe.currentState, isNull);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'focused edit survives keyboard compact threshold in both directions',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        final probe = GlobalKey<_PanelProbeState>();
+        final keyboard = ValueNotifier<double>(0);
+        addTearDown(keyboard.dispose);
+        final focus = await mount(
+          tester,
+          probe: probe,
+          size: const Size(320, 640),
+          compactKeyboard: true,
+          reduced: true,
+          keyboardInsets: keyboard,
+        );
+        await tester.tap(find.text('Open controls'));
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextField), 'Local revision');
+        final editable = tester.state<EditableTextState>(
+          find.byType(EditableText),
+        );
+        final panel = probe.currentState!;
+        expect(editable.widget.focusNode.hasFocus, isTrue);
+        keyboard.value = 260;
+        await tester.pumpAndSettle();
+        expect(
+          identical(
+            tester.state<EditableTextState>(find.byType(EditableText)),
+            editable,
+          ),
+          isTrue,
+        );
+        expect(editable.widget.focusNode.hasFocus, isTrue);
+        expect(panel.text.text, 'Local revision');
+        final action = find.text('Finish');
+        expect(action.hitTestable(), findsOneWidget);
+        expect(tester.getBottomRight(action).dy, lessThanOrEqualTo(380));
+        keyboard.value = 0;
+        await tester.pumpAndSettle();
+        expect(
+          identical(
+            tester.state<EditableTextState>(find.byType(EditableText)),
+            editable,
+          ),
+          isTrue,
+        );
+        expect(editable.widget.focusNode.hasFocus, isTrue);
+        expect(identical(probe.currentState, panel), isTrue);
+        expect(panel.text.text, 'Local revision');
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(focus.hasFocus, isTrue);
+        expect(panel.disposals, 1);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      } finally {
+        semantics.dispose();
+      }
     },
   );
 

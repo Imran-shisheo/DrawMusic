@@ -2349,6 +2349,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Opening drawing…'**
   String get openingDrawing;
+
+  /// Title and accessible tooltip for the compact navigation panel that exposes the retained Home, Library, Settings and New drawing destinations.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation'**
+  String get navigation;
 }
 
 class _AppLocalizationsDelegate

@@ -1205,4 +1205,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get openingDrawing => '描画を開いています…';
+
+  @override
+  String get navigation => 'ナビゲーション';
 }

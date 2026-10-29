@@ -371,5 +371,6 @@
   "backgroundPanelTitle": "Papel y foto",
   "exportFpsChoice": "{fps} FPS",
   "editorToolsShort": "Herramientas",
-  "openingDrawing": "Abriendo dibujo…"
+  "openingDrawing": "Abriendo dibujo…",
+  "navigation": "Navegación"
 }

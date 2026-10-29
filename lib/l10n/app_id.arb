@@ -371,5 +371,6 @@
   "backgroundPanelTitle": "Kertas dan foto",
   "exportFpsChoice": "{fps} FPS",
   "editorToolsShort": "Alat",
-  "openingDrawing": "Membuka gambar…"
+  "openingDrawing": "Membuka gambar…",
+  "navigation": "Navigasi"
 }

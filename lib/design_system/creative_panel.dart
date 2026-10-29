@@ -190,15 +190,20 @@ class CreativePanel extends StatelessWidget {
           icon: const DoodimoIcon(DoodimoGlyph.close),
         );
         final heading = Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(24, 16, 8, 12),
+          padding: compact
+              ? const EdgeInsetsDirectional.only(end: 8)
+              : const EdgeInsetsDirectional.fromSTEB(24, 16, 8, 12),
           child: Row(
             children: [
               Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge,
+                child: Offstage(
+                  offstage: compact,
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                 ),
               ),
@@ -207,6 +212,7 @@ class CreativePanel extends StatelessWidget {
           ),
         );
         final content = Padding(
+          key: const ValueKey('creative-panel-content'),
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -225,42 +231,30 @@ class CreativePanel extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (compact)
-              Padding(
-                padding: const EdgeInsetsDirectional.only(end: 8),
-                child: Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: close,
-                ),
-              )
-            else
-              heading,
+            heading,
             Flexible(
               child: scrollable
                   ? SingleChildScrollView(
-                      child: compact
-                          ? Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    24,
-                                    0,
-                                    24,
-                                    12,
-                                  ),
-                                  child: Text(
-                                    title,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleLarge,
-                                  ),
-                                ),
-                                content,
-                              ],
-                            )
-                          : content,
+                      // Keep the editable subtree in one stable slot when
+                      // keyboard insets cross the compact-height threshold.
+                      // Only the extra in-scroll heading changes visibility.
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Offstage(
+                            offstage: !compact,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                              child: Text(
+                                title,
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                            ),
+                          ),
+                          content,
+                        ],
+                      ),
                     )
                   : Column(
                       mainAxisSize: MainAxisSize.min,

@@ -371,5 +371,6 @@
   "backgroundPanelTitle": "Carta e foto",
   "exportFpsChoice": "{fps} FPS",
   "editorToolsShort": "Strumenti",
-  "openingDrawing": "Apertura del disegno…"
+  "openingDrawing": "Apertura del disegno…",
+  "navigation": "Navigazione"
 }

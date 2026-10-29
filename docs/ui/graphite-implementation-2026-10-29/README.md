@@ -14,6 +14,7 @@ re-renders that source. Capture harness: `test/ui_visual_capture_test.dart`,
 | [Exports](03-exports-dark-phone.png) | Real featured artifact and complete file actions |
 | [Compact French Drafts](12b-drafts-compact-fr-large.png) | Actual320×640/200% retained shell and whole-word selector |
 | [Compact French Exports](12c-exports-compact-fr-large.png) | Same compact shell and real artifact fixture |
+| [Compact navigation menu](12d-navigation-compact-fr-large.png) | Actual full-labelled menu; collapsed bar preserves more gallery viewport |
 | [Editor](06-editor-immersive-dark-phone.png) | Stable 4:5 document with joined transport and tools |
 | [Export](09-export-immersive-dark-phone.png) | Four formats, actual artwork preview and visible transparency setting |
 | [Light Home](10b-home-cool-light-phone.png) | Light stone material variant, same document colors |
@@ -32,3 +33,5 @@ safe-area/keyboard variants use declared simulated insets. These PNGs establish
 rendered layout, not native behavior, continuous motion, physical frame pacing,
 audibility, iOS compilation or user-device acceptance. Original real-time owned
 emulator recordings and source-mapped profile results are separate pending work.
+
+The compact navigation refinement reduces the French summary bar from235dp to74dp at320×640/200%. It exposes the selected destination and a persistent Create key; the real navigation panel retains all labelled destinations and selection cues. Separate interaction tests scroll both retained Library sections, execute file-backed artifact actions and reopen the menu with Back/focus/state checks. The editor retains its72dp minimum paper at this extreme text scale; its scrollable controls are exercised, not all simultaneously visible. Keyboard stills simulate insets and are not native IME acceptance. All eight strict reference PNGs remain byte-identical.

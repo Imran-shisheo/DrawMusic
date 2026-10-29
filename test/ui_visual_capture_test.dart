@@ -1,5 +1,7 @@
 // Explicit visual-evidence harness. Fixtures replace storage/audio platform ports;
 // these PNGs are actual product widgets, not device/runtime acceptance.
+import 'support/root_navigation.dart';
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -431,7 +433,7 @@ void main() {
           await save('12-home-compact-fr-large');
           // The adaptive Library selector shares the actual320dp/200% shell,
           // including its retained dock, rather than a taller isolated fixture.
-          await tapVisible(find.byKey(const ValueKey('nav-library')));
+          await tapRootNavigation(tester, 'nav-library');
           await save('12b-drafts-compact-fr-large');
           await tapVisible(find.text('Exports'));
           await save('12c-exports-compact-fr-large');
@@ -554,7 +556,7 @@ void main() {
           await save('30-settings-error-compact-rtl-dark-large');
           if (_immersive) {
             await mount(root: true, dark: false);
-            await tapVisible(find.byKey(const ValueKey('nav-library')));
+            await tapRootNavigation(tester, 'nav-library');
             await save('02b-drafts-cool-light-phone');
             await tapVisible(find.text('Exports'));
             await save('03b-exports-cool-light-phone');

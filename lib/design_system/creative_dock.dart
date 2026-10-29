@@ -2,7 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/strings.dart';
 import 'brand_colors.dart';
+import 'creative_panel.dart';
 import 'doodimo_icon.dart';
 import 'motion.dart';
 import 'immersive_surface.dart';
@@ -29,6 +31,7 @@ class CreativeDock extends StatelessWidget {
     required this.createLabel,
     this.rail = false,
     this.compactCreateLabel,
+    this.allowSummary = true,
   });
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
@@ -37,6 +40,7 @@ class CreativeDock extends StatelessWidget {
   final String createLabel;
   final bool rail;
   final String? compactCreateLabel;
+  final bool allowSummary;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -132,6 +136,9 @@ class CreativeDock extends StatelessWidget {
           : fitsTwo && !(expandedText && contentWidth < 320)
           ? 2
           : 1;
+      if (columns == 1 && allowSummary) {
+        return _SummaryDock(dock: this, style: style);
+      }
       final fullRows = columns == 1;
       final adaptive = columns != 4;
       final slot = contentWidth / columns;
@@ -234,6 +241,132 @@ class CreativeDock extends StatelessWidget {
         radius: 28,
         padding: const EdgeInsets.all(5),
         child: keys,
+      );
+    },
+  );
+}
+
+/// Only presentation is collapsed; the router continues owning all branches.
+class _SummaryDock extends StatefulWidget {
+  const _SummaryDock({required this.dock, required this.style});
+  final CreativeDock dock;
+  final TextStyle style;
+
+  @override
+  State<_SummaryDock> createState() => _SummaryDockState();
+}
+
+class _SummaryDockState extends State<_SummaryDock> {
+  bool _opening = false;
+
+  Future<void> _open() async {
+    if (_opening) return;
+    _opening = true;
+    try {
+      await showCreativePanel<void>(
+        context: context,
+        builder: (panelContext) => CreativePanel(
+          key: const ValueKey('nav-menu'),
+          title: context.strings.navigation,
+          child: CreativeDock(
+            allowSummary: false,
+            selectedIndex: widget.dock.selectedIndex,
+            labels: widget.dock.labels,
+            createLabel: widget.dock.createLabel,
+            onDestinationSelected: (index) {
+              Navigator.of(panelContext).pop();
+              widget.dock.onDestinationSelected(index);
+            },
+            onCreate: () {
+              Navigator.of(panelContext).pop();
+              widget.dock.onCreate();
+            },
+          ),
+        ),
+      );
+    } finally {
+      _opening = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, bounds) {
+      final colors = Theme.of(context).colorScheme;
+      final label = widget.dock.labels[widget.dock.selectedIndex];
+      var widest = 0.0;
+      for (final destination in widget.dock.labels) {
+        final measure = TextPainter(
+          text: TextSpan(text: destination, style: widget.style),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        widest = math.max(widest, measure.width);
+        measure.dispose();
+      }
+      // Reserve the same geometry for every destination so a branch switch
+      // cannot clamp retained scroll offsets by changing the viewport height.
+      // A second48dp row is preferable to splitting a word or shrinking input.
+      final stacked = widest + 24 + 24 + 56 > bounds.maxWidth - 12;
+      final summary = Semantics(
+        key: const ValueKey('nav-summary'),
+        selected: true,
+        child: Tooltip(
+          message: context.strings.navigation,
+          child: TextButton(
+            style: TextButton.styleFrom(
+              minimumSize: const Size(48, 64),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              foregroundColor: colors.onSurface,
+            ),
+            onPressed: _open,
+            child: Row(
+              children: [
+                Expanded(child: Text(label, style: widget.style)),
+                const SizedBox(width: 4),
+                const DoodimoIcon(DoodimoGlyph.chevronDown, size: 24),
+              ],
+            ),
+          ),
+        ),
+      );
+      final create = Tooltip(
+        message: widget.dock.createLabel,
+        child: Semantics(
+          label: widget.dock.createLabel,
+          button: true,
+          onTap: widget.dock.onCreate,
+          child: ExcludeSemantics(
+            child: IconButton.filled(
+              key: const ValueKey('root-new-drawing'),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              onPressed: widget.dock.onCreate,
+              icon: const DoodimoIcon(DoodimoGlyph.add),
+            ),
+          ),
+        ),
+      );
+      return ImmersiveSurface(
+        radius: 28,
+        padding: const EdgeInsets.all(5),
+        child: stacked
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  summary,
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: create,
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(child: summary),
+                  create,
+                ],
+              ),
       );
     },
   );

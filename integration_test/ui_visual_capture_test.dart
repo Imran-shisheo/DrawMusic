@@ -411,10 +411,21 @@ void main() {
       await wait();
     }
 
+    Future<Finder> rootTarget(String id) async {
+      final target = key(id);
+      final summary = key('nav-summary').hitTestable();
+      if (target.hitTestable().evaluate().isEmpty &&
+          summary.evaluate().isNotEmpty) {
+        await tap(summary);
+      }
+      await until(() => target.hitTestable().evaluate().isNotEmpty);
+      return target.hitTestable();
+    }
+
     Future<void> control(String id, String fallback) async =>
         tap(key(id).evaluate().isNotEmpty ? key(id) : find.byTooltip(fallback));
     Future<void> tab(String name) async {
-      final target = key('nav-${name.toLowerCase()}');
+      final target = await rootTarget('nav-${name.toLowerCase()}');
       await tap(target.evaluate().isNotEmpty ? target : find.text(name));
     }
 
@@ -1240,7 +1251,7 @@ void main() {
       await tester.ensureVisible(key('home-artwork'));
       await wait(350);
       await recorded('01-root-navigation', () async {
-        await action('root-library', key('nav-library'));
+        await action('root-library', await rootTarget('nav-library'));
         for (var i = 0; i < 4; i++) {
           await action(
             'library-normal-$i',
@@ -1255,8 +1266,8 @@ void main() {
           );
         }
         await graphiteUntil(() => expectedShot('02-drafts'));
-        await action('root-settings', key('nav-settings'));
-        await action('root-home', key('nav-home'));
+        await action('root-settings', await rootTarget('nav-settings'));
+        await action('root-home', await rootTarget('nav-home'));
         await graphiteUntil(warmHome);
         return {'retainedLibraryReady': true, 'warmLaunchNotReplayed': true};
       });
@@ -1438,10 +1449,10 @@ void main() {
           container().read(settingsProvider).preferences.reduceMotion,
           isFalse,
         );
-        await action('system-library', key('nav-library'));
+        await action('system-library', await rootTarget('nav-library'));
         await action('system-exports', libraryTab('Exports'));
         await action('system-drafts', libraryTab('Drafts'));
-        await action('system-home', key('nav-home'));
+        await action('system-home', await rootTarget('nav-home'));
         await host.event('system_motion', 'normal');
         await graphiteUntil(
           () => !MediaQuery.disableAnimationsOf(
@@ -1453,10 +1464,10 @@ void main() {
           MediaQuery.disableAnimationsOf(tester.element(homeCreateControl())),
           isTrue,
         );
-        await action('stored-library', key('nav-library'));
+        await action('stored-library', await rootTarget('nav-library'));
         await action('stored-exports', libraryTab('Exports'));
         await action('stored-drafts', libraryTab('Drafts'));
-        await action('stored-home', key('nav-home'));
+        await action('stored-home', await rootTarget('nav-home'));
         await graphiteUntil(warmHome);
         return {
           'storedFalseDuringSystem': true,
@@ -1528,7 +1539,7 @@ void main() {
         );
         await clip(name, () async {
           clock.start();
-          await action('root-library', key('nav-library'), 700);
+          await action('root-library', await rootTarget('nav-library'), 700);
           await until(
             () => libraryTab('Exports').hitTestable().evaluate().isNotEmpty,
           );
@@ -1547,10 +1558,14 @@ void main() {
             );
           }
           await until(() => expectedShot('02-drafts'));
-          await action('root-settings', key('nav-settings'), 700);
-          await action('root-home', key('nav-home'), 700);
-          await action('root-library-return', key('nav-library'), 700);
-          await action('root-home-editor', key('nav-home'), 700);
+          await action('root-settings', await rootTarget('nav-settings'), 700);
+          await action('root-home', await rootTarget('nav-home'), 700);
+          await action(
+            'root-library-return',
+            await rootTarget('nav-library'),
+            700,
+          );
+          await action('root-home-editor', await rootTarget('nav-home'), 700);
           await action('editor-open', find.text('Paper hills'), 1000);
           await until(() => expectedShot('05-editor-drawn'));
           await action('editor-back', find.byTooltip('Back to gallery'), 700);

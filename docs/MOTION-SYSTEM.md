@@ -80,3 +80,7 @@ Actual process snapshots were PSS173801→181433KB and RSS267524→275984KB; the
 ## Recorded Library continuity comparison
 
 The [28 October original before/after evidence](ui/library-motion-2026-10-28/README.md) preserves two normal/reduced clips per source, actual hit-tested action times, complete-file decodes and nine real-frame contacts. Before shows a blank Library-body frame; sampled after frames retain content. This is transition correctness evidence, not physical GPU/presentation acceptance. Home scroll paint/delegate correction has [separate diagnostics](HOME-SCROLL-PERFORMANCE.md).
+
+### Compact navigation and keyboard continuity
+
+At compact expanded text, the current-destination summary opens the existing300ms/240ms CreativePanel; reduced motion is immediate. A single menu lease rejects double-open, Back restores trigger focus, and selecting a destination closes the panel before routing without remounting retained branches. Geometry is reserved from all destination labels so switching branches does not clamp scroll offsets. The shared panel keeps its editable subtree stable when keyboard insets cross the compact-height breakpoint; the editor behind it does not resize/reparent its drawing plane. Tests assert exact live-canvas state/rectangle, EditableTextState/focus and retained Library offsets. These are executed motion-correctness checks; native IME, continuous original footage and frame pacing are separate pending evidence.

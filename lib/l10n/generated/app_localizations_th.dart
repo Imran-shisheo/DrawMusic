@@ -1234,4 +1234,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get openingDrawing => 'กำลังเปิดภาพวาด…';
+
+  @override
+  String get navigation => 'การนำทาง';
 }

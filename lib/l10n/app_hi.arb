@@ -371,5 +371,6 @@
   "backgroundPanelTitle": "कागज़ और फ़ोटो",
   "exportFpsChoice": "{fps} FPS",
   "editorToolsShort": "उपकरण",
-  "openingDrawing": "ड्रॉइंग खोली जा रही है…"
+  "openingDrawing": "ड्रॉइंग खोली जा रही है…",
+  "navigation": "नेविगेशन"
 }

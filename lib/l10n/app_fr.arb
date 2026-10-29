@@ -371,5 +371,6 @@
   "backgroundPanelTitle": "Papier et photo",
   "exportFpsChoice": "{fps} i/s",
   "editorToolsShort": "Outils",
-  "openingDrawing": "Ouverture du dessin…"
+  "openingDrawing": "Ouverture du dessin…",
+  "navigation": "Navigation"
 }

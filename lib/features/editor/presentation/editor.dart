@@ -1240,6 +1240,9 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
         if (!didPop) unawaited(_leave());
       },
       child: Scaffold(
+        // Modal panels own keyboard avoidance. Resizing the live workspace
+        // behind them can reparent its GlobalKey canvas at compact thresholds.
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
           toolbarHeight: textScale.scale(14) > 21 ? 80 : 64,
           leading: IconButton(

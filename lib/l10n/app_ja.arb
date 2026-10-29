@@ -371,5 +371,6 @@
   "backgroundPanelTitle": "紙と写真",
   "exportFpsChoice": "{fps} FPS",
   "editorToolsShort": "ツール",
-  "openingDrawing": "描画を開いています…"
+  "openingDrawing": "描画を開いています…",
+  "navigation": "ナビゲーション"
 }

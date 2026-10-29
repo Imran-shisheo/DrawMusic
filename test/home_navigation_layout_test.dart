@@ -1,3 +1,5 @@
+import 'support/root_navigation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:scribblesong/design_system/creative_dock.dart';
 import 'package:flutter/services.dart';
@@ -124,9 +126,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       final beforeSwitch = tester.getTopLeft(find.text('Warm columns'));
-      await tester.tap(find.byKey(const ValueKey('nav-library')));
+      await tapRootNavigation(tester, 'nav-library');
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('nav-home')));
+      await tapRootNavigation(tester, 'nav-home');
       await tester.pumpAndSettle();
       expect(find.text('Warm columns').hitTestable(), findsOneWidget);
       expect(tester.getTopLeft(find.text('Warm columns')), beforeSwitch);

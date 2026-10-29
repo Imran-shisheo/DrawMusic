@@ -371,5 +371,6 @@
   "backgroundPanelTitle": "Papel at larawan",
   "exportFpsChoice": "{fps} FPS",
   "editorToolsShort": "Mga tool",
-  "openingDrawing": "Binubuksan ang drawing…"
+  "openingDrawing": "Binubuksan ang drawing…",
+  "navigation": "Nabigasyon"
 }

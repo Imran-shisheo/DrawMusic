@@ -578,5 +578,9 @@
   "openingDrawing": "Opening drawing…",
   "@openingDrawing": {
     "description": "Honest indeterminate status while a drawing is actually being read from local storage, not decorative transition progress."
+  },
+  "navigation": "Navigation",
+  "@navigation": {
+    "description": "Title and accessible tooltip for the compact navigation panel that exposes the retained Home, Library, Settings and New drawing destinations."
   }
 }

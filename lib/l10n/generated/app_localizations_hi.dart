@@ -1254,4 +1254,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get openingDrawing => 'ड्रॉइंग खोली जा रही है…';
+
+  @override
+  String get navigation => 'नेविगेशन';
 }
