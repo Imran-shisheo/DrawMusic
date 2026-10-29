@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../l10n/strings.dart';
-import '../../../design_system/brand_colors.dart';
 import '../domain/background.dart';
 
 /// A local editing interaction. Only Apply publishes a document revision. The
@@ -259,22 +258,48 @@ class _CropFramePainter extends CustomPainter {
     canvas.drawPath(
       grid,
       Paint()
-        ..color = DoodimoColors.cyan.withValues(alpha: .55)
+        ..color = Colors.white.withValues(alpha: .72)
         ..strokeWidth = .7
         ..style = PaintingStyle.stroke,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, const Radius.circular(14)),
       Paint()
-        ..color = Colors.black.withValues(alpha: .55)
-        ..strokeWidth = 3
+        ..color = Colors.black.withValues(alpha: .72)
+        ..strokeWidth = focused ? 6 : 4
         ..style = PaintingStyle.stroke,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, const Radius.circular(14)),
       Paint()
-        ..color = focused ? color : DoodimoColors.cyan
+        ..color = focused ? color : Colors.white
         ..strokeWidth = focused ? 3 : 1.5
+        ..style = PaintingStyle.stroke,
+    );
+    // Physical-looking crop corners stay fixed to the document plane. These
+    // are editing chrome only; the background renderer/export never sees them.
+    final corners = Path();
+    const length = 18.0;
+    for (final corner in [
+      rect.topLeft,
+      rect.topRight,
+      rect.bottomLeft,
+      rect.bottomRight,
+    ]) {
+      final dx = corner.dx == rect.left ? 1.0 : -1.0;
+      final dy = corner.dy == rect.top ? 1.0 : -1.0;
+      corners
+        ..moveTo(corner.dx + dx * length, corner.dy)
+        ..lineTo(corner.dx, corner.dy)
+        ..lineTo(corner.dx, corner.dy + dy * length);
+    }
+    canvas.drawPath(
+      corners,
+      Paint()
+        ..color = color
+        ..strokeWidth = focused ? 3.5 : 2.5
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
         ..style = PaintingStyle.stroke,
     );
   }

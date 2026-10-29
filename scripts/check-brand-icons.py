@@ -46,7 +46,7 @@ def main():
     for plane, name in zip(planes, ('Orbit', 'Fold', 'Edge')):
         actual = re.search(rf"const doodimo{name}PathData\s*=\s*'([^']+)';", painter)
         assert actual and actual.group(1) == plane.get('d'), f'In-app {name} geometry differs from original SVG/native identity'
-    assert report['background'] == '#090B18'
+    assert report['background'] == '#141819'
     for name in ('doodimo_icon_foreground', 'doodimo_icon_monochrome', 'doodimo_splash_mark'):
         vector = ET.parse(ROOT / f'android/app/src/main/res/drawable/{name}.xml').getroot()
         group = vector.find('group')

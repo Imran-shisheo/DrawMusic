@@ -327,7 +327,7 @@ void main() {
 
   for (final dark in [false, true]) {
     testWidgets(
-      '411 normal ${dark ? 'dark' : 'light'} keeps original floating composition with real safe gap',
+      '411 normal ${dark ? 'dark' : 'light'} keeps graphite artwork framing, safe gaps and immediate creation',
       (tester) async {
         final router = await _mount(
           tester,
@@ -339,8 +339,11 @@ void main() {
           final strings = AppLocalizations.of(
             tester.element(find.byType(HomePage)),
           )!;
-          expect(find.text(strings.aLittleLineALittleMusic), findsOneWidget);
-          expect(find.text(strings.drawYourMelody), findsNothing);
+          expect(find.text(strings.drawYourMelody), findsOneWidget);
+          final paper = tester.getRect(
+            find.byKey(const ValueKey('home-artwork-paint')),
+          );
+          expect(paper.width / paper.height, closeTo(4 / 5, .001));
           final headline = tester.getRect(
             find.byKey(const ValueKey('home-headline')),
           );

@@ -1251,4 +1251,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get editorToolsShort => 'उपकरण';
+
+  @override
+  String get openingDrawing => 'ड्रॉइंग खोली जा रही है…';
 }

@@ -9,7 +9,7 @@ import 'package:scribblesong/features/editor/presentation/canvas.dart';
 import 'package:scribblesong/features/editor/presentation/editor.dart';
 import 'package:scribblesong/l10n/strings.dart';
 
-import 'creative_editor_test.dart' show current, mountEditor;
+import 'creative_editor_test.dart' show current, mountEditor, waitFor;
 import 'support/editor_controls.dart';
 
 bool _fontsLoaded = false;
@@ -71,6 +71,43 @@ void _expectWholeWordsAndVisible(WidgetTester tester, Finder finder) {
 }
 
 void main() {
+  for (final scale in [1.0, 2.0]) {
+    testWidgets(
+      'actual bundled-font landscape rail keeps transport captions readable at ${scale}x',
+      (tester) async {
+        await tester.runAsync(_loadProductFonts);
+        tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
+        addTearDown(tester.view.resetPadding);
+        await mountEditor(tester, size: const Size(640, 360), scale: scale);
+        final strings = tester.element(find.byType(EditorWorkspace)).strings;
+        final canvas = find.byKey(const ValueKey('drawing-canvas'));
+        final bounds = tester.getRect(canvas);
+        if (scale == 2) {
+          // The deliberately retained very-short rail is one scrollable panel.
+          await tester.ensureVisible(find.byTooltip(strings.play));
+          await tester.pumpAndSettle();
+        }
+        _expectWholeWordsAndVisible(tester, find.text(strings.play));
+        _expectWholeWordsAndVisible(tester, find.text(strings.undo));
+        if (scale == 1) {
+          _expectWholeWordsAndVisible(tester, find.text(strings.redo));
+          _expectWholeWordsAndVisible(tester, find.text(strings.replay));
+        }
+        await tester.tap(find.byTooltip(strings.play));
+        await waitFor(
+          tester,
+          () => find.byTooltip(strings.pause).evaluate().isNotEmpty,
+        );
+        _expectWholeWordsAndVisible(tester, find.text(strings.pause));
+        expect(tester.getRect(canvas), bounds);
+        expect(
+          tester.getSize(find.byTooltip(strings.pause)).shortestSide,
+          greaterThanOrEqualTo(48),
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   for (final language in [
     'en',
     'fr',
@@ -86,9 +123,11 @@ void main() {
     'id',
   ]) {
     testWidgets(
-      'actual bundled-font $language 320dp 200% preserves full Draw/Erase/Tools words and named voice access',
+      'actual bundled-font $language 320dp 200% preserves initial Play/Pause captions, stable72dp paper and full tools/voice labels',
       (tester) async {
         await tester.runAsync(_loadProductFonts);
+        tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
+        addTearDown(tester.view.resetPadding);
         await mountEditor(
           tester,
           locale: language,
@@ -99,6 +138,22 @@ void main() {
         final context = tester.element(find.byType(EditorWorkspace));
         final strings = context.strings;
         final original = current(tester).encode();
+        final canvas = find.byKey(const ValueKey('drawing-canvas'));
+        final initialCanvas = tester.getRect(canvas);
+        expect(initialCanvas.width, greaterThanOrEqualTo(72));
+        expect(initialCanvas.height, greaterThanOrEqualTo(72));
+        _expectWholeWordsAndVisible(tester, find.text(strings.play));
+        await tester.tap(find.byTooltip(strings.play));
+        await waitFor(
+          tester,
+          () => find.byTooltip(strings.pause).evaluate().isNotEmpty,
+        );
+        _expectWholeWordsAndVisible(tester, find.text(strings.pause));
+        expect(tester.getRect(canvas), initialCanvas);
+        await tester.tap(find.byTooltip(strings.pause));
+        await tester.pumpAndSettle();
+        _expectWholeWordsAndVisible(tester, find.text(strings.play));
+        expect(tester.getRect(canvas), initialCanvas);
         _expectWholeWordsAndVisible(tester, find.text(strings.draw));
         _expectWholeWordsAndVisible(tester, find.text(strings.erase));
         final tools = find.byKey(const ValueKey('editor-tools'));

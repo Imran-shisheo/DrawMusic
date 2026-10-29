@@ -1,3 +1,5 @@
+import '../../../app/artwork_navigation.dart';
+
 import 'package:scribblesong/l10n/strings.dart';
 
 import 'dart:async';
@@ -5,13 +7,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../design_system/name_dialog.dart';
 import '../../../design_system/creative_panel.dart';
 import '../../library/presentation/library_state_panel.dart';
 import '../../../design_system/doodimo_icon.dart';
+import '../../../design_system/immersive_surface.dart';
 import '../../editor/presentation/canvas.dart';
 import '../../backgrounds/presentation/background_surface.dart';
 import '../../library/presentation/library_gallery_layout.dart';
@@ -90,7 +92,11 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           );
           if (name != null) await repository.rename(entry.id, name);
         case _Action.source:
-          context.push('/editor/${entry.artifact.projectId}');
+          await openEditorWithArtworkFlight(
+            context,
+            entry.artifact.projectId,
+            null,
+          );
         case _Action.delete:
           final confirmed = await showCreativePanel<bool>(
             context: context,
@@ -171,7 +177,7 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
                 children: [
                   Text(
                     context.strings.yourExports,
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(context.strings.libraryExportsSubtitle),
@@ -226,6 +232,8 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
                                 .someExportDetailsCouldNotBeReadTheOriginalFilesArePreserve,
                           ),
                         ),
+                      _featured(context, listing.entries.first),
+                      const SizedBox(height: 16),
                       for (final entry in listing.entries)
                         _card(context, entry),
                     ],
@@ -233,54 +241,149 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
       ],
     ),
   );
+  Widget _preview(LibraryExport entry, {required bool large}) {
+    final format = entry.id.split('.').last.toUpperCase();
+    if (format == 'PNG' && entry.available) {
+      return Image.file(
+        File(entry.artifact.path),
+        cacheWidth: large ? 420 : 112,
+        fit: BoxFit.contain,
+        excludeFromSemantics: true,
+        errorBuilder: (_, _, _) =>
+            const Center(child: DoodimoIcon(DoodimoGlyph.image, size: 40)),
+      );
+    }
+    if (entry.preview != null) {
+      return Center(
+        child: AspectRatio(
+          aspectRatio: .8,
+          child: BackgroundSurface(
+            key: ValueKey(
+              '${large ? 'export-feature-preview' : 'export-preview'}-${entry.id}',
+            ),
+            // This immutable export revision owns its paper and geometry.
+            paper: entry.preview!.effectiveBackground,
+            maxWidth: large ? 420 : 112,
+            maxHeight: large ? 525 : 140,
+            child: CustomPaint(painter: DrawingPainter(entry.preview!)),
+          ),
+        ),
+      );
+    }
+    return Center(
+      child: DoodimoIcon(switch (format) {
+        'MP4' => DoodimoGlyph.video,
+        'PNG' => DoodimoGlyph.image,
+        'MID' => DoodimoGlyph.notes,
+        _ => DoodimoGlyph.sound,
+      }, size: large ? 64 : 32),
+    );
+  }
+
+  Widget _featured(BuildContext context, LibraryExport entry) {
+    final colors = Theme.of(context).colorScheme;
+    final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+    return ImmersiveSurface(
+      key: const ValueKey('export-featured-artwork'),
+      padding: const EdgeInsets.all(12),
+      radius: 20,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 360,
+                maxHeight: largeText ? 240 : 340,
+              ),
+              child: AspectRatio(
+                aspectRatio: .8,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colors.outlineVariant),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(7),
+                      child: _preview(entry, large: true),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          RichText(
+            key: const ValueKey('export-feature-caption'),
+            textAlign: TextAlign.center,
+            textScaler: MediaQuery.textScalerOf(context),
+            text: TextSpan(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: colors.onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+              children: [
+                TextSpan(
+                  text: entry.artifact.name.replaceFirst(
+                    RegExp(r'\.[^.]+$'),
+                    '',
+                  ),
+                ),
+                TextSpan(
+                  text:
+                      RegExp(r'\.[^.]+$')
+                          .firstMatch(entry.artifact.name)
+                          ?.group(0) ??
+                      '',
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              FilledButton.icon(
+                key: ValueKey('export-feature-share-${entry.id}'),
+                onPressed: _busy || !entry.available
+                    ? null
+                    : () => _act(entry, _Action.share),
+                icon: const DoodimoIcon(DoodimoGlyph.export),
+                label: Text(context.strings.shareExportedFile),
+              ),
+              OutlinedButton.icon(
+                key: ValueKey('export-feature-save-${entry.id}'),
+                onPressed: _busy || !entry.available
+                    ? null
+                    : () => _act(entry, _Action.save),
+                icon: const DoodimoIcon(DoodimoGlyph.save),
+                label: Text(context.strings.saveAPublicCopy),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _card(BuildContext context, LibraryExport entry) {
     final format = entry.id.split('.').last.toUpperCase();
     final date = context.formatLocalDate(entry.createdAt);
     return LibraryDocumentCard(
       leading: SizedBox(
         key: ValueKey('export-thumbnail-${entry.id}'),
-        width: 80,
-        height: 100,
-        child: format == 'PNG' && entry.available
-            ? SizedBox(
-                width: 80,
-                height: 100,
-                child: Image.file(
-                  File(entry.artifact.path),
-                  cacheWidth: 112,
-                  fit: BoxFit.contain,
-                  excludeFromSemantics: true,
-                  errorBuilder: (_, _, _) =>
-                      const Icon(Icons.broken_image_outlined),
-                ),
-              )
-            : entry.preview == null
-            ? Icon(
-                format == 'MP4'
-                    ? Icons.movie_outlined
-                    : Icons.audio_file_outlined,
-              )
-            : SizedBox(
-                width: 80,
-                height: 100,
-                // Letterbox to the immutable document's 4:5 aspect.
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: .8,
-                    child: BackgroundSurface(
-                      key: ValueKey('export-preview-${entry.id}'),
-                      // The export catalog owns this immutable revision. Never
-                      // load the newer editable project for a saved thumbnail.
-                      paper: entry.preview!.effectiveBackground,
-                      maxWidth: 112,
-                      maxHeight: 140,
-                      child: CustomPaint(
-                        painter: DrawingPainter(entry.preview!),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+        width: 72,
+        height: 90,
+        child: _preview(entry, large: false),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,11 +402,7 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            entry.artifact.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+          Text(entry.artifact.name, softWrap: true),
         ],
       ),
       subtitle: Text(
@@ -314,6 +413,13 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
             : context.strings.drawingMayHaveChangedSinceExport}',
       ),
       onTap: _busy || !entry.available ? null : () => _act(entry, _Action.open),
+      primaryAction: IconButton.outlined(
+        tooltip: context.strings.saveAPublicCopy,
+        onPressed: _busy || !entry.available
+            ? null
+            : () => _act(entry, _Action.save),
+        icon: const DoodimoIcon(DoodimoGlyph.save),
+      ),
       trailing: PopupMenuButton<_Action>(
         onOpened: () => ScaffoldMessenger.of(context).clearSnackBars(),
         tooltip: context.strings.exportActions(entry.artifact.name),

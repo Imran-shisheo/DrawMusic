@@ -88,12 +88,25 @@ void main() {
             () => Future<void>.delayed(const Duration(milliseconds: 10)),
           );
           await tester.pump();
+          final list = find.byKey(const PageStorageKey('exports-scroll'));
+          if (list.evaluate().isNotEmpty &&
+              find
+                  .byKey(const ValueKey('export-featured-artwork'))
+                  .evaluate()
+                  .isNotEmpty) {
+            await tester.drag(list, const Offset(0, -180));
+            await tester.pumpAndSettle();
+          }
         }
         await tester.pumpAndSettle();
         expect(find.text(label), findsOneWidget);
+        await tester.ensureVisible(find.text(label));
+        await tester.pumpAndSettle();
       }
 
       Future<void> menu(String name, String action) async {
+        await tester.ensureVisible(find.byTooltip('Actions for $name'));
+        await tester.pumpAndSettle();
         await tester.tap(find.byTooltip('Actions for $name'));
         await tester.pumpAndSettle();
         await tester.tap(find.text(action));
@@ -101,7 +114,15 @@ void main() {
       }
 
       await ready(artifact.name);
-      expect(find.byType(Image), findsOneWidget);
+      final previews = tester.widgetList<Image>(find.byType(Image));
+      expect(previews, isNotEmpty);
+      for (final preview in previews) {
+        final provider = preview.image is ResizeImage
+            ? (preview.image as ResizeImage).imageProvider
+            : preview.image;
+        expect(provider, isA<FileImage>());
+        expect((provider as FileImage).file.path, artifact.path);
+      }
       await tester.tap(find.text(artifact.name));
       await tester.pumpAndSettle();
       expect(actions.opened.single.mime, 'image/png');

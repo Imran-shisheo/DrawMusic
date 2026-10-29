@@ -1,22 +1,20 @@
 # Approved graphite redesign — implementation checkpoint
 
-## Current state and input blocker
+## Verified approved inputs and implementation status — 29 October
 
-The owner approved the original graphite review boards and cloud implementation on 28 October 2026. This is a new app-wide visual direction, superseding the earlier navy/violet/cyan presentation. Existing functionality and verified corrections remain mandatory.
+The owner approved cloud implementation and public transfer of exactly the two original boards and full motion plan. The previous Library-tool access blocker is resolved through the authorized Git handoff: branch `design-reference/doodimo-approved-2026-10-28`, source commit `e7231b55c31596d0cfb8e37267bbfb0ccb2e361b`, retained with provenance by cherry-pick2b23e5b. The three original files are unchanged under `design/approved/2026-10-28/`. Both1536×1024 PNGs were actually viewed and the complete35-line Markdown plan read before visual code. Its historical approval-required wording is superseded by the later explicit owner approval.
 
-Baseline: remote main `a7a8e595d96735c9b5db607c8d03d785937edf15`, containing `75e708d9efbd21fc829a290e5e56e0f15a826823`; their file trees have no content diff. The user merged PR22/23/24. This task did not perform those merges. New development branch: `codex/graphite-redesign-2026-10-28`.
+| Approved source | SHA256 |
+|---|---|
+| Doodimo-Graphite-Review.png | `00fd5b5e6656f56e5dee43ed2b4b75aafdac25e55b495aa50fc043f8148e25ca` |
+| Doodimo-Motion-Storyboard.png | `746b50fd0086ffc1f6f870670e0096fb045231e7182cdd9b0b95d771fbbc2064` |
+| Doodimo-Motion-Plan.md | `6da6452a943ca90824be56c873c8ac67e91ea695b15e00fa4391aed0c54bacfd` |
 
-**Blocked before visual implementation:** the selected cloud session has no Library skill, Library file tools, or supported Library materialization helper. Both complete cloud-skill catalog pages and the executor catalog were inspected; no Library skill is listed and the executor skill catalog is empty. Tool metadata exposes no Library search/read/materialize route. The exact files are absent from this workspace. The project tracker Page contains no references to their filenames, so its exact-reference reader cannot be used with an invented reference. No authenticated URL, parent/Mac filesystem path or generic Sediment downloader was used as a workaround.
+These are approved original ImageGen static design inputs, not Stitch exports or product screenshots. No source reference clip imagery or synthetic mockup user activity is shipped. Shipping visual geometry/materials are authored Flutter/native vectors; current artwork, saved data and package ID stay independent.
 
-Required authorized inputs:
+Baseline: user-merged main `a7a8e595d96735c9b5db607c8d03d785937edf15` contains accepted75e708d; PR22/23/24 were merged by the user. Branch `codex/graphite-redesign-2026-10-28` continues the same cloud task. [Actual baseline](ui/graphite-baseline-2026-10-28/README.md) contains four inspected widgets from a passing76-state real-font capture, not device-performance evidence.
 
-| File | Authoritative Library identity | Current verification |
-|---|---|---|
-| Doodimo-Graphite-Review.png | `libfile_90e6fdfce7b881918256b20f898237d8` | Bytes unavailable; not visually inspected |
-| Doodimo-Motion-Storyboard.png | `libfile_95faaa9a450881919a22c6b77b58abd4` | Bytes unavailable; not visually inspected |
-| Doodimo-Motion-Plan.md | `libfile_9850c6512d408191912ba6e2c721e4c3` | Complete source unavailable; parent summary only |
-
-These are original static ImageGen design inputs, not Stitch exports or implemented product captures. They must be materialized through a supported authorized transfer route into this executor, verified for byte length/SHA256/MIME/dimensions/path, and both PNGs viewed before implementation. User approval is already given; no new design approval is needed. Restoring supported file access or supplying the exact authorized bytes to this task is the missing prerequisite. Until then, only inventory and implementation planning proceed. No visual product change, new APK or redesigned-screen test pass is claimed. The independent current-main baseline widget capture passed and generated76 real-font fixture states; four original PNGs were inspected and are retained in [the baseline evidence](ui/graphite-baseline-2026-10-28/README.md). This is not native/device validation.
+Implementation now includes shared graphite/orange semantic materials and outline glyphs; artwork-led Home; retained connected Library/dock; stable Editor canvas and adaptive transport/tool plates; matching export/background/crop/Settings/help/language/rating surfaces; original finite launch and snapshot artwork flight; real I/O readiness and per-navigation load identities; guarded shared-engine ownership during Back/reopen. Original board spacing and example labels are adapted for real controls/locales rather than hardcoded synthetic files. Scoped tests and76-state working-tree renders passed; the complete local formatter/analyzer/413-test/strict-visual/JVM/lint/APK/recovery gate passes; fresh hosted native/runtime/profile acceptance is active. No completion or smoothness pass is implied by these interim results.
 
 ## Source inventory and preserved contracts
 
@@ -52,7 +50,7 @@ Document artwork, paper, instrument identities, saved/recovery formats, audio sc
 
 ## Skill use and evidence boundaries
 
-### Nonvisual ownership audit while input transfer is pending
+### Preserved ownership audit from the input-transfer phase
 
 - `main.dart` awaits bounded coordinated background cleanup before creating providers. A launch composition must not reorder that storage-safety gate or initialize an editor/audio session just to animate. Additive visual work starts after application construction and cannot create a second startup delay.
 - `ScribbleSongApp` owns one late-final router. Keep that router and its branch trees stable while launch/theme/motion widgets rebuild. `settingsProvider` initially reports `loading: true` and loads asynchronously: a future decorative launch must not animate before a persisted reduced-motion preference is known. Keep content usable with a static composition while unknown, combine persisted/system preferences, and never start a late entrance cascade after the session is warm.
@@ -61,9 +59,9 @@ Document artwork, paper, instrument identities, saved/recovery formats, audio sc
 - The editor owns `_canvas` through a GlobalKey and its engine through init/dispose. On non-resumed lifecycle it finishes the gesture, pauses and saves. A safe flight animates a separate immutable representation, never reparents the live DrawingCanvas into an overlay or mounts a second Editor. First-pointer input during flight must either remain immediately visible on stable canvas coordinates or cancel the decorative flight safely; decide through an actual prototype and test, not by hiding input until animation completion.
 - Export deliberately finishes the active gesture and pauses before opening its owned sheet. Existing PopScope/save/pause and export cancellation/finalization determine correctness. No decorative completion callback may pop a route, save a project, resume audio, cancel an export or announce publication success.
 
-These are source-audit constraints and proposed verification points, not implemented launch/Hero behavior. Exact paths, shapes, timings and composition remain dependent on the actual approved images and complete motion plan.
+These original source-audit constraints now inform the implemented launch, typed destination readiness, per-engine leases and actual-snapshot flights. Their implementation and targeted regressions are recorded above; runtime verification remains separate.
 
-The pinned MIT `.agents/skills/ui-ux-pro-max/SKILL.md` is explicitly read/applied; its provenance remains upstream `28b3b8dee8c976df4fa3e94aed4e092ad43fcb03`. Offline Flutter shared-element search returned Hero guidance and shared-state guidance; the unrelated state row is not a visual specification. The first interruptible-motion search returned reduced-motion/excessive-motion guidance; one narrowed retry returned Web Cancellable State Transitions. That cancellation principle may inform Flutter ownership, but Web examples are not native implementation proof. Generic catalog recommendations do not override the approved boards, existing product contracts, pinned Flutter3.47.2 or48dp Android touch targets. No new design-system output was persisted or substituted for the unavailable mockups.
+The pinned MIT `.agents/skills/ui-ux-pro-max/SKILL.md` is explicitly read/applied; its provenance remains upstream `28b3b8dee8c976df4fa3e94aed4e092ad43fcb03`. Offline Flutter shared-element search returned Hero guidance and shared-state guidance; the unrelated state row is not a visual specification. The first interruptible-motion search returned reduced-motion/excessive-motion guidance; one narrowed retry returned Web Cancellable State Transitions. That cancellation principle may inform Flutter ownership, but Web examples are not native implementation proof. Generic catalog recommendations do not override the approved boards, existing product contracts, pinned Flutter3.47.2 or48dp Android touch targets. No new design-system output was persisted or substituted for the approved mockups.
 
 Retain existing meaningful tests for Library first-frame coverage/reversal/transparent ink/footer isolation, Home document/painter identity and dense-preview paint isolation, navigation/scroll/focus, save/recovery and actual exports. Add targeted launch/flight/interruption/lifecycle coverage for new behavior. Run formatter/analyzer/product tests and `bash scripts/check-android.sh`; new protected product source needs fresh applicable native/media acceptance. Update visual references only after inspecting intended rendered changes, without deleting functional coverage or weakening pixel thresholds.
 

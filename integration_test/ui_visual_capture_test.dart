@@ -27,6 +27,7 @@ import 'package:scribblesong/features/settings/application/settings_controller.d
 import 'package:scribblesong/features/settings/data/file_preferences_store.dart';
 import 'package:scribblesong/features/settings/domain/preferences.dart';
 import 'package:scribblesong/main.dart' as app;
+import 'package:scribblesong/l10n/strings.dart';
 
 import 'support/ui_capture_metrics.dart';
 import 'support/ui_frame_clock.dart';
@@ -36,6 +37,7 @@ import 'support/ui_presentation_fence.dart';
 const _staticBackdropProbe = bool.fromEnvironment('UI_STATIC_BACKDROP_PROBE');
 const _responsivePreset = String.fromEnvironment('UI_RESPONSIVE_PRESET');
 const _homeProfileOnly = bool.fromEnvironment('UI_HOME_PROFILE_ONLY');
+const _graphiteCapture = bool.fromEnvironment('UI_GRAPHITE_CAPTURE');
 const _transitionCaptureOnly = bool.fromEnvironment(
   'UI_TRANSITION_CAPTURE_ONLY',
 );
@@ -212,6 +214,117 @@ Future<void> _seedFixtures() async {
   );
 }
 
+Future<void> _recordProductionGraphiteOpening(
+  WidgetTester tester,
+  IntegrationTestWidgetsFlutterBinding binding,
+  _CaptureHost host,
+) async {
+  await host.event('metadata', 'session', {
+    'label': _label,
+    'buildMode': 'profile',
+    'captureMode': 'graphite-reference-capture',
+    'animationsDisabled':
+        binding.platformDispatcher.accessibilityFeatures.disableAnimations,
+    'firstProductionWidgetMounted': false,
+    'physicalSize': [
+      tester.view.physicalSize.width,
+      tester.view.physicalSize.height,
+    ],
+    'devicePixelRatio': tester.view.devicePixelRatio,
+    'refreshHz': tester.view.display.refreshRate,
+    'fixtures': 'Original real file repositories/PNG/WAV and completed guide; actual production app.main; no mocked ports',
+    'openingScope': 'Recorder is ready before the first production runApp in this fixture-seeded profile diagnostic process. Excludes OS/VM startup and fixture preparation; no product controller is delayed or replayed.',
+  });
+  final observations = <Map<String, Object?>>[];
+  final clock = Stopwatch();
+  var sawLaunch = false;
+  await host.event('record_start', '00-graphite-opening');
+  try {
+    clock.start();
+    await app.main(); // The real cold widget mount, showWelcome:true.
+    final end = DateTime.now().add(const Duration(seconds: 25));
+    var previousValue = -1.0;
+    while (true) {
+      final decoration = find.byKey(
+        const ValueKey('graphite-launch-decoration'),
+      );
+      if (decoration.evaluate().length == 1) {
+        sawLaunch = true;
+        final paint = tester.widget<CustomPaint>(
+          find
+              .descendant(of: decoration, matching: find.byType(CustomPaint))
+              .first,
+        );
+        // Public Animation field on the actual production painter, not a
+        // replacement clock/controller or a diagnostic animation overlay.
+        final progress =
+            (paint.painter as dynamic).progress as Animation<double>;
+        if (progress.value != previousValue && observations.length < 128) {
+          observations.add({
+            'elapsedUs': clock.elapsedMicroseconds,
+            'controllerValue': progress.value,
+            'controllerStatus': progress.status.name,
+            'engineFrameNumber':
+                binding.platformDispatcher.frameData.frameNumber,
+          });
+          previousValue = progress.value;
+        }
+      }
+      final home = find.byKey(const ValueKey('home-start')).hitTestable();
+      if (sawLaunch &&
+          decoration.evaluate().isEmpty &&
+          home.evaluate().isNotEmpty) {
+        break;
+      }
+      if (DateTime.now().isAfter(end)) {
+        fail(
+          'Actual production finite launch was not observed and completed; no replay/padding fallback',
+        );
+      }
+      await tester.pump(const Duration(milliseconds: 25));
+    }
+    await binding.waitUntilFirstFrameRasterized.timeout(
+      const Duration(seconds: 20),
+    );
+    await tester.pump(const Duration(milliseconds: 450));
+  } finally {
+    clock.stop();
+    await host.event('record_stop', '00-graphite-opening');
+  }
+  final root = tester.widget<ScribbleSongApp>(find.byType(ScribbleSongApp));
+  final scope = ProviderScope.containerOf(
+    tester.element(find.byType(ScribbleSongApp)),
+  );
+  expect(root.showWelcome, isTrue);
+  expect(scope.read(settingsProvider).preferences.tutorialCompleted, isTrue);
+  expect(observations.length, greaterThanOrEqualTo(2));
+  expect(
+    observations.last['controllerValue'],
+    greaterThan(observations.first['controllerValue']! as double),
+  );
+  await host.event('graphite_opening', 'opening', {
+    'productionEntryPoint': 'lib/main.dart',
+    'showWelcome': root.showWelcome,
+    'fixtureGuideAlreadyCompleted': scope
+        .read(settingsProvider)
+        .preferences
+        .tutorialCompleted,
+    'firstFrameRasterized': binding.firstFrameRasterized,
+    'readyHomeRendered': find
+        .byKey(const ValueKey('home-start'))
+        .hitTestable()
+        .evaluate()
+        .isNotEmpty,
+    'launchEndedWithoutInput': find
+        .byKey(const ValueKey('graphite-launch-decoration'))
+        .evaluate()
+        .isEmpty,
+    'observations': observations,
+    'actualElapsedUs': clock.elapsedMicroseconds,
+    'scope': 'Actual finite production launch controller samples and original clip. Samples are not phase-by-phase compositor presentation or OS cold-start/performance proof.',
+  });
+}
+
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.benchmarkLive;
@@ -237,6 +350,15 @@ void main() {
     );
     expect(!(_staticBackdropProbe && _responsivePreset.isNotEmpty), isTrue);
     expect(
+      !_graphiteCapture ||
+          (_label == 'after' &&
+              !_staticBackdropProbe &&
+              _responsivePreset.isEmpty &&
+              !_homeProfileOnly &&
+              !_transitionCaptureOnly),
+      isTrue,
+    );
+    expect(
       !_transitionCaptureOnly ||
           (_label == 'after' &&
               !_staticBackdropProbe &&
@@ -254,7 +376,11 @@ void main() {
     final host = _CaptureHost();
     addTearDown(host.close);
     await _seedFixtures();
-    await app.main();
+    if (_graphiteCapture) {
+      await _recordProductionGraphiteOpening(tester, binding, host);
+    } else {
+      await app.main();
+    }
     Future<void> wait([int ms = 800]) =>
         tester.pump(Duration(milliseconds: ms));
     Future<void> until(bool Function() condition, {int seconds = 30}) async {
@@ -365,6 +491,7 @@ void main() {
         '04-settings' =>
           uri == '/settings' && !hasPanel && renderedAnchor(settings),
         '05-editor-drawn' => editor('Paper hills'),
+        '24-graphite-editor' => editor('Morning tide'),
         '06-photo-editor' => editor('Amber window'),
         '07-photo-crop-panel' => renderedAnchor(
           key('background-crop-workspace').evaluate().isNotEmpty
@@ -685,7 +812,8 @@ void main() {
     Map<String, Object?>? subsetHomeReadiness;
     if (_responsivePreset.isNotEmpty ||
         _homeProfileOnly ||
-        _transitionCaptureOnly) {
+        _transitionCaptureOnly ||
+        _graphiteCapture) {
       await until(() {
         final home = find.byWidgetPredicate(
           (widget) => widget.runtimeType.toString() == 'HomePage',
@@ -733,31 +861,33 @@ void main() {
       const Duration(seconds: 20),
     );
     await wait(1500);
-    await host.event('metadata', 'session', {
-      'firstFrameRasterized': binding.firstFrameRasterized,
-      'subsetHomeReadiness': ?subsetHomeReadiness,
-      'label': _label,
-      'buildMode': 'profile',
-      'captureMode': _responsivePreset.isNotEmpty
-          ? 'responsive-$_responsivePreset'
-          : (_staticBackdropProbe
-                ? 'diagnostic-static-backdrop-only'
-                : (_homeProfileOnly
-                      ? 'home-profile-only'
-                      : (_transitionCaptureOnly
-                            ? 'transition-capture-only'
-                            : 'normal-product-ui-capture'))),
-      'physicalSize': [
-        tester.view.physicalSize.width,
-        tester.view.physicalSize.height,
-      ],
-      'devicePixelRatio': tester.view.devicePixelRatio,
-      'refreshHz': tester.view.display.refreshRate,
-      'animationsDisabled': MediaQuery.disableAnimationsOf(
-        tester.element(find.byType(Scaffold).first),
-      ),
-      'fixtures': 'Original seeded real repositories/PNG/WAV; no mocked adapters, user content or competitor assets',
-    });
+    if (!_graphiteCapture) {
+      await host.event('metadata', 'session', {
+        'firstFrameRasterized': binding.firstFrameRasterized,
+        'subsetHomeReadiness': ?subsetHomeReadiness,
+        'label': _label,
+        'buildMode': 'profile',
+        'captureMode': _responsivePreset.isNotEmpty
+            ? 'responsive-$_responsivePreset'
+            : (_staticBackdropProbe
+                  ? 'diagnostic-static-backdrop-only'
+                  : (_homeProfileOnly
+                        ? 'home-profile-only'
+                        : (_transitionCaptureOnly
+                              ? 'transition-capture-only'
+                              : 'normal-product-ui-capture'))),
+        'physicalSize': [
+          tester.view.physicalSize.width,
+          tester.view.physicalSize.height,
+        ],
+        'devicePixelRatio': tester.view.devicePixelRatio,
+        'refreshHz': tester.view.display.refreshRate,
+        'animationsDisabled': MediaQuery.disableAnimationsOf(
+          tester.element(find.byType(Scaffold).first),
+        ),
+        'fixtures': 'Original seeded real repositories/PNG/WAV; no mocked adapters, user content or competitor assets',
+      });
+    }
     expect(
       MediaQuery.disableAnimationsOf(
         tester.element(find.byType(Scaffold).first),
@@ -981,6 +1111,369 @@ void main() {
         'diagnosticOnly': true,
         'normalProductCapturePassed': false,
         'normalFootageProduced': false,
+      };
+      expect(tester.takeException(), isNull);
+      return;
+    }
+    if (_graphiteCapture) {
+      await shot('01-home');
+      Finder libraryTab(String label) => find.descendant(
+        of: find.byWidgetPredicate(
+          (widget) => widget.runtimeType.toString() == 'LibraryTabs',
+        ),
+        matching: find.text(label),
+      );
+      Future<void> graphiteUntil(
+        bool Function() condition, {
+        int seconds = 30,
+      }) async {
+        final end = DateTime.now().add(Duration(seconds: seconds));
+        while (!condition()) {
+          if (DateTime.now().isAfter(end)) {
+            fail('Graphite actual-state readiness timed out');
+          }
+          await wait(25);
+        }
+      }
+
+      var actions = <Map<String, Object?>>[];
+      var clock = Stopwatch();
+      void note(
+        String name,
+        Rect bounds,
+        BuildContext context, {
+        int waitMs = 350,
+      }) {
+        actions.add({
+          'action': name,
+          'tapElapsedUs': clock.elapsedMicroseconds,
+          'engineFrameNumber': binding.platformDispatcher.frameData.frameNumber,
+          'reducedMotion': MediaQuery.disableAnimationsOf(context),
+          'targetBounds': [
+            bounds.left,
+            bounds.top,
+            bounds.width,
+            bounds.height,
+          ],
+          'requestedPostTapWaitMs': waitMs,
+        });
+      }
+
+      Future<void> action(
+        String name,
+        Finder target, {
+        int waitMs = 350,
+      }) async {
+        await graphiteUntil(() => target.hitTestable().evaluate().isNotEmpty);
+        final actual = target.hitTestable().last;
+        note(
+          name,
+          tester.getRect(actual),
+          tester.element(actual),
+          waitMs: waitMs,
+        );
+        await tester.tap(actual); // Fatal missed-hit policy stays enabled.
+        await wait(waitMs);
+      }
+
+      Future<void> recorded(
+        String name,
+        Future<Map<String, Object?>> Function() run,
+      ) async {
+        actions = [];
+        clock = Stopwatch();
+        late Map<String, Object?> witnesses;
+        await clip(name, () async {
+          clock.start();
+          witnesses = await run();
+          clock.stop();
+        });
+        await host.event('graphite_trace', name, {
+          'actions': actions,
+          'actualElapsedUs': clock.elapsedMicroseconds,
+          'witnesses': witnesses,
+        });
+      }
+
+      bool warmHome() =>
+          expectedShot('01-home') &&
+          key('graphite-launch-decoration').evaluate().isEmpty;
+      await measure(
+        'graphite-interactions-unrecorded',
+        () async {
+          await tab('Library');
+          for (var i = 0; i < 4; i++) {
+            await tap(libraryTab(i.isEven ? 'Exports' : 'Drafts'));
+          }
+          await tab('Home');
+          await tap(key('home-artwork'));
+          await graphiteUntil(() => expectedShot('24-graphite-editor'));
+          await control('editor-back', 'Back to gallery');
+          await graphiteUntil(warmHome);
+          final scrollable = find
+              .descendant(
+                of: find.byWidgetPredicate(
+                  (widget) => widget.runtimeType.toString() == 'HomePage',
+                ),
+                matching: find.byType(Scrollable),
+              )
+              .hitTestable();
+          await tester.drag(scrollable.first, const Offset(0, -240));
+          await wait(400);
+          await tester.drag(scrollable.first, const Offset(0, 240));
+          await wait(400);
+        },
+        visibleScope: {
+          'graphiteProductionInteractions': true,
+          'screenRecordingActive': false,
+          'scope': 'Actual Library switches, source artwork navigation/Back and Home drag; software-emulator UI/raster timing, not physical display drops or audio acceptance',
+        },
+      );
+      await tester.ensureVisible(key('home-artwork'));
+      await wait(350);
+      await recorded('01-root-navigation', () async {
+        await action('root-library', key('nav-library'));
+        for (var i = 0; i < 4; i++) {
+          await action(
+            'library-normal-$i',
+            libraryTab(i.isEven ? 'Exports' : 'Drafts'),
+          );
+        }
+        for (var i = 0; i < 6; i++) {
+          await action(
+            'library-rapid-$i',
+            libraryTab(i.isEven ? 'Exports' : 'Drafts'),
+            waitMs: 80,
+          );
+        }
+        await graphiteUntil(() => expectedShot('02-drafts'));
+        await action('root-settings', key('nav-settings'));
+        await action('root-home', key('nav-home'));
+        await graphiteUntil(warmHome);
+        return {'retainedLibraryReady': true, 'warmLaunchNotReplayed': true};
+      });
+      await tab('Library');
+      await tap(libraryTab('Drafts'));
+      await shot('02-drafts');
+      await tap(libraryTab('Exports'));
+      await shot('03-exports');
+      await tab('Settings');
+      await shot('04-settings');
+      await tab('Home');
+      await recorded('02-editor-instrument', () async {
+        await action('artwork-open', key('home-artwork'), waitMs: 0);
+        await graphiteUntil(
+          () =>
+              key('drawing-canvas').hitTestable().evaluate().isNotEmpty &&
+              key('artwork-flight-shuttle').evaluate().isNotEmpty,
+        );
+        final canvas = key('drawing-canvas').hitTestable().first;
+        final bounds = tester.getRect(canvas);
+        final intent =
+            GoRouterState.of(tester.element(canvas)).extra as dynamic;
+        expect(intent, isNotNull);
+        expect(intent.cancelled, isFalse);
+        note('canvas-first-input', bounds, tester.element(canvas), waitMs: 0);
+        final gesture = await tester.startGesture(
+          Offset(
+            bounds.left + bounds.width * .28,
+            bounds.top + bounds.height * .58,
+          ),
+        );
+        expect(intent.cancelled, isTrue);
+        for (var i = 1; i <= 4; i++) {
+          await gesture.moveTo(
+            Offset(
+              bounds.left + bounds.width * (.28 + i * .04),
+              bounds.top + bounds.height * (.58 - i * .025),
+            ),
+          );
+          await wait(20);
+        }
+        await gesture.up();
+        await wait(150);
+        expect(tester.getRect(canvas), bounds);
+        await action('voice-open', key('current-voice'));
+        await action('voice-bell', key('voice-bell'));
+        await action('play', find.byTooltip('Play'));
+        await graphiteUntil(
+          () => find.byTooltip('Pause').hitTestable().evaluate().isNotEmpty,
+        );
+        await action('pause', find.byTooltip('Pause'));
+        await graphiteUntil(
+          () => find.byTooltip('Play').hitTestable().evaluate().isNotEmpty,
+        );
+        await action('music-open', key('music-settings'));
+        await action('music-close', find.byTooltip('Close'));
+        await action('tools-open', key('editor-tools'));
+        await action('tools-close', find.byTooltip('Close'));
+        await action('background-open', key('editor-background'));
+        await action('background-close', find.text('Cancel'));
+        await action(
+          'editor-back',
+          find.byTooltip('Back to gallery'),
+          waitMs: 0,
+        );
+        await graphiteUntil(
+          () => key('home-artwork').hitTestable().evaluate().isNotEmpty,
+        );
+        await action('rapid-artwork-reopen', key('home-artwork'), waitMs: 0);
+        await graphiteUntil(
+          () => find.byTooltip('Play').hitTestable().evaluate().isNotEmpty,
+        );
+        await action('rapid-play', find.byTooltip('Play'), waitMs: 0);
+        await graphiteUntil(
+          () => find.byTooltip('Pause').hitTestable().evaluate().isNotEmpty,
+        );
+        await action('rapid-pause', find.byTooltip('Pause'));
+        await action('rapid-back', find.byTooltip('Back to gallery'));
+        await graphiteUntil(warmHome);
+        return {
+          'heroObserved': true,
+          'firstInputCancelledPresentation': true,
+          'canvasRectStable': true,
+          'playingUiObserved': true,
+          'pausedUiObserved': true,
+          'warmLaunchNotReplayed': true,
+          'audioScope': 'Actual production transport UI/native adapter; silent screenrecord is not physical audibility/latency proof',
+        };
+      });
+      await tap(key('home-artwork'));
+      await shot('24-graphite-editor');
+      await tap(key('current-voice'));
+      await shot('08-instruments');
+      await tap(key('voice-bell'));
+      await control('editor-export', 'Export loop');
+      await shot('10-export-selection');
+      await recorded('05-export-ready', () async {
+        final strings = tester.element(key('export-start')).strings;
+        await action('cancel-format-video', key('export-intent-mp4'));
+        await action('cancel-start', key('export-start'), waitMs: 0);
+        await graphiteUntil(() => key('export-working').evaluate().isNotEmpty);
+        await action('cancel-job', key('export-start'), waitMs: 0);
+        await graphiteUntil(
+          () => find.text(strings.exportCancelled).evaluate().isNotEmpty,
+          seconds: 60,
+        );
+        await wait(450); // Actual readable cancellation state, no added frames.
+        await action('error-format-image', key('export-intent-png'));
+        final root = Directory(
+          '${(await getApplicationDocumentsDirectory()).path}/exports',
+        );
+        final backup = Directory('${root.path}-graphite-owned-fixture-backup');
+        final blocker = File(root.path);
+        const marker =
+            'Owned graphite fixture I/O fault; restore before retry.';
+        expect(await root.exists(), isTrue);
+        expect(await backup.exists(), isFalse);
+        var restored = false;
+        await root.rename(backup.path);
+        try {
+          await blocker.writeAsString(marker, flush: true);
+          await action('error-start', key('export-start'), waitMs: 0);
+          await graphiteUntil(
+            () => find.text(strings.exportFailed).evaluate().isNotEmpty,
+            seconds: 60,
+          );
+          await wait(450); // Leave the actual I/O error readable before retry.
+        } finally {
+          if (await blocker.exists()) {
+            expect(await blocker.readAsString(), marker);
+            await blocker.delete();
+          }
+          expect(await root.exists(), isFalse);
+          await backup.rename(root.path);
+          restored = await root.exists() && !await backup.exists();
+        }
+        expect(restored, isTrue);
+        await action('retry-export', key('export-start'), waitMs: 0);
+        await graphiteUntil(
+          () => key('export-ready').evaluate().isNotEmpty,
+          seconds: 60,
+        );
+        expect(find.text(strings.exportReady), findsOneWidget);
+        final published = (await FileExportLibrary(root).list()).entries
+            .where(
+              (entry) =>
+                  entry.available &&
+                  entry.artifact.projectId == 'capture-morning' &&
+                  entry.artifact.mime == 'image/png',
+            )
+            .toList();
+        expect(published, isNotEmpty);
+        final bytes = await File(published.first.artifact.path).readAsBytes();
+        expect(bytes.take(8).toList(), [137, 80, 78, 71, 13, 10, 26, 10]);
+        return {
+          'cancelObserved': true,
+          'actualIoErrorObserved': true,
+          'fixtureDirectoryRestored': restored,
+          'readyAfterRetry': true,
+          'faultScope': 'Actual I/O failure from a temporary blocker in this fresh diagnostic app exports directory; original fixture directory restored, no mocked adapter or fake UI state',
+        };
+      });
+      await shot('11-export-ready');
+      await tap(find.byTooltip('Close'));
+      await control('editor-back', 'Back to gallery');
+      await graphiteUntil(warmHome);
+      expect(
+        container().read(settingsProvider).preferences.reduceMotion,
+        isFalse,
+      );
+      await recorded('06-reduced-motion', () async {
+        await host.event('system_motion', 'reduced');
+        await graphiteUntil(
+          () =>
+              MediaQuery.disableAnimationsOf(tester.element(key('home-start'))),
+        );
+        expect(
+          container().read(settingsProvider).preferences.reduceMotion,
+          isFalse,
+        );
+        await action('system-library', key('nav-library'));
+        await action('system-exports', libraryTab('Exports'));
+        await action('system-drafts', libraryTab('Drafts'));
+        await action('system-home', key('nav-home'));
+        await host.event('system_motion', 'normal');
+        await graphiteUntil(
+          () => !MediaQuery.disableAnimationsOf(
+            tester.element(key('home-start')),
+          ),
+        );
+        await preference(reduce: true);
+        expect(
+          MediaQuery.disableAnimationsOf(tester.element(key('home-start'))),
+          isTrue,
+        );
+        await action('stored-library', key('nav-library'));
+        await action('stored-exports', libraryTab('Exports'));
+        await action('stored-drafts', libraryTab('Drafts'));
+        await action('stored-home', key('nav-home'));
+        await graphiteUntil(warmHome);
+        return {
+          'storedFalseDuringSystem': true,
+          'systemRestoredBeforeStored': true,
+          'systemAndStoredObserved': true,
+          'warmLaunchNotReplayed': true,
+        };
+      });
+      await shot('15-home-reduced-motion');
+      await preference(reduce: false);
+      expect(
+        MediaQuery.disableAnimationsOf(tester.element(key('home-start'))),
+        isFalse,
+      );
+      await host.event('graphite_complete', 'graphite', {
+        'passed': true,
+        'normalFullCapturePassed': false,
+        'storedMotionRestored': !container()
+            .read(settingsProvider)
+            .preferences
+            .reduceMotion,
+        'performanceScope': 'Real unrecorded profile timings are separate from five original silent clips; not physical FPS/audio/iOS acceptance',
+      });
+      binding.reportData = {
+        'graphiteSubsetPassed': true,
+        'normalFullCapturePassed': false,
       };
       expect(tester.takeException(), isNull);
       return;

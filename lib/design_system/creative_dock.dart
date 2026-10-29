@@ -60,8 +60,8 @@ class CreativeDock extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: dark
-                  ? const [Color(0xff1b2440), Color(0xff0e1429)]
-                  : const [Color(0xfffafbff), Color(0xffe5edff)],
+                  ? const [Color(0xff303334), Color(0xff171b1c)]
+                  : const [Color(0xfffafaf2), Color(0xffdfe5d9)],
             ),
             border: Border.all(color: colors.primary.withValues(alpha: .4)),
           ),
@@ -137,17 +137,18 @@ class CreativeDock extends StatelessWidget {
       var keyHeight = fullRows ? 54.0 : 78.0;
       for (var role = 0; role < allLabels.length; role++) {
         final reserved = fullRows
-            ? 24.0 +
-                  (role == 3 ? 42 : 32) +
-                  14 +
-                  (role == selectedIndex ? 18 : 0)
-            : 8.0;
+            ? 24.0 + 42 + 14 + (role == selectedIndex ? 18 : 0)
+            : (role == 3 ? 20.0 : 8.0);
         final text = TextPainter(
           text: TextSpan(text: allLabels[role], style: style),
           textDirection: Directionality.of(context),
           textScaler: MediaQuery.textScalerOf(context),
         )..layout(maxWidth: math.max(1, slot - reserved));
-        keyHeight = math.max(keyHeight, text.height + (fullRows ? 12 : 60));
+        keyHeight = math.max(
+          keyHeight,
+          text.height +
+              (fullRows ? (role == 3 ? 18 : 12) : (role == 3 ? 64 : 58)),
+        );
         text.dispose();
       }
       Widget tile(int role) => _DockKey(
@@ -209,8 +210,8 @@ class CreativeDock extends StatelessWidget {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: dark
-                                ? const [Color(0x455f4ba7), Color(0x2226b7d3)]
-                                : const [Color(0xffe1d8ff), Color(0xffd8f5ff)],
+                                ? const [Color(0xff454b43), Color(0xff282f2a)]
+                                : const [Color(0xffd0d9c8), Color(0xffe7eadf)],
                           ),
                           border: Border.all(
                             color: colors.primary.withValues(alpha: .3),
@@ -243,12 +244,12 @@ class CreativeDock extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: dark ? .35 : .12),
-              blurRadius: 20,
+              blurRadius: 12,
               offset: const Offset(0, 8),
             ),
             BoxShadow(
-              color: DoodimoColors.violet.withValues(alpha: dark ? .12 : .06),
-              blurRadius: 22,
+              color: DoodimoColors.orange.withValues(alpha: dark ? .12 : .06),
+              blurRadius: 10,
             ),
           ],
         ),
@@ -261,8 +262,8 @@ class CreativeDock extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: dark
-                    ? const [Color(0xff1b2440), Color(0xff0e1429)]
-                    : const [Color(0xfffafbff), Color(0xffe5edff)],
+                    ? const [Color(0xff303334), Color(0xff171b1c)]
+                    : const [Color(0xfffafaf2), Color(0xffdfe5d9)],
               ),
             ),
             child: Padding(padding: const EdgeInsets.all(5), child: keys),
@@ -303,50 +304,51 @@ class _DockKeyState extends State<_DockKey> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final iconSize = widget.rail
+        ? 24.0
+        : widget.horizontal
+        ? 42.0
+        : 42.0;
     final icon = Container(
-      width: widget.rail
-          ? 24
-          : widget.create
-          ? 42
-          : 32,
-      height: widget.rail
-          ? 24
-          : widget.create
-          ? 42
-          : 32,
+      width: iconSize,
+      height: iconSize,
       decoration: widget.create
-          ? BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              gradient: const LinearGradient(
+          ? null
+          : BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xffbda4ff), Color(0xff77e7ff)],
+                colors: [
+                  colors.surfaceContainerHigh,
+                  colors.surfaceContainerLow,
+                ],
               ),
               border: Border.all(
-                color: const Color(0xffe7e2ff).withValues(alpha: .7),
+                color: widget.selected ? colors.primary : colors.outline,
+                width: widget.selected ? 1.8 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: DoodimoColors.violet.withValues(alpha: .3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: dark ? .3 : .09),
+                  blurRadius: 4,
+                  offset: const Offset(0, 3),
                 ),
               ],
-            )
-          : null,
+            ),
       child: Center(
         child: DoodimoIcon(
           widget.glyph,
           size: widget.rail
-              ? 21
+              ? 20
               : widget.create
-              ? 28
-              : 27,
+              ? 30
+              : 24,
           color: widget.create
               ? DoodimoColors.ink
               : widget.selected
-              ? (dark ? DoodimoColors.cyan : colors.primary)
-              : colors.onSurfaceVariant,
+              ? colors.primary
+              : colors.onSurface,
         ),
       ),
     );
@@ -354,7 +356,11 @@ class _DockKeyState extends State<_DockKey> {
       widget.label,
       textAlign: widget.horizontal ? TextAlign.start : TextAlign.center,
       style: widget.style.copyWith(
-        color: widget.selected ? colors.onSurface : colors.onSurfaceVariant,
+        color: widget.create
+            ? DoodimoColors.ink
+            : widget.selected
+            ? colors.onSurface
+            : colors.onSurfaceVariant,
       ),
     );
     Widget content = widget.horizontal
@@ -392,10 +398,28 @@ class _DockKeyState extends State<_DockKey> {
               ),
             ],
           );
-    if (widget.raised) {
-      content = Transform.translate(
-        offset: const Offset(0, -5),
-        child: content,
+    if (widget.create) {
+      content = DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(23),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xffffac6a), Color(0xffed7e37)],
+          ),
+          border: Border.all(color: const Color(0xffffc89c)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .3),
+              blurRadius: 7,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          child: content,
+        ),
       );
     }
     return Semantics(

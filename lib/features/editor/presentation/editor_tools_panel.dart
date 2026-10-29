@@ -6,15 +6,16 @@ import '../../../l10n/strings.dart';
 import '../../../design_system/doodimo_icon.dart';
 import 'studio_control.dart';
 import '../../../design_system/immersive_surface.dart';
-import '../../../design_system/brand_colors.dart';
 
 enum EditorToolAction { paper, style, mix, score, clear, tips }
 
 Future<EditorToolAction?> showEditorToolsPanel(
   BuildContext context,
-  ProjectDocument document,
-) => showCreativePanel<EditorToolAction>(
+  ProjectDocument document, {
+  Rect? sourceBounds,
+}) => showCreativePanel<EditorToolAction>(
   context: context,
+  sourceBounds: sourceBounds,
   builder: (context) {
     final actions = [
       (EditorToolAction.paper, DoodimoGlyph.paper, context.strings.paperColor),
@@ -57,8 +58,8 @@ Future<EditorToolAction?> showEditorToolsPanel(
                     padding: EdgeInsets.zero,
                     radius: 22,
                     accent: action == EditorToolAction.clear
-                        ? DoodimoColors.pink
-                        : DoodimoColors.violet,
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
                     child: StudioControl(
                       key: ValueKey('editor-tool-${action.name}'),
                       label: label,

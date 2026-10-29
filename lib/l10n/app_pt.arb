@@ -370,5 +370,6 @@
   "welcomeToBrand": "Boas-vindas ao {name}",
   "backgroundPanelTitle": "Papel e foto",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "Ferramentas"
+  "editorToolsShort": "Ferramentas",
+  "openingDrawing": "Abrindo desenho…"
 }

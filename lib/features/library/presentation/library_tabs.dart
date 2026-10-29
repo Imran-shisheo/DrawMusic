@@ -21,7 +21,11 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
     Widget tab(bool exported, DoodimoGlyph icon, String label) {
       final selected = exported == exports;
       final contents = [
-        DoodimoIcon(icon, size: 24),
+        DoodimoIcon(
+          icon,
+          size: 24,
+          color: selected ? colors.onPrimary : colors.onSurfaceVariant,
+        ),
         const SizedBox(width: 8, height: 6),
         Flexible(child: Text(label, textAlign: TextAlign.center)),
       ];
@@ -32,7 +36,7 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
           child: Material(
             type: MaterialType.transparency,
             child: InkWell(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
               onTap: () => context.go(exported ? '/exports' : '/drafts'),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: 52),
@@ -44,7 +48,7 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
                   child: DefaultTextStyle(
                     style: Theme.of(context).textTheme.labelLarge!.copyWith(
                       color: selected
-                          ? colors.primary
+                          ? colors.onPrimary
                           : colors.onSurfaceVariant,
                       fontWeight: FontWeight.w700,
                     ),
@@ -52,7 +56,13 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
                         ? Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              DoodimoIcon(icon, size: 24),
+                              DoodimoIcon(
+                                icon,
+                                size: 24,
+                                color: selected
+                                    ? colors.onPrimary
+                                    : colors.onSurfaceVariant,
+                              ),
                               const SizedBox(height: 6),
                               Text(label, textAlign: TextAlign.center),
                             ],
@@ -72,7 +82,7 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
 
     return ImmersiveSurface(
       padding: const EdgeInsets.all(5),
-      radius: 21,
+      radius: 24,
       child: Stack(
         children: [
           Positioned.fill(
@@ -93,13 +103,13 @@ class LibraryTabs extends StatelessWidget implements PreferredSizeWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        colors.secondary.withValues(alpha: .22),
-                        colors.primary.withValues(alpha: .09),
+                        Color.lerp(colors.primary, Colors.white, .12)!,
+                        colors.primary,
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: colors.secondary.withValues(alpha: .4),
+                      color: Color.lerp(colors.primary, Colors.white, .3)!,
                     ),
                   ),
                 ),

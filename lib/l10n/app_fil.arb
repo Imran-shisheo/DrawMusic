@@ -370,5 +370,6 @@
   "welcomeToBrand": "Maligayang pagdating sa {name}",
   "backgroundPanelTitle": "Papel at larawan",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "Mga tool"
+  "editorToolsShort": "Mga tool",
+  "openingDrawing": "Binubuksan ang drawing…"
 }

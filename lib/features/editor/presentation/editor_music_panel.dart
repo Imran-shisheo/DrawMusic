@@ -9,7 +9,6 @@ import 'canvas.dart' show scaleName;
 import '../../../design_system/doodimo_icon.dart';
 import 'studio_control.dart';
 import '../../../design_system/immersive_surface.dart';
-import '../../../design_system/brand_colors.dart';
 
 class EditorMusicSelection {
   const EditorMusicSelection(
@@ -31,9 +30,11 @@ class EditorMusicSelection {
 
 Future<EditorMusicSelection?> showEditorMusicPanel(
   BuildContext context,
-  ProjectDocument document,
-) => showCreativePanel<EditorMusicSelection>(
+  ProjectDocument document, {
+  Rect? sourceBounds,
+}) => showCreativePanel<EditorMusicSelection>(
   context: context,
+  sourceBounds: sourceBounds,
   builder: (context) => _MusicPanel(document),
 );
 
@@ -82,7 +83,7 @@ class _MusicPanelState extends State<_MusicPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ImmersiveSurface(
-            accent: DoodimoColors.cyan,
+            accent: Theme.of(context).colorScheme.primary,
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -207,7 +208,7 @@ class _MusicPanelState extends State<_MusicPanel> {
           const SizedBox(height: 16),
           ImmersiveSurface(
             padding: EdgeInsets.zero,
-            accent: DoodimoColors.cyan,
+            accent: Theme.of(context).colorScheme.primary,
             child: StudioControl(
               label: context.strings.accompaniment,
               fill: Colors.transparent,
@@ -229,7 +230,7 @@ class _MusicPanelState extends State<_MusicPanel> {
           const SizedBox(height: 16),
           ImmersiveSurface(
             padding: const EdgeInsets.all(16),
-            accent: DoodimoColors.pink,
+            accent: Theme.of(context).colorScheme.error,
             child: SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
               title: Text(context.strings.expressiveMode),

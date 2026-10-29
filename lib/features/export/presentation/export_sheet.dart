@@ -309,12 +309,6 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     ExportFormat.mp4 => 'MP4',
     ExportFormat.midi => 'MIDI',
   };
-  Color _formatTint(ExportFormat format) => switch (format) {
-    ExportFormat.png => const Color(0xff55dff5),
-    ExportFormat.wav => const Color(0xffb29aff),
-    ExportFormat.mp4 => const Color(0xfff19bda),
-    ExportFormat.midi => const Color(0xff80b5ff),
-  };
   DoodimoGlyph _glyph(ExportFormat format) => switch (format) {
     ExportFormat.png => DoodimoGlyph.image,
     ExportFormat.wav => DoodimoGlyph.sound,
@@ -326,30 +320,56 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     final selected = _selectedFormat == format;
     final colors = Theme.of(context).colorScheme;
     final short = MediaQuery.sizeOf(context).height < 480;
-    final accent = _formatTint(format);
+    final accent = colors.primary;
     final icon = SizedBox(
       width: short ? 32 : 46,
-      height: short ? 32 : 46,
-      child: Center(
-        child: DoodimoIcon(
-          _glyph(format),
-          size: short ? 23 : 30,
-          color: Theme.of(context).brightness == Brightness.dark
-              ? accent
-              : colors.primary,
-        ),
+      height: short ? 32 : 40,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          DoodimoIcon(
+            _glyph(format),
+            size: short ? 23 : 30,
+            color: selected ? colors.onPrimary : colors.onSurface,
+          ),
+          if (selected)
+            PositionedDirectional(
+              end: 0,
+              bottom: 0,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colors.onPrimary,
+                  shape: BoxShape.circle,
+                ),
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: Center(
+                    child: DoodimoIcon(
+                      DoodimoGlyph.check,
+                      size: 12,
+                      color: accent,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
     final label = Text(
       _label(format),
       textAlign: short ? TextAlign.start : TextAlign.center,
-      style: Theme.of(context).textTheme.labelLarge
-          ?.copyWith(fontWeight: selected ? FontWeight.w800 : FontWeight.w500),
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+        fontWeight: FontWeight.w700,
+        color: selected ? colors.onPrimary : colors.onSurface,
+      ),
     );
     return SizedBox(
       width: width,
       child: Semantics(
         selected: selected,
+        enabled: !_busy && !_fileActionBusy,
         button: true,
         label: _description(format),
         child: Tooltip(
@@ -358,32 +378,35 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
             color: Colors.transparent,
             child: InkWell(
               key: ValueKey('export-intent-${format.name}'),
-              borderRadius: BorderRadius.circular(18),
-              onTap: () => _choose(format),
+              borderRadius: BorderRadius.circular(16),
+              onTap: _busy || _fileActionBusy ? null : () => _choose(format),
               child: AnimatedContainer(
                 duration: CreativeMotion.duration(
                   context,
                   CreativeMotion.selection,
                 ),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(16),
                   gradient: selected
                       ? LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            accent.withValues(alpha: .22),
-                            const Color(0xff8b5cf6).withValues(alpha: .12),
+                            Color.lerp(accent, Colors.white, .2)!,
+                            accent,
                           ],
                         )
                       : null,
                   border: Border.all(
                     color: selected
-                        ? accent.withValues(alpha: .45)
-                        : Colors.transparent,
+                        ? Color.lerp(accent, Colors.white, .45)!
+                        : colors.outlineVariant,
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 6,
+                ),
                 child: short
                     ? ConstrainedBox(
                         constraints: const BoxConstraints(minHeight: 48),
@@ -402,13 +425,15 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
                           const SizedBox(height: 8),
                           label,
                           const SizedBox(height: 6),
-                          Container(
-                            height: 3,
-                            width: 18,
-                            decoration: BoxDecoration(
-                              color: selected ? accent : Colors.transparent,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
+                          Text(
+                            _extension(format),
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: selected
+                                      ? colors.onPrimary
+                                      : colors.onSurfaceVariant,
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                         ],
                       ),
@@ -421,8 +446,9 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
   }
 
   Widget _preview({bool ready = false}) => ExportPreviewStage(
+    key: const ValueKey('export-artwork-stage'),
     document: widget.snapshot,
-    accent: _formatTint(_selectedFormat),
+    accent: Theme.of(context).colorScheme.primary,
     extension: _extension(_selectedFormat),
     ready: ready,
     transparentBackground:
@@ -430,39 +456,15 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
   );
 
   Widget _detail() {
-    final preview = MediaQuery.sizeOf(context).height >= 480;
     return Column(
       key: ValueKey('export-settings-${_selectedFormat.name}'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (preview) ...[_preview(), const SizedBox(height: 22)],
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(
-                _label(_selectedFormat),
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Padding(
-              padding: const EdgeInsets.only(top: 7),
-              child: Text(
-                _extension(_selectedFormat),
-                style: Theme.of(context).textTheme.labelLarge
-                    ?.copyWith(letterSpacing: 1.5),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 7),
         Text(
           _description(_selectedFormat),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         Material(type: MaterialType.transparency, child: _settings()),
       ],
     );
@@ -500,7 +502,14 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
                   horizontal: 14,
                   vertical: 12,
                 ),
-                shape: const StadiumBorder(),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: value == selected
+                        ? colors.primary
+                        : colors.outlineVariant,
+                  ),
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -599,39 +608,38 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     );
   }
 
+  Widget _formatSelector() => Semantics(
+    label: context.strings.exportChooseFormat,
+    child: ImmersiveSurface(
+      padding: const EdgeInsets.all(5),
+      radius: 24,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+          final columns = largeText && constraints.maxWidth < 440 ? 2 : 4;
+          final width = (constraints.maxWidth - (columns - 1) * 4) / columns;
+          return Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: [
+              for (final format in [
+                ExportFormat.png,
+                ExportFormat.wav,
+                ExportFormat.mp4,
+                ExportFormat.midi,
+              ])
+                _intent(format, width),
+            ],
+          );
+        },
+      ),
+    ),
+  );
+
   Widget _selection() => Column(
     key: const ValueKey('export-selection'),
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Semantics(
-        label: context.strings.exportChooseFormat,
-        child: ImmersiveSurface(
-          padding: const EdgeInsets.all(5),
-          radius: 24,
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
-              final columns = largeText && constraints.maxWidth < 440 ? 2 : 4;
-              final width =
-                  (constraints.maxWidth - (columns - 1) * 4) / columns;
-              return Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: [
-                  for (final format in [
-                    ExportFormat.png,
-                    ExportFormat.wav,
-                    ExportFormat.mp4,
-                    ExportFormat.midi,
-                  ])
-                    _intent(format, width),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-      const SizedBox(height: 20),
       ContinuitySwitcher(
         stateKeys: const [
           ValueKey('export-settings-png'),
@@ -662,19 +670,11 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
     padding: const EdgeInsets.symmetric(vertical: 28),
     child: Column(
       children: [
-        _preview(),
-        const SizedBox(height: 24),
         Text(
           _finalizing
               ? context.strings.exportFinalizing
               : context.strings.exportPreparing,
           style: Theme.of(context).textTheme.headlineSmall,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          widget.snapshot.title,
-          style: Theme.of(context).textTheme.bodyMedium,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 28),
@@ -702,8 +702,6 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
       key: const ValueKey('export-ready'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _preview(ready: true),
-        const SizedBox(height: 22),
         Text(
           context.strings.exportReadyTitle,
           style: Theme.of(context).textTheme.headlineSmall
@@ -726,12 +724,6 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
           Semantics(liveRegion: true, child: Text(_message!)),
         ],
         const SizedBox(height: 20),
-        PrismAction(
-          onPressed: _fileActionBusy ? null : _share,
-          icon: const DoodimoIcon(DoodimoGlyph.export),
-          label: context.strings.shareExportedFile,
-        ),
-        const SizedBox(height: 8),
         OutlinedButton.icon(
           onPressed: _fileActionBusy ? null : _savePublic,
           icon: const DoodimoIcon(DoodimoGlyph.save),
@@ -761,44 +753,62 @@ class _ExportSheetState extends ConsumerState<ExportSheet>
       title: context.strings.exportThisLoop,
       canClose: !_finalizing,
       onClose: _close,
-      actions: _artifact != null
-          ? const []
-          : [
-              SizedBox(
-                width: double.infinity,
-                child: PrismAction(
-                  key: const ValueKey('export-start'),
-                  onPressed: _busy
-                      ? _finalizing
-                            ? null
-                            : () => _cancellation?.cancelled = true
-                      : _fileActionBusy ||
-                            (_selectedFormat != ExportFormat.png && !_hasMusic)
+      actions: [
+        SizedBox(
+          width: double.infinity,
+          child: PrismAction(
+            key: const ValueKey('export-start'),
+            onPressed: _artifact != null
+                ? (_fileActionBusy ? null : _share)
+                : _busy
+                ? _finalizing
                       ? null
-                      : () => _export(_selectedFormat),
-                  icon: DoodimoIcon(
-                    _busy ? DoodimoGlyph.close : DoodimoGlyph.arrowUpRight,
-                  ),
-                  label: _busy
-                      ? (_finalizing
-                            ? context.strings.finishingLibraryEntry
-                            : context.strings.cancelExport)
-                      : _actionLabel(),
-                ),
-              ),
+                      : () => _cancellation?.cancelled = true
+                : _fileActionBusy ||
+                      (_selectedFormat != ExportFormat.png && !_hasMusic)
+                ? null
+                : () => _export(_selectedFormat),
+            icon: DoodimoIcon(
+              _artifact != null
+                  ? DoodimoGlyph.export
+                  : _busy
+                  ? DoodimoGlyph.close
+                  : DoodimoGlyph.arrowUpRight,
+            ),
+            label: _artifact != null
+                ? context.strings.shareExportedFile
+                : _busy
+                ? (_finalizing
+                      ? context.strings.finishingLibraryEntry
+                      : context.strings.cancelExport)
+                : _actionLabel(),
+          ),
+        ),
+      ],
+      child: Column(
+        key: const ValueKey('export-studio'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _formatSelector(),
+          const SizedBox(height: 14),
+          if (MediaQuery.sizeOf(context).height >= 480) ...[
+            _preview(ready: _artifact != null),
+            const SizedBox(height: 14),
+          ],
+          ContinuitySwitcher(
+            stateKeys: const [
+              ValueKey('export-selection'),
+              ValueKey('export-working'),
+              ValueKey('export-finalizing'),
+              ValueKey('export-ready'),
             ],
-      child: ContinuitySwitcher(
-        stateKeys: const [
-          ValueKey('export-selection'),
-          ValueKey('export-working'),
-          ValueKey('export-finalizing'),
-          ValueKey('export-ready'),
+            child: _busy
+                ? _working()
+                : _artifact != null
+                ? _ready()
+                : _selection(),
+          ),
         ],
-        child: _busy
-            ? _working()
-            : _artifact != null
-            ? _ready()
-            : _selection(),
       ),
     ),
   );

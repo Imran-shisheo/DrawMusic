@@ -8,6 +8,7 @@ import hashlib
 from collections import Counter
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -134,9 +135,43 @@ TRANSITION_ACTIONS = ('root-library', *('library-normal-' + str(i) for i in rang
     'root-library-return', 'root-home-editor', 'editor-open', 'editor-back',
     'sheet-editor-open', 'sheet-tools-open', 'sheet-paper-open', 'sheet-close', 'sheet-editor-back')
 
+GRAPHITE_CLIPS = ('00-graphite-opening', '01-root-navigation', '02-editor-instrument', '05-export-ready', '06-reduced-motion')
+GRAPHITE_SHOTS = ('01-home', '02-drafts', '03-exports', '04-settings', '24-graphite-editor', '08-instruments', '10-export-selection', '11-export-ready', '15-home-reduced-motion')
+GRAPHITE_ACTIONS = {
+    '01-root-navigation': ('root-library', *('library-normal-' + str(i) for i in range(4)),
+        *('library-rapid-' + str(i) for i in range(6)), 'root-settings', 'root-home'),
+    '02-editor-instrument': ('artwork-open', 'canvas-first-input', 'voice-open', 'voice-bell', 'play', 'pause',
+        'music-open', 'music-close', 'tools-open', 'tools-close', 'background-open', 'background-close',
+        'editor-back', 'rapid-artwork-reopen', 'rapid-play', 'rapid-pause', 'rapid-back'),
+    '05-export-ready': ('cancel-format-video', 'cancel-start', 'cancel-job', 'error-format-image', 'error-start', 'retry-export'),
+    '06-reduced-motion': ('system-library', 'system-exports', 'system-drafts', 'system-home',
+        'stored-library', 'stored-exports', 'stored-drafts', 'stored-home'),
+}
+GRAPHITE_EVENTS = (
+    ('metadata', 'session'), ('record_start', GRAPHITE_CLIPS[0]), ('record_stop', GRAPHITE_CLIPS[0]),
+    ('graphite_opening', 'opening'), ('snapshot', '01-home'),
+    ('perf_start', 'graphite-interactions-unrecorded'), ('perf_finish', 'graphite-interactions-unrecorded'),
+    ('record_start', GRAPHITE_CLIPS[1]), ('record_stop', GRAPHITE_CLIPS[1]), ('graphite_trace', GRAPHITE_CLIPS[1]),
+    ('snapshot', '02-drafts'), ('snapshot', '03-exports'), ('snapshot', '04-settings'),
+    ('record_start', GRAPHITE_CLIPS[2]), ('record_stop', GRAPHITE_CLIPS[2]), ('graphite_trace', GRAPHITE_CLIPS[2]),
+    ('snapshot', '24-graphite-editor'), ('snapshot', '08-instruments'), ('snapshot', '10-export-selection'),
+    ('record_start', GRAPHITE_CLIPS[3]), ('record_stop', GRAPHITE_CLIPS[3]), ('graphite_trace', GRAPHITE_CLIPS[3]),
+    ('snapshot', '11-export-ready'),
+    ('record_start', GRAPHITE_CLIPS[4]), ('system_motion', 'reduced'), ('system_motion', 'normal'),
+    ('record_stop', GRAPHITE_CLIPS[4]), ('graphite_trace', GRAPHITE_CLIPS[4]),
+    ('snapshot', '15-home-reduced-motion'), ('graphite_complete', 'graphite'),
+)
+MOTION_SETTINGS = ('window_animation_scale', 'transition_animation_scale', 'animator_duration_scale')
+
 
 class Capture:
-    def __init__(self, *, static_backdrop_probe=False, responsive_preset=None, home_profile_only=False, transition_capture_only=False):
+    def __init__(self, *, static_backdrop_probe=False, responsive_preset=None, home_profile_only=False, transition_capture_only=False, graphite_capture=False):
+        if type(graphite_capture) is not bool or (graphite_capture and (static_backdrop_probe or responsive_preset is not None or home_profile_only or transition_capture_only)):
+            raise ValueError('Unknown or conflicting graphite mode')
+        self.graphite_capture = graphite_capture
+        self.graphite_traces = []
+        self.graphite_opening = False
+        self.graphite_system_motion = None
         if type(transition_capture_only) is not bool or (transition_capture_only and (static_backdrop_probe or responsive_preset is not None or home_profile_only)):
             raise ValueError('Unknown or conflicting transition subset mode')
         self.transition_capture_only = transition_capture_only
@@ -159,6 +194,9 @@ class Capture:
         self.probe_restored = False
         self.probe_cache_size = None
         self.report = {'passed': False, 'scope': 'Owned API35 QEMU profile-build screenshots, silent interaction recordings and real engine timings; not phone/iOS acceptance', 'events': [], 'recordingsHaveAudio': False}
+        if graphite_capture:
+            self.report.update(scope='Actual graphite production launch mount, Hero/input, retained tabs, panels/export and reduced-motion subset; initial recording excludes OS/VM startup, unrecorded interaction engine timings are separate; not physical/audio/iOS smoothness acceptance',
+                graphiteCapture=True, graphiteSubsetPassed=False, normalFullCapturePassed=False)
         if transition_capture_only:
             self.report.update(scope='Actual normal/reduced transition recordings with real taps, not full23 capture, profiling, smoothness or physical/iOS acceptance',
                 transitionCaptureOnly=True, transitionSubsetPassed=False, normalFullCapturePassed=False)
@@ -172,6 +210,18 @@ class Capture:
         if static_backdrop_probe:
             self.report.update(scope='Diagnostic-only same-run static radial-backdrop A/B; not normal product capture or smoothness/device acceptance',
                                diagnosticOnly=True, normalProductCapturePassed=False, normalFootageProduced=False)
+
+    def _write_graphite_json(self, relative, value):
+        allowed = {'graphite-opening.json', 'performance/graphite-interactions-unrecorded.json',
+                   *('graphite-' + name + '.json' for name in GRAPHITE_CLIPS[1:])}
+        if relative not in allowed:
+            raise ValueError('Undeclared graphite evidence path')
+        data = (json.dumps(value, indent=2)+'\n').encode()
+        limit = 1_048_576 if relative.startswith('performance/') else 65_536
+        if not 0 < len(data) <= limit:
+            raise ValueError('Graphite evidence exceeds bounded diagnostic size')
+        (OUTPUT / relative).write_bytes(data)
+        return {'evidenceFile': relative, 'evidenceBytes': len(data), 'evidenceSha256': hashlib.sha256(data).hexdigest()}
 
     def _cleanup_failed_start(self, remote, pid, process, log, error):
         diagnostic = {'error': str(error).replace(self.token, '[redacted]'),
@@ -348,6 +398,10 @@ class Capture:
             self.sequence += 1
             operation, name = body.get('operation'), slug(body.get('name'))
             item = {'sequence': self.sequence, 'operation': operation, 'name': name, 'hostMonotonicSeconds': time.monotonic()}
+            if self.graphite_capture:
+                index = len(self.report['events'])
+                if index >= len(GRAPHITE_EVENTS) or (operation, name) != GRAPHITE_EVENTS[index]:
+                    raise ValueError('Graphite capture requires exactly its ordered original operations')
             if self.transition_capture_only:
                 index = len(self.report['events'])
                 if index >= len(TRANSITION_EVENTS) or (operation, name) != TRANSITION_EVENTS[index]:
@@ -408,6 +462,8 @@ class Capture:
                     item['screenshotReadiness'] = readiness
                 if self.home_profile_only and readiness is None:
                     raise ValueError('Home profile snapshot requires original exact-frame readiness')
+                if self.graphite_capture and readiness is None:
+                    raise ValueError('Graphite snapshot requires original exact-frame readiness')
                 if self.responsive_preset is not None:
                     if readiness is None:
                         raise ValueError('Responsive snapshot requires original exact-frame readiness')
@@ -431,6 +487,10 @@ class Capture:
                     raise ValueError('Missing real performance result')
                 self.perf = None
                 result = body['result']
+                if self.graphite_capture and (body.get('recordingDuringMeasurement') is not False or
+                        result.get('visibleScope', {}).get('screenRecordingActive') is not False or
+                        result.get('visibleScope', {}).get('graphiteProductionInteractions') is not True):
+                    raise ValueError('Graphite profile must be actual unrecorded production interactions')
                 if self.home_profile_only:
                     scope = result.get('visibleScope', {})
                     samples = scope.get('clockSamples', [])
@@ -472,6 +532,8 @@ class Capture:
                 if not result.get('rawFrames'):
                     raise ValueError('No real Flutter frame samples')
                 (OUTPUT / 'performance' / f'{name}.json').write_text(json.dumps(result, indent=2) + '\n')
+                if self.graphite_capture:
+                    item.update(self._write_graphite_json('performance/graphite-interactions-unrecorded.json', result))
                 (OUTPUT / 'performance' / f'{name}-android-framestats.txt').write_text(adb('shell', 'dumpsys', 'gfxinfo', PACKAGE, 'framestats').stdout)
                 (OUTPUT / 'performance' / f'{name}-memory-after.txt').write_text(adb('shell', 'dumpsys', 'meminfo', PACKAGE).stdout)
                 item.update(frameSamples=len(result['rawFrames']), recordingDuringMeasurement=False,
@@ -497,6 +559,81 @@ class Capture:
                 adb('shell', 'wm', 'density', density)
                 adb('shell', 'settings', 'put', 'system', 'font_scale', scale)
                 item.update(physicalSize=size, densityDpi=density, systemFontScale=scale)
+            elif operation == 'system_motion':
+                if not self.graphite_capture or name not in ('reduced', 'normal') or not self.recording or self.recording[0] != GRAPHITE_CLIPS[-1]:
+                    raise ValueError('System motion changes require the owned graphite reduced-motion phase')
+                value = '0.0' if name == 'reduced' else '1.0'
+                observed = {}
+                for setting in MOTION_SETTINGS:
+                    adb('shell', 'settings', 'put', 'global', setting, value)
+                    observed[setting] = adb('shell', 'settings', 'get', 'global', setting).stdout.strip()
+                    if float(observed[setting]) != float(value):
+                        raise ValueError('Owned system motion setting did not apply')
+                self.graphite_system_motion = name == 'reduced'
+                item.update(actualSystemReadbacks=observed, reducedMotionRequested=self.graphite_system_motion)
+            elif operation == 'graphite_opening':
+                observations = body.get('observations')
+                stop = self.report['events'][-1] if self.report['events'] else {}
+                if (not self.graphite_capture or self.recording or self.perf or
+                        stop.get('operation') != 'record_stop' or stop.get('name') != GRAPHITE_CLIPS[0] or
+                        stop.get('wholeVideoDecode', {}).get('passed') is not True or
+                        body.get('productionEntryPoint') != 'lib/main.dart' or body.get('showWelcome') is not True or
+                        body.get('fixtureGuideAlreadyCompleted') is not True or body.get('firstFrameRasterized') is not True or
+                        body.get('readyHomeRendered') is not True or body.get('launchEndedWithoutInput') is not True or
+                        not isinstance(observations, list) or not 2 <= len(observations) <= 128 or
+                        any(not isinstance(x, dict) for x in observations) or
+                        any(type(x.get('elapsedUs')) is not int or x['elapsedUs'] < 0 or
+                            type(x.get('engineFrameNumber')) is not int or x['engineFrameNumber'] < 0 or
+                            type(x.get('controllerValue')) not in (int, float) or not 0 <= x['controllerValue'] <= 1
+                            for x in observations) or
+                        any(b['elapsedUs'] <= a['elapsedUs'] for a, b in zip(observations, observations[1:])) or
+                        max(x['controllerValue'] for x in observations) <= min(x['controllerValue'] for x in observations)):
+                    raise ValueError('Missing actual production launch/controller/whole-video evidence')
+                witness = {key: value for key, value in body.items() if key not in ('token', 'sequence')}
+                item.update(self._write_graphite_json('graphite-opening.json', witness))
+                self.graphite_opening = True
+                item.update(actualControllerSamples=len(observations),
+                    scope='First actual production widget mount in a fixture-seeded profile diagnostic process; not OS/VM cold-start time or phase-by-phase presentation proof')
+            elif operation == 'graphite_trace':
+                actions, witnesses = body.get('actions'), body.get('witnesses')
+                stop = self.report['events'][-1] if self.report['events'] else {}
+                reduced = name == GRAPHITE_CLIPS[-1]
+                required = {
+                    '01-root-navigation': ('retainedLibraryReady', 'warmLaunchNotReplayed'),
+                    '02-editor-instrument': ('heroObserved', 'firstInputCancelledPresentation', 'canvasRectStable', 'playingUiObserved', 'pausedUiObserved', 'warmLaunchNotReplayed'),
+                    '05-export-ready': ('cancelObserved', 'actualIoErrorObserved', 'fixtureDirectoryRestored', 'readyAfterRetry'),
+                    '06-reduced-motion': ('storedFalseDuringSystem', 'systemRestoredBeforeStored', 'systemAndStoredObserved', 'warmLaunchNotReplayed'),
+                }
+                if (not self.graphite_capture or name not in GRAPHITE_ACTIONS or self.recording or self.perf or
+                        stop.get('operation') != 'record_stop' or stop.get('name') != name or
+                        stop.get('wholeVideoDecode', {}).get('passed') is not True or
+                        not isinstance(actions, list) or any(not isinstance(a, dict) for a in actions) or
+                        [a.get('action') for a in actions] != list(GRAPHITE_ACTIONS[name]) or
+                        any(type(a.get('tapElapsedUs')) is not int or a['tapElapsedUs'] < 0 or
+                            type(a.get('engineFrameNumber')) is not int or a['engineFrameNumber'] < 0 or
+                            not isinstance(a.get('targetBounds'), list) or len(a['targetBounds']) != 4 or
+                            any(type(x) not in (int, float) or not math.isfinite(x) for x in a['targetBounds']) or
+                            min(a['targetBounds'][2:]) <= 0 or
+                            type(a.get('requestedPostTapWaitMs')) is not int or not 0 <= a['requestedPostTapWaitMs'] <= 1500 or
+                            a.get('reducedMotion') is not reduced for a in actions) or
+                        any(b['tapElapsedUs'] <= a['tapElapsedUs'] for a, b in zip(actions, actions[1:])) or
+                        type(body.get('actualElapsedUs')) is not int or body['actualElapsedUs'] <= actions[-1]['tapElapsedUs'] or
+                        not isinstance(witnesses, dict) or any(witnesses.get(key) is not True for key in required[name])):
+                    raise ValueError('Missing actual graphite action/state/decode evidence')
+                item.update(self._write_graphite_json('graphite-' + name + '.json', {
+                    'scope': 'Actual hit-tested/pointer actions and UI/storage witnesses; not physical audibility, every-frame continuity or presentation FPS',
+                    'actions': actions, 'witnesses': witnesses, 'actualElapsedUs': body['actualElapsedUs']}))
+                self.graphite_traces.append(name)
+                item.update(actionCount=len(actions), reducedMotion=reduced, witnesses=witnesses)
+            elif operation == 'graphite_complete':
+                if (not self.graphite_capture or not self.graphite_opening or self.recording or self.perf or
+                        self.graphite_traces != list(GRAPHITE_CLIPS[1:]) or self.graphite_system_motion is not False or
+                        body.get('storedMotionRestored') is not True or body.get('passed') is not True or
+                        body.get('normalFullCapturePassed') is not False or
+                        self.report.get('appMetadata', {}).get('captureMode') != 'graphite-reference-capture'):
+                    raise ValueError('Incomplete graphite subset or unrestored motion state')
+                self.complete = True
+                self.report.update(graphiteSubsetPassed=True, normalFullCapturePassed=False)
             elif operation == 'transition_trace':
                 reduced = name == TRANSITION_CLIPS[1]
                 actions = body.get('actions')
@@ -569,6 +706,8 @@ class Capture:
                 self.report['diagnosticPassed'] = True
             elif operation == 'metadata':
                 mode = body.get('captureMode')
+                if (self.graphite_capture and (mode != 'graphite-reference-capture' or body.get('label') != 'after')) or (not self.graphite_capture and mode == 'graphite-reference-capture'):
+                    raise ValueError('Host/app graphite mode or after-label mismatch')
                 if (self.transition_capture_only and (mode != 'transition-capture-only' or body.get('label') != 'after')) or (not self.transition_capture_only and mode == 'transition-capture-only'):
                     raise ValueError('Host/app transition mode or after-label mismatch')
                 if (self.home_profile_only and (mode != 'home-profile-only' or body.get('label') != 'after')) or (not self.home_profile_only and mode == 'home-profile-only'):
@@ -622,6 +761,17 @@ def finalize_capture(capture, server, port):
         # Do this BEFORE any further ADB operation: offline logcat previously
         # masked the driver failure and prevented final event/SHA preservation.
         persist()
+        if capture.graphite_capture:
+            try:
+                restored = {}
+                for setting in MOTION_SETTINGS:
+                    adb('shell', 'settings', 'put', 'global', setting, '1.0')
+                    restored[setting] = adb('shell', 'settings', 'get', 'global', setting).stdout.strip()
+                    if float(restored[setting]) != 1:
+                        raise ValueError('Owned system motion restoration did not apply')
+                capture.report['finalSystemMotionReadbacks'] = restored
+            except Exception as error:
+                failed('restore-owned-system-motion', error)
         try:
             output = adb('logcat', '-d', '-s', 'AndroidRuntime', 'flutter', required=False).stdout
             (OUTPUT / 'android-logcat.txt').write_text(output)
@@ -668,7 +818,10 @@ def main():
     transitions = provenance.get('transitionCaptureOnly', False)
     if transitions is True and (provenance.get('label') != 'after' or provenance.get('transitionComparison') not in ('before-fix', 'after-fix')):
         raise RuntimeError('Transition subset requires explicit pinned after-source comparison role')
-    capture = Capture(static_backdrop_probe=diagnostic == 'static-backdrop', responsive_preset=responsive, home_profile_only=home_only, transition_capture_only=transitions)
+    graphite = provenance.get('graphiteCapture', False)
+    if graphite is True and provenance.get('label') != 'after':
+        raise RuntimeError('Graphite capture requires pinned after-source provenance')
+    capture = Capture(static_backdrop_probe=diagnostic == 'static-backdrop', responsive_preset=responsive, home_profile_only=home_only, transition_capture_only=transitions, graphite_capture=graphite)
     capture.report['source'] = provenance
     capture.report['hostCpuContext'] = host_cpu_context()
     capture.report['nativeImeWithHardwareKeyboard'] = True
@@ -728,6 +881,8 @@ def main():
         command.append('--dart-define=UI_HOME_PROFILE_ONLY=true')
     if capture.transition_capture_only:
         command.append('--dart-define=UI_TRANSITION_CAPTURE_ONLY=true')
+    if capture.graphite_capture:
+        command.append('--dart-define=UI_GRAPHITE_CAPTURE=true')
     capture.report['profileProcessBudgetSeconds'] = PROFILE_PROCESS_TIMEOUT_SECONDS
     capture.report['profileProcessBudgetScope'] = 'Whole Flutter drive process, including cold profile compilation and runtime; all per-operation acceptance gates remain independent.'
     try:

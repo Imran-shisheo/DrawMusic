@@ -17,14 +17,14 @@ ROOT = Path('work/ui-capture-inspect')
 RESOURCE_PHASES = ('home-ambient-visible', 'diagnostic-static-backdrop-normal', 'diagnostic-static-backdrop-solid')
 
 
-def inspect_native_profile_resources():
+def inspect_native_profile_resources(phases=RESOURCE_PHASES):
     """Small exact-file summaries, not arbitrary dumpsys/runner-file access."""
     folder = ROOT / 'performance'
     if folder.is_symlink():
         raise ValueError('Native profile resource directory symlink rejected')
     graphics_pattern = re.compile(r'\s*(?:Total frames rendered:\s*\d+|Janky frames(?: \(legacy\))?:\s*\d+\s*\([0-9.]+%\)|(?:50th|90th|95th|99th) percentile:\s*\d+ms)\s*')
     memory_pattern = re.compile(r'\s*(?:(?:Native Heap|Dalvik Heap|TOTAL)\s+\d+(?:\s+\d+)+|(?:Java Heap|Native Heap|Graphics):\s*\d+(?:\s+\d+)*|TOTAL PSS:\s*\d+(?:\s+TOTAL RSS:\s*\d+)?(?:\s+TOTAL SWAP PSS:\s*\d+)?)\s*')
-    for phase in RESOURCE_PHASES:
+    for phase in phases:
         for suffix in ('android-framestats', 'memory-before', 'memory-after'):
             name = phase + '-' + suffix + '.txt'
             path = folder / name
@@ -45,11 +45,162 @@ INTERACTION_RECORDINGS = (
     '01-root-navigation', '02-home-editor-back', '03-paper-sheet',
     '04-instrument-and-playback', '05-export-ready', '06-reduced-motion',
 )
+GRAPHITE_RECORDINGS = ('00-graphite-opening', '01-root-navigation', '02-editor-instrument', '05-export-ready', '06-reduced-motion')
+GRAPHITE_SHOTS = ('01-home', '02-drafts', '03-exports', '04-settings', '24-graphite-editor', '08-instruments', '10-export-selection', '11-export-ready', '15-home-reduced-motion')
+GRAPHITE_ACTIONS = {
+    '01-root-navigation': ('root-library', *('library-normal-' + str(i) for i in range(4)),
+        *('library-rapid-' + str(i) for i in range(6)), 'root-settings', 'root-home'),
+    '02-editor-instrument': ('artwork-open', 'canvas-first-input', 'voice-open', 'voice-bell', 'play', 'pause',
+        'music-open', 'music-close', 'tools-open', 'tools-close', 'background-open', 'background-close',
+        'editor-back', 'rapid-artwork-reopen', 'rapid-play', 'rapid-pause', 'rapid-back'),
+    '05-export-ready': ('cancel-format-video', 'cancel-start', 'cancel-job', 'error-format-image', 'error-start', 'retry-export'),
+    '06-reduced-motion': ('system-library', 'system-exports', 'system-drafts', 'system-home',
+        'stored-library', 'stored-exports', 'stored-drafts', 'stored-home'),
+}
+GRAPHITE_EVENTS = (
+    ('metadata', 'session'), ('record_start', GRAPHITE_RECORDINGS[0]), ('record_stop', GRAPHITE_RECORDINGS[0]),
+    ('graphite_opening', 'opening'), ('snapshot', '01-home'),
+    ('perf_start', 'graphite-interactions-unrecorded'), ('perf_finish', 'graphite-interactions-unrecorded'),
+    ('record_start', GRAPHITE_RECORDINGS[1]), ('record_stop', GRAPHITE_RECORDINGS[1]), ('graphite_trace', GRAPHITE_RECORDINGS[1]),
+    ('snapshot', '02-drafts'), ('snapshot', '03-exports'), ('snapshot', '04-settings'),
+    ('record_start', GRAPHITE_RECORDINGS[2]), ('record_stop', GRAPHITE_RECORDINGS[2]), ('graphite_trace', GRAPHITE_RECORDINGS[2]),
+    ('snapshot', '24-graphite-editor'), ('snapshot', '08-instruments'), ('snapshot', '10-export-selection'),
+    ('record_start', GRAPHITE_RECORDINGS[3]), ('record_stop', GRAPHITE_RECORDINGS[3]), ('graphite_trace', GRAPHITE_RECORDINGS[3]),
+    ('snapshot', '11-export-ready'),
+    ('record_start', GRAPHITE_RECORDINGS[4]), ('system_motion', 'reduced'), ('system_motion', 'normal'),
+    ('record_stop', GRAPHITE_RECORDINGS[4]), ('graphite_trace', GRAPHITE_RECORDINGS[4]),
+    ('snapshot', '15-home-reduced-motion'), ('graphite_complete', 'graphite'),
+)
+GRAPHITE_WITNESSES = {
+    '01-root-navigation': ('retainedLibraryReady', 'warmLaunchNotReplayed'),
+    '02-editor-instrument': ('heroObserved', 'firstInputCancelledPresentation', 'canvasRectStable', 'playingUiObserved', 'pausedUiObserved', 'warmLaunchNotReplayed'),
+    '05-export-ready': ('cancelObserved', 'actualIoErrorObserved', 'fixtureDirectoryRestored', 'readyAfterRetry'),
+    '06-reduced-motion': ('storedFalseDuringSystem', 'systemRestoredBeforeStored', 'systemAndStoredObserved', 'warmLaunchNotReplayed'),
+}
+MOTION_SETTINGS = ('window_animation_scale', 'transition_animation_scale', 'animator_duration_scale')
+
+
+def graphite_requested(request):
+    value = request.get('graphiteCaptureDiagnostic', False)
+    if type(value) is not bool or (value and request.get('interactionMotionDiagnostic') is not True):
+        raise ValueError('Graphite inspection requires explicit boolean and complete original interaction diagnostics')
+    return value
+
+
+def validate_graphite_report(report):
+    source = report.get('source', {})
+    if (report.get('passed') is not True or report.get('graphiteCapture') is not True or
+            report.get('graphiteSubsetPassed') is not True or report.get('normalFullCapturePassed') is not False or
+            report.get('reportSource') != 'capture-report.json' or
+            source.get('graphiteCapture') is not True or source.get('label') != 'after' or
+            any(not isinstance(source.get(key), str) or not re.fullmatch(r'[a-f0-9]{40}', source[key])
+                for key in ('productSourceSha', 'productTreeSha', 'captureHarnessSourceSha')) or
+            report.get('appMetadata', {}).get('captureMode') != 'graphite-reference-capture'):
+        raise ValueError('Not an original completed source-pinned graphite report')
+    events = report.get('events')
+    if (not isinstance(events, list) or any(not isinstance(item, dict) for item in events) or
+            [(item.get('operation'), item.get('name')) for item in events] != list(GRAPHITE_EVENTS) or
+            [item.get('sequence') for item in events] != list(range(1, len(GRAPHITE_EVENTS)+1))):
+        raise ValueError('Graphite original operation inventory/order differs')
+    for item in events:
+        if item['operation'] == 'record_stop' and item.get('wholeVideoDecode', {}).get('passed') is not True:
+            raise ValueError('Graphite original clip lacks host full-stream decode')
+        if item['operation'] == 'snapshot':
+            witness = item.get('screenshotReadiness', {})
+            if (witness.get('expectedScene') != item['name'] or type(witness.get('matchedEngineFrameNumber')) is not int or
+                    witness['matchedEngineFrameNumber'] < 0 or witness.get('rasterFrameNumber') != witness['matchedEngineFrameNumber']):
+                raise ValueError('Graphite original exact-frame screenshot witness missing')
+        if item['operation'] == 'system_motion':
+            expected = 0 if item['name'] == 'reduced' else 1
+            values = item.get('actualSystemReadbacks', {})
+            if set(values) != set(MOTION_SETTINGS) or any(float(values[key]) != expected for key in MOTION_SETTINGS):
+                raise ValueError('Graphite original system motion readbacks mismatch')
+    restored = report.get('finalSystemMotionReadbacks', {})
+    if set(restored) != set(MOTION_SETTINGS) or any(float(restored[key]) != 1 for key in MOTION_SETTINGS):
+        raise ValueError('Graphite final system motion restoration is unverified')
+
+
+def graphite_json(relative, event, *, limit=65_536):
+    path = ROOT / relative
+    if (ROOT.is_symlink() or path.parent.is_symlink() or path.is_symlink() or not path.is_file() or
+            event.get('evidenceFile') != relative or type(event.get('evidenceBytes')) is not int or
+            not 0 < path.stat().st_size <= limit or path.stat().st_size != event['evidenceBytes']):
+        raise ValueError('Bounded exact graphite evidence path/length rejected: ' + relative)
+    data = path.read_bytes()
+    if hashlib.sha256(data).hexdigest() != event.get('evidenceSha256'):
+        raise ValueError('Graphite evidence SHA differs from original host: ' + relative)
+    value = json.loads(data)
+    if not isinstance(value, dict): raise ValueError('Graphite evidence must be a bounded object')
+    return value
+
+
+def inspect_graphite_evidence(report):
+    validate_graphite_report(report)
+    events = report['events']
+    opening_event = next(item for item in events if item['operation'] == 'graphite_opening')
+    opening = graphite_json('graphite-opening.json', opening_event)
+    observations = opening.get('observations')
+    if (opening.get('productionEntryPoint') != 'lib/main.dart' or opening.get('showWelcome') is not True or
+            opening.get('fixtureGuideAlreadyCompleted') is not True or opening.get('firstFrameRasterized') is not True or
+            opening.get('readyHomeRendered') is not True or opening.get('launchEndedWithoutInput') is not True or
+            not isinstance(observations, list) or not 2 <= len(observations) <= 128 or
+            opening_event.get('actualControllerSamples') != len(observations) or
+            any(not isinstance(x, dict) or type(x.get('elapsedUs')) is not int or x['elapsedUs'] < 0 or
+                type(x.get('engineFrameNumber')) is not int or x['engineFrameNumber'] < 0 or
+                type(x.get('controllerValue')) not in (int, float) or not 0 <= x['controllerValue'] <= 1 for x in observations) or
+            any(b['elapsedUs'] <= a['elapsedUs'] or b['controllerValue'] < a['controllerValue'] for a,b in zip(observations, observations[1:])) or
+            observations[-1]['controllerValue'] <= observations[0]['controllerValue']):
+        raise ValueError('Original graphite production launch witness is incomplete')
+    print('UI_GRAPHITE_OPENING ' + json.dumps(opening), flush=True)
+    for name in GRAPHITE_RECORDINGS[1:]:
+        event = next(item for item in events if item['operation'] == 'graphite_trace' and item['name'] == name)
+        trace = graphite_json('graphite-' + name + '.json', event)
+        actions, witnesses = trace.get('actions'), trace.get('witnesses')
+        if (not isinstance(actions, list) or any(not isinstance(x, dict) for x in actions) or
+                [x.get('action') for x in actions] != list(GRAPHITE_ACTIONS[name]) or event.get('actionCount') != len(actions) or
+                not isinstance(witnesses, dict) or any(witnesses.get(key) is not True for key in GRAPHITE_WITNESSES[name]) or
+                any(type(x.get('tapElapsedUs')) is not int or x['tapElapsedUs'] < 0 or
+                    type(x.get('engineFrameNumber')) is not int or x['engineFrameNumber'] < 0 or
+                    x.get('reducedMotion') is not (name == GRAPHITE_RECORDINGS[-1]) or
+                    not isinstance(x.get('targetBounds'), list) or len(x['targetBounds']) != 4 or
+                    any(type(v) not in (int, float) or not math.isfinite(v) for v in x['targetBounds']) or min(x['targetBounds'][2:]) <= 0
+                    for x in actions) or
+                any(b['tapElapsedUs'] <= a['tapElapsedUs'] for a,b in zip(actions, actions[1:])) or
+                type(trace.get('actualElapsedUs')) is not int or trace['actualElapsedUs'] <= actions[-1]['tapElapsedUs']):
+            raise ValueError('Original graphite action/state witness mismatch: ' + name)
+        print('UI_GRAPHITE_ACTION_TRACE ' + json.dumps({'name': name, **trace}), flush=True)
+    profile_event = next(item for item in events if item['operation'] == 'perf_finish')
+    result = graphite_json('performance/graphite-interactions-unrecorded.json', profile_event, limit=1_048_576)
+    frames, hz = result.get('rawFrames'), result.get('refreshHz')
+    scope = result.get('visibleScope', {})
+    if (profile_event.get('recordingDuringMeasurement') is not False or scope.get('screenRecordingActive') is not False or
+            scope.get('graphiteProductionInteractions') is not True or not isinstance(frames, list) or not 1 <= len(frames) <= 20000 or
+            type(hz) not in (int, float) or not math.isfinite(hz) or hz <= 0 or
+            any(not isinstance(frame, dict) or any(type(frame.get(key)) is not int or frame[key] < 0
+                for key in ('frameNumber', 'vsyncUs', 'rasterFinishWallUs', 'buildUs', 'rasterUs', 'totalUs')) for frame in frames)):
+        raise ValueError('Missing actual bounded unrecorded graphite engine timings')
+    budget = 1_000_000 / hz
+    if type(result.get('frameBudgetUs')) not in (int,float) or abs(result['frameBudgetUs']-budget) > .001:
+        raise ValueError('Graphite observed refresh/frame budget mismatch')
+    for key, field in (('uiBuild','buildUs'), ('raster','rasterUs'), ('totalSpan','totalUs')):
+        values = sorted(frame[field] for frame in frames)
+        observed = result.get(key, {})
+        expected = {'count': len(values), 'maxUs': values[-1], 'overBudgetFrames': sum(v > budget for v in values),
+                    **{label: values[int((len(values)-1)*p+.5)] for label,p in (('p50Us',.5),('p90Us',.9),('p95Us',.95),('p99Us',.99))}}
+        if any(observed.get(k) != v for k,v in expected.items()):
+            raise ValueError('Graphite engine summary differs from original raw samples: ' + key)
+    misses = sum(f['buildUs'] > budget or f['rasterUs'] > budget for f in frames)
+    if result.get('eitherUiOrRasterOverBudgetFrames') != misses:
+        raise ValueError('Graphite engine budget-miss count differs')
+    summary = {key:value for key,value in result.items() if key != 'rawFrames'}
+    print('UI_GRAPHITE_PROFILE_VERIFIED ' + json.dumps({'originalRawFrameCount':len(frames), 'actualSummaryRecomputed':True,
+        'scope':'Unrecorded software-emulator engine samples, not presentation dropped frames, physical smoothness/audio/iOS acceptance', **summary}), flush=True)
 
 
 def interaction_contact_names(request):
     names = request.get('interactionContactNames', [])
-    if not isinstance(names, list) or len(names) > 2 or any(not isinstance(name, str) or name not in INTERACTION_RECORDINGS for name in names) or len(set(names)) != len(names):
+    allowed = GRAPHITE_RECORDINGS if graphite_requested(request) else INTERACTION_RECORDINGS
+    if not isinstance(names, list) or len(names) > 2 or any(not isinstance(name, str) or name not in allowed for name in names) or len(set(names)) != len(names):
         raise ValueError('Select at most two unique exact interaction recording names')
     if names and request.get('interactionMotionDiagnostic') is not True:
         raise ValueError('Interaction contacts require explicit recording diagnostics')
@@ -92,9 +243,15 @@ def inspect_interaction_recordings(request, report):
     if type(diagnostic) is not bool:
         raise ValueError('Expected boolean interactionMotionDiagnostic')
     if not diagnostic:
-        return
+        return 0
     names = request.get('interactionRecordingNames')
-    if names is None:
+    graphite = graphite_requested(request)
+    if graphite:
+        validate_graphite_report(report)
+        if names is not None and names != list(GRAPHITE_RECORDINGS):
+            raise ValueError('Graphite diagnostics inspect exactly all five original declared clips')
+        names = GRAPHITE_RECORDINGS
+    elif names is None:
         names = INTERACTION_RECORDINGS
     elif (names != ['01-root-navigation', '06-reduced-motion'] or
             report.get('transitionCaptureOnly') is not True or
@@ -170,7 +327,8 @@ def inspect_interaction_recordings(request, report):
             if frame_count != len(values):
                 raise ValueError('Contact original decoded-frame/packet count mismatch: ' + name)
             contact_bytes += interaction_contact(clip, name, frame_count, 1_500_000 - contact_bytes,
-                                                 dense=report.get('transitionCaptureOnly') is True)
+                                                 dense=graphite or report.get('transitionCaptureOnly') is True)
+    return contact_bytes
 
 
 def load_capture_report(request):
@@ -311,6 +469,10 @@ def inspect_ambient_recording(request, report):
 
 def main():
     request = json.loads(Path('cloud/ui-capture-inspect.json').read_text())
+    graphite = graphite_requested(request)
+    report = load_capture_report(request)
+    if graphite:
+        inspect_graphite_evidence(report)
     for name in ('source-provenance.json', 'capture-report.json', 'flutter-drive.log'):
         path = ROOT / name
         print(f'UI_INSPECT_START {name}', flush=True)
@@ -329,12 +491,16 @@ def main():
         for line in timing[:12]:
             if 'UI_CAPTURE_TOKEN=' not in line:
                 print('UI_PROFILE_BUILD_TIMING ' + line[:2000], flush=True)
-    for path in sorted((ROOT / 'performance').glob('*.json')):
+    for path in ([] if graphite else sorted((ROOT / 'performance').glob('*.json'))):
         value = json.loads(path.read_text())
         value.pop('rawFrames', None)
         print(f'UI_PERFORMANCE_SUMMARY {path.name} {json.dumps(value)}', flush=True)
-    inspect_native_profile_resources()
-    for path in sorted((ROOT / 'recordings').glob('*.log'))[:8]:
+    inspect_native_profile_resources(('graphite-interactions-unrecorded',) if graphite else RESOURCE_PHASES)
+    logs = [ROOT / 'recordings' / (name + '.log') for name in GRAPHITE_RECORDINGS] if graphite else sorted((ROOT / 'recordings').glob('*.log'))[:8]
+    for path in logs:
+        if graphite and not path.exists():
+            print('UI_GRAPHITE_RECORDING_LOG_MISSING ' + path.name, flush=True)
+            continue
         if not re.fullmatch(r'[0-9]{2}-[a-z0-9-]{1,70}\.log', path.name):
             raise ValueError('Recording diagnostic name rejected')
         print(f'UI_RECORDING_LOG_BEGIN {path.name}', flush=True)
@@ -344,22 +510,23 @@ def main():
     screenshots = request.get('screenshots', [])
     if not isinstance(screenshots, list) or len(screenshots) > 5:
         raise ValueError('Select at most five exact acceptance PNG names per read-only inspection')
-    report = load_capture_report(request)
     print('UI_CAPTURE_REPORT_SOURCE ' + json.dumps({key: report.get(key) for key in ('reportSource', 'passed', 'inspectionStatus')}), flush=True)
     # Encoder/clock diagnosis is independent of PNG display/log-size limits.
     inspect_ambient_recording(request, report)
-    inspect_interaction_recordings(request, report)
+    contact_bytes = inspect_interaction_recordings(request, report)
     expected = {item['name'] + '.png': item for item in report.get('events', []) if item.get('operation') == 'snapshot'}
     failure = report.get('presentationFailure')
     if failure and failure.get('name') == '00-home-not-presented':
         expected[failure['name'] + '.png'] = failure
-    total = 0
+    total = contact_bytes if graphite else 0
     sizes = []
     for name in screenshots:
         if not isinstance(name, str) or not re.fullmatch(r'[0-9]{2}-[a-z0-9-]{1,70}\.png', name):
             raise ValueError('Screenshot name rejected')
         sizes.append({'name': name, 'bytes': (ROOT / 'screenshots' / name).stat().st_size})
-    print('UI_CAPTURE_PNG_REQUEST_SIZES ' + json.dumps({'images': sizes, 'totalBytes': sum(item['bytes'] for item in sizes), 'maxBytes': 1_500_000}), flush=True)
+    print('UI_CAPTURE_PNG_REQUEST_SIZES ' + json.dumps({'images': sizes, 'totalBytes': sum(item['bytes'] for item in sizes), 'priorContactBytes': total, 'maxBytes': 1_500_000}), flush=True)
+    if graphite and total + sum(item['bytes'] for item in sizes) > 1_500_000:
+        raise ValueError('Combined original graphite PNG/contact batch exceeds1.5MB')
     for name in screenshots:
         if not isinstance(name, str) or not re.fullmatch(r'[0-9]{2}-[a-z0-9-]{1,70}\.png', name):
             raise ValueError('Screenshot name rejected')

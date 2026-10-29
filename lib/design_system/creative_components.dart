@@ -1,10 +1,97 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'motion.dart';
 import 'layout.dart';
 import 'doodimo_mark_painter.dart';
+import 'brand.dart';
+import 'doodimo_icon.dart';
+import '../l10n/strings.dart';
 
-/// Original dimensional ribbon-D identity, separate from document rendering.
+/// The same compact instrument identity on Home and retained Library surfaces.
+/// Natural text height is retained at200% and in translated/RTL interfaces.
+class StudioHeader extends StatelessWidget {
+  const StudioHeader({
+    super.key,
+    this.showSettings = true,
+    this.showHelp = true,
+  });
+  final bool showSettings, showHelp;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final type = Theme.of(context).textTheme;
+    return LayoutBuilder(
+      builder: (context, bounds) {
+        final compact =
+            bounds.maxWidth < 350 ||
+            MediaQuery.textScalerOf(context).scale(14) > 21;
+        final actions = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (showHelp)
+              IconButton(
+                tooltip: context.strings.replayCreationGuide,
+                onPressed: () => context.push('/help'),
+                icon: const DoodimoIcon(DoodimoGlyph.help),
+              ),
+            if (showSettings)
+              IconButton(
+                tooltip: context.strings.settings,
+                onPressed: () => context.go('/settings'),
+                icon: const DoodimoIcon(DoodimoGlyph.settings),
+              ),
+          ],
+        );
+        final identity = Row(
+          children: [
+            SketchMark(size: compact ? 36 : 48),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppBrand.displayName,
+                    style: type.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (!compact) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      AppBrand.tagline,
+                      style: type.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (!compact) actions,
+          ],
+        );
+        return compact
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  identity,
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: actions,
+                  ),
+                ],
+              )
+            : identity;
+      },
+    );
+  }
+}
+
+/// Original drawing-to-sound gesture, separate from document rendering.
 class SketchMark extends StatefulWidget {
   const SketchMark({super.key, this.size = 64, this.animated = false});
   final double size;

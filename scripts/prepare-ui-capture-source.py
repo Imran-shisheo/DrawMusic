@@ -39,10 +39,13 @@ def main():
     comparison = request.get('transitionComparison')
     if type(transitions) is not bool or (transitions and (label != 'after' or diagnostic is not None or responsive is not None or home_only or comparison not in ('before-fix', 'after-fix'))) or (not transitions and comparison is not None):
         raise ValueError('Expected exclusive transition capture with explicit before-fix/after-fix role')
+    graphite = request.get('graphiteCapture', False)
+    if type(graphite) is not bool or (graphite and (label != 'after' or diagnostic is not None or responsive is not None or home_only or transitions)):
+        raise ValueError('Expected exclusive after-source graphiteCapture boolean')
     output = os.environ.get('GITHUB_OUTPUT')
     if output:
         with open(output, 'a') as stream:
-            stream.write('product_apk_required=' + str(not transitions and not home_only and diagnostic is None and responsive in (None, 'light')).lower() + '\n')
+            stream.write('product_apk_required=' + str(not graphite and not transitions and not home_only and diagnostic is None and responsive in (None, 'light')).lower() + '\n')
     harness = git('rev-parse', 'HEAD')
     if git('cat-file', '-t', source) != 'commit':
         raise ValueError('Requested source is not an available repository commit')
@@ -66,6 +69,7 @@ def main():
         'diagnosticOnly': diagnostic, 'responsivePreset': responsive,
         'homeProfileOnly': home_only,
         'transitionCaptureOnly': transitions, 'transitionComparison': comparison,
+        'graphiteCapture': graphite,
         'scope': 'Actual pinned production widget/native source plus separately identified diagnostic target. Not a substitute for full functional acceptance.'
     }, indent=2) + '\n')
     print(f'Capture product source {source}; diagnostic harness {harness}; label {label}', flush=True)

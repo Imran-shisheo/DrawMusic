@@ -574,5 +574,9 @@
       }
     }
   },
-  "editorToolsShort": "Tools"
+  "editorToolsShort": "Tools",
+  "openingDrawing": "Opening drawing…",
+  "@openingDrawing": {
+    "description": "Honest indeterminate status while a drawing is actually being read from local storage, not decorative transition progress."
+  }
 }

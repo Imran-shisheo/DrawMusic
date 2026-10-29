@@ -7,13 +7,14 @@ import '../../../l10n/strings.dart';
 import 'canvas.dart';
 import 'instrument_glyph.dart';
 import '../../../design_system/doodimo_icon.dart';
-import '../../../design_system/brand_colors.dart';
 
 Future<Instrument?> showEditorVoicePanel(
   BuildContext context,
-  Instrument selected,
-) => showCreativePanel<Instrument>(
+  Instrument selected, {
+  Rect? sourceBounds,
+}) => showCreativePanel<Instrument>(
   context: context,
+  sourceBounds: sourceBounds,
   builder: (context) => CreativePanel(
     title: context.strings.chooseAVoice,
     subtitle: MediaQuery.textScalerOf(context).scale(14) > 21
@@ -55,7 +56,6 @@ class _VoiceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final name = instrumentName(context, instrument);
-    final dark = Theme.of(context).brightness == Brightness.dark;
     void choose() => Navigator.pop(context, instrument);
     return Semantics(
       selected: selected,
@@ -70,25 +70,16 @@ class _VoiceTile extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: dark
-                  ? [
-                      selected
-                          ? const Color(0xff37315d)
-                          : const Color(0xff202746),
-                      const Color(0xff11172c),
-                    ]
-                  : [
-                      Colors.white,
-                      selected
-                          ? const Color(0xffe3ddff)
-                          : const Color(0xffe9edff),
-                    ],
+              colors: [
+                selected
+                    ? scheme.primaryContainer
+                    : scheme.surfaceContainerHigh,
+                scheme.surfaceContainerLow,
+              ],
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: selected
-                  ? (dark ? DoodimoColors.cyan : scheme.primary)
-                  : DoodimoColors.violet.withValues(alpha: .35),
+              color: selected ? scheme.primary : scheme.outlineVariant,
               width: 2,
             ),
           ),
@@ -125,9 +116,9 @@ class _VoiceTile extends StatelessWidget {
                         ),
                         const Spacer(),
                         if (selected)
-                          const DoodimoIcon(
+                          DoodimoIcon(
                             DoodimoGlyph.check,
-                            color: DoodimoColors.cyan,
+                            color: scheme.onPrimaryContainer,
                             size: 20,
                           ),
                       ],

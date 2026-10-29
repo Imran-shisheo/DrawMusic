@@ -1,7 +1,8 @@
+import '../../../app/artwork_navigation.dart';
+
 import 'package:scribblesong/l10n/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../domain/recovery_export_port.dart';
@@ -14,6 +15,7 @@ import '../../editor/presentation/canvas.dart';
 import '../../backgrounds/presentation/background_surface.dart';
 import '../../export/presentation/export_sheet.dart';
 import '../../../design_system/name_dialog.dart';
+import '../../../design_system/artwork_flight.dart';
 import '../../../design_system/creative_panel.dart';
 import 'library_state_panel.dart';
 import '../../../design_system/immersive_surface.dart';
@@ -183,9 +185,9 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                 children: [
                   Text(
                     context.strings.yourDrawings,
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Text(
                     context.strings.libraryDrawingsSubtitle,
                     style: Theme.of(context).textTheme.bodyMedium,
@@ -200,7 +202,17 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 14),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: FilledButton.icon(
+            key: const ValueKey('library-create'),
+            onPressed: () => openEditorWithArtworkFlight(context, 'new', null),
+            icon: const DoodimoIcon(DoodimoGlyph.add),
+            label: Text(context.strings.newDrawing),
+          ),
+        ),
+        const SizedBox(height: 12),
         ...ref
             .watch(libraryProvider)
             .when(
@@ -231,7 +243,8 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                             .strings
                             .yourDrawingsWillLiveHereCreateANewDrawingToBegin,
                         action: PrismAction(
-                          onPressed: () => context.push('/editor/new'),
+                          onPressed: () =>
+                              openEditorWithArtworkFlight(context, 'new', null),
                           icon: const DoodimoIcon(DoodimoGlyph.add),
                           label: context.strings.libraryNewDrawing,
                         ),
@@ -282,7 +295,9 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                                             id,
                                             context.strings.damagedDrawing,
                                           ),
-                                    icon: const Icon(Icons.delete_outline),
+                                    icon: const DoodimoIcon(
+                                      DoodimoGlyph.delete,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -301,7 +316,11 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                                           ? null
                                           : () {
                                               ref.invalidate(libraryProvider);
-                                              context.push('/editor/$id');
+                                              openEditorWithArtworkFlight(
+                                                context,
+                                                id,
+                                                null,
+                                              );
                                             },
                                       child: Text(context.strings.retry),
                                     ),
@@ -323,17 +342,20 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                           ),
                         ),
                       for (final doc in listing.projects)
-                        LibraryDocumentCard(
-                          leading: SizedBox(
-                            width: 80,
-                            height: 100,
+                        ArtworkFlightSource(
+                          key: ValueKey('draft-artwork-${doc.id}'),
+                          document: doc,
+                          routeId: doc.id,
+                          artwork: SizedBox(
+                            width: 112,
+                            height: 140,
                             child: Center(
                               child: AspectRatio(
                                 aspectRatio: .8,
                                 child: BackgroundSurface(
                                   paper: doc.effectiveBackground,
-                                  maxWidth: 112,
-                                  maxHeight: 140,
+                                  maxWidth: 168,
+                                  maxHeight: 210,
                                   child: CustomPaint(
                                     painter: DrawingPainter(doc),
                                   ),
@@ -341,53 +363,71 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                               ),
                             ),
                           ),
-                          title: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                context.strings.libraryEditable,
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary,
-                                    ),
+                          onOpen: (intent) async {
+                            await openEditorWithArtworkFlight(
+                              context,
+                              doc.id,
+                              intent,
+                            );
+                          },
+                          builder: (context, artwork, open) => LibraryDocumentCard(
+                            leading: artwork,
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  context.strings.libraryEditable,
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                      ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(doc.title),
+                              ],
+                            ),
+                            subtitle: Text(
+                              '${context.formatLocalDate(doc.updatedAt)}\n'
+                              '${context.strings.drawingDetails(doc.root.label, context.formatNumber(doc.strokes.length), context.formatNumber(doc.tempo), scaleName(context, doc.scale))}'
+                              '${listing.recoveredIds.contains(doc.id) ? '\n${context.strings.recoveredPreviousRevision}' : ''}',
+                            ),
+                            onTap: open,
+                            primaryAction: IconButton.outlined(
+                              tooltip: context.strings.openSourceDrawing,
+                              onPressed: open,
+                              icon: const DoodimoIcon(
+                                DoodimoGlyph.arrowUpRight,
                               ),
-                              const SizedBox(height: 4),
-                              Text(doc.title),
-                            ],
-                          ),
-                          subtitle: Text(
-                            '${context.formatLocalDate(doc.updatedAt)}\n'
-                            '${context.strings.drawingDetails(doc.root.label, context.formatNumber(doc.strokes.length), context.formatNumber(doc.tempo), scaleName(context, doc.scale))}'
-                            '${listing.recoveredIds.contains(doc.id) ? '\n${context.strings.recoveredPreviousRevision}' : ''}',
-                          ),
-                          onTap: () => context.push('/editor/${doc.id}'),
-                          trailing: PopupMenuButton<_Action>(
-                            onOpened: () =>
-                                ScaffoldMessenger.of(context).clearSnackBars(),
-                            tooltip: context.strings.manageDrawing(doc.title),
-                            enabled: !_busy,
-                            icon: const DoodimoIcon(DoodimoGlyph.more),
-                            onSelected: (action) => _act(doc, action),
-                            itemBuilder: (_) => [
-                              PopupMenuItem(
-                                value: _Action.rename,
-                                child: Text(context.strings.rename),
-                              ),
-                              PopupMenuItem(
-                                value: _Action.duplicate,
-                                child: Text(context.strings.duplicate),
-                              ),
-                              PopupMenuItem(
-                                value: _Action.export,
-                                child: Text(context.strings.exportShare),
-                              ),
-                              PopupMenuItem(
-                                value: _Action.delete,
-                                child: Text(context.strings.delete),
-                              ),
-                            ],
+                            ),
+                            trailing: PopupMenuButton<_Action>(
+                              onOpened: () =>
+                                  ScaffoldMessenger.of(context)
+                                      .clearSnackBars(),
+                              tooltip: context.strings.manageDrawing(doc.title),
+                              enabled: !_busy,
+                              icon: const DoodimoIcon(DoodimoGlyph.more),
+                              onSelected: (action) => _act(doc, action),
+                              itemBuilder: (_) => [
+                                PopupMenuItem(
+                                  value: _Action.rename,
+                                  child: Text(context.strings.rename),
+                                ),
+                                PopupMenuItem(
+                                  value: _Action.duplicate,
+                                  child: Text(context.strings.duplicate),
+                                ),
+                                PopupMenuItem(
+                                  value: _Action.export,
+                                  child: Text(context.strings.exportShare),
+                                ),
+                                PopupMenuItem(
+                                  value: _Action.delete,
+                                  child: Text(context.strings.delete),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                     ],

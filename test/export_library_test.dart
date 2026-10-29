@@ -16,6 +16,7 @@ import 'package:share_plus/share_plus.dart';
 
 import 'export_test.dart' show sample;
 import 'support/memory_preferences.dart';
+import 'support/export_gallery_navigation.dart';
 
 class RecordingFileActions implements ExportFileActions {
   final opened = <ExportArtifact>[];
@@ -212,10 +213,15 @@ void main() {
       }
 
       await ready(artifact.name);
+      await revealExportGalleryItem(tester, find.text(artifact.name));
       await tester.tap(find.text(artifact.name));
       await tester.pumpAndSettle();
       expect(actions.opened.single.path, artifact.path);
       Future<void> menu(String name, String action) async {
+        await revealExportGalleryItem(
+          tester,
+          find.byTooltip('Actions for $name'),
+        );
         await tester.tap(find.byTooltip('Actions for $name'));
         await tester.pumpAndSettle();
         await tester.tap(find.text(action));

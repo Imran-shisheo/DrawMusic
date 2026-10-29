@@ -550,4 +550,131 @@ class TransitionSubsetProtocol(unittest.TestCase):
             self.assertFalse(c.complete)
 
 
+class GraphiteCaptureTests(unittest.TestCase):
+    """Protocol fakes establish guards, never native launch or media evidence."""
+    def emit(self, capture, operation, name, **extra):
+        return capture.event({'token': capture.token, 'sequence': capture.sequence + 1,
+                              'operation': operation, 'name': name, **extra})
+
+    def opening(self):
+        return dict(productionEntryPoint='lib/main.dart', showWelcome=True,
+            fixtureGuideAlreadyCompleted=True, firstFrameRasterized=True,
+            readyHomeRendered=True, launchEndedWithoutInput=True,
+            observations=[{'elapsedUs': 1, 'engineFrameNumber': 1, 'controllerValue': .1},
+                          {'elapsedUs': 2, 'engineFrameNumber': 2, 'controllerValue': .8}])
+
+    def trace(self, name):
+        reduced = name == host.GRAPHITE_CLIPS[-1]
+        witnesses = {key: True for key in (
+            'retainedLibraryReady', 'warmLaunchNotReplayed', 'heroObserved',
+            'firstInputCancelledPresentation', 'canvasRectStable', 'playingUiObserved', 'pausedUiObserved',
+            'cancelObserved', 'actualIoErrorObserved', 'fixtureDirectoryRestored', 'readyAfterRetry',
+            'storedFalseDuringSystem', 'systemRestoredBeforeStored', 'systemAndStoredObserved')}
+        return {'actions': [{'action': tag, 'tapElapsedUs': i+1,
+                            'engineFrameNumber': i+1, 'reducedMotion': reduced,
+                            'targetBounds': [0, 0, 48, 48], 'requestedPostTapWaitMs': 350}
+                            for i, tag in enumerate(host.GRAPHITE_ACTIONS[name])],
+                'actualElapsedUs': 1000, 'witnesses': witnesses}
+
+    def test_complete_graphite_inventory_requires_original_clips_profiles_and_real_state_witnesses(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(host, 'OUTPUT', Path(tmp)):
+            for name in ('screenshots', 'performance', 'recordings'): (Path(tmp)/name).mkdir()
+            c = host.Capture(graphite_capture=True)
+            def adb(*args, **kwargs):
+                return SimpleNamespace(stdout=b'\x89PNG\r\n\x1a\nfixture' if kwargs.get('binary') else '')
+            with patch.object(host, 'adb', adb):
+                for operation, name in host.GRAPHITE_EVENTS:
+                    if operation == 'metadata':
+                        self.emit(c, operation, name, label='after', buildMode='profile', animationsDisabled=False,
+                                  captureMode='graphite-reference-capture')
+                    elif operation == 'record_start':
+                        with patch.object(c, 'record_start', return_value={}): self.emit(c, operation, name)
+                        c.recording = (name,)
+                    elif operation == 'record_stop':
+                        with patch.object(c, 'record_stop', return_value={'wholeVideoDecode': {'passed': True}}): self.emit(c, operation, name)
+                        c.recording = None
+                    elif operation == 'graphite_opening':
+                        self.emit(c, operation, name, **self.opening())
+                    elif operation == 'snapshot':
+                        self.emit(c, operation, name, screenshotReadiness={'expectedScene': name, 'matchedEngineFrameNumber': 1, 'rasterFrameNumber': 1})
+                    elif operation == 'perf_start':
+                        self.emit(c, operation, name)
+                    elif operation == 'perf_finish':
+                        self.emit(c, operation, name, result={'rawFrames': [{'frameNumber': 1}],
+                            'visibleScope': {'screenRecordingActive': False, 'graphiteProductionInteractions': True}}, recordingDuringMeasurement=False)
+                    elif operation == 'graphite_trace':
+                        self.emit(c, operation, name, **self.trace(name))
+                    elif operation == 'system_motion':
+                        with patch.object(host, 'adb', return_value=SimpleNamespace(stdout='0.0' if name == 'reduced' else '1.0')):
+                            self.emit(c, operation, name)
+                    elif operation == 'graphite_complete':
+                        self.emit(c, operation, name, passed=True, storedMotionRestored=True, normalFullCapturePassed=False)
+            self.assertTrue(c.complete)
+            self.assertTrue(c.report['graphiteSubsetPassed'])
+            self.assertFalse(c.report['normalFullCapturePassed'])
+            self.assertEqual([(e['operation'], e['name']) for e in c.report['events']], list(host.GRAPHITE_EVENTS))
+            self.assertEqual([e['name'] for e in c.report['events'] if e['operation'] == 'snapshot'], list(host.GRAPHITE_SHOTS))
+
+    def test_exclusive_flags_metadata_and_operation_scope(self):
+        for options in ({'graphite_capture': 1}, {'graphite_capture': True, 'transition_capture_only': True},
+                        {'graphite_capture': True, 'home_profile_only': True}, {'graphite_capture': True, 'responsive_preset': 'compact'},
+                        {'graphite_capture': True, 'static_backdrop_probe': True}):
+            with self.assertRaises(ValueError): host.Capture(**options)
+        for operation, name in (('record_start', '00-home-ambient'), ('display', 'compact'), ('complete', 'capture'), ('graphite_complete', 'graphite')):
+            with self.assertRaises(ValueError): self.emit(host.Capture(graphite_capture=True), operation, name)
+        with self.assertRaises(ValueError): self.emit(host.Capture(graphite_capture=True), 'metadata', 'session',
+            buildMode='profile', animationsDisabled=False, captureMode='graphite-reference-capture', label='before')
+        with self.assertRaises(ValueError): self.emit(host.Capture(), 'metadata', 'session',
+            buildMode='profile', animationsDisabled=False, captureMode='graphite-reference-capture', label='after')
+
+    def test_opening_cannot_be_fake_replayed_constant_or_undecoded(self):
+        for change in ('entry', 'welcome', 'raster', 'samples', 'constant', 'order', 'decode'):
+            c = host.Capture(graphite_capture=True)
+            c.report['events'] = [{'operation': op, 'name': name} for op, name in host.GRAPHITE_EVENTS[:3]]
+            c.report['events'][-1]['wholeVideoDecode'] = {'passed': change != 'decode'}
+            witness = self.opening()
+            if change == 'entry': witness['productionEntryPoint'] = 'fake-overlay'
+            if change == 'welcome': witness['showWelcome'] = False
+            if change == 'raster': witness['firstFrameRasterized'] = False
+            if change == 'samples': witness['observations'].pop()
+            if change == 'constant': witness['observations'][1]['controllerValue'] = .1
+            if change == 'order': witness['observations'][1]['elapsedUs'] = 0
+            with self.assertRaises(ValueError): self.emit(c, 'graphite_opening', 'opening', **witness)
+            self.assertFalse(c.complete)
+
+    def test_missing_reordered_invalid_or_unreduced_action_evidence_cannot_qualify(self):
+        for change in ('missing', 'order', 'bounds', 'nan', 'reduced', 'decode', 'witness'):
+            c = host.Capture(graphite_capture=True)
+            c.report['events'] = [{'operation': op, 'name': name} for op, name in host.GRAPHITE_EVENTS[:9]]
+            c.report['events'][-1]['wholeVideoDecode'] = {'passed': change != 'decode'}
+            trace = self.trace(host.GRAPHITE_CLIPS[1])
+            if change == 'missing': trace['actions'].pop()
+            if change == 'order': trace['actions'].reverse()
+            if change == 'bounds': trace['actions'][0]['targetBounds'] = [0, 0, 0, 20]
+            if change == 'nan': trace['actions'][0]['targetBounds'][0] = float('nan')
+            if change == 'reduced': trace['actions'][0]['reducedMotion'] = True
+            if change == 'witness': trace['witnesses']['warmLaunchNotReplayed'] = False
+            with self.assertRaises(ValueError): self.emit(c, 'graphite_trace', host.GRAPHITE_CLIPS[1], **trace)
+            self.assertFalse(c.complete)
+
+    def test_system_motion_readback_and_failure_cleanup_are_mandatory(self):
+        c = host.Capture(graphite_capture=True)
+        before_motion = host.GRAPHITE_EVENTS.index(('system_motion', 'reduced'))
+        c.report['events'] = [{'operation': op, 'name': name} for op, name in host.GRAPHITE_EVENTS[:before_motion]]
+        c.recording = (host.GRAPHITE_CLIPS[-1],)
+        with patch.object(host, 'adb', return_value=SimpleNamespace(stdout='1.0')):
+            with self.assertRaisesRegex(ValueError, 'did not apply'): self.emit(c, 'system_motion', 'reduced')
+        with tempfile.TemporaryDirectory() as tmp, patch.object(host, 'OUTPUT', Path(tmp)):
+            c = host.Capture(graphite_capture=True); c.report['error'] = 'original failure'
+            calls = []
+            server = SimpleNamespace(shutdown=lambda: calls.append('shutdown'), server_close=lambda: calls.append('close'))
+            with patch.object(host, 'adb', return_value=SimpleNamespace(stdout='1.0')):
+                host.finalize_capture(c, server, 1234)
+            report = json.loads((Path(tmp)/'capture-report.json').read_text())
+            self.assertEqual(set(report['finalSystemMotionReadbacks']), set(host.MOTION_SETTINGS))
+            self.assertEqual(report['error'], 'original failure')
+            self.assertFalse(report['passed'])
+            self.assertEqual(calls, ['shutdown', 'close'])
+
+
 if __name__ == '__main__': unittest.main()

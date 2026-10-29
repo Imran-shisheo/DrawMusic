@@ -1,30 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generated original filled dimensional D/sound ribbon. Critical glyph fits the 66dp safe circle. -->
+<!-- Generated original original dimensional drawing-to-sound gesture. Critical glyph fits the 66dp safe circle. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
     <group android:translateX="20" android:translateY="20" android:scaleX="0.68" android:scaleY="0.68">
-        <path android:pathData="M31 18 C57 10 83 25 83 49 C83 73 61 88 36 81 L25 71 L25 31 C25 25 26 20 31 18 Z M39 31 L39 59 L41 68 C56 73 68 63 68 49 C68 34 52 24 39 31 Z" android:fillType="evenOdd" android:fillAlpha="1">
+        <path android:pathData="M7 66 C18 55 30 27 39 25 C49 22 49 60 57 64 C64 69 76 45 91 40 L93 46 C79 51 67 80 55 71 C43 64 45 31 38 33 C32 34 19 62 10 71 Z" android:fillType="evenOdd" android:fillAlpha="1">
             <aapt:attr name="android:fillColor">
                 <gradient android:type="linear" android:startX="25" android:startY="25" android:endX="79" android:endY="76">
-                    <item android:offset="0" android:color="#FFB7A0FF"/>
-                    <item android:offset="0.45" android:color="#FF8B5CF6"/>
-                    <item android:offset="1" android:color="#FFEF81C7"/>
+                    <item android:offset="0" android:color="#FFFFB577"/>
+                    <item android:offset="0.45" android:color="#FFFF9855"/>
+                    <item android:offset="1" android:color="#FFE27432"/>
                 </gradient>
             </aapt:attr>
         </path>
-        <path android:pathData="M25 71 L39 59 L58 39 C61 36 66 37 68 40 L51 60 C45 67 38 73 36 81 Z" android:fillType="evenOdd" android:fillAlpha="1">
+        <path android:pathData="M8 66 C20 53 31 27 39 25 C48 23 48 53 54 61 L52 65 C44 59 45 32 39 33 C31 31 20 62 10 71 Z" android:fillType="evenOdd" android:fillAlpha="1">
             <aapt:attr name="android:fillColor">
                 <gradient android:type="linear" android:startX="29" android:startY="73" android:endX="64" android:endY="38">
-                    <item android:offset="0" android:color="#FF6672F5"/>
-                    <item android:offset="0.48" android:color="#FF55DFF5"/>
-                    <item android:offset="1" android:color="#FFC6F8FF"/>
+                    <item android:offset="0" android:color="#FFE97C3B"/>
+                    <item android:offset="0.48" android:color="#FFFFAA68"/>
+                    <item android:offset="1" android:color="#FFFFD4AE"/>
                 </gradient>
             </aapt:attr>
         </path>
-        <path android:pathData="M38 24 C61 17 77 32 78 48 C78 69 59 82 39 76 L41 73 C60 77 74 64 74 48 C74 33 56 23 39 28 Z" android:fillType="evenOdd" android:fillAlpha="0.42">
+        <path android:pathData="M10 64 C22 49 31 29 39 28 C43 28 45 39 46 47 L44 47 C43 39 42 31 39 31 C33 31 22 52 11 66 Z" android:fillType="evenOdd" android:fillAlpha="0.42">
             <aapt:attr name="android:fillColor">
                 <gradient android:type="linear" android:startX="36" android:startY="22" android:endX="70" android:endY="71">
-                    <item android:offset="0" android:color="#FFF2EBFF"/>
-                    <item android:offset="1" android:color="#00F2EBFF"/>
+                    <item android:offset="0" android:color="#FFFFF1DB"/>
+                    <item android:offset="1" android:color="#00FFF1DB"/>
                 </gradient>
             </aapt:attr>
         </path>

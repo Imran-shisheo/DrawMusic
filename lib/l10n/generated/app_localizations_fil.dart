@@ -1273,4 +1273,7 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get editorToolsShort => 'Mga tool';
+
+  @override
+  String get openingDrawing => 'Binubuksan ang drawing…';
 }

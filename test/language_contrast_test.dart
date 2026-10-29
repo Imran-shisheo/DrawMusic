@@ -154,7 +154,10 @@ void main() {
         void expectReadable(String code) {
           final tile = find.byKey(ValueKey('language-$code'));
           final paragraph = tester.renderObject<RenderParagraph>(
-            find.descendant(of: tile, matching: find.byType(RichText)).first,
+            find.descendant(
+              of: tile,
+              matching: find.text(nativeLanguageNames[code]!),
+            ),
           );
           final foreground = paragraph.text.style!.color!;
           final surface = tester.widget<AnimatedContainer>(
@@ -162,21 +165,27 @@ void main() {
                 .ancestor(of: tile, matching: find.byType(AnimatedContainer))
                 .first,
           );
-          final background = (surface.decoration! as BoxDecoration).color!;
+          final decoration = surface.decoration! as BoxDecoration;
+          final backgrounds =
+              decoration.gradient?.colors ?? [decoration.color!];
           double contrast(Color a, Color b) {
             final x = a.computeLuminance(), y = b.computeLuminance();
             return ((x > y ? x : y) + .05) / ((x > y ? y : x) + .05);
           }
 
-          expect(
-            contrast(foreground, background),
-            greaterThanOrEqualTo(4.5),
-            reason: 'Actual rendered language label must stay readable on its selected surface',
-          );
+          for (final background in backgrounds) {
+            expect(
+              contrast(foreground, background),
+              greaterThanOrEqualTo(4.5),
+              reason: 'Actual native-language label must stay readable across every selected material stop',
+            );
+          }
           final check = tester.widget<DoodimoIcon>(
             find.descendant(of: tile, matching: find.byType(DoodimoIcon)),
           );
-          expect(contrast(check.color!, background), greaterThanOrEqualTo(3));
+          for (final background in backgrounds) {
+            expect(contrast(check.color!, background), greaterThanOrEqualTo(3));
+          }
         }
 
         await open();

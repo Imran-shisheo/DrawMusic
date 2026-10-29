@@ -2343,6 +2343,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tools'**
   String get editorToolsShort;
+
+  /// Honest indeterminate status while a drawing is actually being read from local storage, not decorative transition progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening drawing…'**
+  String get openingDrawing;
 }
 
 class _AppLocalizationsDelegate

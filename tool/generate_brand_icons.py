@@ -14,7 +14,7 @@ from PIL import Image, ImageDraw, ImageChops
 
 ROOT = Path(__file__).resolve().parents[1]
 SVG = ROOT / 'assets/branding/mark.svg'
-PAPER, DARK, IVORY = '#090B18', '#090B18', '#F2EBFF'
+PAPER, DARK, IVORY = '#141819', '#141819', '#F5F3EB'
 ANDROID = ROOT / 'android/app/src/main/res'
 IOS = ROOT / 'ios/Runner/Assets.xcassets'
 NS = '{http://www.w3.org/2000/svg}'
@@ -131,7 +131,7 @@ def vector(*, background=False, monochrome=False, launch=False, round_background
             </aapt:attr>
         </path>''')
     return f'''<?xml version="1.0" encoding="utf-8"?>
-<!-- Generated original filled dimensional D/sound ribbon. Critical glyph fits the 66dp safe circle. -->
+<!-- Generated original original dimensional drawing-to-sound gesture. Critical glyph fits the 66dp safe circle. -->
 <vector xmlns:android="{ANDROID_NS}" xmlns:aapt="http://schemas.android.com/aapt" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
 {base}    <group android:translateX="20" android:translateY="20" android:scaleX="0.68" android:scaleY="0.68">
 {chr(10).join(items)}
@@ -147,7 +147,7 @@ def put(relative, text):
 
 
 def main():
-    put('values/brand_colors.xml', f'<resources>\n    <color name="doodimo_icon_background">{PAPER}</color>\n    <color name="doodimo_launch_background">{PAPER}</color>\n    <color name="doodimo_launch_ink">#8B5CF6</color>\n</resources>\n')
+    put('values/brand_colors.xml', f'<resources>\n    <color name="doodimo_icon_background">{PAPER}</color>\n    <color name="doodimo_launch_background">{PAPER}</color>\n    <color name="doodimo_launch_ink">#FF9855</color>\n</resources>\n')
     put('values-night/brand_colors.xml', f'<resources>\n    <color name="doodimo_launch_background">{DARK}</color>\n    <color name="doodimo_launch_ink">{IVORY}</color>\n</resources>\n')
     put('drawable/app_icon.xml', vector(background=True))
     put('drawable/doodimo_icon_foreground.xml', vector())
@@ -226,8 +226,8 @@ def main():
     source = storyboard.read_text()
     source = re.sub(r'<color key="backgroundColor"[^>]*/>', '<color key="backgroundColor" name="DoodimoLaunchBackground"/>', source)
     if '<namedColor name="DoodimoLaunchBackground">' not in source:
-        source = source.replace('    </resources>', '        <namedColor name="DoodimoLaunchBackground">\n            <color red="0.035294" green="0.043137" blue="0.094118" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>\n        </namedColor>\n    </resources>')
-    source = re.sub(r'(<namedColor name="DoodimoLaunchBackground">\s*)<color[^>]*/>', r'\1<color red="0.035294" green="0.043137" blue="0.094118" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>', source)
+        source = source.replace('    </resources>', '        <namedColor name="DoodimoLaunchBackground">\n            <color red="0.078431" green="0.094118" blue="0.098039" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>\n        </namedColor>\n    </resources>')
+    source = re.sub(r'(<namedColor name="DoodimoLaunchBackground">\s*)<color[^>]*/>', r'\1<color red="0.078431" green="0.094118" blue="0.098039" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>', source)
     storyboard.write_text(source)
     native = ROOT / 'ios/Runner/DrawMusicBackgrounds.swift'
     native.write_text(native.read_text().replace('Enable Camera for DrawMusic in iOS Settings', f'Enable Camera for {NAME} in iOS Settings'))

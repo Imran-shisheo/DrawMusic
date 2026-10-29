@@ -1,4 +1,3 @@
-import '../../../design_system/brand_colors.dart';
 import '../../../design_system/doodimo_icon.dart';
 import '../../../design_system/immersive_surface.dart';
 
@@ -148,7 +147,7 @@ class _TipOverlayState extends State<_TipOverlay> with WidgetsBindingObserver {
             child: IgnorePointer(
               child: CustomPaint(
                 key: const ValueKey('editor-tip-spotlight'),
-                painter: _Spotlight(_rect),
+                painter: _Spotlight(_rect, colors.scrim, colors.primary),
               ),
             ),
           ),
@@ -179,7 +178,8 @@ class _TipOverlayState extends State<_TipOverlay> with WidgetsBindingObserver {
                   child: FocusTraversalGroup(
                     child: ImmersiveSurface(
                       padding: EdgeInsets.zero,
-                      glow: true,
+                      accent: colors.primary,
+                      radius: 24,
                       child: Padding(
                         padding: const EdgeInsets.all(20),
                         child: Column(
@@ -298,8 +298,9 @@ class _TipOverlayState extends State<_TipOverlay> with WidgetsBindingObserver {
 }
 
 class _Spotlight extends CustomPainter {
-  _Spotlight(this.rect);
+  _Spotlight(this.rect, this.scrim, this.focus);
   final Rect? rect;
+  final Color scrim, focus;
   @override
   void paint(Canvas canvas, Size size) {
     final full = Path()..addRect(Offset.zero & size);
@@ -313,24 +314,22 @@ class _Spotlight extends CustomPainter {
           );
         canvas.drawPath(
           Path.combine(PathOperation.difference, full, hole),
-          Paint()..color = DoodimoColors.ink.withValues(alpha: .70),
+          Paint()..color = scrim.withValues(alpha: .70),
         );
         canvas.drawRRect(
           RRect.fromRectAndRadius(clipped, const Radius.circular(12)),
           Paint()
-            ..color = Colors.white
+            ..color = focus
             ..style = PaintingStyle.stroke
             ..strokeWidth = 3,
         );
         return;
       }
     }
-    canvas.drawPath(
-      full,
-      Paint()..color = DoodimoColors.ink.withValues(alpha: .70),
-    );
+    canvas.drawPath(full, Paint()..color = scrim.withValues(alpha: .70));
   }
 
   @override
-  bool shouldRepaint(_Spotlight old) => old.rect != rect;
+  bool shouldRepaint(_Spotlight old) =>
+      old.rect != rect || old.scrim != scrim || old.focus != focus;
 }

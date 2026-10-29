@@ -1,5 +1,23 @@
 # Motion system
 
+## Approved graphite motion — 29 October 2026
+
+The [verified original storyboard/plan](GRAPHITE-IMPLEMENTATION-PLAN.md) replaces the old ambient-heavy direction. Production Home no longer mounts the previous Aurora sculpture; its standalone historical resource tests remain intact. Graphite depth is static authored geometry; motion belongs to opening, actual selection/navigation, connected panels and real artifact success.
+
+| Motion | Actual implementation | Interruption / reduced alternative |
+|---|---|---|
+| Cold application composition | finite1100ms target, seed→expand→gather→reform→settle; preferences must be known, underlying UI ready/input-transparent | first input/hidden/background/reduce consumes the decoration; no warm replay or mandatory wait |
+| Root/Library | existing260ms retained blend samples current weights, stable shared selector/backdrop | rapid reversals/third destination maintain coverage and selected-only input/focus/semantics/tickers/Hero ownership; reduce snaps |
+| Artwork route | bounded actual preview-pixel snapshot through a unique request Hero,320ms forward/240ms reverse; live4:5 canvas never transforms | actual I/O readiness only, localized status after150ms; no artificial animation delay. First drawing pointer cancels presentation; direct/missing/reduced/superseded flight uses opaque fallback |
+| Connected plates | shared300ms forward/240ms reverse, bounded shape/position from actual trigger; content/job owner retained | first input finishes local travel, Back/focus/keyboard remain native; reduce immediate |
+| Press/selection |120/180ms shared ease-out curve, local paint/compositing | target geometry stable, retarget immediately; reduce static |
+| Export success | finite420ms check seal only AFTER actual atomic publication | hidden/background/reduce completes without replay; no fake progress/share delivery |
+| Playback | actual native audio-clock cursor/state | no independent beat scheduler; essential position remains readable |
+
+Each navigation has a typed transient load session distinct from persisted document IDs, so old reversing routes cannot supply stale saved/New data. A per-router push owner prevents duplicate queued Editors. A per-engine ownership token prevents departing async preparation/poll/disposal from commanding a newer session. No extra engine/controller is mounted for a flight, and no correctness depends on animation completion.
+
+Final-source actual recordings/profile evidence remain pending until executed; deterministic/widget tests and original mockups do not establish physical frame pacing. The following sections preserve the prior source-specific motion history.
+
 28 October 2026. Transition continuity correction in verification; GPU performance acceptance remains separate.
 
 | Motion | Purpose and trigger | Duration / curve | Interruption and reduced motion |

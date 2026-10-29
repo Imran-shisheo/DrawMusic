@@ -1275,4 +1275,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get editorToolsShort => 'Ferramentas';
+
+  @override
+  String get openingDrawing => 'Abrindo desenho…';
 }

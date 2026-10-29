@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import importlib.util
+import copy
 import contextlib
 import io
 import subprocess
 import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -413,6 +415,173 @@ class TransitionRecordingSelection(unittest.TestCase):
         with patch.object(ui.subprocess, 'run') as run:
             with self.assertRaises(ValueError): ui.inspect_interaction_recordings(request, self.report)
             run.assert_not_called()
+
+
+class GraphiteEvidenceInspection(unittest.TestCase):
+    """Original-file guard fixtures, not native runtime or performance proof."""
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        for folder in ('recordings', 'screenshots', 'performance'): (self.root/folder).mkdir()
+        self.patch = patch.object(ui, 'ROOT', self.root); self.patch.start(); self.addCleanup(self.patch.stop)
+        self.report = {'passed': True, 'graphiteCapture': True, 'graphiteSubsetPassed': True,
+            'normalFullCapturePassed': False, 'reportSource': 'capture-report.json',
+            'source': {'label': 'after', 'graphiteCapture': True,
+                       'productSourceSha': 'a'*40, 'productTreeSha': 'b'*40, 'captureHarnessSourceSha': 'c'*40},
+            'appMetadata': {'captureMode': 'graphite-reference-capture'},
+            'finalSystemMotionReadbacks': {key:'1.0' for key in ui.MOTION_SETTINGS}, 'events': []}
+        all_witnesses = {key:True for names in ui.GRAPHITE_WITNESSES.values() for key in names}
+        for i,(operation,name) in enumerate(ui.GRAPHITE_EVENTS):
+            event = {'operation':operation, 'name':name, 'sequence':i+1}
+            self.report['events'].append(event)
+            if operation == 'record_stop':
+                data = (name.encode()+b'original-owned-fixture')*100
+                (self.root/'recordings'/(name+'.mp4')).write_bytes(data)
+                event.update(bytes=len(data), sha256=hashlib.sha256(data).hexdigest(), wholeVideoDecode={'passed':True})
+            elif operation == 'snapshot':
+                data=b'\x89PNG\r\n\x1a\noriginal-fixture';(self.root/'screenshots'/(name+'.png')).write_bytes(data)
+                event.update(bytes=len(data), sha256=hashlib.sha256(data).hexdigest(), screenshotReadiness={
+                    'expectedScene':name,'matchedEngineFrameNumber':i+1,'rasterFrameNumber':i+1})
+            elif operation == 'graphite_opening':
+                self.write_json('graphite-opening.json', event, {'productionEntryPoint':'lib/main.dart', 'showWelcome':True,
+                    'fixtureGuideAlreadyCompleted':True,'firstFrameRasterized':True,'readyHomeRendered':True,'launchEndedWithoutInput':True,
+                    'observations':[{'elapsedUs':1,'engineFrameNumber':1,'controllerValue':.1},
+                                    {'elapsedUs':2,'engineFrameNumber':2,'controllerValue':.8}]})
+                event['actualControllerSamples']=2
+            elif operation == 'graphite_trace':
+                actions=[{'action':tag,'tapElapsedUs':j+1,'engineFrameNumber':j+1,
+                          'reducedMotion':name==ui.GRAPHITE_RECORDINGS[-1], 'targetBounds':[0,0,48,48]}
+                         for j,tag in enumerate(ui.GRAPHITE_ACTIONS[name])]
+                self.write_json('graphite-'+name+'.json', event, {'actions':actions,'actualElapsedUs':1000,'witnesses':all_witnesses})
+                event['actionCount']=len(actions)
+            elif operation == 'system_motion':
+                event['actualSystemReadbacks']={key:'0.0' if name=='reduced' else '1.0' for key in ui.MOTION_SETTINGS}
+            elif operation == 'perf_finish':
+                frames=[{'frameNumber':1,'vsyncUs':1,'rasterFinishWallUs':10,'buildUs':1000,'rasterUs':2000,'totalUs':3000},
+                        {'frameNumber':2,'vsyncUs':2,'rasterFinishWallUs':20,'buildUs':2000,'rasterUs':22000,'totalUs':24000}]
+                result={'refreshHz':60,'frameBudgetUs':1_000_000/60,'rawFrames':frames,
+                        'visibleScope':{'screenRecordingActive':False,'graphiteProductionInteractions':True},
+                        'eitherUiOrRasterOverBudgetFrames':1}
+                for key,field in (('uiBuild','buildUs'),('raster','rasterUs'),('totalSpan','totalUs')):
+                    values=sorted(f[field] for f in frames)
+                    result[key]={'count':2,'maxUs':values[-1],'overBudgetFrames':sum(v>1_000_000/60 for v in values),
+                        **{label:values[int((len(values)-1)*p+.5)] for label,p in (('p50Us',.5),('p90Us',.9),('p95Us',.95),('p99Us',.99))}}
+                self.write_json('performance/graphite-interactions-unrecorded.json', event, result)
+                event.update(recordingDuringMeasurement=False, frameSamples=2)
+        self.request={'graphiteCaptureDiagnostic':True,'interactionMotionDiagnostic':True}
+        self.metadata={'format':{'duration':'1.0'},'streams':[{'codec_name':'h264','width':720,'height':1600,'nb_read_frames':'9'}]}
+        self.packets={'packets':[{'pts_time':str(i/9),'dts_time':str(i/9)} for i in range(9)]}
+
+    def write_json(self, relative, event, value):
+        data=(json.dumps(value,indent=2)+'\n').encode();(self.root/relative).write_bytes(data)
+        event.update(evidenceFile=relative,evidenceBytes=len(data),evidenceSha256=hashlib.sha256(data).hexdigest())
+
+    def inspect(self):
+        with contextlib.redirect_stdout(io.StringIO()) as output: ui.inspect_graphite_evidence(self.report)
+        return output.getvalue()
+
+    def event(self, operation, name=None):
+        return next(e for e in self.report['events'] if e['operation']==operation and (name is None or e['name']==name))
+
+    def test_producer_and_reader_protocols_agree_and_recompute_original_raw_timings(self):
+        spec=importlib.util.spec_from_file_location('graphite_producer',Path(__file__).with_name('capture-android-ui.py'))
+        producer=importlib.util.module_from_spec(spec);spec.loader.exec_module(producer)
+        self.assertEqual(ui.GRAPHITE_EVENTS,producer.GRAPHITE_EVENTS)
+        self.assertEqual(ui.GRAPHITE_RECORDINGS,producer.GRAPHITE_CLIPS)
+        self.assertEqual(ui.GRAPHITE_SHOTS,producer.GRAPHITE_SHOTS)
+        self.assertEqual(ui.GRAPHITE_ACTIONS,producer.GRAPHITE_ACTIONS)
+        text=self.inspect()
+        self.assertIn('UI_GRAPHITE_OPENING ',text)
+        self.assertEqual(text.count('UI_GRAPHITE_ACTION_TRACE '),4)
+        self.assertIn('"actualSummaryRecomputed": true',text)
+        self.assertIn('physical smoothness/audio/iOS',text)
+
+    def test_all_five_originals_decode_without_trim_or_retiming_and_contacts_are_dense(self):
+        calls=[]
+        def run(command,**kwargs):
+            calls.append((command,kwargs))
+            return subprocess.CompletedProcess([],0,json.dumps({} if command[0]=='ffmpeg' else self.packets if '-show_packets' in command else self.metadata),'')
+        request=self.request|{'interactionContactNames':[ui.GRAPHITE_RECORDINGS[0],ui.GRAPHITE_RECORDINGS[2]]}
+        with patch.object(ui.subprocess,'run',side_effect=run),patch.object(ui,'interaction_contact',return_value=100) as contacts,contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(ui.inspect_interaction_recordings(request,self.report),200)
+        self.assertEqual(output.getvalue().count('"wholeVideoDecodePassed": true'),5)
+        self.assertEqual(contacts.call_count,2)
+        self.assertTrue(all(call.kwargs['dense'] is True for call in contacts.call_args_list))
+        decodes=[c for c,_ in calls if c[0]=='ffmpeg'];self.assertEqual(len(decodes),5)
+        for command in decodes:
+            for forbidden in ('-t','-ss','-r','-vsync'):self.assertNotIn(forbidden,command)
+            self.assertIn('-xerror',command);self.assertIn('explode',command)
+        self.assertTrue(all(k['timeout']==30 for _,k in calls))
+
+    def test_completed_source_inventory_and_restoration_cannot_be_forged_by_partial_labels(self):
+        original=copy.deepcopy(self.report)
+        for change in ('passed','source','subset','partial','sequence','inventory','restoration','decode','screenshot'):
+            self.report=copy.deepcopy(original)
+            if change=='passed':self.report['passed']=False
+            if change=='source':self.report['source']['graphiteCapture']=False
+            if change=='subset':self.report['graphiteSubsetPassed']=False
+            if change=='partial':self.report['reportSource']='capture-progress.json'
+            if change=='sequence':self.report['events'][1]['sequence']=1
+            if change=='inventory':self.report['events'].pop()
+            if change=='restoration':self.report['finalSystemMotionReadbacks']['animator_duration_scale']='0.0'
+            if change=='decode':self.event('record_stop')['wholeVideoDecode']['passed']=False
+            if change=='screenshot':self.event('snapshot')['screenshotReadiness']['rasterFrameNumber']=-1
+            with self.assertRaises(ValueError):ui.validate_graphite_report(self.report)
+
+    def test_exact_five_clip_selection_and_contacts_reject_paths_before_subprocess(self):
+        for request in (self.request|{'interactionRecordingNames':[]},self.request|{'interactionRecordingNames':['01-root-navigation']},
+                        self.request|{'interactionRecordingNames':list(reversed(ui.GRAPHITE_RECORDINGS))},
+                        self.request|{'interactionContactNames':['../private']},self.request|{'interactionContactNames':['03-paper-sheet']},
+                        self.request|{'graphiteCaptureDiagnostic':1}):
+            with patch.object(ui.subprocess,'run') as run:
+                with self.assertRaises(ValueError):ui.inspect_interaction_recordings(request,self.report)
+                run.assert_not_called()
+        for request in ({'graphiteCaptureDiagnostic':True},{'graphiteCaptureDiagnostic':'yes'}):
+            with self.assertRaises(ValueError):ui.graphite_requested(request)
+
+    def test_original_trace_hash_path_size_and_actions_are_required(self):
+        event=self.event('graphite_trace',ui.GRAPHITE_RECORDINGS[1]);relative=event['evidenceFile'];path=self.root/relative
+        original=path.read_bytes()
+        path.write_bytes(original+b' ')
+        with self.assertRaises(ValueError):self.inspect()
+        path.write_bytes(original);event['evidenceFile']='../../private'
+        with self.assertRaises(ValueError):self.inspect()
+        event['evidenceFile']=relative;path.rename(self.root/'private');path.symlink_to(self.root/'private')
+        with self.assertRaises(ValueError):self.inspect()
+        path.unlink();(self.root/'private').rename(path)
+        value=json.loads(original);value['actions'][0]['reducedMotion']=True;self.write_json(relative,event,value)
+        with self.assertRaises(ValueError):self.inspect()
+        value=json.loads(original);value['witnesses']['warmLaunchNotReplayed']=False;self.write_json(relative,event,value)
+        with self.assertRaises(ValueError):self.inspect()
+
+    def test_altered_summary_or_recorded_profile_cannot_be_reported_as_verified(self):
+        event=self.event('perf_finish');relative=event['evidenceFile'];original=json.loads((self.root/relative).read_text())
+        for change in ('summary','recorded','raw','budget'):
+            value=copy.deepcopy(original)
+            if change=='summary':value['raster']['p95Us']=1
+            if change=='recorded':value['visibleScope']['screenRecordingActive']=True
+            if change=='raw':value['rawFrames']=[]
+            if change=='budget':value['frameBudgetUs']=1
+            self.write_json(relative,event,value)
+            with self.assertRaises(ValueError):self.inspect()
+
+    def test_graphite_contact_and_original_png_bytes_share_the_existing_combined_cap(self):
+        data=b'\x89PNG\r\n\x1a\n'+b'x'*100_000
+        (self.root/'screenshots/01-home.png').write_bytes(data)
+        request=self.request|{'screenshots':['01-home.png']}
+        with tempfile.TemporaryDirectory() as cwd:
+            folder=Path(cwd)/'cloud';folder.mkdir();(folder/'ui-capture-inspect.json').write_text(json.dumps(request))
+            old=os.getcwd()
+            try:
+                os.chdir(cwd)
+                with patch.object(ui,'load_capture_report',return_value=self.report),patch.object(ui,'inspect_graphite_evidence'),\
+                     patch.object(ui,'inspect_native_profile_resources'),patch.object(ui,'inspect_ambient_recording'),\
+                     patch.object(ui,'inspect_interaction_recordings',return_value=1_400_000),patch.object(ui,'emit_png') as emit,\
+                     contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(ValueError,'Combined original graphite PNG/contact batch exceeds1.5MB'):ui.main()
+                    emit.assert_not_called()
+            finally:os.chdir(old)
 
 
 if __name__ == '__main__':

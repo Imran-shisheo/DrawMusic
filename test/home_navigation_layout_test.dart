@@ -70,7 +70,7 @@ void main() {
   );
 
   testWidgets(
-    'phone Home exposes creation and the first template names without an overlapping dock',
+    'phone Home exposes creation and artwork-led gallery names remain unobscured after real scrolling',
     (tester) async {
       tester.view.physicalSize = const Size(411, 850);
       tester.view.devicePixelRatio = 1;
@@ -94,6 +94,17 @@ void main() {
         find.byKey(const ValueKey('home-start')).hitTestable(),
         findsOneWidget,
       );
+      // Artwork leads the approved composition. Reach the actual first row by
+      // scrolling; labels must remain usable above the persistent dock.
+      await tester.scrollUntilVisible(
+        find.text('Paper hills'),
+        180,
+        scrollable: find.descendant(
+          of: find.byKey(const PageStorageKey('home-scroll')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.pumpAndSettle();
       expect(find.text('Paper hills').hitTestable(), findsOneWidget);
       expect(find.text('Little rain').hitTestable(), findsOneWidget);
       expect(
