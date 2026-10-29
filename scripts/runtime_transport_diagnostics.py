@@ -9,7 +9,7 @@ import subprocess
 import time
 
 DEVICE = 'emulator-5554'
-PACKAGE = 'com.imranshisheo.scribblesong'
+PACKAGE = 'com.devwithdelta.doodimo'
 OUTPUT = Path('work/runtime-output')
 TAGS = ['ActivityManager:I', 'ActivityTaskManager:I', 'lmkd:I', 'libc:I', 'flutter:I', 'DartVM:I', 'AndroidRuntime:I', '*:S']
 CGROUP_ROOT = Path('/sys/fs/cgroup')

@@ -1,4 +1,4 @@
-package com.imranshisheo.scribblesong
+package com.devwithdelta.doodimo
 
 import kotlin.math.abs
 import kotlin.math.max

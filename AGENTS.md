@@ -2,6 +2,8 @@
 
 ## Authorized scope
 
+Latest owner authorization, 29 October 2026: change Android applicationId/namespace and iOS Runner Bundle ID to `com.devwithdelta.doodimo` before any AAB/IPA upload. This supersedes prior preserve-app-identifier rules only for those technical identities; derive test target IDs consistently. Keep existing user files/model versions/internal `scribblesong/*` channels and the Dart package unchanged. A distinct installed identity has a new private sandbox: do not uninstall the old app or assume automatic migration/access to its files. Old-ID runs remain attributable historical evidence; new-ID source requires fresh checks. Do not register/sign/upload/store-edit from this cloud executor.
+
 Latest owner authorization, 28 October 2026: implement the approved original graphite/charcoal/orange reference-led app-wide redesign in this same cloud task, from current main including75e708d. See docs/GRAPHITE-IMPLEMENTATION-PLAN.md for exact approved Library inputs, preserved functional contracts and execution sequence. This supersedes earlier navy/violet/cyan styling. Inspect the actual two boards and complete motion plan before visual implementation; if unavailable, report the exact access blocker and continue inventory/planning only. Preserve all creation/audio/save/export features, Home caching and Library interrupted continuity. New PRs remain draft/unmerged; no paid usage, credentials, stores, force-push, scheduled continuation or phone/Mac operation from this executor.
 
 LATEST visual authorization: the owner rejected progress-02 as only a 5% improvement and explicitly rejected its palette/icons. Follow docs/requests/IMMERSIVE-REDESIGN-2026-10-27.md: a dark navy/indigo/violet/cyan immersive audiovisual playground, polished duotone/soft-dimensional icons, prominent bounded original ribbon motion and intentional cool light theme. This supersedes BOTH earlier aesthetic directions, not their functional/a11y constraints. Preserve all verified fixes and data. Next gate is a radically new Home/editor/export slice plus ACTUAL emulator motion recording before propagating all secondary screens. No merge/publication/phone/services/schedules.
@@ -16,7 +18,7 @@ Earlier owner authorization, 26 October 2026: implement the creative expansion i
 
 The owner authorized Android Flutter development in Codex Cloud on 2026-10-24. The earlier research-only instruction applied to the completed research phase. iOS compilation, signing and device testing will be performed by the owner on a local Mac; retain portable Dart code and platform boundaries. Do not claim iOS validation from a Linux run.
 
-Read PRD.md, docs/ROADMAP.md and cloud/FIRST-TASK.md. ScribbleSong is the PRD's provisional original product name; DrawMusic is the repository name. Use `com.imranshisheo.scribblesong` as the development application identifier; final store naming is a later owner decision.
+Read PRD.md, docs/ROADMAP.md and cloud/FIRST-TASK.md. ScribbleSong is the PRD's provisional original product name; DrawMusic is the repository name. Use owner-approved `com.devwithdelta.doodimo` as the current application identifier. The PRD’s original technical identifier is historical; Doodimo is the approved display name.
 
 ## Product and evidence
 

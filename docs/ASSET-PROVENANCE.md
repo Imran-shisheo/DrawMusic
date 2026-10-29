@@ -1,5 +1,7 @@
 # Shipping asset provenance
 
+Current identity amendment,29October2026: Android applicationId/namespace and iOS app Bundle ID are now`com.devwithdelta.doodimo`, explicitly approved by the owner. Earlier identity references below describe previous naming/branding checkpoints. Artwork/font/audio provenance is unchanged. Old private user files remain untouched; the new installed identity has a distinct sandbox, with no automatic migration claim.
+
 Version 1, 2026-10-24.
 
 - **Cloud keys / Wood drops / Glass stars**: original additive synthesis equations and envelopes authored for DrawMusic in `lib/features/composition/domain/audio_renderer.dart`. No sample recordings or reference-app audio are used. Engine version 1. Preview and WAV share this renderer; MIDI programs are piano (0), marimba (12), music box (10), channels 1–3, SMF format 0 / 480 PPQ.

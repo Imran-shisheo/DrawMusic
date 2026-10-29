@@ -1,4 +1,4 @@
-package com.imranshisheo.scribblesong
+package com.devwithdelta.doodimo
 
 /** Same integer alpha-over-white policy as the pure Dart document renderer. */
 internal fun opaquePaperColor(argb: Int): Int {

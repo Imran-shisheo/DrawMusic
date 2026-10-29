@@ -1,4 +1,4 @@
-package com.imranshisheo.scribblesong
+package com.devwithdelta.doodimo
 
 /** Main-channel startup lease. An unsafe/native operation never races sweep. */
 internal class BackgroundCleanupGuard {

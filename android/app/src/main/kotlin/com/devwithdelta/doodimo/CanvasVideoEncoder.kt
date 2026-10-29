@@ -1,4 +1,4 @@
-package com.imranshisheo.scribblesong
+package com.devwithdelta.doodimo
 
 import android.graphics.Bitmap
 import android.graphics.Canvas

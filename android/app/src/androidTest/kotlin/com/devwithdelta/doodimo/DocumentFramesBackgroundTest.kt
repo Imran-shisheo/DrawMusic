@@ -1,4 +1,4 @@
-package com.imranshisheo.scribblesong
+package com.devwithdelta.doodimo
 
 import android.graphics.Bitmap
 import androidx.test.platform.app.InstrumentationRegistry

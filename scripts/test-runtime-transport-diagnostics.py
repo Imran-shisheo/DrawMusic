@@ -144,9 +144,9 @@ class TransportDiagnosticsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {'GITHUB_ACTIONS': 'true'}), patch.object(diagnostics, 'host_resources', return_value={}), patch.object(diagnostics, 'command', side_effect=fake) as command:
             diagnostics.snapshot('before', output=Path(tmp))
             calls = [c.args[0] for c in command.call_args_list]
-            self.assertIn(['adb','-s','emulator-5554','shell','pidof','com.imranshisheo.scribblesong'], calls)
+            self.assertIn(['adb','-s','emulator-5554','shell','pidof','com.devwithdelta.doodimo'], calls)
             self.assertIn(['adb','-s','emulator-5554','shell','cat','/proc/meminfo'], calls)
-            self.assertIn(['adb','-s','emulator-5554','shell','dumpsys','meminfo','com.imranshisheo.scribblesong'], calls)
+            self.assertIn(['adb','-s','emulator-5554','shell','dumpsys','meminfo','com.devwithdelta.doodimo'], calls)
             log = next(args for args in calls if 'logcat' in args)
             self.assertEqual(log[log.index('-t')+1], '200')
             self.assertEqual(log[-1], '*:S')

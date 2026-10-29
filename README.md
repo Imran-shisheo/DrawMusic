@@ -1,6 +1,8 @@
 # Doodimo — DrawMusic repository
 
-An original Flutter drawing-to-music application. Doodimo is the owner-selected display name; DrawMusic remains the repository name. The historical PRD uses the provisional ScribbleSong name, and the package ID remains com.imranshisheo.scribblesong. Android development runs in Codex Cloud. The owner will build and test iOS on a local Mac.
+An original Flutter drawing-to-music application. Doodimo is the owner-selected display name; DrawMusic remains the repository name. The historical PRD uses the provisional ScribbleSong name, and the owner-approved Android application ID and iOS app Bundle ID are now com.devwithdelta.doodimo. Android development runs in Codex Cloud. The owner will build and test iOS on a local Mac.
+
+The29October2026 identity change creates a separate installed app/private sandbox. Existing old-ID files are not deleted or automatically migrated. Release signing and store registration/upload are not performed by this cloud task.
 
 ## Start here
 

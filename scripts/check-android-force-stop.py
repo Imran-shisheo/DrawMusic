@@ -7,7 +7,7 @@ import subprocess
 import time
 import uuid
 
-PACKAGE = 'com.imranshisheo.scribblesong'
+PACKAGE = 'com.devwithdelta.doodimo'
 DEVICE = 'emulator-5554'
 OUTPUT = Path('work/runtime-output')
 

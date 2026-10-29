@@ -1,4 +1,4 @@
-package com.imranshisheo.scribblesong
+package com.devwithdelta.doodimo
 
 import android.media.AudioAttributes
 import android.media.AudioFormat

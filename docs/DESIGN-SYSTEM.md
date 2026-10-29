@@ -4,7 +4,7 @@
 
 ## Identity and color
 
-`brand.dart` keeps Doodimo / Draw your sound. The original orange drawing-to-sound gesture is shared by in-app painting, authoredSVG and generated native assets. Fine24-unit outline glyphs share stroke/corner/optical size and explicit disabled/selected semantics. All materials are offline Flutter/native geometry with static authored lighting, not extracted competitor art or full-screen blur. Package `com.imranshisheo.scribblesong`, project IDs, normalized artwork, original instrument colors, paper and export rendering remain unchanged.
+`brand.dart` keeps Doodimo / Draw your sound. The original orange drawing-to-sound gesture is shared by in-app painting, authoredSVG and generated native assets. Fine24-unit outline glyphs share stroke/corner/optical size and explicit disabled/selected semantics. All materials are offline Flutter/native geometry with static authored lighting, not extracted competitor art or full-screen blur. Current owner-approved package/bundle ID is `com.devwithdelta.doodimo`; project IDs, normalized artwork, original instrument colors, paper and export rendering remain unchanged. The technical identity changed on29October2026; it is a distinct installed-app sandbox.
 
 | Semantic role | Graphite dark | Light stone |
 |---|---|---|

@@ -1,4 +1,4 @@
-package com.imranshisheo.scribblesong
+package com.devwithdelta.doodimo
 
 /** Monotonic native control envelope; it never schedules musical events. */
 internal class AudioGainEnvelope(private val durationNanos:Long=16_000_000L) {

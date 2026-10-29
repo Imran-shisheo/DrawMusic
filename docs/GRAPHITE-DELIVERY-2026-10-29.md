@@ -1,5 +1,13 @@
 # Doodimo graphite implementation and evidence — 29 October 2026
 
+## Owner-approved technical identity — final local checks passed
+
+The owner explicitly changed the final app IDs before anyAAB/IPAupload. Android applicationId/namespace is now`com.devwithdelta.doodimo`; its22Kotlin files moved coherently across main/unit/instrumentation roots, with only package declarations changed. Runner allthree configurations use the same app Bundle ID; RunnerTests derives`com.devwithdelta.doodimo.RunnerTests`. There are no extension targets. InternalDartpackage/methodchannels, models, fileformats/schema/engineversions, document IDs, artwork/audio/export behavior and current user files remain unchanged. New identity means a distinct installed-app sandbox; old private data is not automatically migrated or deleted. No owner-phone uninstall, signing/team/portal registration or upload occurs.
+
+Executable runtime helpers and identity checks/fixtures use the new target. Final new-ID `bash scripts/check-android.sh` passes:213formatted Dart files/zerochanges, analyzer0,417Fluttertests/three diagnostic skips,78real-fontstates/eight unchanged strict references, actualdebugAPK/v2signature,24JVMtests/zeroerrors, Androidlint and12interruptedwriters recovered. SeparateassembleDebugAndroidTest andprocessReleaseMainManifest tasks pass. BuiltAPK metadata confirms2.1.0+24/min24/target36/newappID andMainActivity; instrumentationAPK is`com.devwithdelta.doodimo.test` targetingnewappID. Allprovider authorities use the new prefix. Release mergedmanifest has only the own signature receiver permission, with noInternet/microphone/camera/broadstorage/locationpermission. IndividualnewdebugAPK SHA256`f3c9bf040177ca88900714a97119bd68079f8e4b64944cefaaf7fb0bbf85ea67`. Transport13/host39/observer14/icon/syntax checks pass; exact six iOS configuration substitutions are statically checked, not an Xcode build.
+
+Previoussource3d168d0/heads d4d8c04 andedf6da8, their APKs and hosted runs are OLD-ID evidence. Both documented-renderer recovery runs40866059918/40866067869 also failed after emulator transport loss; their exact observer artifacts12894446981/12895546559 are retained. Changing the graphics selector has not established recovery. New-ID native/media and real motion acceptance remains pending; old native cases/soaks cannot count for the new installed identity. A scoped diagnostic-only fault-stack trace is being prepared using already installed tools; debugger scheduling, argv0 differences and raw exit-status ambiguity must be disclosed and cannot count as accepted performance. [Store-draft source facts](STORE-DRAFT-FACTS.md) remain provisional until final platform validation/assets.
+
 ## Confirmed emulator SIGSEGV and controlled renderer recovery
 
 Product3d168d0/head d4d8c04 passed the full local gate and hosted417Flutter tests/78real-font states/core/build/signature/portable Swift. [Current test APK12892621636](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40861701527/artifacts/12892621636) is a checkpoint, not full runtime acceptance. Native40861701527 finished20native cases and600005mssoak, then its Flutter flow lost the emulator and produced incomplete UI video; full native/media acceptance failed. Motion40861693301 failed after six events.
@@ -8,7 +16,7 @@ Exact read-only readers [40865612415](https://github.com/Imran-shisheo/DrawMusic
 
 The next bounded recovery changes only the emulator graphics selector from deprecated `swiftshader_indirect` to documented `swiftshader`, preserving emulator37.2.12/API35/x86_64, KVM, all other flags, original app/native source, budgets and acceptance assertions. [Google's official graphics modes](https://developer.android.com/studio/run/emulator-acceleration) list this replacement and mark the indirect mode deprecated since36.4.9. No Vulkan toggle, SDK downgrade, skipped case, fabricated frame, paid runner or physical-device workaround is introduced. This is a controlled candidate workaround, not a claimed fix; new complete native/media and original motion results are required. SDK-child observation remains enabled for any further exit.
 
-## Current compact candidate
+## Previous compact candidate — former technical identity
 
 Product source `3d168d0805bb228067929f02da89c9bc7517ec0e` is pinned independently in the capture request. The later request/documentation commit does not change app/native/assets/dependencies, tests or workflows. Current-source hosted checks are pending.
 

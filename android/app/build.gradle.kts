@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.imranshisheo.scribblesong"
+    namespace = "com.devwithdelta.doodimo"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.imranshisheo.scribblesong"
+        applicationId = "com.devwithdelta.doodimo"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.

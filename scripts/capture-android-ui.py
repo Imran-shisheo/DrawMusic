@@ -21,7 +21,7 @@ from ui_capture_mp4 import encoded_avc_readiness
 from runtime_transport_diagnostics import safe_snapshot
 
 DEVICE = 'emulator-5554'
-PACKAGE = 'com.imranshisheo.scribblesong'
+PACKAGE = 'com.devwithdelta.doodimo'
 OUTPUT = Path('work/ui-capture')
 PROFILE_PROCESS_TIMEOUT_SECONDS = 1200
 

@@ -151,7 +151,7 @@ void main() {
     }
     PackageInfo.setMockInitialValues(
       appName: 'Doodimo',
-      packageName: 'com.imranshisheo.scribblesong',
+      packageName: 'com.devwithdelta.doodimo',
       version: '2.1.0',
       buildNumber: '24',
       buildSignature: 'visual-fixture',

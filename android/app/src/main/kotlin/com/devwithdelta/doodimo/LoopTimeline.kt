@@ -1,4 +1,4 @@
-package com.imranshisheo.scribblesong
+package com.devwithdelta.doodimo
 
 import java.util.ArrayDeque
 import kotlin.math.roundToInt
