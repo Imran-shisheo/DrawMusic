@@ -1,7 +1,7 @@
 name: Inspect private UI capture evidence (read only)
 on:
   push:
-    branches: [codex/ui-redesign-2026-10-27]
+    branches: [codex/ui-redesign-2026-10-27, codex/graphite-evidence-reader-2026-10-29]
     paths:
       - .github/workflows/ui-capture-inspect.yml
       - cloud/ui-capture-inspect.json
