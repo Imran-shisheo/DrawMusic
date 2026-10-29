@@ -2,6 +2,8 @@
 
 ## Current compact candidate
 
+Product source `3d168d0805bb228067929f02da89c9bc7517ec0e` is pinned independently in the capture request. The later request/documentation commit does not change app/native/assets/dependencies, tests or workflows. Current-source hosted checks are pending.
+
 ## Compact navigation and keyboard refinement — 29 October 2026
 
 The enclosing product commit extends refined graphite `aae5bab` without changing the normal-phone composition or artwork/data/audio contracts. At320dp/200% text, navigation now reserves a stable summary row and persistent Create key rather than four permanently stacked destinations (French74dp instead of235dp). Its branded panel exposes every original destination with full labels, selection cues, accessible targets, Back and focus restoration. All12locales include the new Navigation label:373keys each. Independent retained Drafts/Exports scroll offsets survive route changes; file-backed Open/Rename/Share/Save/Delete/Undo remain exercised.
