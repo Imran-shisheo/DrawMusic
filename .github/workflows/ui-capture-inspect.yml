@@ -38,10 +38,10 @@ jobs:
           request=json.loads(Path('cloud/ui-capture-inspect.json').read_text())
           assert type(request['runId']) is int and request['runId']>0
           mode=request.get('mode','ui')
-          assert mode in ('ui','runtime','emulator-fault','ui-transport')
+          assert mode in ('ui','runtime','emulator-fault','ui-transport','skia-functional')
           artifact_id=''
           name=request['artifactName']
-          if mode in ('runtime','emulator-fault','ui-transport'):
+          if mode in ('runtime','emulator-fault','ui-transport','skia-functional'):
               import importlib.util,sys
               sys.path.insert(0,str(Path('scripts').resolve()))
               filename='scripts/inspect-runtime-artifact.py' if mode=='runtime' else 'scripts/inspect-emulator-fault-artifact.py'
@@ -74,7 +74,7 @@ jobs:
           python3 scripts/test-runtime-artifact-inspect.py
           python3 scripts/test-emulator-fault-artifact-inspect.py
       - name: Check preinstalled host debugger readiness (diagnostic only)
-        if: steps.request.outputs.mode != 'emulator-fault' && steps.request.outputs.mode != 'ui-transport'
+        if: steps.request.outputs.mode != 'emulator-fault' && steps.request.outputs.mode != 'ui-transport' && steps.request.outputs.mode != 'skia-functional'
         timeout-minutes: 3
         run: |
           python3 scripts/test-host-debugger-readiness.py
@@ -83,7 +83,7 @@ jobs:
           python3 scripts/check-host-debugger-readiness.py
           python3 scripts/check-execchain-debugger-readiness.py
       - name: Preserve bounded host debugger readiness
-        if: ${{ always() && steps.request.outputs.mode != 'emulator-fault' && steps.request.outputs.mode != 'ui-transport' }}
+        if: ${{ always() && steps.request.outputs.mode != 'emulator-fault' && steps.request.outputs.mode != 'ui-transport' && steps.request.outputs.mode != 'skia-functional' }}
         uses: actions/upload-artifact@v7
         with:
           name: drawmusic-host-debugger-readiness-${{ github.sha }}
@@ -94,7 +94,7 @@ jobs:
         if: steps.request.outputs.mode == 'runtime'
         run: python3 scripts/inspect-runtime-artifact.py
       - name: Inspect fixed owned SDK debugger evidence (never acceptance)
-        if: steps.request.outputs.mode == 'emulator-fault' || steps.request.outputs.mode == 'ui-transport'
+        if: steps.request.outputs.mode == 'emulator-fault' || steps.request.outputs.mode == 'ui-transport' || steps.request.outputs.mode == 'skia-functional'
         run: python3 scripts/inspect-emulator-fault-artifact.py
       - name: Inspect actual diagnostic logs and requested exact PNGs (not a product test)
         if: steps.request.outputs.mode == 'ui'

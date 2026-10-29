@@ -47,6 +47,25 @@ class FaultReaderTest(unittest.TestCase):
             self.assertTrue(result['normalSdkObserver']['partialOrMissing'])
             self.assertNotIn('boundedSignalAndTailLines', json.dumps(result))
 
+    def test_functional_artifact_is_distinct_and_must_remain_ineligible(self):
+        request = REQUEST | {'mode': 'skia-functional', 'artifactName': 'drawmusic-skia-functional-diagnostic-' + 'a'*40}
+        module.validate_request(request)
+        with self.assertRaises(ValueError):
+            module.validate_request(request | {'artifactName': REQUEST['artifactName']})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'emulator-process').mkdir()
+            (root / 'emulator-process/stdout-tail.log').write_text('SDK exit')
+            report = {'passed': False, 'acceptanceEligible': False, 'functionalSequenceCompleted': True, 'mediaInspectionsCompleted': True}
+            path = root / 'skia-functional-diagnostic.json'
+            path.write_text(json.dumps(report))
+            result = module.inspect(root, request, lambda text: None)
+            self.assertTrue(result['functionalReport']['mediaInspectionsCompleted'])
+            self.assertIn('ownedSdkObserver', result)
+            path.write_text(json.dumps(report | {'passed': True}))
+            with self.assertRaises(ValueError):
+                module.inspect(root, request, lambda text: None)
+
     def test_actual_fixed_metadata_does_not_dump_unknown_fields_or_console(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

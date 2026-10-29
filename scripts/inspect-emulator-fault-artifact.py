@@ -25,11 +25,11 @@ TOKENS = ('dynamic loader', 'rendezvous', 'link_map', 'failed to read', 'unable 
 
 
 def validate_request(request):
-    if set(request) != {'mode', 'runId', 'artifactId', 'artifactName'} or request.get('mode') not in ('emulator-fault', 'ui-transport'):
+    if set(request) != {'mode', 'runId', 'artifactId', 'artifactName'} or request.get('mode') not in ('emulator-fault', 'ui-transport', 'skia-functional'):
         raise ValueError('Explicit fixed-schema emulator-fault inspection required')
     if any(type(request.get(key)) is not int or request[key] <= 0 for key in ('runId', 'artifactId')):
         raise ValueError('Positive exact run and artifact IDs required')
-    prefix = 'drawmusic-emulator-fault-trace-' if request['mode'] == 'emulator-fault' else 'drawmusic-ui-visuals-'
+    prefix = {'emulator-fault': 'drawmusic-emulator-fault-trace-', 'ui-transport': 'drawmusic-ui-visuals-', 'skia-functional': 'drawmusic-skia-functional-diagnostic-'}[request['mode']]
     if not isinstance(request.get('artifactName'), str) or not re.fullmatch(re.escape(prefix) + r'[0-9a-f]{40}', request['artifactName']):
         raise ValueError('Only explicitly unaccepted fault-trace artifacts allowed')
 
@@ -93,8 +93,8 @@ def inspect(root, request, emit=print):
     found = 0
     # Single-directory normal uploads have contents at ZIP root; fault-trace
     # uploads preserve their ui-capture/ sibling because they include two roots.
-    capture_prefix = Path() if request['mode'] == 'ui-transport' else Path('ui-capture')
-    if request['mode'] == 'ui-transport':
+    capture_prefix = Path('ui-capture') if request['mode'] == 'emulator-fault' else Path()
+    if request['mode'] in ('ui-transport', 'skia-functional'):
         captured = []
         observed = reader.inspect_observer(root, Path('emulator-process'), captured.append)
         found += observed['files']
@@ -102,7 +102,7 @@ def inspect(root, request, emit=print):
             original = json.loads(captured[0].split('EMULATOR_PROCESS_DIAGNOSTIC ', 1)[1])
             for log in original.get('logs', []):
                 log.pop('boundedSignalAndTailLines', None)
-            result['normalSdkObserver'] = original
+            result['ownedSdkObserver' if request['mode'] == 'skia-functional' else 'normalSdkObserver'] = original
     for name, fields in FIELDS.items():
         relative = PREFIX / name
         if not (root / relative).exists():
@@ -151,10 +151,16 @@ def inspect(root, request, emit=print):
             'rawConsolePrinted': False}
     else:
         result['missing'].append(str(driver))
-    report_path = capture_prefix / 'capture-report.json'
+    report_path = capture_prefix / ('skia-functional-diagnostic.json' if request['mode'] == 'skia-functional' else 'capture-report.json')
     if (root / report_path).exists():
         report_data = reader.safe_bytes(root, report_path, 2 * 1024 * 1024)
         report = json.loads(report_data)
+        if request['mode'] == 'skia-functional':
+            if report.get('acceptanceEligible') is not False or report.get('passed') is not False:
+                raise ValueError('Functional renderer diagnostic must never claim product acceptance')
+            result['functionalReport'] = {key: report.get(key) for key in ('passed', 'acceptanceEligible', 'diagnosticOnly',
+                'functionalSequenceCompleted', 'mediaInspectionsCompleted', 'originalUiDriverUnchanged', 'nativeCasesAndSoakRerun', 'forceStopRerun')
+                if report.get(key) is None or type(report.get(key)) is bool}
         result['captureReport'] = {key: report.get(key) for key in ('passed', 'diagnosticOnly', 'acceptanceEligible',
             'diagnosticSequenceCompleted', 'graphiteSubsetPassed', 'normalFullCapturePassed', 'normalProductCapturePassed')
             if report.get(key) is None or type(report.get(key)) is bool}

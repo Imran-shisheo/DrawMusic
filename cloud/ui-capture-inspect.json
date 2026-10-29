@@ -1,6 +1,6 @@
 {
-  "mode": "runtime",
-  "runId": 40900621914,
-  "artifactId": 12911171841,
-  "artifactName": "drawmusic-runtime-evidence-3fdb6be5cc8c587a24a55fe1307c18a255e75d4e"
+  "mode": "skia-functional",
+  "runId": 40908601566,
+  "artifactId": 12913950884,
+  "artifactName": "drawmusic-skia-functional-diagnostic-7db152d93ec12b2bfae2c69d64a105311f7266ce"
 }
