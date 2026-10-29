@@ -47,6 +47,22 @@ class FaultReaderTest(unittest.TestCase):
             self.assertEqual(result['driverRenderer']['impellerVulkanAnnouncements'], 0)
             self.assertTrue(result['missing'])
 
+    def test_bounded_flight_fields_survive_without_leaking_driver_or_route_identity(self):
+        text = 'SECRET-CAPABILITY\nUI_GRAPHITE_FLIGHT_SUMMARY ' + json.dumps({'naturalFramesObserved': 5, 'scope': 'SECRET-SCOPE'})
+        text += '\nUI_GRAPHITE_FLIGHT_FRAME ' + json.dumps({'routePath': '/editor/SECRET-ID?session=SECRET',
+            'routeType': '_PageBasedMaterialPageRoute<void>', 'routeTransitionDurationUs': 320000,
+            'canvasRect': [1, 2, 3, 4], 'shuttleVisibleCount': 1, 'intentCancelled': False,
+            'fieldErrors': {'routerLookup': 'FlutterError', 'unknown': 'SECRET'}, 'extra': 'SECRET'})
+        result = module.flight_observations(text)
+        self.assertNotIn('SECRET', json.dumps(result))
+        self.assertEqual(result['frames'][0]['routeKind'], 'editor')
+        self.assertEqual(result['frames'][0]['shuttleVisibleCount'], 1)
+        self.assertEqual(result['frames'][0]['fieldErrors'], {'routerLookup': 'FlutterError'})
+        with self.assertRaises(ValueError):
+            module.flight_observations('\n'.join(['UI_GRAPHITE_FLIGHT_FRAME {}'] * 81))
+        with self.assertRaises(ValueError):
+            module.flight_observations('UI_GRAPHITE_FLIGHT_FRAME ' + 'x' * 8193)
+
     def test_missing_files_are_not_success(self):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(ValueError):

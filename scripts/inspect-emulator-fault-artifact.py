@@ -40,6 +40,50 @@ def scalar(value):
     return '<non-scalar omitted>'
 
 
+def flight_observations(text):
+    """Read only bounded authored telemetry; never print arbitrary driver lines."""
+    numbers = {'naturalFramesObserved', 'stateChangesObserved', 'stateChangesDroppedForBound',
+               'actualElapsedUs', 'engineFrameNumber', 'postFrameTimestampUs', 'systemFrameTimestampUs',
+               'wallElapsedUs', 'routeTransitionDurationUs', 'routeReverseDurationUs', 'canvasMountedCount',
+               'canvasVisibleCount', 'canvasHitTestableCount', 'canvasElementIdentity', 'shuttleVisibleCount',
+               'shuttleMountedCount', 'shuttleOpacity', 'matchingHeroTags', 'routeAnimationValue'}
+    booleans = {'diagnosticOnly', 'acceptanceEligible', 'intentPresent', 'intentCancelled', 'reducedMotion', 'contextMounted'}
+    summary, frames = [], []
+    for line in text.splitlines():
+        for label, output in (('UI_GRAPHITE_FLIGHT_SUMMARY ', summary), ('UI_GRAPHITE_FLIGHT_FRAME ', frames)):
+            if label not in line:
+                continue
+            payload = line.split(label, 1)[1]
+            if len(payload) > 8192 or len(output) >= (1 if output is summary else 80):
+                raise ValueError('Flight telemetry exceeds authored bounds')
+            value = json.loads(payload)
+            if not isinstance(value, dict):
+                raise ValueError('Flight telemetry must be an object')
+            selected = {key: item for key, item in value.items()
+                        if (key in numbers and (item is None or type(item) in (int, float) and -1e15 <= item <= 1e15))
+                        or (key in booleans and (item is None or type(item) is bool))}
+            if 'routePath' in value:
+                path = value['routePath']
+                selected['routeKind'] = 'home' if path == '/home' else 'editor' if isinstance(path, str) and path.startswith('/editor/') else 'other'
+            for key, allowed in {'routeType': {'_PageBasedMaterialPageRoute<void>', '_CustomTransitionPageRoute<void>', 'MaterialPageRoute<void>'},
+                                 'routeAnimationStatus': {'dismissed', 'forward', 'reverse', 'completed'},
+                                 'lifecycle': {'resumed', 'inactive', 'paused', 'hidden', 'detached'}}.items():
+                if key in value:
+                    selected[key] = value[key] if value[key] is None or value[key] in allowed else '<other omitted>'
+            rectangle = value.get('canvasRect')
+            if isinstance(rectangle, list) and len(rectangle) == 4 and all(type(x) in (int, float) and -1e6 <= x <= 1e6 for x in rectangle):
+                selected['canvasRect'] = rectangle
+            errors = value.get('fieldErrors')
+            if isinstance(errors, dict):
+                allowed_errors = {'canvasMounted', 'canvasVisible', 'canvasHitTestable', 'shuttleVisible', 'sourceVisible',
+                    'routerLookup', 'modalLookup', 'shuttleOpacity', 'canvasRect', 'forwardDuration', 'reverseDuration',
+                    'shuttleMounted', 'intentCancelled', 'heroTags', 'reducedMotion', 'animationValue', 'animationStatus'}
+                selected['fieldErrors'] = {key: item if item in {'FlutterError', 'StateError', 'TypeError', '_TypeError', 'AssertionError'} else '<other omitted>'
+                                           for key, item in errors.items() if key in allowed_errors}
+            output.append(selected)
+    return {'summary': summary, 'frames': frames, 'scope': 'Authored engine-frame state only; raw driver lines and route identities omitted. Not presentation or smoothness acceptance.'}
+
+
 def inspect(root, request, emit=print):
     validate_request(request)
     result = {'diagnosticOnly': True, 'acceptanceEligible': False, 'request': request, 'files': [], 'missing': [],
@@ -83,6 +127,7 @@ def inspect(root, request, emit=print):
     if (root / driver).exists():
         data = reader.safe_bytes(root, driver, 8 * 1024 * 1024)
         text = data.decode('utf-8', errors='replace')
+        result['flightObservation'] = flight_observations(text)
         # Only canonical renderer identities, never raw driver capability URLs,
         # arguments, test tokens or arbitrary matching log lines.
         result['driverRenderer'] = {'file': str(driver), 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(),
@@ -92,6 +137,14 @@ def inspect(root, request, emit=print):
             'rawConsolePrinted': False}
     else:
         result['missing'].append(str(driver))
+    report_path = Path('ui-capture/capture-report.json')
+    if (root / report_path).exists():
+        report_data = reader.safe_bytes(root, report_path, 2 * 1024 * 1024)
+        report = json.loads(report_data)
+        result['captureReport'] = {key: report.get(key) for key in ('passed', 'diagnosticOnly', 'acceptanceEligible',
+            'diagnosticSequenceCompleted', 'graphiteSubsetPassed', 'normalFullCapturePassed', 'normalProductCapturePassed')
+            if report.get(key) is None or type(report.get(key)) is bool}
+        result['captureReportSha256'] = hashlib.sha256(report_data).hexdigest()
     if not found:
         raise ValueError('No fixed diagnostic evidence found')
     emit('OWNED_SDK_TRACE_INSPECTION ' + json.dumps(result, sort_keys=True))
