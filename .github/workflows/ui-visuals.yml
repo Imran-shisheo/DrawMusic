@@ -82,7 +82,7 @@ jobs:
           profile: pixel_2
           disable-animations: false
           pre-emulator-launch-script: python3 scripts/observe-emulator-process.py install --mode ui
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
           script: bash scripts/check-android-visuals.sh
       - name: Retain owned emulator lifecycle and scoped crash diagnostics
         if: ${{ always() && steps.profile_emulator.outcome != 'skipped' }}

@@ -154,7 +154,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           pre-emulator-launch-script: python3 scripts/observe-emulator-process.py install --mode runtime
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
           script: bash scripts/check-android-runtime.sh
       - name: Retain owned emulator lifecycle and scoped crash diagnostics
         if: ${{ always() && steps.runtime_emulator.outcome != 'skipped' && needs.setup-files.outputs.native_required != 'false' }}
