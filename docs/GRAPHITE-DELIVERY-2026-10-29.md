@@ -1,5 +1,13 @@
 # Doodimo graphite implementation and evidence — 29 October 2026
 
+## SDK page/flight correction — final local product2ffc616
+
+A real full-App warm/reopen regression found GoRouter18.1.1 selecting zero-duration custom pages because its material_ui app-type check does not recognize this SDK MaterialApp. Explicit SDK MaterialPage builders for the retained shell and every route preserve keys, names, path/query arguments and restoration IDs, restore the existing320ms theme transition and actual artwork Hero flight. First pointer cancels the presentation without remounting or moving the live canvas. Reduced motion remains stationary. No audio/data/animation-duration changes or reference-image updates.
+
+Exact product`2ffc61665159d38240c7a869811c4580d82a8fc0` passes the complete local Android gate:214formatted Dart files/zero changes, analyzer0,420Flutter tests/three diagnostic skips,78real-font states/eight unchanged strict references, realdebugAPK/v2 signature,24JVM cases (unchanged outputs cached), lint and12interrupted-writer recoveries. APK SHA256`4828829472a1d2ccbf5f83ce36d8d8f7b0a6fc1f225b8bb34677a34dbbf2dd18`, com.devwithdelta.doodimo,2.1.0+24/min24/target36. The first full gate exposed two existing instantaneous-disposal assumptions; phase-correct tests now observe the real reverse lifecycle within the same bounded time budget and retain their terminal assertions.
+
+[Fault and flight evidence](EMULATOR-FAULT-DIAGNOSTIC-2026-10-29.md) separates confirmed host QEMU SIGSEGV/anonymous executable PC from the independently reproduced app routing bug. Native baseline40893506989 measured259 natural frames/30.026s and zero-duration Home; Editor lookup fields were lost to a diagnostic FlutterError, not proof of absent native flight. Per-field diagnostic repair preserves unaffected measurements. Alternate-renderer captures always remain acceptanceEligible:false. New-ID full native/media, final original motion/profile, actual IME, physical and iOS acceptance are still pending. Earlier local417-test and former-ID hosted results below remain source-specific history, not a current full runtime pass.
+
 ## Owner-approved technical identity — final local checks passed
 
 New-ID product source`35e5ec6303d2bc7b46aa1f1abd93d8c276a2f057` is independently pinned. The later pin/documentation commit does not change app/native/assets/dependencies/tests. Hosted new-ID acceptance remains pending while the confirmed emulator failure is diagnosed.
