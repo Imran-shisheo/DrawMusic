@@ -12,6 +12,22 @@ spec=importlib.util.spec_from_file_location('host_debugger_readiness',Path(__fil
 tool=importlib.util.module_from_spec(spec);spec.loader.exec_module(tool)
 
 class HostReadinessTests(unittest.TestCase):
+    def test_safe_version_formats_stderr_loader_failure_and_statuses_remain_explicit(self):
+        for text in ('lldb version 17.0.0 (revision owned)','lldb-server version 23.0.0git (revision owned)'):
+            value=tool.version_summary({'returncode':0,'stdout':'','stderr':text})
+            self.assertEqual(value['category'],'VersionParsed')
+            self.assertIn(value['parsedVersion'],('17.0.0','23.0.0git'))
+            self.assertEqual(value['returncode'],0)
+        value=tool.version_summary({'returncode':127,'stderr':'lldb: error while loading shared libraries: libpython3.13.so.1.0: cannot open shared object file\nAPI_KEY=DO_NOT_PRINT'})
+        self.assertEqual(value['category'],'MissingRuntimeSharedLibrary')
+        self.assertEqual(value['missingLibrary'],'libpython3.13.so.1.0')
+        self.assertEqual(value['returncode'],127)
+        self.assertIsNone(value['parsedVersion'])
+        self.assertNotIn('DO_NOT_PRINT',json.dumps(value))
+        self.assertEqual(tool.version_summary({'returncode':None,'error':'TimeoutExpired'})['category'],'VersionCommandTimedOut')
+        self.assertEqual(tool.version_summary({'returncode':0,'stdout':'Usage: lldb-server v[ersion]'})['category'],'VersionInvocationReturnedUsage')
+        self.assertIsNone(tool.version_summary({'returncode':1,'stdout':'lldb version 17.0.0'})['parsedVersion'])
+
     def test_non_actions_never_executes_or_discovers_tools(self):
         with patch.dict(os.environ,{'GITHUB_ACTIONS':'false','RUNNER_OS':'Linux'}),patch.object(tool,'candidates') as candidates,patch.object(tool,'run_bounded') as run:
             result=tool.readiness()
@@ -65,6 +81,8 @@ class HostReadinessTests(unittest.TestCase):
                 result=tool.readiness()
             self.assertFalse(result['ready']);self.assertEqual(probe.call_count,1)
             self.assertEqual(len(result['attempts']),1)
+            self.assertEqual(result['attempts'][0]['versionChecks']['server']['parsedVersion'],'17.0.0')
+            self.assertEqual(result['attempts'][0]['versionChecks']['server']['returncode'],0)
             self.assertFalse(any('sudo' in arguments or 'apt' in arguments for arguments in calls))
 
     def test_report_size_and_symlink_guards(self):

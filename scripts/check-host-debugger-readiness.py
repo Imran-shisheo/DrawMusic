@@ -106,6 +106,24 @@ def run_bounded(arguments,*,environment,timeout=5,pass_fds=()):
         return {'returncode':code,'stdout':out.read(4096).decode(errors='replace'),
                 'stderr':err.read(4096).decode(errors='replace')}
 
+def version_summary(result):
+    """Publish fixed categories/version tokens, never arbitrary loader text."""
+    stdout=result.get('stdout','');stderr=result.get('stderr','')
+    text=stdout+'\n'+stderr
+    match=re.search(r'\blldb(?:-server)? version ([0-9][0-9A-Za-z.+_-]{0,60})\b',text)
+    missing=re.search(r'error while loading shared libraries:\s*(lib[A-Za-z0-9_.+-]{1,100}):',stderr)
+    code=result.get('returncode')
+    value={'returncode':code,'parsedVersion':match.group(1) if code==0 and match else None,
+        'inspectedStdoutBytes':len(stdout.encode()),'inspectedStderrBytes':len(stderr.encode())}
+    if result.get('error')=='TimeoutExpired':value['category']='VersionCommandTimedOut'
+    elif missing:
+        value.update(category='MissingRuntimeSharedLibrary',missingLibrary=missing.group(1))
+    elif code!=0:value['category']='VersionCommandNonzero'
+    elif match:value['category']='VersionParsed'
+    elif 'Usage:' in text or 'USAGE:' in text:value['category']='VersionInvocationReturnedUsage'
+    else:value['category']='VersionOutputUnrecognized'
+    return value
+
 def own_probe(binary,mode,root):
     real=root/'owned-readiness-elf';report=root/(mode+'.json');witness=root/(mode+'-witness.json')
     original={**os.environ,'DOODIMO_FAKE_WITNESS':str(witness),'DOODIMO_FAKE_SENTINEL':'OWN_FAKE_SENTINEL'}
@@ -164,11 +182,18 @@ def readiness():
         if not trusted(server) or not regular_executable(server):
             attempt['reason']='MatchingPreinstalledHostServerUnavailable';continue
         environment=debugger_environment(binary,os.environ)
-        versions=[]
-        for arguments in ([str(binary),'--no-lldbinit','--version'],[str(server),'version']):
-            version=run_bounded(arguments,environment=environment)
-            match=re.search(r'lldb version ([0-9][0-9A-Za-z.+_-]{0,60})',version.get('stdout','')+'\n'+version.get('stderr',''))
-            versions.append(match.group(1) if version.get('returncode')==0 and match else None)
+        versions=[];attempt['versionChecks']={}
+        # LLVM's published lldb-server manual specifies v[ersion]. The
+        # preapproved host17 server treats --version as Usage, not a version.
+        # Do not guess alternate invocations or silently loosen identity.
+        for role,arguments in (('debugger',[str(binary),'--no-lldbinit','--version']),('server',[str(server),'version'])):
+            try:version=run_bounded(arguments,environment=environment)
+            except OSError as error:
+                version={'returncode':None,'error':type(error).__name__}
+            summary=version_summary(version)
+            if version.get('error') and version['error']!='TimeoutExpired':summary['category']='VersionExecutableUnavailable'
+            attempt['versionChecks'][role]=summary
+            versions.append(summary['parsedVersion'])
         if versions[0] is None or versions[0]!=versions[1]:
             attempt['reason']='DebuggerServerVersionMismatchOrUnavailable';continue
         attempt['matchingVersion']=versions[0]
