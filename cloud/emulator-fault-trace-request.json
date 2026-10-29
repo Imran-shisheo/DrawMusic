@@ -4,5 +4,6 @@
   "label": "after",
   "graphiteCapture": true,
   "emulatorFaultTrace": true,
-  "faultTraceRevision": "skia-isolation"
+  "faultTraceRevision": "skia-isolation",
+  "observeFlightFrames": true
 }

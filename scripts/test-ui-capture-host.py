@@ -38,6 +38,17 @@ class DiagnosticRendererTests(unittest.TestCase):
         for provenance in ({'rendererOverride':'skia-diagnostic-only'}, {'faultTraceRevision':'unknown'}):
             with self.assertRaises(ValueError):host.diagnostic_renderer_arguments(provenance)
 
+    def test_flight_observer_requires_the_same_unaccepted_isolation_scope(self):
+        self.assertEqual(host.diagnostic_flight_arguments({}), [])
+        with self.assertRaises(ValueError):host.diagnostic_flight_arguments({'observeFlightFrames':'true'})
+        with self.assertRaises(ValueError):host.diagnostic_flight_arguments({'observeFlightFrames':True})
+        provenance={'faultTraceRevision':'skia-isolation','rendererOverride':'skia-diagnostic-only',
+            'diagnosticOnly':'emulator-fault-stack','emulatorFaultTrace':True,'acceptanceEligible':False,
+            'graphiteCapture':True,'label':'after','observeFlightFrames':True}
+        with patch.dict(host.os.environ,{'DRAWMUSIC_EMULATOR_TRACE_DIAGNOSTIC':'1'}):
+            self.assertEqual(host.diagnostic_flight_arguments(provenance), ['--dart-define=UI_GRAPHITE_FLIGHT_OBSERVE=true'])
+            with self.assertRaises(ValueError):host.diagnostic_flight_arguments(provenance | {'acceptanceEligible':True})
+
 
 class Process:
     def __init__(self, exit_code): self.returncode = exit_code

@@ -22,7 +22,8 @@ FILES = ['integration_test/ui_visual_capture_test.dart', 'integration_test/suppo
          'scripts/owned_pc_mapping.py', 'scripts/test-owned-pc-mapping.py',
          'scripts/check-execchain-debugger-readiness.py', 'scripts/test-execchain-debugger-readiness.py',
          'scripts/test-trace-owned-emulator.py', 'scripts/free-hosted-runner-space.sh',
-         'scripts/prepare-ui-capture-source.py']
+         'scripts/prepare-ui-capture-source.py',
+         'integration_test/support/ui_flight_frame_observer.dart', 'test/ui_flight_frame_observer_test.dart']
 
 def git(*args):
     return subprocess.check_output(['git', *args], text=True).strip()
@@ -57,6 +58,9 @@ def main():
     fault_revision = request.get('faultTraceRevision')
     if fault_revision not in (None, 'owned-pc-map', 'skia-isolation') or (fault_revision is not None and not fault_trace):
         raise ValueError('Only explicitly requested owned-PC/renderer-isolation diagnostic revisions are supported')
+    observe_flight = request.get('observeFlightFrames', False)
+    if type(observe_flight) is not bool or (observe_flight and (not fault_trace or fault_revision != 'skia-isolation')):
+        raise ValueError('Flight observation requires explicit renderer-isolation diagnostic provenance')
     output = os.environ.get('GITHUB_OUTPUT')
     if output:
         with open(output, 'a') as stream:
@@ -84,6 +88,7 @@ def main():
         'diagnosticOnly': 'emulator-fault-stack' if fault_trace else diagnostic,
         'emulatorFaultTrace': fault_trace, 'faultTraceRevision': fault_revision, 'acceptanceEligible': not fault_trace,
         'rendererOverride': 'skia-diagnostic-only' if fault_revision == 'skia-isolation' else None,
+        'observeFlightFrames': observe_flight,
         'responsivePreset': responsive,
         'homeProfileOnly': home_only,
         'transitionCaptureOnly': transitions, 'transitionComparison': comparison,

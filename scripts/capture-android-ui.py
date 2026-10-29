@@ -45,6 +45,17 @@ def diagnostic_renderer_arguments(provenance):
     return []
 
 
+def diagnostic_flight_arguments(provenance):
+    observe = provenance.get('observeFlightFrames', False)
+    if type(observe) is not bool:
+        raise ValueError('Flight observation flag must be boolean')
+    if observe:
+        if diagnostic_renderer_arguments(provenance) != ['--no-enable-impeller']:
+            raise ValueError('Flight observation is restricted to unaccepted renderer isolation')
+        return ['--dart-define=UI_GRAPHITE_FLIGHT_OBSERVE=true']
+    return []
+
+
 def safe_capture_error(error, token):
     if isinstance(error, subprocess.TimeoutExpired):
         # TimeoutExpired.__str__ includes the complete command, including the
@@ -838,6 +849,7 @@ def main():
         (OUTPUT / folder).mkdir(parents=True, exist_ok=True)
     provenance = json.loads((OUTPUT / 'source-provenance.json').read_text())
     renderer_arguments = diagnostic_renderer_arguments(provenance)
+    flight_arguments = diagnostic_flight_arguments(provenance)
     diagnostic = provenance.get('diagnosticOnly')
     if diagnostic not in (None, 'static-backdrop', 'emulator-fault-stack'):
         raise RuntimeError('Unknown capture diagnostic mode')
@@ -858,7 +870,7 @@ def main():
     capture.report['source'] = provenance
     if fault_trace:
         capture.report.update(diagnosticOnly=True, acceptanceEligible=False, emulatorFaultTrace=True, normalProductCapturePassed=False,
-                              rendererOverride=provenance.get('rendererOverride'))
+                              rendererOverride=provenance.get('rendererOverride'), observeFlightFrames=bool(flight_arguments))
     capture.report['hostCpuContext'] = host_cpu_context()
     capture.report['nativeImeWithHardwareKeyboard'] = True
 
@@ -910,6 +922,7 @@ def main():
                f'--dart-define=UI_CAPTURE_PORT={port}',
                f'--dart-define=UI_CAPTURE_LABEL={provenance["label"]}']
     command.extend(renderer_arguments)
+    command.extend(flight_arguments)
     if capture.static_backdrop_probe:
         command.append('--dart-define=UI_STATIC_BACKDROP_PROBE=true')
     if responsive is not None:

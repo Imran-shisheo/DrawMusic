@@ -34,6 +34,7 @@ jobs:
           assert p['diagnosticOnly']=='emulator-fault-stack' and p['emulatorFaultTrace'] is True and p['acceptanceEligible'] is False
           assert p['faultTraceRevision'] in ('owned-pc-map','skia-isolation')
           assert p['rendererOverride']==('skia-diagnostic-only' if p['faultTraceRevision']=='skia-isolation' else None)
+          assert p['observeFlightFrames'] is True
           assert re.fullmatch('[0-9a-f]{40}',p['productSourceSha'])
           assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==p['productSourceSha']
           assert 'applicationId = "com.devwithdelta.doodimo"' in Path('android/app/build.gradle.kts').read_text()
@@ -78,9 +79,9 @@ jobs:
           python3 scripts/test-ui-capture-host.py
           python3 scripts/test-ui-capture-mp4.py
           python3 scripts/test-runtime-transport-diagnostics.py
-          dart format --output=none --set-exit-if-changed integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart integration_test/support/ui_presentation_fence.dart test_driver/ui_visual_capture_driver.dart
-          flutter analyze --no-pub integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart integration_test/support/ui_presentation_fence.dart test_driver/ui_visual_capture_driver.dart
-          flutter test --no-pub test/ui_frame_clock_test.dart test/ui_presentation_fence_test.dart
+          dart format --output=none --set-exit-if-changed integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart integration_test/support/ui_presentation_fence.dart integration_test/support/ui_flight_frame_observer.dart test/ui_flight_frame_observer_test.dart test_driver/ui_visual_capture_driver.dart
+          flutter analyze --no-pub integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart integration_test/support/ui_presentation_fence.dart integration_test/support/ui_flight_frame_observer.dart test/ui_flight_frame_observer_test.dart test_driver/ui_visual_capture_driver.dart
+          flutter test --no-pub test/ui_frame_clock_test.dart test/ui_presentation_fence_test.dart test/ui_flight_frame_observer_test.dart
       - name: Enable disposable emulator acceleration
         if: steps.debugger.outputs.ready == 'true'
         run: |

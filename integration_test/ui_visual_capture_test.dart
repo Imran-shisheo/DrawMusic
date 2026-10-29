@@ -16,6 +16,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:scribblesong/app/app.dart';
 import 'package:scribblesong/app/providers.dart' show libraryProvider;
 import 'package:scribblesong/creative_document/document.dart';
+import 'package:scribblesong/design_system/artwork_flight.dart';
 import 'package:scribblesong/features/backgrounds/domain/background.dart';
 import 'package:scribblesong/features/export/data/file_export_adapter.dart';
 import 'package:scribblesong/features/export/data/file_image_export_adapter.dart';
@@ -33,11 +34,13 @@ import 'support/ui_capture_metrics.dart';
 import 'support/ui_frame_clock.dart';
 import 'support/ui_static_backdrop_probe.dart';
 import 'support/ui_presentation_fence.dart';
+import 'support/ui_flight_frame_observer.dart';
 
 const _staticBackdropProbe = bool.fromEnvironment('UI_STATIC_BACKDROP_PROBE');
 const _responsivePreset = String.fromEnvironment('UI_RESPONSIVE_PRESET');
 const _homeProfileOnly = bool.fromEnvironment('UI_HOME_PROFILE_ONLY');
 const _graphiteCapture = bool.fromEnvironment('UI_GRAPHITE_CAPTURE');
+const _observeFlightFrames = bool.fromEnvironment('UI_GRAPHITE_FLIGHT_OBSERVE');
 const _transitionCaptureOnly = bool.fromEnvironment(
   'UI_TRANSITION_CAPTURE_ONLY',
 );
@@ -1280,38 +1283,139 @@ void main() {
       await shot('04-settings');
       await tab('Home');
       await recorded('02-editor-instrument', () async {
-        await action('artwork-open', key('home-artwork'), waitMs: 0);
-        await graphiteUntil(
-          () =>
-              key('drawing-canvas').hitTestable().evaluate().isNotEmpty &&
-              key('artwork-flight-shuttle').evaluate().isNotEmpty,
-        );
-        final canvas = key('drawing-canvas').hitTestable().first;
-        final bounds = tester.getRect(canvas);
-        final intent =
-            GoRouterState.of(tester.element(canvas)).extra as dynamic;
-        expect(intent, isNotNull);
-        expect(intent.cancelled, isFalse);
-        note('canvas-first-input', bounds, tester.element(canvas), waitMs: 0);
-        final gesture = await tester.startGesture(
-          Offset(
-            bounds.left + bounds.width * .28,
-            bounds.top + bounds.height * .58,
-          ),
-        );
-        expect(intent.cancelled, isTrue);
-        for (var i = 1; i <= 4; i++) {
-          await gesture.moveTo(
+        final flightObserver = _observeFlightFrames
+            ? UiFlightFrameObserver(binding, () {
+                final mountedCanvas = find.byKey(
+                  const ValueKey('drawing-canvas'),
+                  skipOffstage: false,
+                );
+                final visibleCanvas = key('drawing-canvas');
+                final hitCanvas = visibleCanvas.hitTestable();
+                final visibleShuttle = key('artwork-flight-shuttle');
+                final canvasElements = visibleCanvas.evaluate().toList();
+                final contexts = canvasElements.isNotEmpty
+                    ? canvasElements
+                    : mountedCanvas.evaluate().isNotEmpty
+                    ? mountedCanvas.evaluate().toList()
+                    : key('home-artwork').evaluate().toList();
+                final context = contexts.isEmpty ? null : contexts.first;
+                GoRouterState? route;
+                String? routeReadError;
+                if (context != null) {
+                  try {
+                    route = GoRouterState.of(context);
+                  } catch (error) {
+                    routeReadError = error.runtimeType.toString();
+                  }
+                }
+                final extra = route?.extra;
+                final modal = context == null ? null : ModalRoute.of(context);
+                final opacity = visibleShuttle.evaluate().isNotEmpty
+                    ? tester.widget<Opacity>(visibleShuttle.first).opacity
+                    : null;
+                final rect = hitCanvas.evaluate().isNotEmpty
+                    ? tester.getRect(hitCanvas.first)
+                    : null;
+                return {
+                  'routePath': route?.uri.path,
+                  'routeReadErrorType': routeReadError,
+                  'routeType': modal?.runtimeType.toString(),
+                  'routeTransitionDurationUs':
+                      modal?.transitionDuration.inMicroseconds,
+                  'routeReverseDurationUs':
+                      modal?.reverseTransitionDuration.inMicroseconds,
+                  'canvasMountedCount': mountedCanvas.evaluate().length,
+                  'canvasVisibleCount': canvasElements.length,
+                  'canvasHitTestableCount': hitCanvas.evaluate().length,
+                  'canvasElementIdentity': canvasElements.isEmpty
+                      ? null
+                      : identityHashCode(canvasElements.first),
+                  'canvasRect': rect == null
+                      ? null
+                      : [rect.left, rect.top, rect.width, rect.height],
+                  'shuttleVisibleCount': visibleShuttle.evaluate().length,
+                  'shuttleMountedCount': find
+                      .byKey(
+                        const ValueKey('artwork-flight-shuttle'),
+                        skipOffstage: false,
+                      )
+                      .evaluate()
+                      .length,
+                  'shuttleOpacity': opacity,
+                  'intentPresent': extra is ArtworkFlightIntent,
+                  'intentCancelled': extra is ArtworkFlightIntent
+                      ? extra.cancelled
+                      : null,
+                  'matchingHeroTags': extra is ArtworkFlightIntent
+                      ? find
+                            .byWidgetPredicate(
+                              (widget) =>
+                                  widget is Hero && widget.tag == extra.tag,
+                              skipOffstage: false,
+                            )
+                            .evaluate()
+                            .length
+                      : 0,
+                  'reducedMotion': context == null
+                      ? null
+                      : MediaQuery.disableAnimationsOf(context),
+                  'routeAnimationValue': modal?.animation?.value,
+                  'routeAnimationStatus': modal?.animation?.status.name,
+                  'lifecycle': binding.lifecycleState?.name,
+                };
+              })
+            : null;
+        flightObserver?.start();
+        try {
+          await action('artwork-open', key('home-artwork'), waitMs: 0);
+          await graphiteUntil(
+            () =>
+                key('drawing-canvas').hitTestable().evaluate().isNotEmpty &&
+                key('artwork-flight-shuttle').evaluate().isNotEmpty,
+          );
+          final canvas = key('drawing-canvas').hitTestable().first;
+          final bounds = tester.getRect(canvas);
+          final intent =
+              GoRouterState.of(tester.element(canvas)).extra as dynamic;
+          expect(intent, isNotNull);
+          expect(intent.cancelled, isFalse);
+          note('canvas-first-input', bounds, tester.element(canvas), waitMs: 0);
+          final gesture = await tester.startGesture(
             Offset(
-              bounds.left + bounds.width * (.28 + i * .04),
-              bounds.top + bounds.height * (.58 - i * .025),
+              bounds.left + bounds.width * .28,
+              bounds.top + bounds.height * .58,
             ),
           );
-          await wait(20);
+          expect(intent.cancelled, isTrue);
+          for (var i = 1; i <= 4; i++) {
+            await gesture.moveTo(
+              Offset(
+                bounds.left + bounds.width * (.28 + i * .04),
+                bounds.top + bounds.height * (.58 - i * .025),
+              ),
+            );
+            await wait(20);
+          }
+          await gesture.up();
+          await wait(150);
+          expect(tester.getRect(canvas), bounds);
+        } finally {
+          if (flightObserver != null) {
+            final observed = flightObserver.stop();
+            final samples =
+                observed.remove('samples')! as List<Map<String, Object?>>;
+            // Bounded JSON lines stay below native log-line limits. No source
+            // documents, URI query/session IDs or test capabilities are dumped.
+            debugPrintSynchronously(
+              'UI_GRAPHITE_FLIGHT_SUMMARY ${jsonEncode(observed)}',
+            );
+            for (final sample in samples) {
+              debugPrintSynchronously(
+                'UI_GRAPHITE_FLIGHT_FRAME ${jsonEncode(sample)}',
+              );
+            }
+          }
         }
-        await gesture.up();
-        await wait(150);
-        expect(tester.getRect(canvas), bounds);
         await action('voice-open', key('current-voice'));
         await action('voice-bell', key('voice-bell'));
         await action('play', find.byTooltip('Play'));
