@@ -12,6 +12,15 @@ from pathlib import Path
 import time
 import lldb
 
+def encode_bounded(state):
+    """Keep the newest fault even when older stacks exhaust the byte cap."""
+    while True:
+        data=(json.dumps(state,indent=2)+'\n').encode()
+        if len(data)<=32768:return data
+        if len(state.get('faults',[]))<=1:raise RuntimeError('Last bounded fault report exceeds32KiB')
+        state['faults'].pop(0)
+        state['faultStacksDroppedForByteBound']=state.get('faultStacksDroppedForByteBound',0)+1
+
 
 def observe(fd):
     # Anonymous inherited pipe: never a persisted argv/environment dump.
@@ -29,8 +38,7 @@ def observe(fd):
         'argv0PreservationVerified':False,
         'argv0DiagnosticDifference':'Own-ELF smoke shows SBTarget.Launch normalizes argv0 to retained ELF path despite target.arg0; not equivalent to normal observer.'}
     def save():
-        data=(json.dumps(state,indent=2)+'\n').encode()
-        if len(data)>32768:raise RuntimeError('Bounded fault report exceeds32KiB')
+        data=encode_bounded(state)
         tmp=output.with_suffix('.tmp');tmp.write_bytes(data);tmp.replace(output)
     save()
     debugger=lldb.debugger
@@ -84,17 +92,21 @@ def observe(fd):
                     if thread.GetStopReason()!=lldb.eStopReasonSignal or thread.GetStopReasonDataCount()<1:continue
                     if thread.GetStopReasonDataAtIndex(0)!=11:continue
                     state['sigsegvStopsObserved']+=1
-                    if len(state['faults'])<4:
-                        frames=[]
-                        for index in range(min(thread.GetNumFrames(),24)):
-                            frame=thread.GetFrameAtIndex(index)
-                            module=frame.GetModule()
-                            frames.append({'frame':index,'pc':frame.GetPC(),
-                                'function':(frame.GetFunctionName() or '<symbol unavailable>')[:240],
-                                'module':(module.GetFileSpec().GetFilename() or '<module unavailable>')[:160]})
-                        state['faults'].append({'signal':11,'threadId':thread.GetThreadID(),
-                            'epochSeconds':time.time(),'frames':frames,'argumentsPrinted':False})
-                        save()
+                    frames=[]
+                    for index in range(min(thread.GetNumFrames(),24)):
+                        frame=thread.GetFrameAtIndex(index)
+                        module=frame.GetModule()
+                        base=module.GetObjectFileHeaderAddress().GetLoadAddress(target)
+                        pc=frame.GetPC()
+                        frames.append({'frame':index,'pc':pc,
+                            'moduleOffset':pc-base if base!=lldb.LLDB_INVALID_ADDRESS and 0<=base<=pc else None,
+                            'moduleUuid':(module.GetUUIDString() or '')[:80],
+                            'function':(frame.GetFunctionName() or '<symbol unavailable>')[:80],
+                            'module':(module.GetFileSpec().GetFilename() or '<module unavailable>')[:80]})
+                    state['faults']=(state['faults']+[{'signal':11,'threadId':thread.GetThreadID(),
+                        'signalStopNumber':state['sigsegvStopsObserved'],
+                        'epochSeconds':time.time(),'frames':frames,'argumentsPrinted':False}])[-4:]
+                    save()
                     break
                 # The inferior receives the original signal. A legitimate
                 # handler/probe can recover; do not kill on the first stop.

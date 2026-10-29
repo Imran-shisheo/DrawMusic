@@ -6,7 +6,7 @@ capture_diagnostic=$(python3 - <<'PYMODE'
 import json
 from pathlib import Path
 mode = json.loads(Path('work/ui-capture/source-provenance.json').read_text()).get('diagnosticOnly')
-if mode not in (None, 'static-backdrop'):
+if mode not in (None, 'static-backdrop', 'emulator-fault-stack'):
     raise ValueError('Unknown capture diagnostic mode')
 print(mode or 'normal')
 PYMODE

@@ -614,6 +614,53 @@ class GraphiteCaptureTests(unittest.TestCase):
             self.assertFalse(c.report['normalFullCapturePassed'])
             self.assertEqual([(e['operation'], e['name']) for e in c.report['events']], list(host.GRAPHITE_EVENTS))
             self.assertEqual([e['name'] for e in c.report['events'] if e['operation'] == 'snapshot'], list(host.GRAPHITE_SHOTS))
+            self.assertTrue(all(e['snapshotCaptureState'] == {
+                'ownedRecorderActive': False, 'profileActive': False}
+                for e in c.report['events'] if e['operation'] == 'snapshot'))
+
+    def test_every_graphite_still_rejects_live_owned_recorder_or_profile_before_adb(self):
+        for index, (operation, name) in enumerate(host.GRAPHITE_EVENTS):
+            if operation != 'snapshot': continue
+            for busy in ('recording', 'perf'):
+                with self.subTest(name=name, busy=busy):
+                    c = host.Capture(graphite_capture=True)
+                    # Enter each exact protocol position; no unrelated order
+                    # error can satisfy this active-resource regression.
+                    c.report['events'] = [{'operation': op, 'name': tag}
+                        for op, tag in host.GRAPHITE_EVENTS[:index]]
+                    setattr(c, busy, ('owned-recording',) if busy == 'recording' else 'owned-profile')
+                    with patch.object(host, 'adb') as adb:
+                        with self.assertRaisesRegex(ValueError, 'no owned recorder or profile'):
+                            self.emit(c, operation, name, screenshotReadiness={
+                                'expectedScene': name, 'matchedEngineFrameNumber': 1, 'rasterFrameNumber': 1})
+                        adb.assert_not_called()
+                    self.assertEqual(len(c.report['events']), index)
+
+    def test_legacy_snapshot_during_recording_is_unchanged(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(host, 'OUTPUT', Path(tmp)):
+            (Path(tmp)/'screenshots').mkdir()
+            c = host.Capture()
+            c.recording = ('legacy-owned-recording',)
+            with patch.object(host, 'adb', return_value=SimpleNamespace(stdout=b'\x89PNG\r\n\x1a\nfixture')) as adb:
+                self.emit(c, 'snapshot', '05-editor-drawn')
+                adb.assert_called_once_with('exec-out', 'screencap', '-p', binary=True)
+            self.assertNotIn('snapshotCaptureState', c.report['events'][0])
+
+    def test_graphite_protocol_stills_follow_fully_stopped_recordings(self):
+        active = None
+        completed = []
+        for operation, name in host.GRAPHITE_EVENTS:
+            if operation == 'record_start':
+                self.assertIsNone(active)
+                active = name
+            elif operation == 'record_stop':
+                self.assertEqual(active, name)
+                completed.append(name)
+                active = None
+            elif operation == 'snapshot':
+                self.assertIsNone(active, name)
+                self.assertTrue(completed, name)
+        self.assertEqual(completed, list(host.GRAPHITE_CLIPS))
 
     def test_exclusive_flags_metadata_and_operation_scope(self):
         for options in ({'graphite_capture': 1}, {'graphite_capture': True, 'transition_capture_only': True},

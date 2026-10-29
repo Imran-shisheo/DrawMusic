@@ -18,9 +18,10 @@ import threading
 import time
 
 from ui_capture_mp4 import encoded_avc_readiness
+from runtime_transport_diagnostics import safe_snapshot
 
 DEVICE = 'emulator-5554'
-PACKAGE = 'com.imranshisheo.scribblesong'
+PACKAGE = 'com.devwithdelta.doodimo'
 OUTPUT = Path('work/ui-capture')
 PROFILE_PROCESS_TIMEOUT_SECONDS = 1200
 
@@ -420,6 +421,15 @@ class Capture:
             if self.static_backdrop_probe and operation not in ('metadata', 'perf_start', 'perf_finish', 'static_backdrop_restored', 'diagnostic_complete'):
                 raise ValueError('Probe-only host rejects normal screenshots recordings and completion')
             if operation == 'snapshot':
+                if self.graphite_capture:
+                    # All nine graphite stills are separate revisits after the
+                    # owned recorder has exited and its original MP4 decoded.
+                    # Reject before ANY screencap/ADB work, even if a future
+                    # caller accidentally changes the ordered protocol.
+                    if self.recording is not None or self.perf is not None:
+                        raise ValueError('Graphite snapshot requires no owned recorder or profile phase')
+                    item['snapshotCaptureState'] = {
+                        'ownedRecorderActive': False, 'profileActive': False}
                 deadline = time.monotonic() + 20
                 attempts = 0
                 while True:
@@ -809,8 +819,11 @@ def main():
         (OUTPUT / folder).mkdir(parents=True, exist_ok=True)
     provenance = json.loads((OUTPUT / 'source-provenance.json').read_text())
     diagnostic = provenance.get('diagnosticOnly')
-    if diagnostic not in (None, 'static-backdrop'):
+    if diagnostic not in (None, 'static-backdrop', 'emulator-fault-stack'):
         raise RuntimeError('Unknown capture diagnostic mode')
+    fault_trace = provenance.get('emulatorFaultTrace', False)
+    if type(fault_trace) is not bool or (fault_trace and (diagnostic != 'emulator-fault-stack' or provenance.get('acceptanceEligible') is not False or os.environ.get('DRAWMUSIC_EMULATOR_TRACE_DIAGNOSTIC') != '1')) or (diagnostic == 'emulator-fault-stack' and not fault_trace):
+        raise RuntimeError('Unqualified emulator fault-stack diagnostic')
     responsive = provenance.get('responsivePreset')
     home_only = provenance.get('homeProfileOnly', False)
     if home_only is True and provenance.get('label') != 'after':
@@ -823,6 +836,8 @@ def main():
         raise RuntimeError('Graphite capture requires pinned after-source provenance')
     capture = Capture(static_backdrop_probe=diagnostic == 'static-backdrop', responsive_preset=responsive, home_profile_only=home_only, transition_capture_only=transitions, graphite_capture=graphite)
     capture.report['source'] = provenance
+    if fault_trace:
+        capture.report.update(diagnosticOnly=True, acceptanceEligible=False, emulatorFaultTrace=True, normalProductCapturePassed=False)
     capture.report['hostCpuContext'] = host_cpu_context()
     capture.report['nativeImeWithHardwareKeyboard'] = True
 
@@ -885,6 +900,10 @@ def main():
         command.append('--dart-define=UI_GRAPHITE_CAPTURE=true')
     capture.report['profileProcessBudgetSeconds'] = PROFILE_PROCESS_TIMEOUT_SECONDS
     capture.report['profileProcessBudgetScope'] = 'Whole Flutter drive process, including cold profile compilation and runtime; all per-operation acceptance gates remain independent.'
+    # Observe the already verified owned QEMU and bounded host counters before
+    # compilation. Never inspect command lines/environment or repair transport.
+    # These snapshots are outside the measured interaction/frame phases.
+    safe_snapshot('before', verified_qemu=True, output=OUTPUT)
     try:
         # Do not print this command: the one-job localhost capability is private.
         with (OUTPUT / 'flutter-drive.log').open('w') as log:
@@ -893,6 +912,9 @@ def main():
             raise RuntimeError(f'Profile UI capture failed (exit {run.returncode}); see flutter-drive.log')
         capture.report['passed'] = True
     except Exception as error:
+        # Preserve immediate evidence before ADB/recorder cleanup can change it.
+        # A cgroup OOM counter alone is not per-process cause attribution.
+        safe_snapshot('failure', verified_qemu=True, output=OUTPUT)
         capture.report['error'] = safe_capture_error(error, capture.token)
         log = OUTPUT / 'flutter-drive.log'
         if log.exists():
@@ -902,7 +924,14 @@ def main():
                     print(line.replace(capture.token, '[redacted]'), flush=True)
         raise_capture_failure(error, capture.token)
     finally:
-        finalize_capture(capture, server, port)
+        if fault_trace:
+            capture.report['diagnosticSequenceCompleted'] = capture.report['passed']
+            capture.report['passed'] = False
+            capture.report['scope'] = 'Owned emulator fault-stack diagnostic only; debugger changes scheduling and argv0. Not native product, motion, performance or physical acceptance.'
+        try:
+            finalize_capture(capture, server, port)
+        finally:
+            safe_snapshot('final', verified_qemu=True, output=OUTPUT)
         print(json.dumps({'passed': capture.report['passed'], 'events': len(capture.report['events']), 'scope': capture.report['scope']}), flush=True)
 
 

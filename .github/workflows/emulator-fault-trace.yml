@@ -1,0 +1,112 @@
+name: Owned emulator fault stack (diagnostic only)
+on:
+  push:
+    branches: [codex/graphite-evidence-reader-2026-10-29]
+    paths:
+      - cloud/emulator-fault-trace-request.json
+      - scripts/trace-owned-emulator.py
+      - scripts/test-trace-owned-emulator.py
+      - scripts/emulator_lldb_trace.py
+      - .github/workflows/emulator-fault-trace.yml
+permissions:
+  contents: read
+concurrency:
+  group: drawmusic-emulator-fault-trace-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  fault-trace:
+    name: Trace only the owned SDK child; never platform acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      DRAWMUSIC_EMULATOR_TRACE_DIAGNOSTIC: '1'
+      DRAWMUSIC_ACCEPT_ANDROID_LICENSES: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Pin exact new-ID product and identify all diagnostic instrumentation
+        run: |
+          python3 scripts/prepare-ui-capture-source.py
+          python3 - <<'PY'
+          import json,re,subprocess
+          from pathlib import Path
+          p=json.loads(Path('work/ui-capture/source-provenance.json').read_text())
+          assert p['diagnosticOnly']=='emulator-fault-stack' and p['emulatorFaultTrace'] is True and p['acceptanceEligible'] is False
+          assert re.fullmatch('[0-9a-f]{40}',p['productSourceSha'])
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==p['productSourceSha']
+          assert 'applicationId = "com.devwithdelta.doodimo"' in Path('android/app/build.gradle.kts').read_text()
+          PY
+      - name: Make space while preserving the required existing host Swift debugger
+        run: bash scripts/free-hosted-runner-space.sh
+      - name: Verify existing matching host debugger with owned signal probes
+        id: debugger
+        timeout-minutes: 3
+        run: |
+          python3 scripts/test-host-debugger-readiness.py
+          python3 scripts/test-trace-owned-emulator.py
+          python3 scripts/check-host-debugger-readiness.py
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=json.loads(Path('work/ui-capture-inspect-debugger/readiness.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              out.write('ready='+str(p.get('ready') is True).lower()+'\n')
+          PY
+      - uses: actions/setup-java@v6
+        if: steps.debugger.outputs.ready == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare the same pinned Android and Flutter toolchain
+        if: steps.debugger.outputs.ready == 'true'
+        run: bash scripts/setup-cloud-android.sh
+      - name: Prepare unchanged capture guards and offline dependencies
+        if: steps.debugger.outputs.ready == 'true'
+        timeout-minutes: 8
+        run: |
+          source cloud/env.sh
+          export DASH__SUPPRESS_ANALYTICS=true
+          flutter pub get
+          bash scripts/prepare-runtime-inspectors.sh --video-only
+          python3 scripts/test-ui-capture-host.py
+          python3 scripts/test-ui-capture-mp4.py
+          python3 scripts/test-runtime-transport-diagnostics.py
+          dart format --output=none --set-exit-if-changed integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart integration_test/support/ui_presentation_fence.dart test_driver/ui_visual_capture_driver.dart
+          flutter analyze --no-pub integration_test/ui_visual_capture_test.dart integration_test/support/ui_capture_metrics.dart integration_test/support/ui_frame_clock.dart integration_test/support/ui_presentation_fence.dart test_driver/ui_visual_capture_driver.dart
+          flutter test --no-pub test/ui_frame_clock_test.dart test/ui_presentation_fence_test.dart
+      - name: Enable disposable emulator acceleration
+        if: steps.debugger.outputs.ready == 'true'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Exercise the same new-ID scene with the owned fault-stack observer
+        if: steps.debugger.outputs.ready == 'true'
+        id: trace_emulator
+        timeout-minutes: 23
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: false
+          pre-emulator-launch-script: python3 scripts/trace-owned-emulator.py install
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: bash scripts/check-android-visuals.sh
+      - name: Collect only bounded owned debugger evidence
+        if: ${{ always() && steps.trace_emulator.outcome != 'skipped' && steps.debugger.outputs.ready == 'true' }}
+        timeout-minutes: 1
+        run: python3 scripts/trace-owned-emulator.py collect
+      - name: Preserve diagnostic source, reports and original evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: drawmusic-emulator-fault-trace-${{ github.sha }}
+          path: |
+            work/ui-capture/
+            work/ui-capture-inspect-debugger/
+          if-no-files-found: warn
+          retention-days: 7

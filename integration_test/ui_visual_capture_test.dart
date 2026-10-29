@@ -270,7 +270,7 @@ Future<void> _recordProductionGraphiteOpening(
           previousValue = progress.value;
         }
       }
-      final home = find.byKey(const ValueKey('home-start')).hitTestable();
+      final home = homeCreateControl().hitTestable();
       if (sawLaunch &&
           decoration.evaluate().isEmpty &&
           home.evaluate().isNotEmpty) {
@@ -310,8 +310,7 @@ Future<void> _recordProductionGraphiteOpening(
         .preferences
         .tutorialCompleted,
     'firstFrameRasterized': binding.firstFrameRasterized,
-    'readyHomeRendered': find
-        .byKey(const ValueKey('home-start'))
+    'readyHomeRendered': homeCreateControl()
         .hitTestable()
         .evaluate()
         .isNotEmpty,
@@ -323,6 +322,15 @@ Future<void> _recordProductionGraphiteOpening(
     'actualElapsedUs': clock.elapsedMicroseconds,
     'scope': 'Actual finite production launch controller samples and original clip. Samples are not phase-by-phase compositor presentation or OS cold-start/performance proof.',
   });
+}
+
+// Compact graphite Home has one creation key in the persistent instrument dock;
+// expanded-text Home additionally exposes its reachable first-content action.
+Finder homeCreateControl() {
+  final inline = find.byKey(const ValueKey('home-start'));
+  return inline.evaluate().isNotEmpty
+      ? inline
+      : find.byKey(const ValueKey('root-new-drawing'));
 }
 
 void main() {
@@ -403,10 +411,21 @@ void main() {
       await wait();
     }
 
+    Future<Finder> rootTarget(String id) async {
+      final target = key(id);
+      final summary = key('nav-summary').hitTestable();
+      if (target.hitTestable().evaluate().isEmpty &&
+          summary.evaluate().isNotEmpty) {
+        await tap(summary);
+      }
+      await until(() => target.hitTestable().evaluate().isNotEmpty);
+      return target.hitTestable();
+    }
+
     Future<void> control(String id, String fallback) async =>
         tap(key(id).evaluate().isNotEmpty ? key(id) : find.byTooltip(fallback));
     Future<void> tab(String name) async {
-      final target = key('nav-${name.toLowerCase()}');
+      final target = await rootTarget('nav-${name.toLowerCase()}');
       await tap(target.evaluate().isNotEmpty ? target : find.text(name));
     }
 
@@ -818,7 +837,7 @@ void main() {
         final home = find.byWidgetPredicate(
           (widget) => widget.runtimeType.toString() == 'HomePage',
         );
-        final create = key('home-start'), artwork = key('home-artwork');
+        final create = homeCreateControl(), artwork = key('home-artwork');
         if (home.evaluate().length != 1 ||
             create.hitTestable().evaluate().isEmpty ||
             artwork.evaluate().length != 1 ||
@@ -929,7 +948,7 @@ void main() {
       final home = find.byWidgetPredicate(
         (widget) => widget.runtimeType.toString() == 'HomePage',
       );
-      final create = key('home-start');
+      final create = homeCreateControl();
       final aurora = find.byWidgetPredicate(
         (widget) => widget.runtimeType.toString() == 'AuroraScene',
       );
@@ -1232,7 +1251,7 @@ void main() {
       await tester.ensureVisible(key('home-artwork'));
       await wait(350);
       await recorded('01-root-navigation', () async {
-        await action('root-library', key('nav-library'));
+        await action('root-library', await rootTarget('nav-library'));
         for (var i = 0; i < 4; i++) {
           await action(
             'library-normal-$i',
@@ -1247,8 +1266,8 @@ void main() {
           );
         }
         await graphiteUntil(() => expectedShot('02-drafts'));
-        await action('root-settings', key('nav-settings'));
-        await action('root-home', key('nav-home'));
+        await action('root-settings', await rootTarget('nav-settings'));
+        await action('root-home', await rootTarget('nav-home'));
         await graphiteUntil(warmHome);
         return {'retainedLibraryReady': true, 'warmLaunchNotReplayed': true};
       });
@@ -1422,32 +1441,33 @@ void main() {
       await recorded('06-reduced-motion', () async {
         await host.event('system_motion', 'reduced');
         await graphiteUntil(
-          () =>
-              MediaQuery.disableAnimationsOf(tester.element(key('home-start'))),
+          () => MediaQuery.disableAnimationsOf(
+            tester.element(homeCreateControl()),
+          ),
         );
         expect(
           container().read(settingsProvider).preferences.reduceMotion,
           isFalse,
         );
-        await action('system-library', key('nav-library'));
+        await action('system-library', await rootTarget('nav-library'));
         await action('system-exports', libraryTab('Exports'));
         await action('system-drafts', libraryTab('Drafts'));
-        await action('system-home', key('nav-home'));
+        await action('system-home', await rootTarget('nav-home'));
         await host.event('system_motion', 'normal');
         await graphiteUntil(
           () => !MediaQuery.disableAnimationsOf(
-            tester.element(key('home-start')),
+            tester.element(homeCreateControl()),
           ),
         );
         await preference(reduce: true);
         expect(
-          MediaQuery.disableAnimationsOf(tester.element(key('home-start'))),
+          MediaQuery.disableAnimationsOf(tester.element(homeCreateControl())),
           isTrue,
         );
-        await action('stored-library', key('nav-library'));
+        await action('stored-library', await rootTarget('nav-library'));
         await action('stored-exports', libraryTab('Exports'));
         await action('stored-drafts', libraryTab('Drafts'));
-        await action('stored-home', key('nav-home'));
+        await action('stored-home', await rootTarget('nav-home'));
         await graphiteUntil(warmHome);
         return {
           'storedFalseDuringSystem': true,
@@ -1459,7 +1479,7 @@ void main() {
       await shot('15-home-reduced-motion');
       await preference(reduce: false);
       expect(
-        MediaQuery.disableAnimationsOf(tester.element(key('home-start'))),
+        MediaQuery.disableAnimationsOf(tester.element(homeCreateControl())),
         isFalse,
       );
       await host.event('graphite_complete', 'graphite', {
@@ -1519,7 +1539,7 @@ void main() {
         );
         await clip(name, () async {
           clock.start();
-          await action('root-library', key('nav-library'), 700);
+          await action('root-library', await rootTarget('nav-library'), 700);
           await until(
             () => libraryTab('Exports').hitTestable().evaluate().isNotEmpty,
           );
@@ -1538,10 +1558,14 @@ void main() {
             );
           }
           await until(() => expectedShot('02-drafts'));
-          await action('root-settings', key('nav-settings'), 700);
-          await action('root-home', key('nav-home'), 700);
-          await action('root-library-return', key('nav-library'), 700);
-          await action('root-home-editor', key('nav-home'), 700);
+          await action('root-settings', await rootTarget('nav-settings'), 700);
+          await action('root-home', await rootTarget('nav-home'), 700);
+          await action(
+            'root-library-return',
+            await rootTarget('nav-library'),
+            700,
+          );
+          await action('root-home-editor', await rootTarget('nav-home'), 700);
           await action('editor-open', find.text('Paper hills'), 1000);
           await until(() => expectedShot('05-editor-drawn'));
           await action('editor-back', find.byTooltip('Back to gallery'), 700);
@@ -1590,7 +1614,7 @@ void main() {
     }
     await shot('01-home');
     if (_label == 'after') {
-      final create = key('home-start');
+      final create = homeCreateControl();
       expect(create.hitTestable(), findsOneWidget);
       final createContext = tester.element(create);
       expect(MediaQuery.disableAnimationsOf(createContext), isFalse);

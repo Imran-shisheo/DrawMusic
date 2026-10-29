@@ -163,7 +163,7 @@ def own_probe(binary,mode,root):
         actual.get('argv0') in (str(real),config['argv0']) and len(faults)<=4 and
         all(len(item.get('frames',[]))<=24 for item in faults) and
         'OWN_FAKE_SENTINEL' not in report.read_text())
-    if mode=='handled':valid=valid and value.get('actualExitStatus')==0 and value.get('sigsegvStopsObserved')==5 and len(faults)==4
+    if mode=='handled':valid=valid and value.get('actualExitStatus')==0 and value.get('sigsegvStopsObserved')==5 and len(faults)==4 and [item.get('signalStopNumber') for item in faults]==[2,3,4,5]
     else:valid=valid and value.get('actualExitStatus')!=0 and value.get('sigsegvStopsObserved')==1 and len(faults)==1
     if valid:write_report(OUTPUT/(mode+'.json'),value)
     return {'ready':bool(valid),'fixture':mode,'actualExitStatus':value.get('actualExitStatus'),

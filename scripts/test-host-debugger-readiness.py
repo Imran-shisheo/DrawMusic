@@ -59,7 +59,7 @@ class HostReadinessTests(unittest.TestCase):
                 witness.write_text(json.dumps({'argv0':str(real),'aslrEnabled':True,'sentinelMatches':True}))
                 Path(payload['output']).write_text(json.dumps({'diagnosticOnly':True,'acceptanceEligible':False,'phase':'finished',
                     'actualExitStatus':0,'actualExitDescription':'','sigsegvStopsObserved':5,
-                    'faults':[{'frames':[{'module':'owned-fake'}]}]*4}))
+                    'faults':[{'signalStopNumber':number,'frames':[{'module':'owned-fake'}]} for number in (2,3,4,5)]}))
                 return {'returncode':0,'stdout':''}
             with patch.object(tool,'OUTPUT',outputs),patch.object(tool,'run_bounded',side_effect=run),patch.dict(os.environ,{'SECRET_UNRELATED_VARIABLE':'DO_NOT_SERIALIZE'}):
                 result=tool.own_probe(binary,'handled',root)

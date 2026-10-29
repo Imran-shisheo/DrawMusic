@@ -14,7 +14,13 @@ FILES = ['integration_test/ui_visual_capture_test.dart', 'integration_test/suppo
          'integration_test/support/ui_static_backdrop_probe.dart', 'test/ui_static_backdrop_probe_test.dart',
          'test_driver/ui_visual_capture_driver.dart', 'scripts/capture-android-ui.py', 'scripts/check-android-visuals.sh',
          'scripts/test-ui-capture-host.py', 'scripts/prepare-runtime-inspectors.sh',
-         'scripts/ui_capture_mp4.py', 'scripts/test-ui-capture-mp4.py']
+         'scripts/runtime_transport_diagnostics.py', 'scripts/test-runtime-transport-diagnostics.py',
+         'scripts/observe-emulator-process.py', 'scripts/test-observe-emulator-process.py',
+         'scripts/ui_capture_mp4.py', 'scripts/test-ui-capture-mp4.py',
+         'scripts/emulator_lldb_trace.py', 'scripts/check-host-debugger-readiness.py',
+         'scripts/test-host-debugger-readiness.py', 'scripts/trace-owned-emulator.py',
+         'scripts/test-trace-owned-emulator.py', 'scripts/free-hosted-runner-space.sh',
+         'scripts/prepare-ui-capture-source.py']
 
 def git(*args):
     return subprocess.check_output(['git', *args], text=True).strip()
@@ -22,7 +28,8 @@ def git(*args):
 def main():
     if os.environ.get('GITHUB_ACTIONS') != 'true':
         raise RuntimeError('Refusing to change a developer checkout; this is a disposable Actions-only preparation')
-    request = json.loads(Path('cloud/ui-capture-request.json').read_text())
+    request_path = 'cloud/emulator-fault-trace-request.json' if os.environ.get('DRAWMUSIC_EMULATOR_TRACE_DIAGNOSTIC') == '1' else 'cloud/ui-capture-request.json'
+    request = json.loads(Path(request_path).read_text())
     source, label = request.get('sourceRef'), request.get('label')
     if request.get('schema') != 1 or not isinstance(source, str) or not re.fullmatch(r'[0-9a-f]{40}', source) or label not in ('before', 'after'):
         raise ValueError('Expected a full commit SHA and before/after label')
@@ -42,6 +49,9 @@ def main():
     graphite = request.get('graphiteCapture', False)
     if type(graphite) is not bool or (graphite and (label != 'after' or diagnostic is not None or responsive is not None or home_only or transitions)):
         raise ValueError('Expected exclusive after-source graphiteCapture boolean')
+    fault_trace = request.get('emulatorFaultTrace', False)
+    if type(fault_trace) is not bool or (fault_trace and (not graphite or os.environ.get('DRAWMUSIC_EMULATOR_TRACE_DIAGNOSTIC') != '1')):
+        raise ValueError('Fault trace requires explicit diagnostic authorization and pinned Graphite source')
     output = os.environ.get('GITHUB_OUTPUT')
     if output:
         with open(output, 'a') as stream:
@@ -66,7 +76,9 @@ def main():
     (output / 'source-provenance.json').write_text(json.dumps({
         'label': label, 'productSourceSha': source, 'productTreeSha': tree,
         'captureHarnessSourceSha': harness, 'instrumentationFiles': FILES,
-        'diagnosticOnly': diagnostic, 'responsivePreset': responsive,
+        'diagnosticOnly': 'emulator-fault-stack' if fault_trace else diagnostic,
+        'emulatorFaultTrace': fault_trace, 'acceptanceEligible': not fault_trace,
+        'responsivePreset': responsive,
         'homeProfileOnly': home_only,
         'transitionCaptureOnly': transitions, 'transitionComparison': comparison,
         'graphiteCapture': graphite,
