@@ -2,7 +2,7 @@
 
 ## Implemented candidate
 
-[Draft PR25](https://github.com/Imran-shisheo/DrawMusic/pull/25) remains unmerged. The current refined UI source is identified by the enclosing product checkpoint; its later capture request must pin that exact40-character source separately from diagnostic instrumentation. Baseline is owner-merged main `a7a8e595d96735c9b5db607c8d03d785937edf15`. The first graphite product `d5c9329`, capture head08d7484 and test-only head94ab4b8 are historical pre-refinement checkpoints.
+[Draft PR25](https://github.com/Imran-shisheo/DrawMusic/pull/25) remains unmerged. Refined product `aae5bab009f69979d2d3a158df63cca9c2430f1e` is independently pinned by the capture request; diagnostic source is the later capture commit. Application/native/assets/dependency source is unchanged by that request update. Baseline is owner-merged main `a7a8e595d96735c9b5db607c8d03d785937edf15`. The first graphite product `d5c9329`, capture head08d7484 and test-only head94ab4b8 are historical pre-refinement checkpoints.
 
 Both approved original boards were visually inspected and the complete motion plan read before implementation. [Exact inputs/provenance](GRAPHITE-IMPLEMENTATION-PLAN.md). Their historical approval-required sentence is superseded by later explicit owner approval; they are static design inputs, not product/performance evidence.
 
