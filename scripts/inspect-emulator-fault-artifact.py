@@ -7,6 +7,7 @@ inference of a natural SDK exit signal from LLDB's raw numeric exit status.
 import hashlib
 import importlib.util
 import json
+import math
 from pathlib import Path
 import re
 
@@ -145,6 +146,55 @@ def inspect(root, request, emit=print):
             'diagnosticSequenceCompleted', 'graphiteSubsetPassed', 'normalFullCapturePassed', 'normalProductCapturePassed')
             if report.get(key) is None or type(report.get(key)) is bool}
         result['captureReportSha256'] = hashlib.sha256(report_data).hexdigest()
+        events = report.get('events', [])
+        if not isinstance(events, list) or len(events) > 256:
+            raise ValueError('Bounded capture events required')
+        profile_path = Path('ui-capture/performance/graphite-interactions-unrecorded.json')
+        if (root / profile_path).exists():
+            data = reader.safe_bytes(root, profile_path, 1_048_576)
+            event = next(x for x in events if x.get('operation') == 'perf_finish' and x.get('name') == 'graphite-interactions-unrecorded')
+            if event.get('evidenceBytes') != len(data) or event.get('evidenceSha256') != hashlib.sha256(data).hexdigest():
+                raise ValueError('Profile differs from original host witness')
+            profile = json.loads(data)
+            frames, hz = profile.get('rawFrames'), profile.get('refreshHz')
+            scope = profile.get('visibleScope', {})
+            if (event.get('recordingDuringMeasurement') is not False or scope.get('screenRecordingActive') is not False
+                    or scope.get('graphiteProductionInteractions') is not True or not isinstance(frames, list)
+                    or not 1 <= len(frames) <= 20000 or type(hz) not in (int, float) or not math.isfinite(hz) or hz <= 0
+                    or any(not isinstance(frame, dict) or any(type(frame.get(k)) is not int or frame[k] < 0
+                        for k in ('frameNumber', 'vsyncUs', 'rasterFinishWallUs', 'buildUs', 'rasterUs', 'totalUs')) for frame in frames)):
+                raise ValueError('Unrecorded raw frame witnesses required')
+            budget = 1_000_000 / hz
+            if type(profile.get('frameBudgetUs')) not in (int, float) or abs(profile['frameBudgetUs'] - budget) > .001:
+                raise ValueError('Profile refresh/budget mismatch')
+            timing = {'originalRawFrameCount': len(frames), 'refreshHz': hz, 'frameBudgetUs': budget,
+                      'actualSummaryRecomputed': True, 'acceptanceEligible': False,
+                      'scope': 'Unrecorded software-emulator engine timings with diagnostic renderer/debugger; not physical presentation, dropped frames or smoothness acceptance.'}
+            for key, field in (('uiBuild', 'buildUs'), ('raster', 'rasterUs'), ('totalSpan', 'totalUs')):
+                values = sorted(frame[field] for frame in frames)
+                expected = {'count': len(values), 'maxUs': values[-1], 'overBudgetFrames': sum(v > budget for v in values),
+                    **{label: values[int((len(values)-1)*fraction+.5)] for label, fraction in (('p50Us', .5), ('p90Us', .9), ('p95Us', .95), ('p99Us', .99))}}
+                if any(profile.get(key, {}).get(k) != v for k, v in expected.items()):
+                    raise ValueError('Profile raw/summary mismatch')
+                timing[key] = expected
+            misses = sum(f['buildUs'] > budget or f['rasterUs'] > budget for f in frames)
+            if profile.get('eitherUiOrRasterOverBudgetFrames') != misses:
+                raise ValueError('Profile budget-miss mismatch')
+            timing['eitherUiOrRasterOverBudgetFrames'] = misses
+            result['unrecordedProfile'] = timing
+        recordings = []
+        for name in ('00-graphite-opening', '01-root-navigation', '02-editor-instrument', '05-export-ready', '06-reduced-motion'):
+            event = next((x for x in events if x.get('operation') == 'record_stop' and x.get('name') == name), None)
+            if event is None:
+                continue
+            data = reader.safe_bytes(root, Path('ui-capture/recordings') / (name + '.mp4'), 64_000_000)
+            digest = hashlib.sha256(data).hexdigest()
+            if event.get('bytes') != len(data) or event.get('sha256') != digest:
+                raise ValueError('Original recording byte/hash witness mismatch')
+            recordings.append({'name': name, 'bytes': len(data), 'sha256': digest,
+                'originalHostWholeDecodePassed': event.get('wholeVideoDecode', {}).get('passed') is True,
+                'acceptanceEligible': False, 'scope': 'Original video hash verified; decode status is the original host witness, not an independent re-decode.'})
+        result['originalRecordings'] = recordings
     if not found:
         raise ValueError('No fixed diagnostic evidence found')
     emit('OWNED_SDK_TRACE_INSPECTION ' + json.dumps(result, sort_keys=True))

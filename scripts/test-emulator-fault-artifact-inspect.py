@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import importlib.util
 import json
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -62,6 +63,35 @@ class FaultReaderTest(unittest.TestCase):
             module.flight_observations('\n'.join(['UI_GRAPHITE_FLIGHT_FRAME {}'] * 81))
         with self.assertRaises(ValueError):
             module.flight_observations('UI_GRAPHITE_FLIGHT_FRAME ' + 'x' * 8193)
+
+    def test_profile_recomputes_original_samples_and_rejects_tampering(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            folder = root / module.PREFIX
+            folder.mkdir(parents=True)
+            (folder / 'faults.json').write_text('{}')
+            profile = {'refreshHz': 60, 'frameBudgetUs': 1_000_000/60,
+                'visibleScope': {'screenRecordingActive': False, 'graphiteProductionInteractions': True},
+                'rawFrames': [{'frameNumber': i, 'vsyncUs': i*1000, 'rasterFinishWallUs': i*1000+60,
+                              'buildUs': i*10, 'rasterUs': i*20, 'totalUs': i*30} for i in (1, 2)],
+                'eitherUiOrRasterOverBudgetFrames': 0}
+            for name, maximum in (('uiBuild', 20), ('raster', 40), ('totalSpan', 60)):
+                profile[name] = dict(count=2, maxUs=maximum, overBudgetFrames=0,
+                                     p50Us=maximum, p90Us=maximum, p95Us=maximum, p99Us=maximum)
+            path = root / 'ui-capture/performance/graphite-interactions-unrecorded.json'
+            path.parent.mkdir(parents=True)
+            data = json.dumps(profile).encode()
+            path.write_bytes(data)
+            report = {'passed': False, 'diagnosticSequenceCompleted': True, 'events': [
+                {'operation': 'perf_finish', 'name': 'graphite-interactions-unrecorded',
+                 'recordingDuringMeasurement': False, 'evidenceBytes': len(data), 'evidenceSha256': hashlib.sha256(data).hexdigest()}]}
+            (root / 'ui-capture/capture-report.json').write_text(json.dumps(report))
+            result = module.inspect(root, REQUEST, lambda text: None)
+            self.assertEqual(result['unrecordedProfile']['uiBuild']['p95Us'], 20)
+            self.assertFalse(result['unrecordedProfile']['acceptanceEligible'])
+            path.write_bytes(data + b' ')
+            with self.assertRaises(ValueError):
+                module.inspect(root, REQUEST, lambda text: None)
 
     def test_missing_files_are_not_success(self):
         with tempfile.TemporaryDirectory() as tmp:
