@@ -12,6 +12,12 @@ on:
       - scripts/check-host-debugger-readiness.py
       - scripts/test-host-debugger-readiness.py
       - scripts/emulator_process_inspection.py
+      - scripts/inspect-emulator-fault-artifact.py
+      - scripts/test-emulator-fault-artifact-inspect.py
+      - scripts/owned_pc_mapping.py
+      - scripts/test-owned-pc-mapping.py
+      - scripts/check-execchain-debugger-readiness.py
+      - scripts/test-execchain-debugger-readiness.py
 permissions:
   contents: read
   actions: read
@@ -32,13 +38,14 @@ jobs:
           request=json.loads(Path('cloud/ui-capture-inspect.json').read_text())
           assert type(request['runId']) is int and request['runId']>0
           mode=request.get('mode','ui')
-          assert mode in ('ui','runtime')
+          assert mode in ('ui','runtime','emulator-fault')
           artifact_id=''
           name=request['artifactName']
-          if mode=='runtime':
+          if mode in ('runtime','emulator-fault'):
               import importlib.util,sys
               sys.path.insert(0,str(Path('scripts').resolve()))
-              spec=importlib.util.spec_from_file_location('runtime_inspect','scripts/inspect-runtime-artifact.py')
+              filename='scripts/inspect-runtime-artifact.py' if mode=='runtime' else 'scripts/inspect-emulator-fault-artifact.py'
+              spec=importlib.util.spec_from_file_location('runtime_inspect',filename)
               helper=importlib.util.module_from_spec(spec)
               spec.loader.exec_module(helper)
               helper.validate_request(request)
@@ -63,12 +70,17 @@ jobs:
         timeout-minutes: 8
         run: bash scripts/prepare-runtime-inspectors.sh --video-only
       - name: Verify bounded runtime reader regressions
-        run: python3 scripts/test-runtime-artifact-inspect.py
+        run: |
+          python3 scripts/test-runtime-artifact-inspect.py
+          python3 scripts/test-emulator-fault-artifact-inspect.py
       - name: Check preinstalled host debugger readiness (diagnostic only)
         timeout-minutes: 3
         run: |
           python3 scripts/test-host-debugger-readiness.py
+          python3 scripts/test-owned-pc-mapping.py
+          python3 scripts/test-execchain-debugger-readiness.py
           python3 scripts/check-host-debugger-readiness.py
+          python3 scripts/check-execchain-debugger-readiness.py
       - name: Preserve bounded host debugger readiness
         if: always()
         uses: actions/upload-artifact@v7
@@ -80,6 +92,9 @@ jobs:
       - name: Inspect bounded native runtime logs (not a product test)
         if: steps.request.outputs.mode == 'runtime'
         run: python3 scripts/inspect-runtime-artifact.py
+      - name: Inspect fixed owned SDK debugger evidence (never acceptance)
+        if: steps.request.outputs.mode == 'emulator-fault'
+        run: python3 scripts/inspect-emulator-fault-artifact.py
       - name: Inspect actual diagnostic logs and requested exact PNGs (not a product test)
         if: steps.request.outputs.mode == 'ui'
         run: python3 scripts/inspect-ui-capture.py

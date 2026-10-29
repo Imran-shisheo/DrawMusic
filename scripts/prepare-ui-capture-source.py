@@ -19,6 +19,8 @@ FILES = ['integration_test/ui_visual_capture_test.dart', 'integration_test/suppo
          'scripts/ui_capture_mp4.py', 'scripts/test-ui-capture-mp4.py',
          'scripts/emulator_lldb_trace.py', 'scripts/check-host-debugger-readiness.py',
          'scripts/test-host-debugger-readiness.py', 'scripts/trace-owned-emulator.py',
+         'scripts/owned_pc_mapping.py', 'scripts/test-owned-pc-mapping.py',
+         'scripts/check-execchain-debugger-readiness.py', 'scripts/test-execchain-debugger-readiness.py',
          'scripts/test-trace-owned-emulator.py', 'scripts/free-hosted-runner-space.sh',
          'scripts/prepare-ui-capture-source.py']
 

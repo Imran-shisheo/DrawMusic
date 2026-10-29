@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Authored fake SDK/debugger only; no actual emulator launch or host policy changes."""
 import importlib.util
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
@@ -124,6 +126,25 @@ for i in range(100):
         with patch.object(tool,'identity',return_value='original'):
             self.assertTrue(tool.forward_owned(process,'original',signal.SIGTERM))
         process.send_signal.assert_called_once_with(signal.SIGTERM)
+
+    def test_collector_emits_only_owned_mapping_allowlist(self):
+        self.out.mkdir(parents=True)
+        tool.json_write(self.out/'lifecycle.json',{'phase':'finished'})
+        tool.json_write(self.out/'faults.json',{'phase':'finished','faults':[{
+            'signal':11,'ownedPidMatches':True,'frames':[],
+            'targets':{'process':{'executableBasename':'owned-worker','moduleCount':5,'private':'SECRET-TARGET'}},
+            'ownedPcMapping':{'status':'MappedPath','mappingBasename':'libowned.so','pcFileOffset':4361,
+                'rawMaps':'SECRET-MAPS','backingFile':{'status':'VerifiedBackingElf','sha256':'a'*64,'private':'SECRET-FILE'}}}]})
+        captured=io.StringIO()
+        with contextlib.redirect_stdout(captured):tool.collect()
+        text=captured.getvalue()
+        self.assertNotIn('SECRET-',text)
+        marker=json.loads(text.split('SDK_FAULT_STACK_DIAGNOSTIC ',1)[1])
+        self.assertFalse(marker['acceptanceEligible'])
+        mapping=marker['faults'][0]['ownedPcMapping']
+        self.assertEqual(mapping['mappingBasename'],'libowned.so')
+        self.assertEqual(mapping['pcFileOffset'],4361)
+        self.assertEqual(mapping['backingFile']['sha256'],'a'*64)
 
 class LastFaultBoundTests(unittest.TestCase):
     def test_byte_bound_drops_oldest_stack_and_keeps_newest_signal(self):

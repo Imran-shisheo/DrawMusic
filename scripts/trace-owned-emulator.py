@@ -247,8 +247,16 @@ def collect():
     if trace:
         # Only the controller's fixed fault metadata is printable; never config,
         # arguments, environment, arbitrary JSON keys or raw console streams.
-        summary={key:trace.get(key) for key in ('schema','diagnosticOnly','acceptanceEligible','phase','binarySha256','ownedInferiorPid','aslrDisabled','argv0PreservationVerified','sigsegvStopsObserved','actualExitStatus','finalStateName','finalSignalClassification')}
+        summary={key:trace.get(key) for key in ('schema','diagnosticOnly','acceptanceEligible','phase','binarySha256','mappingHelperSha256','ownedInferiorPid','aslrDisabled','argv0PreservationVerified','sigsegvStopsObserved','actualExitStatus','finalStateName','finalSignalClassification')}
         summary['faults']=[{key:fault.get(key) for key in ('signal','signalStopNumber','threadId','argumentsPrinted')}|{'frames':[{key:frame.get(key) for key in ('frame','pc','function','module','moduleOffset','moduleUuid')} for frame in fault.get('frames',[])[:24]]} for fault in trace.get('faults',[])[:4]]
+        for fault,source in zip(summary['faults'],trace.get('faults',[])[:4]):
+            fault['ownedPidMatches']=source.get('ownedPidMatches')
+            targets=source.get('targets',{})
+            fault['targets']={role:{key:targets.get(role,{}).get(key) for key in ('executableBasename','moduleCount')}
+                              for role in ('original','selected','process')}
+            mapping=source.get('ownedPcMapping',{})
+            fault['ownedPcMapping']={key:mapping.get(key) for key in ('status','rangeMatch','executableBasename','executableStatus','mapsBytesInspected','mapsRowsInspected','mapsComplete','mappedFileCount','permissions','mappingFileOffset','pcFileOffset','mappingBasename','errorCategory')}
+            fault['ownedPcMapping']['backingFile']={key:mapping.get('backingFile',{}).get(key) for key in ('status','bytes','sha256','buildIdStatus','errorCategory')}
         print('SDK_FAULT_STACK_DIAGNOSTIC '+json.dumps(summary,sort_keys=True),flush=True)
 
 def main():

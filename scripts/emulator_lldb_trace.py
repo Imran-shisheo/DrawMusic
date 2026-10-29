@@ -6,11 +6,16 @@ changes scheduling and may normalize argv0; this is never motion/performance
 acceptance. Readiness probes use only authored tiny executables, not an emulator.
 """
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
 import time
 import lldb
+
+MAPPING_SCRIPT=Path(__file__).with_name('owned_pc_mapping.py')
+spec=importlib.util.spec_from_file_location('doodimo_owned_pc_mapping',MAPPING_SCRIPT)
+MAPPING=importlib.util.module_from_spec(spec);spec.loader.exec_module(MAPPING)
 
 def encode_bounded(state):
     """Keep the newest fault even when older stacks exhaust the byte cap."""
@@ -34,6 +39,7 @@ def observe(fd):
     state={'schema':1,'diagnosticOnly':True,'acceptanceEligible':False,
         'scope':'Debugger alters scheduling; never normal motion/performance acceptance. Signal stops are delivered onward, not presumed fatal.',
         'binarySha256':config['binarySha256'],'faults':[],'sigsegvStopsObserved':0,
+        'mappingHelperSha256':hashlib.sha256(MAPPING_SCRIPT.read_bytes()).hexdigest(),
         'phase':'initializing','aslrDisabled':False,
         'argv0PreservationVerified':False,
         'argv0DiagnosticDifference':'Own-ELF smoke shows SBTarget.Launch normalizes argv0 to retained ELF path despite target.arg0; not equivalent to normal observer.'}
@@ -92,6 +98,14 @@ def observe(fd):
                     if thread.GetStopReason()!=lldb.eStopReasonSignal or thread.GetStopReasonDataCount()<1:continue
                     if thread.GetStopReasonDataAtIndex(0)!=11:continue
                     state['sigsegvStopsObserved']+=1
+                    current_target=process.GetTarget()
+                    selected_target=debugger.GetSelectedTarget()
+                    pc0=thread.GetFrameAtIndex(0).GetPC()
+                    mapping=MAPPING.inspect_owned_pc(process.GetProcessID(),state['ownedInferiorPid'],pc0,
+                        trusted_roots=(real.parent,Path('/usr/lib'),Path('/lib'),Path('/usr/lib64'),Path('/lib64')))
+                    target_metadata={name:{'executableBasename':(value.GetExecutable().GetFilename() or '')[:80],
+                        'moduleCount':value.GetNumModules()} for name,value in (
+                            ('original',target),('selected',selected_target),('process',current_target))}
                     frames=[]
                     for index in range(min(thread.GetNumFrames(),24)):
                         frame=thread.GetFrameAtIndex(index)
@@ -105,6 +119,8 @@ def observe(fd):
                             'module':(module.GetFileSpec().GetFilename() or '<module unavailable>')[:80]})
                     state['faults']=(state['faults']+[{'signal':11,'threadId':thread.GetThreadID(),
                         'signalStopNumber':state['sigsegvStopsObserved'],
+                        'stopReason':'signal','ownedPidMatches':process.GetProcessID()==state['ownedInferiorPid'],
+                        'targets':target_metadata,'ownedPcMapping':mapping,
                         'epochSeconds':time.time(),'frames':frames,'argumentsPrinted':False}])[-4:]
                     save()
                     break

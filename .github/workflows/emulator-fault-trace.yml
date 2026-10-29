@@ -3,11 +3,9 @@ on:
   push:
     branches: [codex/graphite-evidence-reader-2026-10-29]
     paths:
+      # Only an explicit source-mapped request allocates another emulator.
+      # Observer/readiness/reader edits alone must remain cheap host checks.
       - cloud/emulator-fault-trace-request.json
-      - scripts/trace-owned-emulator.py
-      - scripts/test-trace-owned-emulator.py
-      - scripts/emulator_lldb_trace.py
-      - .github/workflows/emulator-fault-trace.yml
 permissions:
   contents: read
 concurrency:
@@ -46,13 +44,18 @@ jobs:
         run: |
           python3 scripts/test-host-debugger-readiness.py
           python3 scripts/test-trace-owned-emulator.py
+          python3 scripts/test-owned-pc-mapping.py
+          python3 scripts/test-execchain-debugger-readiness.py
           python3 scripts/check-host-debugger-readiness.py
+          python3 scripts/check-execchain-debugger-readiness.py
           python3 - <<'PY'
           import json,os
           from pathlib import Path
           p=json.loads(Path('work/ui-capture-inspect-debugger/readiness.json').read_text())
+          e=json.loads(Path('work/ui-capture-inspect-debugger/execchain-readiness.json').read_text())
+          ready=p.get('ready') is True and e.get('ready') is True and e.get('diagnosticOnly') is True and e.get('acceptanceEligible') is False
           with open(os.environ['GITHUB_OUTPUT'],'a') as out:
-              out.write('ready='+str(p.get('ready') is True).lower()+'\n')
+              out.write('ready='+str(ready).lower()+'\n')
           PY
       - uses: actions/setup-java@v6
         if: steps.debugger.outputs.ready == 'true'
