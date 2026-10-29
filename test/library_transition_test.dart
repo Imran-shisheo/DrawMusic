@@ -337,8 +337,14 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 40));
       await tester.binding.handlePopRoute();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      // Save/allow-pop awaits endOfFrame before starting the real reverse
+      // transition. Observe bounded frames, rather than advancing one large
+      // clock interval before that asynchronous transition has even begun.
+      for (var frame = 0; frame < 20; frame++) {
+        await tester.pump(const Duration(milliseconds: 25));
+        expect(find.byType(EditorPage).evaluate().length, lessThanOrEqualTo(1));
+        if (find.byType(EditorPage).evaluate().isEmpty) break;
+      }
       expect(find.byType(EditorPage), findsNothing);
       expect(find.byType(LibraryTabs), findsOneWidget);
       final context = tester.element(find.byType(LibraryTabs));

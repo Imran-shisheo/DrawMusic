@@ -37,6 +37,21 @@ export '../design_system/retained_transition.dart';
 import '../features/export_library/presentation/exports_page.dart';
 import '../features/home/presentation/templates.dart';
 
+// Use SDK MaterialPage explicitly. GoRouter 18's material_ui app detection
+// does not recognize this application's SDK MaterialApp and otherwise picks
+// zero-duration WidgetsApp pages, bypassing our theme transitions and Heroes.
+MaterialPage<void> _appPage(GoRouterState state, Widget child) =>
+    MaterialPage<void>(
+      key: state.pageKey,
+      name: state.name ?? state.path,
+      arguments: <String, String>{
+        ...state.pathParameters,
+        ...state.uri.queryParameters,
+      },
+      restorationId: state.pageKey.value,
+      child: child,
+    );
+
 GoRouter buildRouter({bool offerEditorTips = false}) => GoRouter(
   initialLocation: '/home',
   routes: [
@@ -61,41 +76,65 @@ GoRouter buildRouter({bool offerEditorTips = false}) => GoRouter(
               children[3],
             ],
           ),
-      builder: (_, _, shell) => _RootTabs(shell: shell),
+      pageBuilder: (_, state, shell) =>
+          _appPage(state, _RootTabs(shell: shell)),
       branches: [
         StatefulShellBranch(
-          routes: [GoRoute(path: '/home', builder: (_, _) => const HomePage())],
-        ),
-        StatefulShellBranch(
           routes: [
-            GoRoute(path: '/drafts', builder: (_, _) => const DraftsPage()),
+            GoRoute(
+              path: '/home',
+              pageBuilder: (_, state) => _appPage(state, const HomePage()),
+            ),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/exports', builder: (_, _) => const ExportsPage()),
+            GoRoute(
+              path: '/drafts',
+              pageBuilder: (_, state) => _appPage(state, const DraftsPage()),
+            ),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/settings', builder: (_, _) => const SettingsPage()),
+            GoRoute(
+              path: '/exports',
+              pageBuilder: (_, state) => _appPage(state, const ExportsPage()),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/settings',
+              pageBuilder: (_, state) => _appPage(state, const SettingsPage()),
+            ),
           ],
         ),
       ],
     ),
-    GoRoute(path: '/language', builder: (_, _) => const LanguagePage()),
-    GoRoute(path: '/help', builder: (_, _) => const TutorialPage()),
+    GoRoute(
+      path: '/language',
+      pageBuilder: (_, state) => _appPage(state, const LanguagePage()),
+    ),
+    GoRoute(
+      path: '/help',
+      pageBuilder: (_, state) => _appPage(state, const TutorialPage()),
+    ),
     GoRoute(
       path: '/editor/:id',
-      builder: (_, state) => EditorPage(
-        projectId: state.pathParameters['id']!,
-        loadSessionId:
-            state.uri.queryParameters['session'] ?? state.pageKey.value,
-        flightIntent: state.extra is ArtworkFlightIntent
-            ? state.extra as ArtworkFlightIntent
-            : null,
-        offerTips: offerEditorTips,
-        replayTips: state.uri.queryParameters['tips'] == '1',
+      pageBuilder: (_, state) => _appPage(
+        state,
+        EditorPage(
+          projectId: state.pathParameters['id']!,
+          loadSessionId:
+              state.uri.queryParameters['session'] ?? state.pageKey.value,
+          flightIntent: state.extra is ArtworkFlightIntent
+              ? state.extra as ArtworkFlightIntent
+              : null,
+          offerTips: offerEditorTips,
+          replayTips: state.uri.queryParameters['tips'] == '1',
+        ),
       ),
     ),
   ],

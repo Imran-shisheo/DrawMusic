@@ -111,10 +111,24 @@ void main() {
       expect(outgoingRoute.isCurrent, isFalse);
       expect(
         find.byElementPredicate((element) => identical(element, secondContext)),
+        findsOneWidget,
+        reason: 'A real reverse transition retains the outgoing canvas until its exit completes',
+      );
+      expect(
+        find.byElementPredicate(
+          (element) =>
+              identical(element, secondContext) &&
+              uiRenderedEditorAnchor(element, hasPanel: false),
+        ),
         findsNothing,
-        reason: 'The outgoing canvas cannot pass the guarded finder; never look up deactivated ancestors',
+        reason: 'The mounted outgoing canvas must not qualify as a current screenshot anchor',
       );
       await frames();
+      expect(
+        find.byElementPredicate((element) => identical(element, secondContext)),
+        findsNothing,
+        reason: 'The outgoing canvas is disposed after its finite reverse transition; never look up deactivated ancestors',
+      );
       expect(uiRenderedEditorAnchor(firstContext, hasPanel: false), isTrue);
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
