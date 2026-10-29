@@ -1,0 +1,116 @@
+name: Skia creation and exports (diagnostic only)
+on:
+  push:
+    branches: [codex/graphite-evidence-reader-2026-10-29]
+    paths: [cloud/skia-functional-request.json]
+permissions:
+  contents: read
+concurrency:
+  group: drawmusic-skia-functional-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  functional-comparison:
+    name: Original functional assertions with diagnostic renderer; never product acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      DRAWMUSIC_SKIA_FUNCTIONAL_DIAGNOSTIC: '1'
+      DRAWMUSIC_ACCEPT_ANDROID_LICENSES: '1'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Pin exact product and retain only three declared diagnostic helpers
+        run: |
+          python3 - <<'PY'
+          import json,os,shutil,subprocess,tempfile
+          from pathlib import Path
+          assert os.environ.get('GITHUB_ACTIONS')=='true'
+          request=json.loads(Path('cloud/skia-functional-request.json').read_text())
+          assert type(request.get('schema')) is int and type(request.get('acceptanceEligible')) is bool
+          assert request=={'schema':1,'sourceRef':'2ffc61665159d38240c7a869811c4580d82a8fc0','diagnosticOnly':'skia-functional','acceptanceEligible':False}
+          harness=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          files=['scripts/run-skia-functional-diagnostic.py','scripts/test-skia-functional-diagnostic.py','scripts/check-skia-functional.sh']
+          with tempfile.TemporaryDirectory(prefix='owned-functional-helpers-') as tmp:
+              for name in files: shutil.copyfile(name,Path(tmp)/Path(name).name)
+              subprocess.run(['git','checkout','--detach',request['sourceRef']],check=True)
+              for name in files: shutil.copyfile(Path(tmp)/Path(name).name,name)
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==request['sourceRef']
+          assert not subprocess.check_output(['git','diff','HEAD','--','lib','android','ios','assets','test','integration_test','pubspec.yaml','pubspec.lock'],text=True)
+          assert 'applicationId = "com.devwithdelta.doodimo"' in Path('android/app/build.gradle.kts').read_text()
+          out=Path('work/runtime-output');out.mkdir(parents=True,exist_ok=True)
+          (out/'source-provenance.json').write_text(json.dumps({'productSourceSha':request['sourceRef'],'diagnosticHarnessSourceSha':harness,'instrumentationFiles':files,'diagnosticOnly':'skia-functional','acceptanceEligible':False,'rendererOverride':'skia-diagnostic-only','lldbUsed':False,'nativeCasesAndSoakRerun':False,'nativeReferenceRun':40900621914},indent=2)+'\n')
+          PY
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Free disposable runner space
+        run: bash scripts/free-hosted-runner-space.sh
+      - name: Prepare unchanged pinned toolchain and media inspectors
+        run: |
+          bash scripts/setup-cloud-android.sh
+          bash scripts/prepare-runtime-inspectors.sh
+          source cloud/env.sh
+          export DASH__SUPPRESS_ANALYTICS=true
+          flutter pub get
+          python3 scripts/test-skia-functional-diagnostic.py
+          python3 -m py_compile scripts/run-skia-functional-diagnostic.py
+          python3 - <<'PY'
+          import importlib.util,json
+          from pathlib import Path
+          spec=importlib.util.spec_from_file_location('comparison','scripts/run-skia-functional-diagnostic.py')
+          module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+          module.validate(json.loads(Path('work/runtime-output/source-provenance.json').read_text()))
+          PY
+          flutter test --help -v | python3 -c "import sys; assert '--[no-]enable-impeller' in sys.stdin.read()"
+      - name: Enable disposable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Execute original creation, save, exports and HOME assertions
+        id: runtime
+        timeout-minutes: 23
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          pre-emulator-launch-script: python3 scripts/observe-emulator-process.py install --mode runtime
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: bash scripts/check-skia-functional.sh
+      - name: Retain owned SDK lifecycle
+        if: ${{ always() && steps.runtime.outcome != 'skipped' }}
+        timeout-minutes: 1
+        run: python3 scripts/observe-emulator-process.py collect --mode runtime
+      - name: Inspect actual exported audio, video, image and MIDI
+        run: |
+          export PYTHONPATH="$PWD/work/validation-deps"
+          python3 scripts/validate-video.py work/runtime-output/ui-export-video.mp4 work/runtime-output/ui-export-audio.wav work/runtime-output/ui-inspection.json 640
+          python3 scripts/validate-runtime-midi.py
+          python3 scripts/validate-runtime-png.py
+          python3 scripts/validate-video.py work/runtime-output/expanded-video.mp4 work/runtime-output/expanded-audio.wav work/runtime-output/expanded-video-inspection.json 640
+          python3 scripts/validate-expanded-midi.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('work/runtime-output')
+          report=json.loads((root/'skia-functional-diagnostic.json').read_text())
+          assert report['functionalSequenceCompleted'] is True and report['acceptanceEligible'] is False and report['passed'] is False
+          assert json.loads((root/'hd-background-host.json').read_text())['passed'] is True
+          report['mediaInspectionsCompleted']=True
+          (root/'skia-functional-diagnostic.json').write_text(json.dumps(report,indent=2)+'\n')
+          print('SKIA_FUNCTIONAL_VALIDATED '+json.dumps(report))
+          PY
+      - name: Preserve explicit diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: drawmusic-skia-functional-diagnostic-${{ github.sha }}
+          path: work/runtime-output/
+          retention-days: 7
+          if-no-files-found: error
