@@ -12,6 +12,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import time
 
 SCRIPT = Path(__file__).with_name('emulator_lldb_trace.py').resolve()
 OUTPUT = Path('work/ui-capture-inspect-debugger')
@@ -96,15 +97,20 @@ def run_bounded(arguments,*,environment,timeout=5,pass_fds=()):
     # never uploaded. Only small status/marker fields leave readiness.
     with tempfile.TemporaryFile() as out,tempfile.TemporaryFile() as err:
         def no_core():resource.setrlimit(resource.RLIMIT_CORE,(0,0))
+        started=time.monotonic()
         process=subprocess.Popen(arguments,env=environment,stdout=out,stderr=err,
             pass_fds=pass_fds,preexec_fn=no_core)
+        error=None
         try:code=process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             process.kill();process.wait(timeout=3)
-            return {'returncode':None,'error':'TimeoutExpired','stdout':''}
+            code=None;error='TimeoutExpired'
         out.seek(0);err.seek(0)
-        return {'returncode':code,'stdout':out.read(4096).decode(errors='replace'),
-                'stderr':err.read(4096).decode(errors='replace')}
+        result={'returncode':code,'stdout':out.read(4096).decode(errors='replace'),
+                'stderr':err.read(4096).decode(errors='replace'),
+                'elapsedSeconds':round(time.monotonic()-started,3),'timeoutSeconds':timeout}
+        if error:result['error']=error
+        return result
 
 def version_summary(result):
     """Publish fixed categories/version tokens, never arbitrary loader text."""
@@ -115,6 +121,8 @@ def version_summary(result):
     code=result.get('returncode')
     value={'returncode':code,'parsedVersion':match.group(1) if code==0 and match else None,
         'inspectedStdoutBytes':len(stdout.encode()),'inspectedStderrBytes':len(stderr.encode())}
+    for key in ('elapsedSeconds','timeoutSeconds'):
+        if key in result:value[key]=result[key]
     if result.get('error')=='TimeoutExpired':value['category']='VersionCommandTimedOut'
     elif missing:
         value.update(category='MissingRuntimeSharedLibrary',missingLibrary=missing.group(1))
@@ -187,7 +195,7 @@ def readiness():
         # preapproved host17 server treats --version as Usage, not a version.
         # Do not guess alternate invocations or silently loosen identity.
         for role,arguments in (('debugger',[str(binary),'--no-lldbinit','--version']),('server',[str(server),'version'])):
-            try:version=run_bounded(arguments,environment=environment)
+            try:version=run_bounded(arguments,environment=environment,timeout=20)
             except OSError as error:
                 version={'returncode':None,'error':type(error).__name__}
             summary=version_summary(version)
