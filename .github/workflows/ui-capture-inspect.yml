@@ -8,6 +8,10 @@ on:
       - scripts/inspect-ui-capture.py
       - scripts/inspect-runtime-artifact.py
       - scripts/test-runtime-artifact-inspect.py
+      - scripts/emulator_lldb_trace.py
+      - scripts/check-host-debugger-readiness.py
+      - scripts/test-host-debugger-readiness.py
+      - scripts/emulator_process_inspection.py
 permissions:
   contents: read
   actions: read
@@ -60,6 +64,19 @@ jobs:
         run: bash scripts/prepare-runtime-inspectors.sh --video-only
       - name: Verify bounded runtime reader regressions
         run: python3 scripts/test-runtime-artifact-inspect.py
+      - name: Check preinstalled host debugger readiness (diagnostic only)
+        timeout-minutes: 3
+        run: |
+          python3 scripts/test-host-debugger-readiness.py
+          python3 scripts/check-host-debugger-readiness.py
+      - name: Preserve bounded host debugger readiness
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: drawmusic-host-debugger-readiness-${{ github.sha }}
+          path: work/ui-capture-inspect-debugger/
+          if-no-files-found: warn
+          retention-days: 7
       - name: Inspect bounded native runtime logs (not a product test)
         if: steps.request.outputs.mode == 'runtime'
         run: python3 scripts/inspect-runtime-artifact.py
