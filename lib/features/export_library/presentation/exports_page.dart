@@ -1,3 +1,5 @@
+import '../../../app/artwork_navigation.dart';
+
 import 'package:scribblesong/l10n/strings.dart';
 
 import 'dart:async';
@@ -5,13 +7,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../design_system/name_dialog.dart';
 import '../../../design_system/creative_panel.dart';
 import '../../library/presentation/library_state_panel.dart';
 import '../../../design_system/doodimo_icon.dart';
+import '../../../design_system/immersive_surface.dart';
 import '../../editor/presentation/canvas.dart';
 import '../../backgrounds/presentation/background_surface.dart';
 import '../../library/presentation/library_gallery_layout.dart';
@@ -90,7 +92,11 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           );
           if (name != null) await repository.rename(entry.id, name);
         case _Action.source:
-          context.push('/editor/${entry.artifact.projectId}');
+          await openEditorWithArtworkFlight(
+            context,
+            entry.artifact.projectId,
+            null,
+          );
         case _Action.delete:
           final confirmed = await showCreativePanel<bool>(
             context: context,
@@ -166,16 +172,13 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.strings.yourExports,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(context.strings.libraryExportsSubtitle),
-                ],
+              child: Tooltip(
+                message: context.strings.libraryExportsSubtitle,
+                child: Text(
+                  context.strings.yourExports,
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
             ),
             IconButton(
@@ -226,6 +229,8 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
                                 .someExportDetailsCouldNotBeReadTheOriginalFilesArePreserve,
                           ),
                         ),
+                      _featured(context, listing.entries.first),
+                      const SizedBox(height: 16),
                       for (final entry in listing.entries)
                         _card(context, entry),
                     ],
@@ -233,87 +238,217 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
       ],
     ),
   );
-  Widget _card(BuildContext context, LibraryExport entry) {
+  Widget _preview(LibraryExport entry, {required bool large}) {
     final format = entry.id.split('.').last.toUpperCase();
-    final date = context.formatLocalDate(entry.createdAt);
-    return LibraryDocumentCard(
-      leading: SizedBox(
-        key: ValueKey('export-thumbnail-${entry.id}'),
-        width: 80,
-        height: 100,
-        child: format == 'PNG' && entry.available
-            ? SizedBox(
-                width: 80,
-                height: 100,
-                child: Image.file(
-                  File(entry.artifact.path),
-                  cacheWidth: 112,
-                  fit: BoxFit.contain,
-                  excludeFromSemantics: true,
-                  errorBuilder: (_, _, _) =>
-                      const Icon(Icons.broken_image_outlined),
-                ),
-              )
-            : entry.preview == null
-            ? Icon(
-                format == 'MP4'
-                    ? Icons.movie_outlined
-                    : Icons.audio_file_outlined,
-              )
-            : SizedBox(
-                width: 80,
-                height: 100,
-                // Letterbox to the immutable document's 4:5 aspect.
-                child: Center(
-                  child: AspectRatio(
-                    aspectRatio: .8,
-                    child: BackgroundSurface(
-                      key: ValueKey('export-preview-${entry.id}'),
-                      // The export catalog owns this immutable revision. Never
-                      // load the newer editable project for a saved thumbnail.
-                      paper: entry.preview!.effectiveBackground,
-                      maxWidth: 112,
-                      maxHeight: 140,
-                      child: CustomPaint(
-                        painter: DrawingPainter(entry.preview!),
-                      ),
+    if (format == 'PNG' && entry.available) {
+      return Image.file(
+        File(entry.artifact.path),
+        cacheWidth: large ? 420 : 112,
+        fit: BoxFit.contain,
+        excludeFromSemantics: true,
+        errorBuilder: (_, _, _) =>
+            const Center(child: DoodimoIcon(DoodimoGlyph.image, size: 40)),
+      );
+    }
+    if (entry.preview != null) {
+      return Center(
+        child: AspectRatio(
+          aspectRatio: .8,
+          child: BackgroundSurface(
+            key: ValueKey(
+              '${large ? 'export-feature-preview' : 'export-preview'}-${entry.id}',
+            ),
+            // This immutable export revision owns its paper and geometry.
+            paper: entry.preview!.effectiveBackground,
+            maxWidth: large ? 420 : 112,
+            maxHeight: large ? 525 : 140,
+            child: CustomPaint(painter: DrawingPainter(entry.preview!)),
+          ),
+        ),
+      );
+    }
+    return Center(
+      child: DoodimoIcon(switch (format) {
+        'MP4' => DoodimoGlyph.video,
+        'PNG' => DoodimoGlyph.image,
+        'MID' => DoodimoGlyph.notes,
+        _ => DoodimoGlyph.sound,
+      }, size: large ? 64 : 32),
+    );
+  }
+
+  Widget _featured(BuildContext context, LibraryExport entry) {
+    final colors = Theme.of(context).colorScheme;
+    final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+    return ImmersiveSurface(
+      key: const ValueKey('export-featured-artwork'),
+      padding: const EdgeInsets.all(12),
+      radius: 20,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 360,
+                maxHeight: largeText ? 220 : 280,
+              ),
+              child: AspectRatio(
+                aspectRatio: .8,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colors.outlineVariant),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(7),
+                      child: _preview(entry, large: true),
                     ),
                   ),
                 ),
               ),
-      ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              format,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSecondaryContainer,
-              ),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            entry.artifact.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 14),
+          RichText(
+            key: const ValueKey('export-feature-caption'),
+            textAlign: TextAlign.center,
+            textScaler: MediaQuery.textScalerOf(context),
+            text: TextSpan(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: colors.onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+              children: [
+                TextSpan(
+                  text: entry.artifact.name.replaceFirst(
+                    RegExp(r'\.[^.]+$'),
+                    '',
+                  ),
+                ),
+                TextSpan(
+                  text:
+                      RegExp(r'\.[^.]+$')
+                          .firstMatch(entry.artifact.name)
+                          ?.group(0) ??
+                      '',
+                  style: TextStyle(
+                    color: colors.onSurfaceVariant,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, bounds) {
+              final share = FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(48, 64),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                key: ValueKey('export-feature-share-${entry.id}'),
+                onPressed: _busy || !entry.available
+                    ? null
+                    : () => _act(entry, _Action.share),
+                icon: const DoodimoIcon(DoodimoGlyph.export),
+                label: Text(context.strings.shareExportedFile),
+              );
+              final save = OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(48, 64),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                key: ValueKey('export-feature-save-${entry.id}'),
+                onPressed: _busy || !entry.available
+                    ? null
+                    : () => _act(entry, _Action.save),
+                icon: const DoodimoIcon(DoodimoGlyph.save),
+                label: Text(context.strings.saveAPublicCopy),
+              );
+              if (!largeText && bounds.maxWidth >= 320) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: share),
+                    const SizedBox(width: 8),
+                    Expanded(child: save),
+                  ],
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [share, const SizedBox(height: 8), save],
+              );
+            },
           ),
         ],
       ),
-      subtitle: Text(
-        '${context.strings.exportDetails(format, date, context.formatNumber((entry.bytes / 1024).ceil()))}\n${!entry.available
-            ? context.strings.fileUnavailableExportAgain
-            : entry.legacy
-            ? context.strings.olderExportSourceDetailsUnavailable
-            : context.strings.drawingMayHaveChangedSinceExport}',
+    );
+  }
+
+  String _exportDetails(BuildContext context, LibraryExport entry) {
+    final format = entry.id.split('.').last.toUpperCase();
+    final date = context.formatLocalDate(entry.createdAt);
+    return '${context.strings.exportDetails(format, date, context.formatNumber((entry.bytes / 1024).ceil()))}\n${!entry.available
+        ? context.strings.fileUnavailableExportAgain
+        : entry.legacy
+        ? context.strings.olderExportSourceDetailsUnavailable
+        : context.strings.drawingMayHaveChangedSinceExport}';
+  }
+
+  Widget _card(BuildContext context, LibraryExport entry) {
+    final format = entry.id.split('.').last.toUpperCase();
+    return LibraryDocumentCard(
+      leading: SizedBox(
+        key: ValueKey('export-thumbnail-${entry.id}'),
+        width: 72,
+        height: 90,
+        child: _preview(entry, large: false),
+      ),
+      title: Tooltip(
+        message: _exportDetails(context, entry),
+        child: Text(entry.artifact.name, softWrap: true),
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$format · ${switch (format) {
+              'MP4' => context.strings.exportIntentVideo,
+              'PNG' => context.strings.exportIntentImage,
+              'MID' => context.strings.exportIntentNotes,
+              _ => context.strings.exportIntentSound,
+            }}',
+          ),
+          if (!entry.available || entry.legacy) ...[
+            const SizedBox(height: 6),
+            Text(
+              !entry.available
+                  ? context.strings.fileUnavailableExportAgain
+                  : context.strings.olderExportSourceDetailsUnavailable,
+            ),
+          ],
+        ],
       ),
       onTap: _busy || !entry.available ? null : () => _act(entry, _Action.open),
+      primaryAction: IconButton.outlined(
+        tooltip: context.strings.saveAPublicCopy,
+        onPressed: _busy || !entry.available
+            ? null
+            : () => _act(entry, _Action.save),
+        icon: const DoodimoIcon(DoodimoGlyph.save),
+      ),
       trailing: PopupMenuButton<_Action>(
         onOpened: () => ScaffoldMessenger.of(context).clearSnackBars(),
         tooltip: context.strings.exportActions(entry.artifact.name),
@@ -348,6 +483,16 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           PopupMenuItem(
             value: _Action.delete,
             child: Text(context.strings.delete),
+          ),
+          const PopupMenuDivider(),
+          PopupMenuItem<_Action>(
+            enabled: false,
+            child: Text(
+              _exportDetails(context, entry),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
         ],
       ),

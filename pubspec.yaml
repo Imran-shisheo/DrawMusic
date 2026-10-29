@@ -71,6 +71,7 @@ flutter:
   generate: true
 
   assets:
+    - assets/branding/graphite-grain.png
     - assets/fonts/NunitoSans/OFL.txt
     - assets/fonts/SpaceGrotesk/OFL.txt
     - assets/fonts/NotoSansDevanagari/OFL.txt

@@ -370,5 +370,7 @@
   "welcomeToBrand": "Selamat datang di {name}",
   "backgroundPanelTitle": "Kertas dan foto",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "Alat"
+  "editorToolsShort": "Alat",
+  "openingDrawing": "Membuka gambar…",
+  "navigation": "Navigasi"
 }

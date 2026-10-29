@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 
 import '../../../design_system/motion.dart';
-import '../../../design_system/brand_colors.dart';
 
 /// An original educational drawing-to-wave diagram, never an audio waveform,
 /// meter or live visualizer. It cannot schedule notes or enter saved artwork.
@@ -12,6 +11,7 @@ class DrawToSoundIllustration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reduced = MediaQuery.disableAnimationsOf(context);
+    final colors = Theme.of(context).colorScheme;
     return ExcludeSemantics(
       child: IgnorePointer(
         child: AspectRatio(
@@ -27,10 +27,11 @@ class DrawToSoundIllustration extends StatelessWidget {
               builder: (context, value, child) => CustomPaint(
                 painter: _DrawingToWave(
                   value,
-                  DoodimoColors.cyan,
-                  DoodimoColors.indigo,
-                  DoodimoColors.ink,
-                  DoodimoColors.violet,
+                  colors.primary,
+                  colors.surfaceContainerHigh,
+                  colors.surfaceContainerLow,
+                  colors.outlineVariant,
+                  colors.onSurface,
                 ),
               ),
             ),
@@ -42,9 +43,16 @@ class DrawToSoundIllustration extends StatelessWidget {
 }
 
 class _DrawingToWave extends CustomPainter {
-  _DrawingToWave(this.reveal, this.primary, this.tint, this.warm, this.outline);
+  _DrawingToWave(
+    this.reveal,
+    this.primary,
+    this.tint,
+    this.warm,
+    this.outline,
+    this.ink,
+  );
   final double reveal;
-  final Color primary, tint, warm, outline;
+  final Color primary, tint, warm, outline, ink;
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width, h = size.height;
@@ -62,7 +70,14 @@ class _DrawingToWave extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1
-        ..color = outline.withValues(alpha: .45),
+        ..color = outline,
+    );
+    canvas.drawRRect(
+      stage.deflate(5),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = ink.withValues(alpha: .07),
     );
     canvas.save();
     canvas.clipRRect(stage);
@@ -71,8 +86,8 @@ class _DrawingToWave extends CustomPainter {
       w * .45,
       Paint()
         ..shader = ui.Gradient.radial(Offset(w * .78, h * .3), w * .45, [
-          outline.withValues(alpha: .25),
-          outline.withValues(alpha: 0),
+          primary.withValues(alpha: .08),
+          primary.withValues(alpha: 0),
         ]),
     );
     canvas.drawLine(
@@ -105,7 +120,7 @@ class _DrawingToWave extends CustomPainter {
     }
 
     trace(drawing);
-    pen.color = DoodimoColors.lavender;
+    pen.color = ink.withValues(alpha: .85);
     trace(wave);
     final connector = Paint()
       ..color = primary.withValues(alpha: .65 * reveal)
@@ -135,7 +150,7 @@ class _DrawingToWave extends CustomPainter {
     canvas.drawCircle(
       Offset(w * .79, h * .78),
       5,
-      Paint()..color = DoodimoColors.coral.withValues(alpha: reveal),
+      Paint()..color = primary.withValues(alpha: reveal),
     );
     canvas.restore();
   }
@@ -146,5 +161,6 @@ class _DrawingToWave extends CustomPainter {
       old.primary != primary ||
       old.tint != tint ||
       old.warm != warm ||
-      old.outline != outline;
+      old.outline != outline ||
+      old.ink != ink;
 }

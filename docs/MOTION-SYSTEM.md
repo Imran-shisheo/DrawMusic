@@ -1,5 +1,25 @@
 # Motion system
 
+## Approved graphite motion — 29 October 2026
+
+The [verified original storyboard/plan](GRAPHITE-IMPLEMENTATION-PLAN.md) replaces the old ambient-heavy direction. Production Home no longer mounts the previous Aurora sculpture; its standalone historical resource tests remain intact. Graphite depth is static authored geometry; motion belongs to opening, actual selection/navigation, connected panels and real artifact success.
+
+| Motion | Actual implementation | Interruption / reduced alternative |
+|---|---|---|
+| Cold application composition | finite1100ms target, seed→expand→gather→reform→settle; preferences must be known, underlying UI ready/input-transparent | first input/hidden/background/reduce consumes the decoration; no warm replay or mandatory wait |
+| Root/Library | existing260ms retained blend samples current weights, stable shared selector/backdrop | rapid reversals/third destination maintain coverage and selected-only input/focus/semantics/tickers/Hero ownership; reduce snaps |
+| Artwork route | bounded actual preview-pixel snapshot through a unique request Hero,320ms forward/240ms reverse; live4:5 canvas never transforms | actual I/O readiness only, localized status after150ms; no artificial animation delay. First drawing pointer cancels presentation; direct/missing/reduced/superseded flight uses opaque fallback |
+| Connected plates | shared300ms forward/240ms reverse, bounded shape/position from actual trigger; content/job owner retained | first input finishes local travel, Back/focus/keyboard remain native; reduce immediate |
+| Press/selection |120/180ms shared ease-out curve, local paint/compositing | target geometry stable, retarget immediately; reduce static |
+| Export success | finite420ms check seal only AFTER actual atomic publication | hidden/background/reduce completes without replay; no fake progress/share delivery |
+| Playback | actual native audio-clock cursor/state | no independent beat scheduler; essential position remains readable |
+
+The retained shell and every GoRoute use explicit SDK MaterialPage builders. This preserves the page keys, names, path/query arguments and restoration IDs while avoiding GoRouter18.1.1’s material_ui/SDK MaterialApp detection mismatch and zero-duration fallback. The existing theme owns forward/reverse/reduced-motion behaviour; builders add no timers, controller or artificial wait. A real-App warm/reopen regression observes an actual Hero shuttle together with the same hit-testable canvas, then verifies first-pointer cancellation without changing its state or global rectangle. Reverse-route tests distinguish an outgoing mounted canvas from a current usable editor and verify eventual disposal. Native baseline/diagnostic limits and exact source are recorded in [fault/flight evidence](EMULATOR-FAULT-DIAGNOSTIC-2026-10-29.md).
+
+Each navigation has a typed transient load session distinct from persisted document IDs, so old reversing routes cannot supply stale saved/New data. A per-router push owner prevents duplicate queued Editors. A per-engine ownership token prevents departing async preparation/poll/disposal from commanding a newer session. No extra engine/controller is mounted for a flight, and no correctness depends on animation completion.
+
+Final-source actual recordings/profile evidence remain pending until executed; deterministic/widget tests and original mockups do not establish physical frame pacing. The following sections preserve the prior source-specific motion history.
+
 28 October 2026. Transition continuity correction in verification; GPU performance acceptance remains separate.
 
 | Motion | Purpose and trigger | Duration / curve | Interruption and reduced motion |
@@ -15,6 +35,8 @@
 Keep animation state local to presentation widgets. Use repaint listeners for decorative paths, separate from document, canvas/pointer and cursor repaint boundaries. No geometry serialization, project mutations or full editor rebuilds per animation tick. Do not animate canvas constraints, pointer targets or readable content during drawing. Avoid unconditional entrance cascades on branch return.
 
 Test rapid switching, Back during transitions, retained scroll/dialog/language/editor/audio state, hidden/background ticker suspension and reduced-motion semantics. Use bounded deterministic pumps for looping decoration. Actual cloud emulator recordings and profile UI/raster timings must substantiate runtime claims; debug rendering alone is not a smoothness measurement.
+
+The refined material is static original bounded micrograin plus authored bevel lighting, not an ambient ticker or audio meter. Capture snapshots explicitly witness idle owned recording/profiling and fail before ADB on overlap; the original sequence already stopped/decoded recording before stills, so the new invariant is defensive hardening. Pre-refinement VM/QEMU losses remain unaccepted diagnostics. Own-cgroup/structured kernel termination snapshots occur outside measured interaction phases and never repair transport or replace original failures.
 
 ## Continuous navigation and export handoffs — 28 October
 
@@ -60,3 +82,7 @@ Actual process snapshots were PSS173801→181433KB and RSS267524→275984KB; the
 ## Recorded Library continuity comparison
 
 The [28 October original before/after evidence](ui/library-motion-2026-10-28/README.md) preserves two normal/reduced clips per source, actual hit-tested action times, complete-file decodes and nine real-frame contacts. Before shows a blank Library-body frame; sampled after frames retain content. This is transition correctness evidence, not physical GPU/presentation acceptance. Home scroll paint/delegate correction has [separate diagnostics](HOME-SCROLL-PERFORMANCE.md).
+
+### Compact navigation and keyboard continuity
+
+At compact expanded text, the current-destination summary opens the existing300ms/240ms CreativePanel; reduced motion is immediate. A single menu lease rejects double-open, Back restores trigger focus, and selecting a destination closes the panel before routing without remounting retained branches. Geometry is reserved from all destination labels so switching branches does not clamp scroll offsets. The shared panel keeps its editable subtree stable when keyboard insets cross the compact-height breakpoint; the editor behind it does not resize/reparent its drawing plane. Tests assert exact live-canvas state/rectangle, EditableTextState/focus and retained Library offsets. These are executed motion-correctness checks; native IME, continuous original footage and frame pacing are separate pending evidence.

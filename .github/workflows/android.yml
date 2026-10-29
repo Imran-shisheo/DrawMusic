@@ -134,6 +134,7 @@ jobs:
         run: |
           python3 -m py_compile scripts/run-android-ui.py scripts/runtime_transport_diagnostics.py scripts/test-runtime-transport-diagnostics.py scripts/inspect-runtime-artifact.py scripts/test-runtime-artifact-inspect.py
           python3 scripts/test-runtime-transport-diagnostics.py
+          python3 scripts/test-observe-emulator-process.py
           python3 scripts/test-runtime-artifact-inspect.py
       - name: Enable emulator acceleration
         if: needs.setup-files.outputs.native_required != 'false'
@@ -142,6 +143,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Exercise real Android audio and video APIs
+        id: runtime_emulator
         if: needs.setup-files.outputs.native_required != 'false'
         timeout-minutes: 40
         uses: reactivecircus/android-emulator-runner@v2
@@ -151,8 +153,13 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          pre-emulator-launch-script: python3 scripts/observe-emulator-process.py install --mode runtime
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
           script: bash scripts/check-android-runtime.sh
+      - name: Retain owned emulator lifecycle and scoped crash diagnostics
+        if: ${{ always() && steps.runtime_emulator.outcome != 'skipped' && needs.setup-files.outputs.native_required != 'false' }}
+        timeout-minutes: 1
+        run: python3 scripts/observe-emulator-process.py collect --mode runtime
       - name: Inspect encoded audio, video and cursor timing
         timeout-minutes: 10
         if: ${{ !cancelled() && needs.setup-files.outputs.native_required != 'false' }}

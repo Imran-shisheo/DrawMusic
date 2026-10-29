@@ -15,7 +15,7 @@ import urllib.request
 REPOSITORY = 'Imran-shisheo/DrawMusic'
 ACCEPTED_SOURCE = '6f80572a5432469ecbbb37059dc2a25bb2cc11e0'
 ACCEPTED_RUN = 40662060004
-REVIEWED_ANDROID_WORKFLOW_SHA256 = '89a83cb9e1d9f04a907075a6c38aa761e7bf70fa74d9ca9a62732260f655b278'
+REVIEWED_ANDROID_WORKFLOW_SHA256 = '71c8f509bf32d2b182726ef7781966abe4fd30c1f6f951080da6766ba52bdb8b'
 WORKFLOW = '.github/workflows/android.yml'
 # Auditable exact capture/inspection-only exclusions. There is no scripts/**,
 # test/** or workflow/** wildcard. Setup, functional tests and native validators

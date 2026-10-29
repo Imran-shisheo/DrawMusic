@@ -15,6 +15,7 @@ import 'package:scribblesong/features/settings/domain/preferences.dart';
 import 'package:scribblesong/app/providers.dart';
 import 'package:scribblesong/creative_document/document.dart';
 import 'package:scribblesong/features/editor/presentation/canvas.dart';
+import 'package:scribblesong/features/editor/presentation/studio_control.dart';
 import 'package:scribblesong/features/library/domain/project_repository.dart';
 import 'package:scribblesong/features/transport/domain/audio_engine.dart';
 
@@ -190,11 +191,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester
-          .widget<IconButton>(
+          .widget<StudioControl>(
             find
                 .ancestor(
                   of: find.byTooltip('Undo'),
-                  matching: find.byType(IconButton),
+                  matching: find.byType(StudioControl),
                 )
                 .first,
           )
@@ -313,7 +314,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('New drawing'));
+    await tester.tap(
+      find.byKey(const ValueKey('root-new-drawing')).hitTestable(),
+    );
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('drawing-canvas')), findsOneWidget);
     expect(

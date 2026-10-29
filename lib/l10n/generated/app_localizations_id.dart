@@ -1264,4 +1264,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get editorToolsShort => 'Alat';
+
+  @override
+  String get openingDrawing => 'Membuka gambar…';
+
+  @override
+  String get navigation => 'Navigasi';
 }

@@ -1276,4 +1276,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get editorToolsShort => 'Outils';
+
+  @override
+  String get openingDrawing => 'Ouverture du dessin…';
+
+  @override
+  String get navigation => 'Navigation';
 }

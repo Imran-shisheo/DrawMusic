@@ -34,7 +34,7 @@
     <resources>
         <image name="LaunchImage" width="84" height="84"/>
         <namedColor name="DoodimoLaunchBackground">
-            <color red="0.035294" green="0.043137" blue="0.094118" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.078431" green="0.094118" blue="0.098039" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
     </resources>
 </document>

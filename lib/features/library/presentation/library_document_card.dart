@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../design_system/immersive_surface.dart';
-
-/// Artwork remains an untransformed 80×100 document window. The surrounding
-/// gallery material owns depth; saved thumbnail pixels and aspect stay intact.
+/// An artwork-led catalog row on the persistent studio surface. The document
+/// window never transforms; only the surrounding neutral frame owns depth.
 class LibraryDocumentCard extends StatelessWidget {
   const LibraryDocumentCard({
     super.key,
@@ -11,9 +9,11 @@ class LibraryDocumentCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.trailing,
+    this.primaryAction,
     this.onTap,
   });
   final Widget leading, title, subtitle, trailing;
+  final Widget? primaryAction;
   final VoidCallback? onTap;
 
   @override
@@ -21,82 +21,98 @@ class LibraryDocumentCard extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final artwork = DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colors.secondary.withValues(alpha: .22),
-            colors.primary.withValues(alpha: .08),
-          ],
-        ),
-        border: Border.all(color: colors.secondary.withValues(alpha: .3)),
+        borderRadius: BorderRadius.circular(12),
+        color: colors.surfaceContainerHighest,
+        border: Border.all(color: colors.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: .16),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(6),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(7),
           child: leading,
         ),
       ),
     );
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: ImmersiveSurface(
-        padding: EdgeInsets.zero,
-        radius: 26,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(26),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final stacked =
-                    MediaQuery.textScalerOf(context).scale(14) > 21 &&
-                    constraints.maxWidth < 460;
-                final metadata = Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DefaultTextStyle(
-                      style: Theme.of(context).textTheme.titleMedium!
-                          .copyWith(fontWeight: FontWeight.w700),
-                      child: title,
-                    ),
-                    const SizedBox(height: 10),
-                    DefaultTextStyle(
-                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                        color: colors.onSurfaceVariant,
-                        height: 1.5,
-                      ),
-                      child: subtitle,
-                    ),
-                  ],
-                );
-                return stacked
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Row(
+    final actions = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [?primaryAction, trailing],
+    );
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 160),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 4),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: colors.outlineVariant)),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final stacked =
+                  MediaQuery.textScalerOf(context).scale(14) > 21 &&
+                  constraints.maxWidth < 460;
+              final metadata = Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DefaultTextStyle(
+                    style: Theme.of(context).textTheme.titleMedium!
+                        .copyWith(fontWeight: FontWeight.w700),
+                    child: title,
+                  ),
+                  const SizedBox(height: 8),
+                  DefaultTextStyle(
+                    style: Theme.of(context).textTheme.bodySmall!
+                        .copyWith(color: colors.onSurfaceVariant, height: 1.45),
+                    child: subtitle,
+                  ),
+                ],
+              );
+              return stacked
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        metadata,
+                        const SizedBox(height: 20),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            artwork,
+                            const SizedBox(width: 20),
+                            Expanded(child: actions),
+                          ],
+                        ),
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        artwork,
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [artwork, const Spacer(), trailing],
+                            children: [
+                              metadata,
+                              const SizedBox(height: 16),
+                              actions,
+                            ],
                           ),
-                          const SizedBox(height: 18),
-                          metadata,
-                        ],
-                      )
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          artwork,
-                          const SizedBox(width: 18),
-                          Expanded(child: metadata),
-                          const SizedBox(width: 4),
-                          trailing,
-                        ],
-                      );
-              },
-            ),
+                        ),
+                      ],
+                    );
+            },
           ),
         ),
       ),

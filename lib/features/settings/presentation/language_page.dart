@@ -8,7 +8,6 @@ import '../../../l10n/operation_messages.dart';
 import '../../../l10n/strings.dart';
 import '../application/settings_controller.dart';
 import '../../../design_system/motion.dart';
-import '../../../design_system/brand_colors.dart';
 import '../../../design_system/doodimo_icon.dart';
 import '../../../design_system/layout.dart';
 
@@ -97,7 +96,7 @@ class _LanguagePageState extends ConsumerState<LanguagePage> {
                       )
                     else
                       ImmersiveSurface(
-                        accent: DoodimoColors.violet,
+                        accent: colors.primary,
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -129,17 +128,31 @@ class _LanguagePageState extends ConsumerState<LanguagePage> {
                                 ),
                                 curve: CreativeMotion.curve,
                                 decoration: BoxDecoration(
-                                  color: selected == language.key
-                                      ? DoodimoColors.cyan
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border(
-                                    bottom: BorderSide(
-                                      color: selected == language.key
-                                          ? Colors.transparent
-                                          : colors.outlineVariant,
-                                    ),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: selected == language.key
+                                        ? [colors.primary, colors.primary]
+                                        : [
+                                            colors.surfaceContainerHigh,
+                                            colors.surfaceContainerLow,
+                                          ],
                                   ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: selected == language.key
+                                        ? colors.primary
+                                        : colors.outlineVariant,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: colors.shadow.withValues(
+                                        alpha: .12,
+                                      ),
+                                      offset: const Offset(0, 3),
+                                      blurRadius: 5,
+                                    ),
+                                  ],
                                 ),
                                 child: Material(
                                   color: Colors.transparent,
@@ -150,6 +163,20 @@ class _LanguagePageState extends ConsumerState<LanguagePage> {
                                   child: ListTile(
                                     key: ValueKey('language-${language.key}'),
                                     minVerticalPadding: 18,
+                                    leading: ExcludeSemantics(
+                                      child: Text(
+                                        language.key.toUpperCase(),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelMedium
+                                            ?.copyWith(
+                                              color: selected == language.key
+                                                  ? colors.onPrimary
+                                                  : colors.onSurfaceVariant,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ),
                                     title: Text(
                                       language.value,
                                       style: Theme.of(context)
@@ -157,17 +184,17 @@ class _LanguagePageState extends ConsumerState<LanguagePage> {
                                           .titleMedium
                                           ?.copyWith(
                                             color: selected == language.key
-                                                ? DoodimoColors.ink
+                                                ? colors.onPrimary
                                                 : colors.onSurface,
                                           ),
                                     ),
                                     selected: selected == language.key,
                                     textColor: colors.onSurface,
-                                    selectedColor: DoodimoColors.ink,
+                                    selectedColor: colors.onPrimary,
                                     trailing: selected == language.key
                                         ? DoodimoIcon(
                                             DoodimoGlyph.check,
-                                            color: DoodimoColors.ink,
+                                            color: colors.onPrimary,
                                           )
                                         : const SizedBox.square(dimension: 24),
                                     onTap: busy

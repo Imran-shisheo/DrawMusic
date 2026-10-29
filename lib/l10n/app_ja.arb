@@ -370,5 +370,7 @@
   "welcomeToBrand": "{name}へようこそ",
   "backgroundPanelTitle": "紙と写真",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "ツール"
+  "editorToolsShort": "ツール",
+  "openingDrawing": "描画を開いています…",
+  "navigation": "ナビゲーション"
 }

@@ -1212,4 +1212,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get editorToolsShort => '도구';
+
+  @override
+  String get openingDrawing => '그림 여는 중…';
+
+  @override
+  String get navigation => '탐색';
 }

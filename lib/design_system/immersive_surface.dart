@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'brand_colors.dart';
 import 'motion.dart';
 
-/// Bounded layered ink/glass finish, without a full-screen backdrop blur.
+/// Bounded tactile graphite plate. Lighting is static; no backdrop blur.
 class ImmersiveSurface extends StatelessWidget {
   const ImmersiveSurface({
     super.key,
@@ -21,37 +21,54 @@ class ImmersiveSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final edge = accent ?? DoodimoColors.violet;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: dark
-              ? [const Color(0xff202746), const Color(0xff11172c)]
-              : [const Color(0xfffdfdff), const Color(0xffe9edff)],
-        ),
-        border: Border.all(color: edge.withValues(alpha: dark ? .35 : .25)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: dark ? .28 : .08),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+    final colors = Theme.of(context).colorScheme;
+    final edge = accent ?? colors.outline;
+    return CustomPaint(
+      foregroundPainter: _GraphiteEdgePainter(radius, dark),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(radius),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: dark
+                ? [const Color(0xff343837), const Color(0xff111414)]
+                : [const Color(0xfffffef8), const Color(0xffe2e5e1)],
           ),
-          if (glow)
+          border: Border.all(color: edge.withValues(alpha: dark ? .55 : .48)),
+          boxShadow: [
             BoxShadow(
-              color: edge.withValues(alpha: dark ? .16 : .08),
-              blurRadius: 24,
-              spreadRadius: 1,
+              color: Colors.black.withValues(alpha: dark ? .28 : .08),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
             ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: Material(
-          type: MaterialType.transparency,
-          child: Padding(padding: padding, child: child),
+            if (glow)
+              BoxShadow(
+                color: edge.withValues(alpha: dark ? .09 : .05),
+                blurRadius: 14,
+                spreadRadius: 1,
+              ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(radius),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: const ExactAssetImage(
+                  'assets/branding/graphite-grain.png',
+                  scale: 2,
+                ),
+                repeat: ImageRepeat.repeat,
+                opacity: dark ? .8 : .45,
+                filterQuality: FilterQuality.none,
+              ),
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: Padding(padding: padding, child: child),
+            ),
+          ),
         ),
       ),
     );
@@ -70,12 +87,12 @@ class SceneBackdrop extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         gradient: luminous
-            ? RadialGradient(
-                center: const Alignment(.7, -.9),
-                radius: 1.1,
+            ? LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
                 colors: dark
-                    ? [const Color(0xff21204a), DoodimoColors.ink]
-                    : [const Color(0xffdfe3ff), const Color(0xfff4f7ff)],
+                    ? [const Color(0xff303435), DoodimoColors.ink]
+                    : [const Color(0xfff7f7f0), const Color(0xffe4e7e3)],
                 stops: const [0, 1],
               )
             : null,
@@ -124,22 +141,22 @@ class _PrismActionState extends State<PrismAction> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: enabled
-                    ? const [Color(0xffbda4ff), Color(0xff86e8f7)]
-                    : const [Color(0xff48506c), Color(0xff38435c)],
+                    ? const [Color(0xffffab6b), Color(0xffec7d37)]
+                    : const [Color(0xff636b65), Color(0xff4a534e)],
               ),
               border: Border.all(
                 color: _focused
                     ? Colors.white
-                    : const Color(0xffddd4ff).withValues(alpha: .7),
+                    : const Color(0xffffd3ad).withValues(alpha: .9),
                 width: _focused ? 2 : 1,
               ),
               boxShadow: enabled
                   ? [
                       BoxShadow(
-                        color: DoodimoColors.violet.withValues(
-                          alpha: _pressed ? .1 : .26,
+                        color: DoodimoColors.orange.withValues(
+                          alpha: _pressed ? .07 : .12,
                         ),
-                        blurRadius: _pressed ? 8 : 20,
+                        blurRadius: _pressed ? 4 : 10,
                         offset: const Offset(0, 5),
                       ),
                     ]
@@ -203,4 +220,56 @@ class _PrismActionState extends State<PrismAction> {
       ),
     );
   }
+}
+
+// The original shared 128px micrograin is bundled offline and decoded once.
+// It repeats through an image paint; no filter layer, ticker or generated frame.
+/// A machined rim: lit outside bevel, dark recessed seam, inner reflected edge.
+class _GraphiteEdgePainter extends CustomPainter {
+  const _GraphiteEdgePainter(this.radius, this.dark);
+  final double radius;
+  final bool dark;
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.shortestSide < 6) return;
+    final rect = (Offset.zero & size).deflate(1.8);
+    final outer = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.6
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withValues(alpha: dark ? .57 : .98),
+          Colors.white.withValues(alpha: dark ? .06 : .30),
+          Colors.black.withValues(alpha: dark ? .86 : .30),
+        ],
+        stops: const [0, .44, 1],
+      ).createShader(rect);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(rect, Radius.circular(radius)),
+      outer,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        rect.deflate(3),
+        Radius.circular((radius - 3).clamp(0, double.infinity)),
+      ),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.3
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.black.withValues(alpha: dark ? .72 : .16),
+            Colors.white.withValues(alpha: dark ? .16 : .8),
+          ],
+        ).createShader(rect),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_GraphiteEdgePainter old) =>
+      old.radius != radius || old.dark != dark;
 }

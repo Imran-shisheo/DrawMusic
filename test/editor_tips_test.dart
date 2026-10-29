@@ -112,7 +112,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('New drawing'));
+      await tester.tap(
+        find.byKey(const ValueKey('root-new-drawing')).hitTestable(),
+      );
       await tester.pumpAndSettle();
       expect(find.text('Skip tips').hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);

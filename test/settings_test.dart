@@ -71,7 +71,7 @@ void main() {
       final store = MemoryPreferencesStore();
       PackageInfo.setMockInitialValues(
         appName: 'ScribbleSong',
-        packageName: 'com.imranshisheo.scribblesong',
+        packageName: 'com.devwithdelta.doodimo',
         version: '1.3.0',
         buildNumber: '6',
         buildSignature: 'test',

@@ -1231,4 +1231,10 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get editorToolsShort => 'เครื่องมือ';
+
+  @override
+  String get openingDrawing => 'กำลังเปิดภาพวาด…';
+
+  @override
+  String get navigation => 'การนำทาง';
 }

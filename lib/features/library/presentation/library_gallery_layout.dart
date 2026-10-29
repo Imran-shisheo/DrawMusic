@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../design_system/immersive_surface.dart';
+import '../../../design_system/creative_components.dart';
 import 'library_tabs.dart';
 
 class LibraryChromeScope extends InheritedWidget {
@@ -49,6 +50,10 @@ class LibraryGalleryLayout extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final short = constraints.maxHeight < 260;
+            final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+            final showBrand =
+                !(largeText && constraints.maxWidth < 600) &&
+                constraints.maxHeight >= (largeText ? 480 : 360);
             final tabs = Padding(
               padding: EdgeInsets.fromLTRB(20, short ? 8 : 16, 20, 0),
               child: LibraryTabs(exports: exports),
@@ -78,6 +83,11 @@ class LibraryGalleryLayout extends StatelessWidget {
                 ? content
                 : Column(
                     children: [
+                      if (showBrand)
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          child: StudioHeader(),
+                        ),
                       tabs,
                       Expanded(child: content),
                     ],

@@ -162,17 +162,23 @@ void main() {
       );
       final original = _current(tester);
       final music = find.byKey(const ValueKey('music-settings'));
+      // The full captioned transport reduces the tools viewport on short
+      // landscapes; the music control stays accessible in that scroll panel.
+      await tester.ensureVisible(music);
+      await tester.pumpAndSettle();
       final value = find.descendant(of: music, matching: find.byType(Text));
       expect(value, findsOneWidget);
       expect(tester.getSize(value).width, greaterThanOrEqualTo(130));
       expect(
-        tester.getRect(music).bottom,
+        tester.getRect(value).bottom,
         lessThanOrEqualTo(
-          tester.getRect(find.byKey(const ValueKey('drawing-canvas'))).bottom,
+          tester
+              .getRect(find.byKey(const ValueKey('editor-tools-scroll')))
+              .bottom,
         ),
       );
       await openEditorMusic(tester);
-      final faster = find.byTooltip('Faster');
+      final faster = find.byTooltip('Faster').hitTestable();
       await tester.ensureVisible(faster);
       await tester.tap(faster);
       await tester.pumpAndSettle();

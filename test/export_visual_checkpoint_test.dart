@@ -15,6 +15,10 @@ import 'package:scribblesong/features/export/presentation/export_sheet.dart';
 import 'package:scribblesong/l10n/generated/app_localizations.dart';
 
 const _enabled = bool.fromEnvironment('EXPORT_DESIGN_CAPTURE');
+const _output = String.fromEnvironment(
+  'EXPORT_DESIGN_CAPTURE_DIR',
+  defaultValue: 'work/export-immersive-03',
+);
 void main() {
   testWidgets(
     'render immersive output stage, focused settings and real published file',
@@ -57,7 +61,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      final directory = Directory('work/export-immersive-03');
+      final directory = Directory(_output);
       final root = (await tester.runAsync(
         () => Directory.systemTemp.createTemp('export-design-ready-'),
       ))!;

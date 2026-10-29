@@ -1,7 +1,7 @@
 name: UI visual capture (owned profile emulator)
 on:
   push:
-    branches: [codex/ui-redesign-2026-10-27]
+    branches: [codex/ui-redesign-2026-10-27, codex/graphite-redesign-2026-10-28]
     paths:
       - cloud/ui-capture-request.json
       - integration_test/ui_visual_capture_test.dart
@@ -51,6 +51,7 @@ jobs:
         run: |
           bash scripts/prepare-runtime-inspectors.sh --video-only
           python3 scripts/test-ui-capture-host.py
+          python3 scripts/test-observe-emulator-process.py
           python3 scripts/test-ui-capture-mp4.py
       - name: Prepare pinned Flutter and Android SDK
         run: bash scripts/setup-cloud-android.sh
@@ -71,6 +72,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Record actual animated profile app and measure engine frames
+        id: profile_emulator
         timeout-minutes: 24
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -79,8 +81,13 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: false
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          pre-emulator-launch-script: python3 scripts/observe-emulator-process.py install --mode ui
+          emulator-options: -no-window -gpu swiftshader -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
           script: bash scripts/check-android-visuals.sh
+      - name: Retain owned emulator lifecycle and scoped crash diagnostics
+        if: ${{ always() && steps.profile_emulator.outcome != 'skipped' }}
+        timeout-minutes: 1
+        run: python3 scripts/observe-emulator-process.py collect --mode ui
       - name: Upload real UI evidence immediately
         if: always()
         uses: actions/upload-artifact@v7

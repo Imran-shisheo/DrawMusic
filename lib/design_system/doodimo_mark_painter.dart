@@ -7,13 +7,13 @@ import 'package:flutter/rendering.dart';
 // Authoritative authored SVG geometry. scripts/check-brand-icons.py verifies
 // parity with assets/branding/mark.svg and the native generated resources.
 const doodimoOrbitPathData =
-    'M31 18 C57 10 83 25 83 49 C83 73 61 88 36 81 L25 71 L25 31 C25 25 26 20 31 18 Z M39 31 L39 59 L41 68 C56 73 68 63 68 49 C68 34 52 24 39 31 Z';
+    'M7 66 C18 55 30 27 39 25 C49 22 49 60 57 64 C64 69 76 45 91 40 L93 46 C79 51 67 80 55 71 C43 64 45 31 38 33 C32 34 19 62 10 71 Z';
 const doodimoFoldPathData =
-    'M25 71 L39 59 L58 39 C61 36 66 37 68 40 L51 60 C45 67 38 73 36 81 Z';
+    'M8 66 C20 53 31 27 39 25 C48 23 48 53 54 61 L52 65 C44 59 45 32 39 33 C31 31 20 62 10 71 Z';
 const doodimoEdgePathData =
-    'M38 24 C61 17 77 32 78 48 C78 69 59 82 39 76 L41 73 C60 77 74 64 74 48 C74 33 56 23 39 28 Z';
+    'M10 64 C22 49 31 29 39 28 C43 28 45 39 46 47 L44 47 C43 39 42 31 39 31 C33 31 22 52 11 66 Z';
 
-/// The original filled D/sound ribbon shared by launcher and in-app identity.
+/// The original filled drawing-to-sound gesture shared by launcher and in-app identity.
 ///
 /// Motion only shifts the small edge reflection. Its silhouette, actual audio
 /// clock and layout remain independent. The owning widget stops its animation
@@ -31,14 +31,14 @@ class DoodimoMarkPainter extends CustomPainter {
     ..shader = ui.Gradient.linear(
       const Offset(25, 25),
       const Offset(79, 76),
-      const [Color(0xffb7a0ff), Color(0xff8b5cf6), Color(0xffef81c7)],
+      const [Color(0xffffb577), Color(0xffff9855), Color(0xffe27432)],
       const [0, .45, 1],
     );
   static final Paint _foldPaint = Paint()
     ..shader = ui.Gradient.linear(
       const Offset(29, 73),
       const Offset(64, 38),
-      const [Color(0xff6672f5), Color(0xff55dff5), Color(0xffc6f8ff)],
+      const [Color(0xffe97c3b), Color(0xffffaa68), Color(0xffffd4ae)],
       const [0, .48, 1],
     );
 
@@ -51,7 +51,7 @@ class DoodimoMarkPainter extends CustomPainter {
       ..shader = ui.Gradient.linear(
         Offset(36 + reflection, 22 + reflection),
         Offset(70 + reflection, 71 + reflection),
-        const [Color(0x6bf2ebff), Color(0x00f2ebff)],
+        const [Color(0x6bfff1db), Color(0x00fff1db)],
       );
     canvas.save();
     canvas.translate((size.width - extent) / 2, (size.height - extent) / 2);

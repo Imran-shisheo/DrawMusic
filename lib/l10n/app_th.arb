@@ -370,5 +370,7 @@
   "welcomeToBrand": "ยินดีต้อนรับสู่ {name}",
   "backgroundPanelTitle": "กระดาษและภาพถ่าย",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "เครื่องมือ"
+  "editorToolsShort": "เครื่องมือ",
+  "openingDrawing": "กำลังเปิดภาพวาด…",
+  "navigation": "การนำทาง"
 }

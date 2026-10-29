@@ -370,5 +370,7 @@
   "welcomeToBrand": "{name}에 오신 것을 환영합니다",
   "backgroundPanelTitle": "종이와 사진",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "도구"
+  "editorToolsShort": "도구",
+  "openingDrawing": "그림 여는 중…",
+  "navigation": "탐색"
 }

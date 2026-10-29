@@ -2,9 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/strings.dart';
 import 'brand_colors.dart';
+import 'creative_panel.dart';
 import 'doodimo_icon.dart';
 import 'motion.dart';
+import 'immersive_surface.dart';
 
 /// Structural accessibility hint, never a replacement for measuring content.
 /// System scaling can be nonlinear; its preference is compared only, while
@@ -28,6 +31,7 @@ class CreativeDock extends StatelessWidget {
     required this.createLabel,
     this.rail = false,
     this.compactCreateLabel,
+    this.allowSummary = true,
   });
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
@@ -36,6 +40,7 @@ class CreativeDock extends StatelessWidget {
   final String createLabel;
   final bool rail;
   final String? compactCreateLabel;
+  final bool allowSummary;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -60,8 +65,8 @@ class CreativeDock extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: dark
-                  ? const [Color(0xff1b2440), Color(0xff0e1429)]
-                  : const [Color(0xfffafbff), Color(0xffe5edff)],
+                  ? const [Color(0xff303334), Color(0xff171b1c)]
+                  : const [Color(0xfffafaf2), Color(0xffdfe5d9)],
             ),
             border: Border.all(color: colors.primary.withValues(alpha: .4)),
           ),
@@ -131,23 +136,27 @@ class CreativeDock extends StatelessWidget {
           : fitsTwo && !(expandedText && contentWidth < 320)
           ? 2
           : 1;
+      if (columns == 1 && allowSummary) {
+        return _SummaryDock(dock: this, style: style);
+      }
       final fullRows = columns == 1;
       final adaptive = columns != 4;
       final slot = contentWidth / columns;
       var keyHeight = fullRows ? 54.0 : 78.0;
       for (var role = 0; role < allLabels.length; role++) {
         final reserved = fullRows
-            ? 24.0 +
-                  (role == 3 ? 42 : 32) +
-                  14 +
-                  (role == selectedIndex ? 18 : 0)
-            : 8.0;
+            ? 24.0 + 42 + 14 + (role == selectedIndex ? 18 : 0)
+            : (role == 3 ? 20.0 : 8.0);
         final text = TextPainter(
           text: TextSpan(text: allLabels[role], style: style),
           textDirection: Directionality.of(context),
           textScaler: MediaQuery.textScalerOf(context),
         )..layout(maxWidth: math.max(1, slot - reserved));
-        keyHeight = math.max(keyHeight, text.height + (fullRows ? 12 : 60));
+        keyHeight = math.max(
+          keyHeight,
+          text.height +
+              (fullRows ? (role == 3 ? 18 : 12) : (role == 3 ? 64 : 58)),
+        );
         text.dispose();
       }
       Widget tile(int role) => _DockKey(
@@ -209,8 +218,8 @@ class CreativeDock extends StatelessWidget {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: dark
-                                ? const [Color(0x455f4ba7), Color(0x2226b7d3)]
-                                : const [Color(0xffe1d8ff), Color(0xffd8f5ff)],
+                                ? const [Color(0xff383e3e), Color(0xff171b1c)]
+                                : const [Color(0xffd6d9d5), Color(0xffeeeee7)],
                           ),
                           border: Border.all(
                             color: colors.primary.withValues(alpha: .3),
@@ -228,46 +237,136 @@ class CreativeDock extends StatelessWidget {
                 ],
               ),
             );
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colors.primary.withValues(alpha: .65),
-              colors.secondary.withValues(alpha: .35),
-              colors.outlineVariant.withValues(alpha: .6),
-            ],
+      return ImmersiveSurface(
+        radius: 28,
+        padding: const EdgeInsets.all(5),
+        child: keys,
+      );
+    },
+  );
+}
+
+/// Only presentation is collapsed; the router continues owning all branches.
+class _SummaryDock extends StatefulWidget {
+  const _SummaryDock({required this.dock, required this.style});
+  final CreativeDock dock;
+  final TextStyle style;
+
+  @override
+  State<_SummaryDock> createState() => _SummaryDockState();
+}
+
+class _SummaryDockState extends State<_SummaryDock> {
+  bool _opening = false;
+
+  Future<void> _open() async {
+    if (_opening) return;
+    _opening = true;
+    try {
+      await showCreativePanel<void>(
+        context: context,
+        builder: (panelContext) => CreativePanel(
+          key: const ValueKey('nav-menu'),
+          title: context.strings.navigation,
+          child: CreativeDock(
+            allowSummary: false,
+            selectedIndex: widget.dock.selectedIndex,
+            labels: widget.dock.labels,
+            createLabel: widget.dock.createLabel,
+            onDestinationSelected: (index) {
+              Navigator.of(panelContext).pop();
+              widget.dock.onDestinationSelected(index);
+            },
+            onCreate: () {
+              Navigator.of(panelContext).pop();
+              widget.dock.onCreate();
+            },
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: dark ? .35 : .12),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: DoodimoColors.violet.withValues(alpha: dark ? .12 : .06),
-              blurRadius: 22,
-            ),
-          ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(1),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(27),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: dark
-                    ? const [Color(0xff1b2440), Color(0xff0e1429)]
-                    : const [Color(0xfffafbff), Color(0xffe5edff)],
+      );
+    } finally {
+      _opening = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, bounds) {
+      final colors = Theme.of(context).colorScheme;
+      final label = widget.dock.labels[widget.dock.selectedIndex];
+      var widest = 0.0;
+      for (final destination in widget.dock.labels) {
+        final measure = TextPainter(
+          text: TextSpan(text: destination, style: widget.style),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        widest = math.max(widest, measure.width);
+        measure.dispose();
+      }
+      // Reserve the same geometry for every destination so a branch switch
+      // cannot clamp retained scroll offsets by changing the viewport height.
+      // A second48dp row is preferable to splitting a word or shrinking input.
+      final stacked = widest + 24 + 24 + 56 > bounds.maxWidth - 12;
+      final summary = Semantics(
+        key: const ValueKey('nav-summary'),
+        selected: true,
+        child: Tooltip(
+          message: context.strings.navigation,
+          child: TextButton(
+            style: TextButton.styleFrom(
+              minimumSize: const Size(48, 64),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              foregroundColor: colors.onSurface,
+            ),
+            onPressed: _open,
+            child: Row(
+              children: [
+                Expanded(child: Text(label, style: widget.style)),
+                const SizedBox(width: 4),
+                const DoodimoIcon(DoodimoGlyph.chevronDown, size: 24),
+              ],
+            ),
+          ),
+        ),
+      );
+      final create = Tooltip(
+        message: widget.dock.createLabel,
+        child: Semantics(
+          label: widget.dock.createLabel,
+          button: true,
+          onTap: widget.dock.onCreate,
+          child: ExcludeSemantics(
+            child: IconButton.filled(
+              key: const ValueKey('root-new-drawing'),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              onPressed: widget.dock.onCreate,
+              icon: const DoodimoIcon(DoodimoGlyph.add),
+            ),
+          ),
+        ),
+      );
+      return ImmersiveSurface(
+        radius: 28,
+        padding: const EdgeInsets.all(5),
+        child: stacked
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  summary,
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: create,
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(child: summary),
+                  create,
+                ],
               ),
-            ),
-            child: Padding(padding: const EdgeInsets.all(5), child: keys),
-          ),
-        ),
       );
     },
   );
@@ -303,50 +402,51 @@ class _DockKeyState extends State<_DockKey> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final iconSize = widget.rail
+        ? 24.0
+        : widget.horizontal
+        ? 42.0
+        : 42.0;
     final icon = Container(
-      width: widget.rail
-          ? 24
-          : widget.create
-          ? 42
-          : 32,
-      height: widget.rail
-          ? 24
-          : widget.create
-          ? 42
-          : 32,
+      width: iconSize,
+      height: iconSize,
       decoration: widget.create
-          ? BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              gradient: const LinearGradient(
+          ? null
+          : BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xffbda4ff), Color(0xff77e7ff)],
+                colors: [
+                  colors.surfaceContainerHigh,
+                  colors.surfaceContainerLow,
+                ],
               ),
               border: Border.all(
-                color: const Color(0xffe7e2ff).withValues(alpha: .7),
+                color: widget.selected ? colors.primary : colors.outline,
+                width: widget.selected ? 1.8 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: DoodimoColors.violet.withValues(alpha: .3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withValues(alpha: dark ? .3 : .09),
+                  blurRadius: 4,
+                  offset: const Offset(0, 3),
                 ),
               ],
-            )
-          : null,
+            ),
       child: Center(
         child: DoodimoIcon(
           widget.glyph,
           size: widget.rail
-              ? 21
+              ? 20
               : widget.create
-              ? 28
-              : 27,
+              ? 30
+              : 24,
           color: widget.create
               ? DoodimoColors.ink
               : widget.selected
-              ? (dark ? DoodimoColors.cyan : colors.primary)
-              : colors.onSurfaceVariant,
+              ? colors.primary
+              : colors.onSurface,
         ),
       ),
     );
@@ -354,7 +454,11 @@ class _DockKeyState extends State<_DockKey> {
       widget.label,
       textAlign: widget.horizontal ? TextAlign.start : TextAlign.center,
       style: widget.style.copyWith(
-        color: widget.selected ? colors.onSurface : colors.onSurfaceVariant,
+        color: widget.create
+            ? DoodimoColors.ink
+            : widget.selected
+            ? colors.onSurface
+            : colors.onSurfaceVariant,
       ),
     );
     Widget content = widget.horizontal
@@ -392,10 +496,28 @@ class _DockKeyState extends State<_DockKey> {
               ),
             ],
           );
-    if (widget.raised) {
-      content = Transform.translate(
-        offset: const Offset(0, -5),
-        child: content,
+    if (widget.create) {
+      content = DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(23),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xffffac6a), Color(0xffed7e37)],
+          ),
+          border: Border.all(color: const Color(0xffffc89c)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: .3),
+              blurRadius: 7,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          child: content,
+        ),
       );
     }
     return Semantics(

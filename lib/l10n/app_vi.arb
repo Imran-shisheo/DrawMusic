@@ -370,5 +370,7 @@
   "welcomeToBrand": "Chào mừng đến {name}",
   "backgroundPanelTitle": "Giấy và ảnh",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "Công cụ"
+  "editorToolsShort": "Công cụ",
+  "openingDrawing": "Đang mở bản vẽ…",
+  "navigation": "Điều hướng"
 }

@@ -370,5 +370,7 @@
   "welcomeToBrand": "{name} में स्वागत है",
   "backgroundPanelTitle": "कागज़ और फ़ोटो",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "उपकरण"
+  "editorToolsShort": "उपकरण",
+  "openingDrawing": "ड्रॉइंग खोली जा रही है…",
+  "navigation": "नेविगेशन"
 }

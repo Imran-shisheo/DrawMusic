@@ -1,5 +1,7 @@
 # First Android cloud development task
 
+Identity amendment,29October2026: the project is already bootstrapped. Current Android/iOS app ID is`com.devwithdelta.doodimo`; the original bootstrap identifier below is historical. Preserve the implemented project and existing user files rather than regenerating it.
+
 Develop the original Flutter drawing-to-music application described in PRD.md. The owner has authorized Android development in Codex Cloud. Read AGENTS.md and docs/ROADMAP.md first. The research-only phase is finished. iOS builds will be tested by the owner on a local Mac.
 
 1. Inspect the repository and prepared environment. Run the pinned setup script if needed; source cloud/env.sh. Resolve toolchain/network problems. Ask the owner if Android SDK terms need explicit acceptance. Do not treat a setup-only CI pass as an app build.

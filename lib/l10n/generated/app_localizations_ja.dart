@@ -1202,4 +1202,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get editorToolsShort => 'ツール';
+
+  @override
+  String get openingDrawing => '描画を開いています…';
+
+  @override
+  String get navigation => 'ナビゲーション';
 }
