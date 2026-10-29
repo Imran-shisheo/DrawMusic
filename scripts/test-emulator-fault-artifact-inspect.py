@@ -35,10 +35,15 @@ class FaultReaderTest(unittest.TestCase):
             (root / 'emulator-process').mkdir()
             (root / 'emulator-process/stdout-tail.log').write_text('SDK exit')
             (root / 'capture-report.json').write_text(json.dumps({'passed': False, 'events': []}))
+            (root / 'runtime-transport-failure.json').write_text(json.dumps({'stage': 'failure', 'evidenceOnly': True,
+                'qemuVerified': True, 'appPid': {'returncode': 0, 'stdout': '1234'},
+                'logcat': {'returncode': 0, 'stdout': 'Fatal signal 11 SECRET-APP-DATA'}}))
             normal = REQUEST | {'mode': 'ui-transport', 'artifactName': 'drawmusic-ui-visuals-' + 'f'*40}
             result = module.inspect(root, normal, lambda text: None)
             self.assertFalse(result['captureReport']['passed'])
             self.assertIn('normalSdkObserver', result)
+            self.assertNotIn('SECRET', json.dumps(result))
+            self.assertEqual(result['transportSnapshots'][0]['logcat']['signalTokenCounts']['Fatal signal 11'], 1)
             self.assertTrue(result['normalSdkObserver']['partialOrMissing'])
             self.assertNotIn('boundedSignalAndTailLines', json.dumps(result))
 

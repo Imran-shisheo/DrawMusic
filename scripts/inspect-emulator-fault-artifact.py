@@ -208,6 +208,42 @@ def inspect(root, request, emit=print):
                 'originalHostWholeDecodePassed': event.get('wholeVideoDecode', {}).get('passed') is True,
                 'acceptanceEligible': False, 'scope': 'Original video hash verified; decode status is the original host witness, not an independent re-decode.'})
         result['originalRecordings'] = recordings
+    transport = []
+    signal_tokens = ('Fatal signal 11', 'SIGSEGV', 'FATAL EXCEPTION', 'OutOfMemoryError', 'Unhandled Exception')
+    for stage in ('before', 'failure', 'final'):
+        path = capture_prefix / ('runtime-transport-' + stage + '.json')
+        if not (root / path).exists():
+            continue
+        data = reader.safe_bytes(root, path, 131072)
+        value = json.loads(data)
+        if value.get('stage') != stage or value.get('evidenceOnly') is not True:
+            raise ValueError('Fixed transport stage/evidence witness mismatch')
+        item = {'stage': stage, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(),
+                'qemuVerified': value.get('qemuVerified') is True, 'guestReadsSkipped': 'deviceReadsSkipped' in value}
+        for key in ('qemuIdentity', 'deviceState', 'bootCompleted', 'appPid', 'logcat'):
+            command = value.get(key)
+            if not isinstance(command, dict):
+                continue
+            selected = {'returncode': command.get('returncode') if type(command.get('returncode')) is int else None,
+                        'timedOut': command.get('error') == 'timeout after3s'}
+            stdout = command.get('stdout', '')
+            if not isinstance(stdout, str):
+                raise ValueError('Command stdout must be text')
+            if key == 'logcat':
+                selected['signalTokenCounts'] = {token: stdout.count(token) for token in signal_tokens}
+            elif key == 'appPid':
+                selected['pidPresent'] = bool(re.fullmatch(r'[0-9 ]+', stdout.strip()))
+            else:
+                selected['state'] = stdout.strip() if stdout.strip() in {'1', 'device', 'offline', 'unknown'} else '<other omitted>'
+            item[key] = selected
+        transport.append(item)
+    result['transportSnapshots'] = transport
+    logcat_path = capture_prefix / 'android-logcat.txt'
+    if (root / logcat_path).exists():
+        data = reader.safe_bytes(root, logcat_path, 2 * 1024 * 1024)
+        text = data.decode(errors='replace')
+        result['collectedLogcat'] = {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(),
+            'signalTokenCounts': {token: text.count(token) for token in signal_tokens}, 'rawConsolePrinted': False}
     if not found:
         raise ValueError('No fixed diagnostic evidence found')
     emit('OWNED_SDK_TRACE_INSPECTION ' + json.dumps(result, sort_keys=True))
