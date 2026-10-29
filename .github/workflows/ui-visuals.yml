@@ -1,7 +1,7 @@
 name: UI visual capture (owned profile emulator)
 on:
   push:
-    branches: [codex/ui-redesign-2026-10-27]
+    branches: [codex/ui-redesign-2026-10-27, codex/graphite-redesign-2026-10-28]
     paths:
       - cloud/ui-capture-request.json
       - integration_test/ui_visual_capture_test.dart
