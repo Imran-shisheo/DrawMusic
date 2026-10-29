@@ -417,7 +417,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(height: 12),
                 caption,
-                if (!large) ...[const SizedBox(height: 12), create],
               ],
             ),
           );

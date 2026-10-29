@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'brand_colors.dart';
 import 'doodimo_icon.dart';
 import 'motion.dart';
+import 'immersive_surface.dart';
 
 /// Structural accessibility hint, never a replacement for measuring content.
 /// System scaling can be nonlinear; its preference is compared only, while
@@ -210,8 +211,8 @@ class CreativeDock extends StatelessWidget {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: dark
-                                ? const [Color(0xff454b43), Color(0xff282f2a)]
-                                : const [Color(0xffd0d9c8), Color(0xffe7eadf)],
+                                ? const [Color(0xff383e3e), Color(0xff171b1c)]
+                                : const [Color(0xffd6d9d5), Color(0xffeeeee7)],
                           ),
                           border: Border.all(
                             color: colors.primary.withValues(alpha: .3),
@@ -229,46 +230,10 @@ class CreativeDock extends StatelessWidget {
                 ],
               ),
             );
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              colors.primary.withValues(alpha: .65),
-              colors.secondary.withValues(alpha: .35),
-              colors.outlineVariant.withValues(alpha: .6),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: dark ? .35 : .12),
-              blurRadius: 12,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: DoodimoColors.orange.withValues(alpha: dark ? .12 : .06),
-              blurRadius: 10,
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(1),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(27),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: dark
-                    ? const [Color(0xff303334), Color(0xff171b1c)]
-                    : const [Color(0xfffafaf2), Color(0xffdfe5d9)],
-              ),
-            ),
-            child: Padding(padding: const EdgeInsets.all(5), child: keys),
-          ),
-        ),
+      return ImmersiveSurface(
+        radius: 28,
+        padding: const EdgeInsets.all(5),
+        child: keys,
       );
     },
   );

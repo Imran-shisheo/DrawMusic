@@ -429,6 +429,12 @@ void main() {
             locale: 'fr',
           );
           await save('12-home-compact-fr-large');
+          // The adaptive Library selector shares the actual320dp/200% shell,
+          // including its retained dock, rather than a taller isolated fixture.
+          await tapVisible(find.byKey(const ValueKey('nav-library')));
+          await save('12b-drafts-compact-fr-large');
+          await tapVisible(find.text('Exports'));
+          await save('12c-exports-compact-fr-large');
           await mount(size: const Size(320, 640), scale: 2, locale: 'fr');
           await save('13-editor-compact-fr-large');
           await mount(root: true, size: const Size(1024, 768));

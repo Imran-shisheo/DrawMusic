@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/app/app.dart';
@@ -139,68 +143,100 @@ void main() {
     );
   }
 
-  testWidgets(
-    'RTL large-text selector keeps measured geometry and reverses its indicator continuously',
-    (tester) async {
-      tester.platformDispatcher.textScaleFactorTestValue = 2;
-      tester.platformDispatcher.accessibilityFeaturesTestValue =
-          const FakeAccessibilityFeatures();
-      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-      addTearDown(
-        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
-      );
-      var exports = false;
-      late StateSetter change;
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: buildTheme(),
-          locale: const Locale('fr'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Scaffold(
-              body: Align(
-                alignment: Alignment.topCenter,
-                child: SizedBox(
-                  width: 320,
-                  child: StatefulBuilder(
-                    builder: (context, update) {
-                      change = update;
-                      return LibraryTabs(exports: exports);
-                    },
+  for (final width in [320.0, 640.0]) {
+    testWidgets(
+      'RTL large-text selector keeps whole words and reverses continuously at width $width',
+      (tester) async {
+        await tester.runAsync(() async {
+          final loader = FontLoader('NunitoSans');
+          for (final file in Directory(
+            'assets/fonts/NunitoSans',
+          ).listSync().whereType<File>()) {
+            if (file.path.endsWith('.ttf')) {
+              loader.addFont(file.readAsBytes().then(ByteData.sublistView));
+            }
+          }
+          await loader.load();
+        });
+        tester.platformDispatcher.textScaleFactorTestValue = 2;
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures();
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        var exports = false;
+        late StateSetter change;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildTheme(),
+            locale: const Locale('fr'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(
+                body: Align(
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: width,
+                    child: StatefulBuilder(
+                      builder: (context, update) {
+                        change = update;
+                        return LibraryTabs(exports: exports);
+                      },
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      );
-      final bounds = tester.getRect(find.byType(LibraryTabs));
-      final indicator = find.descendant(
-        of: find.byType(AnimatedAlign),
-        matching: find.byType(Container),
-      );
-      final initial = tester.getTopLeft(indicator);
-      change(() => exports = true);
-      await tester.pump();
-      expect(tester.getRect(find.byType(LibraryTabs)), bounds);
-      await tester.pump(const Duration(milliseconds: 80));
-      final intermediate = tester.getTopLeft(indicator);
-      expect(intermediate.dx, lessThan(initial.dx));
-      change(() => exports = false);
-      await tester.pump();
-      expect(
-        (tester.getTopLeft(indicator) - intermediate).distance,
-        lessThan(.00001),
-      );
-      expect(tester.getRect(find.byType(LibraryTabs)), bounds);
-      await tester.pump(const Duration(milliseconds: 250));
-      expect(tester.getTopLeft(indicator), initial);
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
+        );
+        for (final label in ['Brouillons', 'Exports']) {
+          final text = find.text(label);
+          final paragraph = tester.renderObject<RenderParagraph>(text);
+          final boxes = paragraph.getBoxesForSelection(
+            TextSelection(baseOffset: 0, extentOffset: label.length),
+          );
+          expect(
+            boxes.map((box) => box.top).toSet(),
+            hasLength(1),
+            reason: 'The complete translated word must fit one line without text shrinking.',
+          );
+          expect(MediaQuery.textScalerOf(tester.element(text)).scale(14), 28);
+        }
+        final bounds = tester.getRect(find.byType(LibraryTabs));
+        final indicator = find.descendant(
+          of: find.byType(AnimatedAlign),
+          matching: find.byType(Container),
+        );
+        final initial = tester.getTopLeft(indicator);
+        change(() => exports = true);
+        await tester.pump();
+        expect(tester.getRect(find.byType(LibraryTabs)), bounds);
+        await tester.pump(const Duration(milliseconds: 80));
+        final intermediate = tester.getTopLeft(indicator);
+        if (width == 320) {
+          expect(intermediate.dy, greaterThan(initial.dy));
+          expect(intermediate.dx, initial.dx);
+        } else {
+          expect(intermediate.dx, lessThan(initial.dx));
+          expect(intermediate.dy, initial.dy);
+        }
+        change(() => exports = false);
+        await tester.pump();
+        expect(
+          (tester.getTopLeft(indicator) - intermediate).distance,
+          lessThan(.00001),
+        );
+        expect(tester.getRect(find.byType(LibraryTabs)), bounds);
+        await tester.pump(const Duration(milliseconds: 250));
+        expect(tester.getTopLeft(indicator), initial);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
 
   testWidgets(
     'Back during editor and panel entrance returns safely without duplicate ownership',

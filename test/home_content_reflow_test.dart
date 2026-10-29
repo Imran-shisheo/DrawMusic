@@ -192,7 +192,13 @@ void _geometry(WidgetTester tester) {
     expect(key.hitTestable(), findsOneWidget);
     _wholeWords(tester, key);
   }
-  _wholeWords(tester, find.byKey(const ValueKey('home-start')));
+  final create = find.byKey(const ValueKey('home-start'));
+  _wholeWords(
+    tester,
+    create.evaluate().isNotEmpty
+        ? create
+        : find.byKey(const ValueKey('root-new-drawing')),
+  );
 }
 
 Future<void> _save(WidgetTester tester, String name) async {
@@ -351,9 +357,19 @@ void main() {
             find.byKey(const ValueKey('home-artwork')),
           );
           expect(artwork.top - headline.bottom, greaterThanOrEqualTo(4));
+          expect(find.byKey(const ValueKey('home-start')), findsNothing);
           expect(
-            find.byKey(const ValueKey('home-start')).hitTestable(),
+            find.byKey(const ValueKey('root-new-drawing')).hitTestable(),
             findsOneWidget,
+          );
+          final section = tester.getRect(find.text(strings.tryAStartingPoint));
+          final viewport = tester.getRect(
+            find.byKey(const PageStorageKey('home-scroll')),
+          );
+          expect(
+            section.bottom,
+            lessThanOrEqualTo(viewport.bottom),
+            reason: 'The initial next-section heading must be fully visible rather than a clipped sliver above the dock.',
           );
           await _save(tester, '411-100-${dark ? 'dark' : 'light'}-en');
           if (_capture) {

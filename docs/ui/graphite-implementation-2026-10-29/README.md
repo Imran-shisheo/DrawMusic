@@ -10,7 +10,10 @@ re-renders that source. Capture harness: `test/ui_visual_capture_test.dart`,
 | Render | Purpose |
 |---|---|
 | [Home](01-home-immersive-dark-phone.png) | Actual project preview, caption, creation action and retained dock |
-| [Drafts](02-drafts-dark-phone.png) | Connected Drafts/Exports selector and real saved fixtures |
+| [Drafts](02-drafts-dark-phone.png) | Connected selector, title-first rows and real saved fixtures |
+| [Exports](03-exports-dark-phone.png) | Real featured artifact and complete file actions |
+| [Compact French Drafts](12b-drafts-compact-fr-large.png) | Actual320×640/200% retained shell and whole-word selector |
+| [Compact French Exports](12c-exports-compact-fr-large.png) | Same compact shell and real artifact fixture |
 | [Editor](06-editor-immersive-dark-phone.png) | Stable 4:5 document with joined transport and tools |
 | [Export](09-export-immersive-dark-phone.png) | Four formats, actual artwork preview and visible transparency setting |
 | [Light Home](10b-home-cool-light-phone.png) | Light stone material variant, same document colors |
@@ -19,12 +22,12 @@ re-renders that source. Capture harness: `test/ui_visual_capture_test.dart`,
 
 [Before implementation](../graphite-baseline-2026-10-28/README.md) and
 [approved original inputs](../../../design/approved/2026-10-28/) are separately
-labeled. `reference-diffs.json` records the intentional full-layout changes
-to eight reviewed references; strict comparison thresholds remain unchanged.
+labeled. `reference-diffs.json` records the initial intentional full-layout changes
+to eight reviewed references; `refinement-reference-diffs.json` separately records the later material/layout refinement against productd5c9329. Strict comparison thresholds remain unchanged.
 Their previous pixels remain available in Git history. This Linux update does
 not resolve the previously reported eight Mac-specific golden discrepancies.
 
-The full fixture capture covers 76 states. Animation is frozen deterministically;
+The full fixture capture covers78states, including actual320×640/200% French Drafts and Exports. Animation is frozen deterministically;
 safe-area/keyboard variants use declared simulated insets. These PNGs establish
 rendered layout, not native behavior, continuous motion, physical frame pacing,
 audibility, iOS compilation or user-device acceptance. Original real-time owned

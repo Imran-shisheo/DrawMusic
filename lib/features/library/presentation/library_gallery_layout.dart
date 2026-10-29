@@ -51,7 +51,9 @@ class LibraryGalleryLayout extends StatelessWidget {
           builder: (context, constraints) {
             final short = constraints.maxHeight < 260;
             final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
-            final showBrand = constraints.maxHeight >= (largeText ? 480 : 360);
+            final showBrand =
+                !(largeText && constraints.maxWidth < 600) &&
+                constraints.maxHeight >= (largeText ? 480 : 360);
             final tabs = Padding(
               padding: EdgeInsets.fromLTRB(20, short ? 8 : 16, 20, 0),
               child: LibraryTabs(exports: exports),

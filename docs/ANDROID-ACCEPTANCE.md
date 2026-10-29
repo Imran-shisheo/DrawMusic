@@ -1,6 +1,10 @@
 # Android device acceptance — current development checkpoints
 
-## Latest Library/Home correction
+## Refined graphite candidate — 29 October
+
+Local formatter/analyzer/414tests/three skips,78real-font states/eight strict references, APK/v2, JVM/lint and recovery pass; [current implementation/evidence](GRAPHITE-DELIVERY-2026-10-29.md). Fresh current-source native/media and motion/performance acceptance is pending. Both pre-refinement native runs passed20native cases/soak before emulator loss during Flutter UI startup; neither is a complete acceptance pass. The last old APK links below do not verify the latest material/layout refinement. No cloud operation targets the owner's phone. Actual physical checks remain independent.
+
+## Historical Library/Home correction — before graphite
 
 Library product `c965431` / head `15eb9a8` passed fresh full hosted Android/native/media gate40655638868 and portable Swift tests. [Library APK12801693961](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40655638868/artifacts/12801693961) predates Home correction `9f152e6`. Home head `6f80572` passes the full local gate; fresh hosted run40662060004 PASSED, including20native cases, full creation/media/recovery and15portable Swift tests. [Accepted Home APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40662060004/artifacts/12803953970) / [runtime reports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40662060004/artifacts/12805982855). Mergeeca789f and head6f80572 share tree0927ed77433354918dad9c0b096f59c3386f0678. Do not apply an older pass to this new source.
 

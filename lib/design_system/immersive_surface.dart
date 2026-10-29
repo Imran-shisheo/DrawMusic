@@ -32,7 +32,7 @@ class ImmersiveSurface extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: dark
-                ? [const Color(0xff303334), const Color(0xff171a1b)]
+                ? [const Color(0xff343837), const Color(0xff111414)]
                 : [const Color(0xfffffef8), const Color(0xffe2e5e1)],
           ),
           border: Border.all(color: edge.withValues(alpha: dark ? .55 : .48)),
@@ -52,9 +52,22 @@ class ImmersiveSurface extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(radius),
-          child: Material(
-            type: MaterialType.transparency,
-            child: Padding(padding: padding, child: child),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: const ExactAssetImage(
+                  'assets/branding/graphite-grain.png',
+                  scale: 2,
+                ),
+                repeat: ImageRepeat.repeat,
+                opacity: dark ? .8 : .45,
+                filterQuality: FilterQuality.none,
+              ),
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: Padding(padding: padding, child: child),
+            ),
           ),
         ),
       ),
@@ -74,9 +87,9 @@ class SceneBackdrop extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         gradient: luminous
-            ? RadialGradient(
-                center: const Alignment(.7, -.9),
-                radius: 1.1,
+            ? LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
                 colors: dark
                     ? [const Color(0xff303435), DoodimoColors.ink]
                     : [const Color(0xfff7f7f0), const Color(0xffe4e7e3)],
@@ -209,7 +222,9 @@ class _PrismActionState extends State<PrismAction> {
   }
 }
 
-/// Static authored edge lighting, two simple strokes, isolated from child state.
+// The original shared 128px micrograin is bundled offline and decoded once.
+// It repeats through an image paint; no filter layer, ticker or generated frame.
+/// A machined rim: lit outside bevel, dark recessed seam, inner reflected edge.
 class _GraphiteEdgePainter extends CustomPainter {
   const _GraphiteEdgePainter(this.radius, this.dark);
   final double radius;
@@ -217,17 +232,17 @@ class _GraphiteEdgePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (size.shortestSide < 6) return;
-    final rect = (Offset.zero & size).deflate(.7);
+    final rect = (Offset.zero & size).deflate(1.8);
     final outer = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = .8
+      ..strokeWidth = 3.6
       ..shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Colors.white.withValues(alpha: dark ? .3 : .9),
-          Colors.white.withValues(alpha: dark ? .025 : .15),
-          Colors.black.withValues(alpha: dark ? .7 : .2),
+          Colors.white.withValues(alpha: dark ? .57 : .98),
+          Colors.white.withValues(alpha: dark ? .06 : .30),
+          Colors.black.withValues(alpha: dark ? .86 : .30),
         ],
         stops: const [0, .44, 1],
       ).createShader(rect);
@@ -237,13 +252,20 @@ class _GraphiteEdgePainter extends CustomPainter {
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        rect.deflate(2),
-        Radius.circular((radius - 2).clamp(0, double.infinity)),
+        rect.deflate(3),
+        Radius.circular((radius - 3).clamp(0, double.infinity)),
       ),
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = .7
-        ..color = Colors.black.withValues(alpha: dark ? .16 : .05),
+        ..strokeWidth = 1.3
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.black.withValues(alpha: dark ? .72 : .16),
+            Colors.white.withValues(alpha: dark ? .16 : .8),
+          ],
+        ).createShader(rect),
     );
   }
 

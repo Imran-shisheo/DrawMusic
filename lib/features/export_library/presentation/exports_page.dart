@@ -172,16 +172,13 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.strings.yourExports,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(context.strings.libraryExportsSubtitle),
-                ],
+              child: Tooltip(
+                message: context.strings.libraryExportsSubtitle,
+                child: Text(
+                  context.strings.yourExports,
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
               ),
             ),
             IconButton(
@@ -294,7 +291,7 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: 360,
-                maxHeight: largeText ? 240 : 340,
+                maxHeight: largeText ? 220 : 280,
               ),
               child: AspectRatio(
                 aspectRatio: .8,
@@ -347,37 +344,71 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
             ),
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: [
-              FilledButton.icon(
+          LayoutBuilder(
+            builder: (context, bounds) {
+              final share = FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(48, 64),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
                 key: ValueKey('export-feature-share-${entry.id}'),
                 onPressed: _busy || !entry.available
                     ? null
                     : () => _act(entry, _Action.share),
                 icon: const DoodimoIcon(DoodimoGlyph.export),
                 label: Text(context.strings.shareExportedFile),
-              ),
-              OutlinedButton.icon(
+              );
+              final save = OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(48, 64),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
                 key: ValueKey('export-feature-save-${entry.id}'),
                 onPressed: _busy || !entry.available
                     ? null
                     : () => _act(entry, _Action.save),
                 icon: const DoodimoIcon(DoodimoGlyph.save),
                 label: Text(context.strings.saveAPublicCopy),
-              ),
-            ],
+              );
+              if (!largeText && bounds.maxWidth >= 320) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: share),
+                    const SizedBox(width: 8),
+                    Expanded(child: save),
+                  ],
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [share, const SizedBox(height: 8), save],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _card(BuildContext context, LibraryExport entry) {
+  String _exportDetails(BuildContext context, LibraryExport entry) {
     final format = entry.id.split('.').last.toUpperCase();
     final date = context.formatLocalDate(entry.createdAt);
+    return '${context.strings.exportDetails(format, date, context.formatNumber((entry.bytes / 1024).ceil()))}\n${!entry.available
+        ? context.strings.fileUnavailableExportAgain
+        : entry.legacy
+        ? context.strings.olderExportSourceDetailsUnavailable
+        : context.strings.drawingMayHaveChangedSinceExport}';
+  }
+
+  Widget _card(BuildContext context, LibraryExport entry) {
+    final format = entry.id.split('.').last.toUpperCase();
     return LibraryDocumentCard(
       leading: SizedBox(
         key: ValueKey('export-thumbnail-${entry.id}'),
@@ -385,32 +416,30 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
         height: 90,
         child: _preview(entry, large: false),
       ),
-      title: Column(
+      title: Tooltip(
+        message: _exportDetails(context, entry),
+        child: Text(entry.artifact.name, softWrap: true),
+      ),
+      subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              format,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSecondaryContainer,
-              ),
-            ),
+          Text(
+            '$format · ${switch (format) {
+              'MP4' => context.strings.exportIntentVideo,
+              'PNG' => context.strings.exportIntentImage,
+              'MID' => context.strings.exportIntentNotes,
+              _ => context.strings.exportIntentSound,
+            }}',
           ),
-          const SizedBox(height: 6),
-          Text(entry.artifact.name, softWrap: true),
+          if (!entry.available || entry.legacy) ...[
+            const SizedBox(height: 6),
+            Text(
+              !entry.available
+                  ? context.strings.fileUnavailableExportAgain
+                  : context.strings.olderExportSourceDetailsUnavailable,
+            ),
+          ],
         ],
-      ),
-      subtitle: Text(
-        '${context.strings.exportDetails(format, date, context.formatNumber((entry.bytes / 1024).ceil()))}\n${!entry.available
-            ? context.strings.fileUnavailableExportAgain
-            : entry.legacy
-            ? context.strings.olderExportSourceDetailsUnavailable
-            : context.strings.drawingMayHaveChangedSinceExport}',
       ),
       onTap: _busy || !entry.available ? null : () => _act(entry, _Action.open),
       primaryAction: IconButton.outlined(
@@ -454,6 +483,16 @@ class _ExportsPageState extends ConsumerState<ExportsPage> {
           PopupMenuItem(
             value: _Action.delete,
             child: Text(context.strings.delete),
+          ),
+          const PopupMenuDivider(),
+          PopupMenuItem<_Action>(
+            enabled: false,
+            child: Text(
+              _exportDetails(context, entry),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
         ],
       ),

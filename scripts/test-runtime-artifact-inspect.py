@@ -441,7 +441,8 @@ class GraphiteEvidenceInspection(unittest.TestCase):
                 event.update(bytes=len(data), sha256=hashlib.sha256(data).hexdigest(), wholeVideoDecode={'passed':True})
             elif operation == 'snapshot':
                 data=b'\x89PNG\r\n\x1a\noriginal-fixture';(self.root/'screenshots'/(name+'.png')).write_bytes(data)
-                event.update(bytes=len(data), sha256=hashlib.sha256(data).hexdigest(), screenshotReadiness={
+                event.update(bytes=len(data), sha256=hashlib.sha256(data).hexdigest(),
+                    snapshotCaptureState={'ownedRecorderActive':False,'profileActive':False}, screenshotReadiness={
                     'expectedScene':name,'matchedEngineFrameNumber':i+1,'rasterFrameNumber':i+1})
             elif operation == 'graphite_opening':
                 self.write_json('graphite-opening.json', event, {'productionEntryPoint':'lib/main.dart', 'showWelcome':True,
@@ -516,7 +517,7 @@ class GraphiteEvidenceInspection(unittest.TestCase):
 
     def test_completed_source_inventory_and_restoration_cannot_be_forged_by_partial_labels(self):
         original=copy.deepcopy(self.report)
-        for change in ('passed','source','subset','partial','sequence','inventory','restoration','decode','screenshot'):
+        for change in ('passed','source','subset','partial','sequence','inventory','restoration','decode','screenshot','recorder-active','profile-active','idle-missing'):
             self.report=copy.deepcopy(original)
             if change=='passed':self.report['passed']=False
             if change=='source':self.report['source']['graphiteCapture']=False
@@ -527,6 +528,9 @@ class GraphiteEvidenceInspection(unittest.TestCase):
             if change=='restoration':self.report['finalSystemMotionReadbacks']['animator_duration_scale']='0.0'
             if change=='decode':self.event('record_stop')['wholeVideoDecode']['passed']=False
             if change=='screenshot':self.event('snapshot')['screenshotReadiness']['rasterFrameNumber']=-1
+            if change=='recorder-active':self.event('snapshot')['snapshotCaptureState']['ownedRecorderActive']=True
+            if change=='profile-active':self.event('snapshot')['snapshotCaptureState']['profileActive']=True
+            if change=='idle-missing':self.event('snapshot').pop('snapshotCaptureState')
             with self.assertRaises(ValueError):ui.validate_graphite_report(self.report)
 
     def test_exact_five_clip_selection_and_contacts_reject_paths_before_subprocess(self):
@@ -582,6 +586,46 @@ class GraphiteEvidenceInspection(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError,'Combined original graphite PNG/contact batch exceeds1.5MB'):ui.main()
                     emit.assert_not_called()
             finally:os.chdir(old)
+
+
+class CaptureTransportInspectionTest(unittest.TestCase):
+    def test_fixed_host_counters_emit_without_commands_or_unrelated_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            report = {'stage': 'failure', 'evidenceOnly': True, 'qemuVerified': False,
+                      'host': {'memory': {'MemAvailable': '128kB'}, 'cgroup': {'memory.events': 'oom_kill 1'},
+                               'ownCgroup': {'memberships': [{'controller': 'v2', 'counters': {'memory.max': '1000000'}}]},
+                               'kernelTermination': {'signals': [{'signals': ['segfault'], 'process': 'qemu-system-x86'}]},
+                               'processes': [{'pid': 12, 'name': 'java', 'VmRSS': '2000kB', 'cmdline': 'NEVER_PRINT_COMMAND'}],
+                               'unrelated': 'NEVER_PRINT_FIELD'}}
+            (root / 'runtime-transport-failure.json').write_text(json.dumps(report))
+            (root / 'unrelated.txt').write_text('NEVER_PRINT_FILE')
+            out = io.StringIO()
+            with patch.object(ui, 'ROOT', root), contextlib.redirect_stdout(out):
+                ui.inspect_capture_transport_resources()
+            value = out.getvalue()
+            self.assertIn('oom_kill 1', value)
+            self.assertIn('128kB', value)
+            self.assertIn('1000000', value)
+            self.assertIn('qemu-system-x86', value)
+            self.assertIn('segfault', value)
+            self.assertIn('UNACCEPTED_DIAGNOSTIC_ONLY', value)
+            self.assertNotIn('NEVER_PRINT', value)
+
+    def test_capture_transport_reader_rejects_symlinks_and_oversized_json(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / 'unrelated.json'
+            target.write_text('{}')
+            path = root / 'runtime-transport-before.json'
+            path.symlink_to(target)
+            with patch.object(ui, 'ROOT', root):
+                with self.assertRaisesRegex(ValueError, 'Unsafe or oversized'):
+                    ui.inspect_capture_transport_resources()
+                path.unlink()
+                path.write_bytes(b' ' * 131_073)
+                with self.assertRaisesRegex(ValueError, 'Unsafe or oversized'):
+                    ui.inspect_capture_transport_resources()
 
 
 if __name__ == '__main__':

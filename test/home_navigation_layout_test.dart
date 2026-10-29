@@ -91,7 +91,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey('home-start')).hitTestable(),
+        find.byKey(const ValueKey('root-new-drawing')).hitTestable(),
         findsOneWidget,
       );
       // Artwork leads the approved composition. Reach the actual first row by

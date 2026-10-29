@@ -47,7 +47,7 @@ At the rejected checkpoint 9d71f43, `lib/design_system/doodimo_icon.dart` contai
 
 Space Grotesk 600/700 adds a distinct editorial heading voice while Nunito Sans remains the body/control face and all script fallbacks remain bundled. Its official Google Fonts master and original SIL OFL1.1 are pinned to upstream commit e7db6ca603fd4862010383ff17ffd6cc4ffac1c0 and hashed in FONT-MANIFEST.json. The master STAT table lacks a named 600 instance, so static instance name/weight/style metadata is set explicitly; no glyph outlines are redesigned. Latin and Vietnamese example glyphs are present, with Nunito/Noto display fallbacks for other scripts. This is offline typography, not a runtime font download or a new Flutter dependency.
 
-### Immersive Doodimo ribbon identity — 27 October 2026 replacement
+### Historical 27 October ribbon identity — superseded by approved graphite
 
 The owner rejected both warm-paper/forest visual iterations, including their thin
 loop mark. Those sections are historical evidence, not the current shipping
@@ -90,7 +90,7 @@ The approved Doodimo display name, package/bundle identifier
 paths and saved project titles remain unchanged by this visual replacement.
 
 
-## Active immersive duotone symbols — replaces both rejected icon iterations
+## Historical 27 October duotone symbols — superseded by approved graphite
 
 Following the second owner rejection on 27 October 2026, all 31 action/navigation compositions in `lib/design_system/doodimo_icon.dart` were reauthored as original rounded filled planes, solid foreground silhouettes, tonal depth faces and restrained highlights. These are not recolored prior line paths, stock icons or an icon font. The stable public action enum preserves function and localized host labels. Theme-selected color and secondary accent inform the material; one outer opacity group applies disabled alpha once to prevent overlapping faces appearing enabled. Directional actions mirror while music/transport orientation stays stable. The actual 24 px raster contact study includes 28/32 px examples, a selected violet state, disabled state and white help-symbol contrast, at `work/ui-icons-immersive/contact-sheet.png`. It is an icon-material study, not proof of accepted overall product design. Prior warm/forest line-family evidence is retained only as rejected historical work.
 
@@ -103,3 +103,9 @@ The three original ImageGen boards/motion plan in `design/approved/2026-10-28/` 
 The original orange drawing-to-sound gesture is newly authored absoluteM/L/C/Z vector geometry in `assets/branding/mark.svg`, matched exactly by Dart path constants. `tool/generate_brand_icons.py` renders21nativePNG assets and Android legacy/adaptive/monochrome resources from that same source;15opaque iOS icons and6launch variants remain source-validated. Authored content fits the66dp Android adaptive safe circle at31.199dp maximum radius versus33dp allowance. Background is#141819; package/storage names remain unchanged. These checks are not iOS compilation or physical launcher proof. Existing font licenses remain unchanged. Fine-outline control glyphs are authored Flutter paths; no icon-font/SVG pack or remote image dependency was added. Static edge lighting is painted geometry, not sampled mockup texture.
 
 The featured export composition may retain one bounded photo decode up to420×525pixels (~0.84MiBRGBA); each normal catalog-row decode keeps its112×140limit. Tests must enforce per-role/peak live bounds and disposal including late completions. This UI preview budget does not rewrite original image files or change export encoding resolution; widget handle bytes are not physical peak process memory.
+
+## Original graphite micrograin — 29 October 2026
+
+`assets/branding/graphite-grain.png` is an original deterministic procedural texture authored for this app by `tool/generate_graphite_texture.py` (seed20261029). It contains no reference-image pixels, extracted art or remote inputs. Pillow is a developer-only generator dependency; no new shipping dependency/license is introduced. PNG SHA256 `1abd91ffa88167ed36a2cc4a72a6fb24cb57bef3207325b073a2e49b32ec3640`. The128×128 RGBA tile has a64KiB decoded payload, shared through one exact asset key at2x scale; this is a bounded image-payload description, not whole-app RSS/GPU memory acceptance. Static repeated image painting supplies fine grain on app plates; it has no ticker, filter layer or runtime generation. It never enters document paper, saved artwork, thumbnail snapshots or PNG/MP4 rendering. Reduced motion uses the same static material. Rendering/profile acceptance is separately source-mapped.
+
+The refined800×600 gallery resource fixture observes51photo decoder handles across three mount/scroll/disposal cycles, all51released including late loads; peak8row handles/one featured handle/eight total simultaneously,925440B photo RGBA arithmetic. Exact texture clone identity is checked with `ui.Image.isCloneOf` against a held/warmed exact asset, never a size-only exclusion. Its shared65536B backing has nine observed cloned handles, peak two live in this gallery fixture, all nine disposed. Per-photo role/aggregate bounds remain unchanged. These are widget fixture ownership checks, not process/GPU or physical memory acceptance.

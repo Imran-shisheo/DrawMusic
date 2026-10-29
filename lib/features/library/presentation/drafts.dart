@@ -169,6 +169,11 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
     }
   }
 
+  String _drawingDetails(ProjectDocument document, bool recovered) =>
+      '${context.formatLocalDate(document.updatedAt)}\n'
+      '${context.strings.drawingDetails(document.root.label, context.formatNumber(document.strokes.length), context.formatNumber(document.tempo), scaleName(context, document.scale))}'
+      '${recovered ? '\n${context.strings.recoveredPreviousRevision}' : ''}';
+
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: LibraryChromeScope.of(context) ? Colors.transparent : null,
@@ -176,41 +181,55 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
       exports: false,
       scrollKey: 'drafts-scroll',
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.strings.yourDrawings,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    context.strings.libraryDrawingsSubtitle,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
+        LayoutBuilder(
+          builder: (context, bounds) {
+            final title = Tooltip(
+              message: context.strings.libraryDrawingsSubtitle,
+              child: Text(
+                context.strings.yourDrawings,
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
-            ),
-            IconButton(
+            );
+            final refresh = IconButton(
               tooltip: context.strings.refreshDrafts,
               onPressed: () => ref.invalidate(libraryProvider),
               icon: const DoodimoIcon(DoodimoGlyph.replay),
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: FilledButton.icon(
-            key: const ValueKey('library-create'),
-            onPressed: () => openEditorWithArtworkFlight(context, 'new', null),
-            icon: const DoodimoIcon(DoodimoGlyph.add),
-            label: Text(context.strings.newDrawing),
-          ),
+            );
+            final create = FilledButton.icon(
+              key: const ValueKey('library-create'),
+              onPressed: () =>
+                  openEditorWithArtworkFlight(context, 'new', null),
+              icon: const DoodimoIcon(DoodimoGlyph.add),
+              label: Text(context.strings.newDrawing),
+            );
+            final stacked =
+                bounds.maxWidth < 350 ||
+                MediaQuery.textScalerOf(context).scale(14) > 21;
+            return stacked
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: title),
+                          refresh,
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      create,
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(child: title),
+                      const SizedBox(width: 12),
+                      create,
+                      const SizedBox(width: 8),
+                      refresh,
+                    ],
+                  );
+          },
         ),
         const SizedBox(height: 12),
         ...ref
@@ -370,65 +389,88 @@ class _DraftsPageState extends ConsumerState<DraftsPage> {
                               intent,
                             );
                           },
-                          builder: (context, artwork, open) => LibraryDocumentCard(
-                            leading: artwork,
-                            title: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  context.strings.libraryEditable,
-                                  style: Theme.of(context).textTheme.labelSmall
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
+                          builder: (context, artwork, open) =>
+                              LibraryDocumentCard(
+                                leading: artwork,
+                                title: Tooltip(
+                                  message: _drawingDetails(
+                                    doc,
+                                    listing.recoveredIds.contains(doc.id),
+                                  ),
+                                  child: Text(doc.title),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(context.strings.libraryEditable),
+                                    if (listing.recoveredIds.contains(
+                                      doc.id,
+                                    )) ...[
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        context
+                                            .strings
+                                            .recoveredPreviousRevision,
                                       ),
+                                    ],
+                                  ],
                                 ),
-                                const SizedBox(height: 4),
-                                Text(doc.title),
-                              ],
-                            ),
-                            subtitle: Text(
-                              '${context.formatLocalDate(doc.updatedAt)}\n'
-                              '${context.strings.drawingDetails(doc.root.label, context.formatNumber(doc.strokes.length), context.formatNumber(doc.tempo), scaleName(context, doc.scale))}'
-                              '${listing.recoveredIds.contains(doc.id) ? '\n${context.strings.recoveredPreviousRevision}' : ''}',
-                            ),
-                            onTap: open,
-                            primaryAction: IconButton.outlined(
-                              tooltip: context.strings.openSourceDrawing,
-                              onPressed: open,
-                              icon: const DoodimoIcon(
-                                DoodimoGlyph.arrowUpRight,
+                                onTap: open,
+                                primaryAction: IconButton.outlined(
+                                  tooltip: context.strings.openSourceDrawing,
+                                  onPressed: open,
+                                  icon: const DoodimoIcon(
+                                    DoodimoGlyph.arrowUpRight,
+                                  ),
+                                ),
+                                trailing: PopupMenuButton<_Action>(
+                                  onOpened: () =>
+                                      ScaffoldMessenger.of(context)
+                                          .clearSnackBars(),
+                                  tooltip: context.strings.manageDrawing(
+                                    doc.title,
+                                  ),
+                                  enabled: !_busy,
+                                  icon: const DoodimoIcon(DoodimoGlyph.more),
+                                  onSelected: (action) => _act(doc, action),
+                                  itemBuilder: (_) => [
+                                    PopupMenuItem(
+                                      value: _Action.rename,
+                                      child: Text(context.strings.rename),
+                                    ),
+                                    PopupMenuItem(
+                                      value: _Action.duplicate,
+                                      child: Text(context.strings.duplicate),
+                                    ),
+                                    PopupMenuItem(
+                                      value: _Action.export,
+                                      child: Text(context.strings.exportShare),
+                                    ),
+                                    PopupMenuItem(
+                                      value: _Action.delete,
+                                      child: Text(context.strings.delete),
+                                    ),
+                                    const PopupMenuDivider(),
+                                    PopupMenuItem<_Action>(
+                                      enabled: false,
+                                      child: Text(
+                                        _drawingDetails(
+                                          doc,
+                                          listing.recoveredIds.contains(doc.id),
+                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            trailing: PopupMenuButton<_Action>(
-                              onOpened: () =>
-                                  ScaffoldMessenger.of(context)
-                                      .clearSnackBars(),
-                              tooltip: context.strings.manageDrawing(doc.title),
-                              enabled: !_busy,
-                              icon: const DoodimoIcon(DoodimoGlyph.more),
-                              onSelected: (action) => _act(doc, action),
-                              itemBuilder: (_) => [
-                                PopupMenuItem(
-                                  value: _Action.rename,
-                                  child: Text(context.strings.rename),
-                                ),
-                                PopupMenuItem(
-                                  value: _Action.duplicate,
-                                  child: Text(context.strings.duplicate),
-                                ),
-                                PopupMenuItem(
-                                  value: _Action.export,
-                                  child: Text(context.strings.exportShare),
-                                ),
-                                PopupMenuItem(
-                                  value: _Action.delete,
-                                  child: Text(context.strings.delete),
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
                     ],
             ),

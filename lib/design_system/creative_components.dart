@@ -56,7 +56,9 @@ class StudioHeader extends StatelessWidget {
                   Text(
                     AppBrand.displayName,
                     style: type.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontSize: compact ? 24 : 26,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: -.5,
                     ),
                   ),
                   if (!compact) ...[

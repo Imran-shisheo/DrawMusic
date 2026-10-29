@@ -1,0 +1,37 @@
+# Doodimo graphite implementation and evidence — 29 October 2026
+
+## Implemented candidate
+
+[Draft PR25](https://github.com/Imran-shisheo/DrawMusic/pull/25) remains unmerged. The current refined UI source is identified by the enclosing product checkpoint; its later capture request must pin that exact40-character source separately from diagnostic instrumentation. Baseline is owner-merged main `a7a8e595d96735c9b5db607c8d03d785937edf15`. The first graphite product `d5c9329`, capture head08d7484 and test-only head94ab4b8 are historical pre-refinement checkpoints.
+
+Both approved original boards were visually inspected and the complete motion plan read before implementation. [Exact inputs/provenance](GRAPHITE-IMPLEMENTATION-PLAN.md). Their historical approval-required sentence is superseded by later explicit owner approval; they are static design inputs, not product/performance evidence.
+
+The refined implementation includes graphite/light-stone materials, original bounded micrograin/machined frames/orange gesture branding, artwork-led Home with one normal creation key in the persistent dock, calmer retained Library, a whole-word adaptive selector, anchored4:5 editor and connected transport/tools. All13voices, music/accompaniment/expression/history, recovery/save/reopen, transactional paper/photo/crop, four-format exports and native file actions remain accessible. Settings/language/help/onboarding/rating/error states use the same system. Package `com.imranshisheo.scribblesong`, existing data, normalized artwork and instrument/paper colors remain unchanged.
+
+Finite nonblocking opening waits for known motion preferences without delaying ready input; warm return does not replay it. Actual artwork snapshot flights await only actual destination I/O, preserve the anchored live canvas and cancel decoration on input. Typed navigation sessions prevent stale New/saved documents; per-engine leases stop departing async work/disposal from stopping a newer audio owner. Retained blend/selector retargeting preserves branch/scroll/input/focus ownership. No motion fabricates audio, progress or publication.
+
+## Executed local checks
+
+The full refined `bash scripts/check-android.sh` passes:212Dart files formatted with zero changes, zero analyzer issues,414Flutter tests/three explicit diagnostic skips,76real-font states/eight reviewed strict references, native icon/safe-area verification, actual debug APK, Android JVM/lint and12interrupted writers recovered. Unchanged local JVM outputs were cache-reused. The capture-only compact-Library extension then passes78states and the same eight strict comparisons. APK v2 verifies; individual local APK SHA256 `becc5e2ca660afef27afff451c936eda723df5f7f6dfaedf99755a7a513e9c89` is separate from artifact ZIP digests.
+
+Capture-host39, reader38, termination-diagnostic13, native-proof6 and conservative classifier3 checks pass. The new own-cgroup/kernel collection is bounded, read-only and failure-preserving; no command/environment/credential dump, raw kernel log, coredump or budget relaxation is introduced. Its13tests use fakes, not actual local sudo. The fixed noninteractive sudo kernel-read fallback is Actions-only.
+
+[Actual implementation previews](ui/graphite-implementation-2026-10-29/README.md) and [baseline](ui/graphite-baseline-2026-10-28/README.md) are separate from mockups. All eight intended references were visually inspected before regeneration; strict thresholds and functional assertions are unchanged. The original/first graphite pixels remain in Git. Linux regeneration does not resolve eight prior Mac-specific differences. Static capture freezes motion and uses declared fixtures/insets; it does not prove native smoothness or audibility.
+
+The three-cycle gallery fixture observes51photo handles, all released including late loads, peak8row/one feature/eight total handles and925440B photo RGBA arithmetic. Row112×140 and feature420×525 role limits/aggregate bounds are unchanged. Exact warmed texture identity (`ui.Image.isCloneOf`) separately verifies a shared65536B backing, nine cloned handles/peak two live/all nine disposed. No size-only exclusion is used. These are widget resource counts, not process RSS/GPU/physical memory acceptance.
+
+## Runtime results and blocker
+
+First pre-refinement run[40841665063](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40841665063) passed hosted core/build/signature,20actual native cases and600026mssoak, then the Flutter creation driver timed out after install with0test results. Its APK12883681887 is a checkpoint only. Revised test-only head94ab4b8/run[40842502243](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40842502243) again passed20native cases but lost the emulator during Flutter test startup (exit79), so full native/media acceptance failed.
+
+Read-only reader[40851176543](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40851176543) inspected exact native artifact12887275651: QEMU7171/ADB were present before startup, then QEMU was absent and ADB device list empty. Host memory available about9.57GBbefore/12.66GBafter; original root cgroup files were unavailable. No OOM/kernel cause is established. Prior accepted40662060004 uses the same emulator37.2.12/build16428233/SwiftShader backend, so no version drift is established.
+
+Profile[40841611807](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40841611807) failed twice after six events with VM-service/emulator loss. Second diagnostic artifact12883649549 retains an original61-frame/10.219733s720×1600opening clip fully decoded by parent-side inspection. Recording had stopped and decoded before Home screenshot and unrecorded profiling: overlap was a disproven hypothesis, not a recovery. Neither partial run is accepted motion/frame pacing.
+
+The early reader publication was rejected by automatic approval review while native jobs were active. The task followed the sequence and ran the read-only diagnostic branch only after allocated checks completed; it triggered no duplicate native job. Raw FileService archive downloads are denied by the selected executor's enforced host policy; no downloader/policy bypass is used. Supported Pages file uploads now preserve three actual refined PNGs in the existing tracker, with independently confirmed source bytes.
+
+## Remaining authorized verification
+
+Publish this tested candidate and a correctly pinned diagnostic head, then execute affected fresh native/media and original motion/profile gates with bounded termination evidence. Guarded snapshots refuse active Graphite recording/profiling; existing complete-recording/first-NAL/PID/stream-decode/action/idle witnesses remain strict, and original footage is never padded, retimed or repeated. Own-cgroup membership counters and structured kernel signals address missing diagnostic evidence without claiming a cause in advance. Further failures must be diagnosed before equivalent retries.
+
+The complete native creation/playback/save/reopen/four-export/force-stop/HOME flow, independent media inspection, original current-source motion and unrecorded engine UI/raster results remain pending. Physical frame pacing, audibility/latency/routes/recipient apps/stylus/accessibility, human translations, Mac-specific goldens and Apple-framework/iOS compilation are separate. No paid runner/service, new credential, merge, force-push, store publication, personal-device operation or scheduled continuation is performed.

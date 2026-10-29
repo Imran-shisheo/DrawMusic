@@ -52,7 +52,8 @@ class LibraryDocumentCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+          constraints: const BoxConstraints(minHeight: 160),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 4),
           decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: colors.outlineVariant)),
           ),
@@ -62,6 +63,7 @@ class LibraryDocumentCard extends StatelessWidget {
                   MediaQuery.textScalerOf(context).scale(14) > 21 &&
                   constraints.maxWidth < 460;
               final metadata = Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   DefaultTextStyle(
@@ -81,29 +83,29 @@ class LibraryDocumentCard extends StatelessWidget {
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        metadata,
+                        const SizedBox(height: 20),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             artwork,
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 20),
                             Expanded(child: actions),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        metadata,
                       ],
                     )
                   : Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         artwork,
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 20),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               metadata,
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 16),
                               actions,
                             ],
                           ),

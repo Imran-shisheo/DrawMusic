@@ -1009,16 +1009,22 @@ class _EditorWorkspaceState extends ConsumerState<EditorWorkspace>
               end: Alignment.bottomRight,
               colors: hasMusic
                   ? [
+                      Color.lerp(colors.primary, Colors.white, .18)!,
                       colors.primary,
-                      Color.lerp(colors.primary, colors.onPrimary, .08)!,
+                      Color.lerp(colors.primary, Colors.black, .22)!,
                     ]
                   : [
                       colors.surfaceContainerHighest,
                       colors.surfaceContainerHigh,
+                      colors.surfaceContainerHigh,
                     ],
+              stops: const [0, .55, 1],
             ),
             border: Border.all(
-              color: hasMusic ? colors.primary : colors.outline,
+              color: hasMusic
+                  ? Color.lerp(colors.primary, Colors.white, .52)!
+                  : colors.outline,
+              width: 1.3,
             ),
             boxShadow: [
               BoxShadow(

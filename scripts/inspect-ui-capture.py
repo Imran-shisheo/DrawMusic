@@ -17,6 +17,34 @@ ROOT = Path('work/ui-capture-inspect')
 RESOURCE_PHASES = ('home-ambient-visible', 'diagnostic-static-backdrop-normal', 'diagnostic-static-backdrop-solid')
 
 
+def inspect_capture_transport_resources():
+    """Exact owned-QEMU host snapshots; diagnostic evidence, never acceptance."""
+    for stage in ('before', 'failure', 'final'):
+        name = f'runtime-transport-{stage}.json'
+        path = ROOT / name
+        if not path.exists() and not path.is_symlink():
+            continue
+        if ROOT.is_symlink() or path.is_symlink() or not path.is_file() or path.stat().st_size > 131_072:
+            raise ValueError('Unsafe or oversized capture transport evidence: ' + name)
+        data = path.read_bytes()
+        value = json.loads(data)
+        if not isinstance(value, dict) or value.get('stage') != stage or value.get('evidenceOnly') is not True:
+            raise ValueError('Malformed original capture transport evidence: ' + name)
+        host = value.get('host', {})
+        if not isinstance(host, dict):
+            raise ValueError('Malformed capture host counters: ' + name)
+        processes = host.get('processes', [])
+        if not isinstance(processes, list) or len(processes) > 60 or any(not isinstance(item, dict) for item in processes):
+            raise ValueError('Unbounded capture host process counters: ' + name)
+        result = {key: value.get(key) for key in ('stage', 'epochSeconds', 'priorQemuVerified', 'qemuVerified', 'deviceReadsSkipped')}
+        result['host'] = {key: host.get(key) for key in ('memory', 'diskFreeBytes', 'cgroup', 'ownCgroup', 'kernelTermination', 'scope')}
+        result['host']['processes'] = [{key: item.get(key) for key in ('pid', 'name', 'State', 'PPid', 'VmRSS', 'Threads')} for item in processes]
+        result.update(file=name, bytes=len(data), sha256=hashlib.sha256(data).hexdigest(),
+                      status='UNACCEPTED_DIAGNOSTIC_ONLY',
+                      scope='Original bounded host/QEMU evidence. Whole-job counters do not attribute an OOM to a process; no transport repair or native/physical acceptance.')
+        print('UI_CAPTURE_TRANSPORT_DIAGNOSTIC ' + json.dumps(result), flush=True)
+
+
 def inspect_native_profile_resources(phases=RESOURCE_PHASES):
     """Small exact-file summaries, not arbitrary dumpsys/runner-file access."""
     folder = ROOT / 'performance'
@@ -106,6 +134,11 @@ def validate_graphite_report(report):
         if item['operation'] == 'record_stop' and item.get('wholeVideoDecode', {}).get('passed') is not True:
             raise ValueError('Graphite original clip lacks host full-stream decode')
         if item['operation'] == 'snapshot':
+            state = item.get('snapshotCaptureState')
+            if (not isinstance(state, dict) or
+                    state.get('ownedRecorderActive') is not False or
+                    state.get('profileActive') is not False):
+                raise ValueError('Graphite original snapshot lacks idle recorder/profile witness')
             witness = item.get('screenshotReadiness', {})
             if (witness.get('expectedScene') != item['name'] or type(witness.get('matchedEngineFrameNumber')) is not int or
                     witness['matchedEngineFrameNumber'] < 0 or witness.get('rasterFrameNumber') != witness['matchedEngineFrameNumber']):
@@ -471,6 +504,7 @@ def main():
     request = json.loads(Path('cloud/ui-capture-inspect.json').read_text())
     graphite = graphite_requested(request)
     report = load_capture_report(request)
+    inspect_capture_transport_resources()
     if graphite:
         inspect_graphite_evidence(report)
     for name in ('source-provenance.json', 'capture-report.json', 'flutter-drive.log'):

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
 
@@ -50,6 +51,77 @@ LibraryExport _entry(
   // not video encoding. Encode/decode models the persisted export snapshot.
   preview: ProjectDocument.decode(saved.encode()),
 );
+
+// Hold the exact, already decoded chrome asset before observing gallery-owned
+// photo handles. Only actual clones of this same native image are chrome; an
+// unrelated128×128 photo is still a photo and must satisfy its own role guard.
+class _ChromeLease {
+  _ChromeLease(this.info);
+  final ImageInfo info;
+  final created = <ui.Image>[];
+  final live = <ui.Image>{};
+  var peakLive = 0;
+  var _released = false;
+
+  bool record(ui.Image image) {
+    if (!image.isCloneOf(info.image)) return false;
+    created.add(image);
+    live.add(image);
+    if (live.length > peakLive) peakLive = live.length;
+    return true;
+  }
+
+  void disposed(ui.Image image) => live.remove(image);
+
+  void expectGalleryClonesReleased() {
+    expect(info.image.width, 128);
+    expect(info.image.height, 128);
+    expect(info.image.width * info.image.height * 4, 65536);
+    expect(created.every((image) => image.isCloneOf(info.image)), isTrue);
+    // Only the selector and featured plate use this texture in this fixture.
+    expect(peakLive, lessThanOrEqualTo(2));
+    expect(live, isEmpty);
+    expect(created.every((image) => image.debugDisposed), isTrue);
+  }
+
+  void release() {
+    if (_released) return;
+    _released = true;
+    info.dispose();
+  }
+}
+
+Future<_ChromeLease> _warmChrome(WidgetTester tester) async {
+  final data = await tester.runAsync(
+    () => File('assets/branding/graphite-grain.png').readAsBytes(),
+  );
+  expect(
+    sha256.convert(data!).toString(),
+    '1abd91ffa88167ed36a2cc4a72a6fb24cb57bef3207325b073a2e49b32ec3640',
+  );
+  final info = (await tester.runAsync(() async {
+    final ready = Completer<ImageInfo>();
+    final stream = const ExactAssetImage(
+      'assets/branding/graphite-grain.png',
+      scale: 2,
+    ).resolve(ImageConfiguration.empty);
+    final listener = ImageStreamListener(
+      (image, synchronous) => ready.complete(image),
+      onError: (Object error, StackTrace? stack) =>
+          ready.completeError(error, stack),
+    );
+    stream.addListener(listener);
+    try {
+      return await ready.future;
+    } finally {
+      stream.removeListener(listener);
+    }
+  }))!;
+  expect(info.scale, 2);
+  expect(info.image.width, 128);
+  expect(info.image.height, 128);
+  return _ChromeLease(info);
+}
 
 Future<void> _pumpLibrary(
   WidgetTester tester,
@@ -310,17 +382,28 @@ void main() {
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
       messenger.setMockMethodCallHandler(channel, (_) async => root.path);
       addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      final chrome = await _warmChrome(tester);
+      addTearDown(chrome.release);
       final created = <ui.Image>[];
       final pageSize = tester.view.physicalSize / tester.view.devicePixelRatio;
       final previousCreate = ui.Image.onCreate;
+      final previousDispose = ui.Image.onDispose;
       ui.Image.onCreate = (image) {
         previousCreate?.call(image);
+        if (chrome.record(image)) return;
         if (image.width != pageSize.width.round() ||
             image.height != pageSize.height.round()) {
           created.add(image);
         }
       };
-      addTearDown(() => ui.Image.onCreate = previousCreate);
+      ui.Image.onDispose = (image) {
+        previousDispose?.call(image);
+        chrome.disposed(image);
+      };
+      addTearDown(() {
+        ui.Image.onCreate = previousCreate;
+        ui.Image.onDispose = previousDispose;
+      });
       var paper = BackgroundDefinition(
         kind: BackgroundKind.photo,
         assetId: id,
@@ -379,6 +462,7 @@ void main() {
         () => Future<void>.delayed(const Duration(milliseconds: 30)),
       );
       expect(created.every((image) => image.debugDisposed), isTrue);
+      chrome.expectGalleryClonesReleased();
       expect(tester.takeException(), isNull);
     },
   );
@@ -478,6 +562,8 @@ void main() {
         return root.path;
       });
       addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      final chrome = await _warmChrome(tester);
+      addTearDown(chrome.release);
       final created = <ui.Image>[];
       final live = <ui.Image>{};
       var peakLiveRows = 0, peakLiveFeatured = 0, peakLiveHandles = 0;
@@ -489,7 +575,9 @@ void main() {
       ui.Image.onCreate = (image) {
         previousCreate?.call(image);
         // The source fixture was generated before this hook; this test captures
-        // no screenshots. Record ALL decoder handles so oversized images fail.
+        // no screenshots. Exact shared chrome clones are counted separately;
+        // ALL remaining photo handles retain the strict role/size budgets.
+        if (chrome.record(image)) return;
         created.add(image);
         live.add(image);
         final featured = live.where(_featuredDecode).length;
@@ -505,6 +593,7 @@ void main() {
       };
       ui.Image.onDispose = (image) {
         previousDispose?.call(image);
+        chrome.disposed(image);
         live.remove(image);
       };
       addTearDown(() {
@@ -582,6 +671,7 @@ void main() {
               created.every((image) => image.debugDisposed),
           'Unmounted and late thumbnail disposal',
         );
+        chrome.expectGalleryClonesReleased();
         expect(tester.takeException(), isNull);
       }
       expect(created.length, greaterThan(6));
@@ -603,6 +693,11 @@ void main() {
           'peakLiveHandles': peakLiveHandles,
           'peakLiveRgbaBytes': peakLiveRgbaBytes,
           'allDisposed': created.every((image) => image.debugDisposed),
+          'chromeSharedPayloadBytes': 65536,
+          'chromeCreatedCloneHandles': chrome.created.length,
+          'chromePeakLiveCloneHandles': chrome.peakLive,
+          'chromeAllClonesDisposed': chrome.created.every((image) => image.debugDisposed),
+          'chromeIdentity': 'Exact warmed AssetImage128×128 backing via ui.Image.isCloneOf; not size-only exclusion',
           'scope': 'Widget decoder handles and RGBA arithmetic only; not process RSS, GPU or physical memory.',
         })}',
       );

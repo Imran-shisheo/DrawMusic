@@ -40,7 +40,11 @@ class _LibraryBranchFrameState extends State<LibraryBranchFrame> {
           // windows; never impose a fixed-height header on large translated text.
           final shared = bounds.maxHeight >= 260;
           final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
-          final showBrand = bounds.maxHeight >= (largeText ? 480 : 360);
+          // Optional branding never consumes the compact large-text gallery.
+          // Settings/help remain reachable through the retained root dock.
+          final showBrand =
+              !(largeText && bounds.maxWidth < 600) &&
+              bounds.maxHeight >= (largeText ? 480 : 360);
           return Column(
             children: [
               if (shared && showBrand)
