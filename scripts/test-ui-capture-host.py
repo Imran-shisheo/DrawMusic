@@ -17,6 +17,28 @@ host = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(host)
 
 
+class DiagnosticRendererTests(unittest.TestCase):
+    def test_normal_and_owned_pc_modes_keep_default_renderer(self):
+        for provenance in ({}, {'faultTraceRevision':'owned-pc-map','rendererOverride':None}):
+            self.assertEqual(host.diagnostic_renderer_arguments(provenance), [])
+
+    def test_only_explicit_unaccepted_sdk_isolation_adds_optout(self):
+        provenance={'faultTraceRevision':'skia-isolation','rendererOverride':'skia-diagnostic-only',
+            'diagnosticOnly':'emulator-fault-stack','emulatorFaultTrace':True,'acceptanceEligible':False,
+            'graphiteCapture':True,'label':'after'}
+        with patch.dict(host.os.environ,{'DRAWMUSIC_EMULATOR_TRACE_DIAGNOSTIC':'1'}):
+            self.assertEqual(host.diagnostic_renderer_arguments(provenance), ['--no-enable-impeller'])
+            for change in ({'diagnosticOnly':None},{'emulatorFaultTrace':False},{'acceptanceEligible':True},
+                           {'rendererOverride':None},{'graphiteCapture':False},{'label':'before'}):
+                with self.assertRaises(ValueError):host.diagnostic_renderer_arguments(provenance | change)
+        with patch.dict(host.os.environ,{'DRAWMUSIC_EMULATOR_TRACE_DIAGNOSTIC':'0'}):
+            with self.assertRaises(ValueError):host.diagnostic_renderer_arguments(provenance)
+
+    def test_unknown_or_unqualified_override_is_rejected(self):
+        for provenance in ({'rendererOverride':'skia-diagnostic-only'}, {'faultTraceRevision':'unknown'}):
+            with self.assertRaises(ValueError):host.diagnostic_renderer_arguments(provenance)
+
+
 class Process:
     def __init__(self, exit_code): self.returncode = exit_code
     def poll(self): return self.returncode

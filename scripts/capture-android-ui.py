@@ -26,6 +26,25 @@ OUTPUT = Path('work/ui-capture')
 PROFILE_PROCESS_TIMEOUT_SECONDS = 1200
 
 
+def diagnostic_renderer_arguments(provenance):
+    """Isolate related flutter/flutter#192736 without changing shipping defaults.
+
+    Alternate-renderer results never establish normal capture or performance.
+    """
+    revision = provenance.get('faultTraceRevision')
+    override = provenance.get('rendererOverride')
+    if revision == 'skia-isolation':
+        if not (override == 'skia-diagnostic-only' and provenance.get('diagnosticOnly') == 'emulator-fault-stack'
+                and provenance.get('emulatorFaultTrace') is True and provenance.get('acceptanceEligible') is False
+                and provenance.get('graphiteCapture') is True and provenance.get('label') == 'after'
+                and os.environ.get('DRAWMUSIC_EMULATOR_TRACE_DIAGNOSTIC') == '1'):
+            raise ValueError('Renderer isolation requires explicitly unaccepted pinned SDK diagnostic provenance')
+        return ['--no-enable-impeller']
+    if revision not in (None, 'owned-pc-map') or override is not None:
+        raise ValueError('Renderer overrides cannot enter normal product capture')
+    return []
+
+
 def safe_capture_error(error, token):
     if isinstance(error, subprocess.TimeoutExpired):
         # TimeoutExpired.__str__ includes the complete command, including the
@@ -818,6 +837,7 @@ def main():
     for folder in ('screenshots', 'recordings', 'performance'):
         (OUTPUT / folder).mkdir(parents=True, exist_ok=True)
     provenance = json.loads((OUTPUT / 'source-provenance.json').read_text())
+    renderer_arguments = diagnostic_renderer_arguments(provenance)
     diagnostic = provenance.get('diagnosticOnly')
     if diagnostic not in (None, 'static-backdrop', 'emulator-fault-stack'):
         raise RuntimeError('Unknown capture diagnostic mode')
@@ -837,7 +857,8 @@ def main():
     capture = Capture(static_backdrop_probe=diagnostic == 'static-backdrop', responsive_preset=responsive, home_profile_only=home_only, transition_capture_only=transitions, graphite_capture=graphite)
     capture.report['source'] = provenance
     if fault_trace:
-        capture.report.update(diagnosticOnly=True, acceptanceEligible=False, emulatorFaultTrace=True, normalProductCapturePassed=False)
+        capture.report.update(diagnosticOnly=True, acceptanceEligible=False, emulatorFaultTrace=True, normalProductCapturePassed=False,
+                              rendererOverride=provenance.get('rendererOverride'))
     capture.report['hostCpuContext'] = host_cpu_context()
     capture.report['nativeImeWithHardwareKeyboard'] = True
 
@@ -888,6 +909,7 @@ def main():
                f'--dart-define=UI_CAPTURE_TOKEN={capture.token}',
                f'--dart-define=UI_CAPTURE_PORT={port}',
                f'--dart-define=UI_CAPTURE_LABEL={provenance["label"]}']
+    command.extend(renderer_arguments)
     if capture.static_backdrop_probe:
         command.append('--dart-define=UI_STATIC_BACKDROP_PROBE=true')
     if responsive is not None:
@@ -928,6 +950,8 @@ def main():
             capture.report['diagnosticSequenceCompleted'] = capture.report['passed']
             capture.report['passed'] = False
             capture.report['scope'] = 'Owned emulator fault-stack diagnostic only; debugger changes scheduling and argv0. Not native product, motion, performance or physical acceptance.'
+            if renderer_arguments:
+                capture.report['scope'] += ' Explicit Skia renderer isolation; shipping Impeller configuration is unchanged and unverified by this alternate-renderer flow.'
         try:
             finalize_capture(capture, server, port)
         finally:

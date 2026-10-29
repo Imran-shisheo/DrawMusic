@@ -4,5 +4,5 @@
   "label": "after",
   "graphiteCapture": true,
   "emulatorFaultTrace": true,
-  "faultTraceRevision": "owned-pc-map"
+  "faultTraceRevision": "skia-isolation"
 }

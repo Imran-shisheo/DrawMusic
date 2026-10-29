@@ -32,7 +32,8 @@ jobs:
           from pathlib import Path
           p=json.loads(Path('work/ui-capture/source-provenance.json').read_text())
           assert p['diagnosticOnly']=='emulator-fault-stack' and p['emulatorFaultTrace'] is True and p['acceptanceEligible'] is False
-          assert p['faultTraceRevision']=='owned-pc-map'
+          assert p['faultTraceRevision'] in ('owned-pc-map','skia-isolation')
+          assert p['rendererOverride']==('skia-diagnostic-only' if p['faultTraceRevision']=='skia-isolation' else None)
           assert re.fullmatch('[0-9a-f]{40}',p['productSourceSha'])
           assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==p['productSourceSha']
           assert 'applicationId = "com.devwithdelta.doodimo"' in Path('android/app/build.gradle.kts').read_text()

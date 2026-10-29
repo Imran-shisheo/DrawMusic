@@ -55,8 +55,8 @@ def main():
     if type(fault_trace) is not bool or (fault_trace and (not graphite or os.environ.get('DRAWMUSIC_EMULATOR_TRACE_DIAGNOSTIC') != '1')):
         raise ValueError('Fault trace requires explicit diagnostic authorization and pinned Graphite source')
     fault_revision = request.get('faultTraceRevision')
-    if fault_revision not in (None, 'owned-pc-map') or (fault_revision is not None and not fault_trace):
-        raise ValueError('Only the explicitly requested owned-PC diagnostic revision is supported')
+    if fault_revision not in (None, 'owned-pc-map', 'skia-isolation') or (fault_revision is not None and not fault_trace):
+        raise ValueError('Only explicitly requested owned-PC/renderer-isolation diagnostic revisions are supported')
     output = os.environ.get('GITHUB_OUTPUT')
     if output:
         with open(output, 'a') as stream:
@@ -83,6 +83,7 @@ def main():
         'captureHarnessSourceSha': harness, 'instrumentationFiles': FILES,
         'diagnosticOnly': 'emulator-fault-stack' if fault_trace else diagnostic,
         'emulatorFaultTrace': fault_trace, 'faultTraceRevision': fault_revision, 'acceptanceEligible': not fault_trace,
+        'rendererOverride': 'skia-diagnostic-only' if fault_revision == 'skia-isolation' else None,
         'responsivePreset': responsive,
         'homeProfileOnly': home_only,
         'transitionCaptureOnly': transitions, 'transitionComparison': comparison,
