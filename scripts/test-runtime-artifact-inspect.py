@@ -11,6 +11,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+import emulator_process_inspection as observer_reader
 
 spec = importlib.util.spec_from_file_location('runtime_inspect', Path(__file__).with_name('inspect-runtime-artifact.py'))
 module = importlib.util.module_from_spec(spec)
@@ -85,6 +86,115 @@ class RuntimeInspectionTest(unittest.TestCase):
             junit.write_text('<!DOCTYPE testsuite [<!ENTITY secret SYSTEM "file:///etc/passwd">]><testsuite/>')
             with self.assertRaises(ValueError):
                 module.inspect(root, REQUEST, lambda _: None)
+
+
+class EmulatorProcessEvidenceInspection(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
+        self.root=Path(self.tmp.name);self.relative=Path('emulator-process');self.folder=self.root/self.relative
+        self.folder.mkdir()
+        self.hashes={'binarySha256':'a'*64,'observerSha256':'b'*64}
+        self.install={'schema':1,'installed':True,**self.hashes,'arbitrarySecret':'NEVER_PRINT_EXTRA_KEY'}
+        self.lifecycle={'schema':1,'state':'exited',**self.hashes,'wrapperPid':123,'childPid':124,'childStartTicks':'456',
+            'childReturncode':-11,'childTerminationSignal':11,'drainsComplete':True,
+            'observedExecutableNames':['emulator.doodimo-original','qemu-system-x86_64'],
+            'reportedCrashDbPaths':['/tmp/android-runner/emu-crash-37.2.12.db'],'wrapperSignals':[],
+            'argv':'NEVER_PRINT_ARGV','environment':'NEVER_PRINT_ENV'}
+        for stream in ('stdout','stderr'):
+            for position in ('head','tail'):
+                data=b'QEMU crash\nUI_CAPTURE_TOKEN=NEVER_PRINT_TOKEN\nDrawMusicCapture-'+b'f'*32+b'- actual crash\n'
+                (self.folder/f'{stream}-{position}.log').write_bytes(data)
+            self.lifecycle[stream]={'bytesDrained':len(data),'headBytes':len(data),'tailBytes':len(data),'eof':True,'truncated':False,'logWriteOrReadErrors':[]}
+        self.collection={'schema':1,'observedState':'exited','observerFinished':True,'drainsComplete':True}
+        self.binary=b'NEVER_PRINT_CRASH_BINARY\x00\xff'
+        self.dbfile='crash-db/emu-crash-37.2.12.db/pending/owned.dmp'
+        path=self.folder/self.dbfile;path.parent.mkdir(parents=True);path.write_bytes(self.binary)
+        self.database={'maxFiles':8,'maxTotalBytes':8*1024*1024,'retainedBytes':len(self.binary),'partialOrUnavailable':False,
+            'files':[{'file':self.dbfile,'bytes':len(self.binary),'sha256':hashlib.sha256(self.binary).hexdigest()}],'skipped':[]}
+        self.write()
+
+    def write(self):
+        for name,value in (('installation.json',self.install),('lifecycle.json',self.lifecycle),('collection.json',self.collection),('crash-database.json',self.database)):
+            (self.folder/name).write_text(json.dumps(value))
+
+    def inspect(self):
+        lines=[];result=observer_reader.inspect_observer(self.root,self.relative,lines.append)
+        return result,json.loads(lines[0].split(' ',1)[1]),'\n'.join(lines)
+
+    def test_fixed_ui_and_runtime_locations_emit_actual_status_hashes_redacted_logs_and_no_binary(self):
+        result,value,text=self.inspect()
+        self.assertEqual(result['files'],8)
+        self.assertEqual(value['lifecycle']['childReturncode'],-11)
+        self.assertEqual(value['lifecycle']['childTerminationSignal'],11)
+        self.assertTrue(value['crashDatabase']['files'][0]['originalBytesVerified'])
+        self.assertEqual(value['logs'][0]['sha256'],hashlib.sha256((self.folder/'stdout-head.log').read_bytes()).hexdigest())
+        self.assertIn('DrawMusicCapture-[redacted]-',text)
+        for hidden in ('NEVER_PRINT_EXTRA_KEY','NEVER_PRINT_ARGV','NEVER_PRINT_ENV','NEVER_PRINT_TOKEN','NEVER_PRINT_CRASH_BINARY','f'*32):
+            self.assertNotIn(hidden,text)
+        self.relative=Path('work/runtime-output/emulator-process')
+        self.folder.parent.joinpath('work/runtime-output').mkdir(parents=True)
+        original=self.folder;self.folder=self.root/self.relative;original.rename(self.folder)
+        self.assertEqual(self.inspect()[1]['file'],str(self.relative))
+        with self.assertRaises(ValueError):observer_reader.inspect_observer(self.root,Path('arbitrary'),lambda _:None)
+
+    def test_missing_or_still_running_is_explicit_partial_without_presuming_qemu_exit(self):
+        self.lifecycle['state']='child-exited';self.lifecycle['observedExecutableNames']=['emulator.doodimo-original']
+        self.write();(self.folder/'collection.json').unlink();(self.folder/'stderr-tail.log').unlink()
+        value=self.inspect()[1]
+        self.assertTrue(value['partialOrMissing']);self.assertIn('stderr-tail.log',value['missing'])
+        self.assertIn('Launcher exit is not presumed QEMU exit',value['scope'])
+        (self.folder/self.dbfile).unlink()
+        value=self.inspect()[1]
+        self.assertFalse(value['crashDatabase']['files'][0]['originalBytesVerified'])
+        self.assertIn(self.dbfile,value['missing'])
+        self.lifecycle['state']='exited';self.lifecycle['drainsComplete']=False;self.write()
+        self.assertTrue(self.inspect()[1]['partialOrMissing'])
+
+    def test_manifest_and_log_byte_caps_symlinks_and_hash_identity_fail_closed(self):
+        self.lifecycle['binarySha256']='c'*64;self.write()
+        with self.assertRaises(ValueError):self.inspect()
+        self.lifecycle['binarySha256']=self.hashes['binarySha256'];self.write()
+        for name,limit in (('lifecycle.json',32768),('stdout-head.log',65536),('stderr-tail.log',262144)):
+            path=self.folder/name;original=path.read_bytes();path.write_bytes(b'x'*(limit+1))
+            with self.assertRaises(ValueError):self.inspect()
+            path.write_bytes(original)
+        path=self.folder/'stdout-head.log';original=path.read_bytes();path.unlink();path.symlink_to(self.folder/'stderr-head.log')
+        with self.assertRaises(ValueError):self.inspect()
+        path.unlink();path.write_bytes(original)
+        original_folder=self.folder;held=self.folder.with_name('held');self.folder.rename(held);original_folder.symlink_to(held)
+        with self.assertRaises(ValueError):self.inspect()
+
+    def test_actual_log_bytes_and_scoped_crash_files_must_match_manifest(self):
+        path=self.folder/'stdout-head.log';original=path.read_bytes();path.write_bytes(original+b'changed')
+        with self.assertRaises(ValueError):self.inspect()
+        path.write_bytes(original)
+        path=self.folder/self.dbfile;path.write_bytes(b'changed')
+        with self.assertRaises(ValueError):self.inspect()
+        path.write_bytes(self.binary)
+        path.unlink();path.symlink_to(self.folder/'stdout-head.log')
+        with self.assertRaises(ValueError):self.inspect()
+
+    def test_crash_manifest_cannot_select_unrelated_paths_multiple_databases_or_more_files(self):
+        original=copy.deepcopy(self.database)
+        for name in ('../secret','crash-db/emu-crash-37.2.12.db/../secret','work/runtime-output/android.log','crash-db/emu-crash-37.2.12.db-other/file'):
+            self.database=copy.deepcopy(original);self.database['files'][0]['file']=name;self.write()
+            with self.assertRaises(ValueError):self.inspect()
+        self.database=copy.deepcopy(original);self.database['files']*=9;self.write()
+        with self.assertRaises(ValueError):self.inspect()
+        self.database=copy.deepcopy(original);self.database['retainedBytes']+=1;self.write()
+        with self.assertRaises(ValueError):self.inspect()
+        self.database=copy.deepcopy(original);self.database['files'][0]['file']='crash-db/emu-crash-99.99.99.db/pending/other.dmp';self.write()
+        with self.assertRaises(ValueError):self.inspect()
+
+    def test_signal_and_collection_cannot_claim_unobserved_exit(self):
+        for change in ('signal','missing-exit','collection'):
+            original=copy.deepcopy(self.lifecycle);collection=copy.deepcopy(self.collection)
+            if change=='signal':self.lifecycle['childTerminationSignal']=15
+            if change=='missing-exit':self.lifecycle.pop('childReturncode')
+            if change=='collection':self.collection['observedState']='running'
+            self.write()
+            with self.assertRaises(ValueError):self.inspect()
+            self.lifecycle=original;self.collection=collection
 
 
 class UiPartialInspectionTest(unittest.TestCase):

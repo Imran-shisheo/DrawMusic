@@ -32,7 +32,8 @@ jobs:
           artifact_id=''
           name=request['artifactName']
           if mode=='runtime':
-              import importlib.util
+              import importlib.util,sys
+              sys.path.insert(0,str(Path('scripts').resolve()))
               spec=importlib.util.spec_from_file_location('runtime_inspect','scripts/inspect-runtime-artifact.py')
               helper=importlib.util.module_from_spec(spec)
               spec.loader.exec_module(helper)

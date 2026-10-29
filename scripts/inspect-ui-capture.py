@@ -12,6 +12,7 @@ import math
 from pathlib import Path
 import re
 import subprocess
+from emulator_process_inspection import inspect_observer
 
 ROOT = Path('work/ui-capture-inspect')
 RESOURCE_PHASES = ('home-ambient-visible', 'diagnostic-static-backdrop-normal', 'diagnostic-static-backdrop-solid')
@@ -503,6 +504,7 @@ def inspect_ambient_recording(request, report):
 def main():
     request = json.loads(Path('cloud/ui-capture-inspect.json').read_text())
     graphite = graphite_requested(request)
+    inspect_observer(ROOT, Path('emulator-process'))
     report = load_capture_report(request)
     inspect_capture_transport_resources()
     if graphite:

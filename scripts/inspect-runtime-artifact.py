@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import stat
 import xml.etree.ElementTree as ET
+from emulator_process_inspection import inspect_observer
 
 ROOT = Path('work/ui-capture-inspect')
 REQUEST = Path('cloud/ui-capture-inspect.json')
@@ -58,14 +59,17 @@ def inspect(root, request, emit=print):
     validate_request(request)
     emit('RUNTIME_INSPECT_REQUEST ' + json.dumps(request, sort_keys=True))
     emit('RUNTIME_INSPECT_SCOPE Exact stored emulator diagnostic text; not a test rerun, physical/iOS acceptance or proof of an unrecorded cause.')
-    used = 0
-    found = 0
+    observer = inspect_observer(root, Path('work/runtime-output/emulator-process'), emit)
+    used = observer['textBytes']
+    found = observer['files']
     for relative, limit in FIXED.items():
         if not (root / relative).exists():
             emit('RUNTIME_INSPECT_MISSING ' + str(relative))
             continue
         data = safe_bytes(root, relative, limit)
         used += len(data)
+        if used > MAX_TOTAL:
+            raise ValueError('Total runtime text bound exceeded')
         found += 1
         text = data.decode('utf-8', errors='replace')
         emit('RUNTIME_INSPECT_BEGIN ' + str(relative))
