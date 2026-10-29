@@ -91,9 +91,12 @@ def inspect(root, request, emit=print):
     result = {'diagnosticOnly': True, 'acceptanceEligible': False, 'request': request, 'files': [], 'missing': [],
               'scope': 'Stored fixed-path owned debugger metadata only. Console bytes are hashed/classified, never printed. Numeric LLDB exit status is not a natural SDK signal.'}
     found = 0
+    # Single-directory normal uploads have contents at ZIP root; fault-trace
+    # uploads preserve their ui-capture/ sibling because they include two roots.
+    capture_prefix = Path() if request['mode'] == 'ui-transport' else Path('ui-capture')
     if request['mode'] == 'ui-transport':
         captured = []
-        observed = reader.inspect_observer(root / 'ui-capture', Path('emulator-process'), captured.append)
+        observed = reader.inspect_observer(root, Path('emulator-process'), captured.append)
         found += observed['files']
         if captured:
             original = json.loads(captured[0].split('EMULATOR_PROCESS_DIAGNOSTIC ', 1)[1])
@@ -134,7 +137,7 @@ def inspect(root, request, emit=print):
                                     'diagnosticTokenCounts': {token: text.count(token) for token in TOKENS},
                                     'rawConsolePrinted': False})
             found += 1
-    driver = Path('ui-capture/flutter-drive.log')
+    driver = capture_prefix / 'flutter-drive.log'
     if (root / driver).exists():
         data = reader.safe_bytes(root, driver, 8 * 1024 * 1024)
         text = data.decode('utf-8', errors='replace')
@@ -148,7 +151,7 @@ def inspect(root, request, emit=print):
             'rawConsolePrinted': False}
     else:
         result['missing'].append(str(driver))
-    report_path = Path('ui-capture/capture-report.json')
+    report_path = capture_prefix / 'capture-report.json'
     if (root / report_path).exists():
         report_data = reader.safe_bytes(root, report_path, 2 * 1024 * 1024)
         report = json.loads(report_data)
@@ -159,7 +162,7 @@ def inspect(root, request, emit=print):
         events = report.get('events', [])
         if not isinstance(events, list) or len(events) > 256:
             raise ValueError('Bounded capture events required')
-        profile_path = Path('ui-capture/performance/graphite-interactions-unrecorded.json')
+        profile_path = capture_prefix / 'performance/graphite-interactions-unrecorded.json'
         if (root / profile_path).exists():
             data = reader.safe_bytes(root, profile_path, 1_048_576)
             event = next(x for x in events if x.get('operation') == 'perf_finish' and x.get('name') == 'graphite-interactions-unrecorded')
@@ -197,7 +200,7 @@ def inspect(root, request, emit=print):
             event = next((x for x in events if x.get('operation') == 'record_stop' and x.get('name') == name), None)
             if event is None:
                 continue
-            data = reader.safe_bytes(root, Path('ui-capture/recordings') / (name + '.mp4'), 64_000_000)
+            data = reader.safe_bytes(root, capture_prefix / 'recordings' / (name + '.mp4'), 64_000_000)
             digest = hashlib.sha256(data).hexdigest()
             if event.get('bytes') != len(data) or event.get('sha256') != digest:
                 raise ValueError('Original recording byte/hash witness mismatch')

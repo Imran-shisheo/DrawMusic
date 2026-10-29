@@ -29,6 +29,19 @@ class FaultReaderTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             module.validate_request(normal | {'mode': 'emulator-fault'})
 
+    def test_normal_single_directory_upload_is_read_at_its_exact_zip_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'emulator-process').mkdir()
+            (root / 'emulator-process/stdout-tail.log').write_text('SDK exit')
+            (root / 'capture-report.json').write_text(json.dumps({'passed': False, 'events': []}))
+            normal = REQUEST | {'mode': 'ui-transport', 'artifactName': 'drawmusic-ui-visuals-' + 'f'*40}
+            result = module.inspect(root, normal, lambda text: None)
+            self.assertFalse(result['captureReport']['passed'])
+            self.assertIn('normalSdkObserver', result)
+            self.assertTrue(result['normalSdkObserver']['partialOrMissing'])
+            self.assertNotIn('boundedSignalAndTailLines', json.dumps(result))
+
     def test_actual_fixed_metadata_does_not_dump_unknown_fields_or_console(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
