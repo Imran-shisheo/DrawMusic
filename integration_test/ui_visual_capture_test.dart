@@ -1285,83 +1285,148 @@ void main() {
       await recorded('02-editor-instrument', () async {
         final flightObserver = _observeFlightFrames
             ? UiFlightFrameObserver(binding, () {
-                final mountedCanvas = find.byKey(
-                  const ValueKey('drawing-canvas'),
-                  skipOffstage: false,
-                );
+                final fieldErrors = <String, String>{};
+                T? read<T>(String name, T Function() getter) {
+                  try {
+                    return getter();
+                  } catch (error) {
+                    fieldErrors[name] = error.runtimeType.toString();
+                    return null;
+                  }
+                }
+
+                Element? first(List<Element>? elements) =>
+                    elements == null || elements.isEmpty
+                    ? null
+                    : elements.first;
                 final visibleCanvas = key('drawing-canvas');
                 final hitCanvas = visibleCanvas.hitTestable();
                 final visibleShuttle = key('artwork-flight-shuttle');
-                final canvasElements = visibleCanvas.evaluate().toList();
-                final contexts = canvasElements.isNotEmpty
-                    ? canvasElements
-                    : mountedCanvas.evaluate().isNotEmpty
-                    ? mountedCanvas.evaluate().toList()
-                    : key('home-artwork').evaluate().toList();
-                final context = contexts.isEmpty ? null : contexts.first;
-                GoRouterState? route;
-                String? routeReadError;
-                if (context != null) {
-                  try {
-                    route = GoRouterState.of(context);
-                  } catch (error) {
-                    routeReadError = error.runtimeType.toString();
-                  }
-                }
-                final extra = route?.extra;
-                final modal = context == null ? null : ModalRoute.of(context);
-                final opacity = visibleShuttle.evaluate().isNotEmpty
-                    ? tester.widget<Opacity>(visibleShuttle.first).opacity
-                    : null;
-                final rect = hitCanvas.evaluate().isNotEmpty
-                    ? tester.getRect(hitCanvas.first)
-                    : null;
-                return {
-                  'routePath': route?.uri.path,
-                  'routeReadErrorType': routeReadError,
-                  'routeType': modal?.runtimeType.toString(),
-                  'routeTransitionDurationUs':
-                      modal?.transitionDuration.inMicroseconds,
-                  'routeReverseDurationUs':
-                      modal?.reverseTransitionDuration.inMicroseconds,
-                  'canvasMountedCount': mountedCanvas.evaluate().length,
-                  'canvasVisibleCount': canvasElements.length,
-                  'canvasHitTestableCount': hitCanvas.evaluate().length,
-                  'canvasElementIdentity': canvasElements.isEmpty
-                      ? null
-                      : identityHashCode(canvasElements.first),
-                  'canvasRect': rect == null
-                      ? null
-                      : [rect.left, rect.top, rect.width, rect.height],
-                  'shuttleVisibleCount': visibleShuttle.evaluate().length,
-                  'shuttleMountedCount': find
+                final mountedElements = read(
+                  'canvasMounted',
+                  () => find
                       .byKey(
-                        const ValueKey('artwork-flight-shuttle'),
+                        const ValueKey('drawing-canvas'),
                         skipOffstage: false,
                       )
                       .evaluate()
-                      .length,
+                      .toList(),
+                );
+                final canvasElements = read(
+                  'canvasVisible',
+                  () => visibleCanvas.evaluate().toList(),
+                );
+                final hitElements = read(
+                  'canvasHitTestable',
+                  () => hitCanvas.evaluate().toList(),
+                );
+                final shuttleElements = read(
+                  'shuttleVisible',
+                  () => visibleShuttle.evaluate().toList(),
+                );
+                final sourceElements = read(
+                  'sourceVisible',
+                  () => key('home-artwork').evaluate().toList(),
+                );
+                final context =
+                    first(canvasElements) ??
+                    first(mountedElements) ??
+                    first(sourceElements);
+                final route = context == null
+                    ? null
+                    : read('routerLookup', () => GoRouterState.of(context));
+                final modal = context == null
+                    ? null
+                    : read('modalLookup', () => ModalRoute.of(context));
+                final extra = route?.extra;
+                final shuttle = first(shuttleElements)?.widget;
+                final opacity = shuttle == null
+                    ? null
+                    : read(
+                        'shuttleOpacity',
+                        () => (shuttle as Opacity).opacity,
+                      );
+                final rect = first(hitElements) == null
+                    ? null
+                    : read('canvasRect', () => tester.getRect(hitCanvas.first));
+                return {
+                  'routePath': route?.uri.path,
+                  'routeType': modal?.runtimeType.toString(),
+                  'routeTransitionDurationUs': modal == null
+                      ? null
+                      : read(
+                          'forwardDuration',
+                          () => modal.transitionDuration.inMicroseconds,
+                        ),
+                  'routeReverseDurationUs': modal == null
+                      ? null
+                      : read(
+                          'reverseDuration',
+                          () => modal.reverseTransitionDuration.inMicroseconds,
+                        ),
+                  'canvasMountedCount': mountedElements?.length,
+                  'canvasVisibleCount': canvasElements?.length,
+                  'canvasHitTestableCount': hitElements?.length,
+                  'canvasElementIdentity': first(canvasElements) == null
+                      ? null
+                      : identityHashCode(first(canvasElements)),
+                  'canvasRect': rect == null
+                      ? null
+                      : [rect.left, rect.top, rect.width, rect.height],
+                  'shuttleVisibleCount': shuttleElements?.length,
+                  'shuttleMountedCount': read(
+                    'shuttleMounted',
+                    () => find
+                        .byKey(
+                          const ValueKey('artwork-flight-shuttle'),
+                          skipOffstage: false,
+                        )
+                        .evaluate()
+                        .length,
+                  ),
                   'shuttleOpacity': opacity,
-                  'intentPresent': extra is ArtworkFlightIntent,
+                  'intentPresent': route == null
+                      ? null
+                      : extra is ArtworkFlightIntent,
                   'intentCancelled': extra is ArtworkFlightIntent
-                      ? extra.cancelled
+                      ? read('intentCancelled', () => extra.cancelled)
                       : null,
                   'matchingHeroTags': extra is ArtworkFlightIntent
-                      ? find
-                            .byWidgetPredicate(
-                              (widget) =>
-                                  widget is Hero && widget.tag == extra.tag,
-                              skipOffstage: false,
-                            )
-                            .evaluate()
-                            .length
+                      ? read(
+                          'heroTags',
+                          () => find
+                              .byWidgetPredicate(
+                                (widget) =>
+                                    widget is Hero && widget.tag == extra.tag,
+                                skipOffstage: false,
+                              )
+                              .evaluate()
+                              .length,
+                        )
+                      : route == null
+                      ? null
                       : 0,
                   'reducedMotion': context == null
                       ? null
-                      : MediaQuery.disableAnimationsOf(context),
-                  'routeAnimationValue': modal?.animation?.value,
-                  'routeAnimationStatus': modal?.animation?.status.name,
+                      : read(
+                          'reducedMotion',
+                          () => MediaQuery.disableAnimationsOf(context),
+                        ),
+                  'routeAnimationValue': modal == null
+                      ? null
+                      : read<double?>(
+                          'animationValue',
+                          () => modal.animation?.value,
+                        ),
+                  'routeAnimationStatus': modal == null
+                      ? null
+                      : read<String?>(
+                          'animationStatus',
+                          () => modal.animation?.status.name,
+                        ),
                   'lifecycle': binding.lifecycleState?.name,
+                  'contextMounted': context?.mounted,
+                  'fieldErrors': fieldErrors,
                 };
               })
             : null;
