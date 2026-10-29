@@ -30,6 +30,7 @@ class FaultReaderTest(unittest.TestCase):
                 'stderr': {'eof': True}, 'environment': 'SECRET-ENV'}))
             (folder / 'faults.json').write_text(json.dumps({'phase': 'finished', 'actualExitStatus': -1, 'arguments': 'SECRET-ARGV'}))
             (folder / 'stderr-tail.log').write_text('unable to read rendezvous\nSECRET-ENVIRONMENT\n')
+            (root / 'ui-capture/flutter-drive.log').write_text('Using the Impeller rendering backend (OpenGLES).\nSECRET-DRIVER-CAPABILITY\n')
             (root / 'arbitrary').write_text('SECRET-UNRELATED')
             emitted = []
             result = module.inspect(root, REQUEST, emitted.append)
@@ -42,6 +43,8 @@ class FaultReaderTest(unittest.TestCase):
             lifecycle = next(file for file in result['files'] if file['file'].endswith('lifecycle.json'))
             self.assertEqual(lifecycle['wrapperSignals'], [])
             self.assertTrue(lifecycle['drains']['stdout']['eof'])
+            self.assertEqual(result['driverRenderer']['impellerGlesAnnouncements'], 1)
+            self.assertEqual(result['driverRenderer']['impellerVulkanAnnouncements'], 0)
             self.assertTrue(result['missing'])
 
     def test_missing_files_are_not_success(self):

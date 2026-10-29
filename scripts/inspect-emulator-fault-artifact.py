@@ -79,6 +79,19 @@ def inspect(root, request, emit=print):
                                     'diagnosticTokenCounts': {token: text.count(token) for token in TOKENS},
                                     'rawConsolePrinted': False})
             found += 1
+    driver = Path('ui-capture/flutter-drive.log')
+    if (root / driver).exists():
+        data = reader.safe_bytes(root, driver, 8 * 1024 * 1024)
+        text = data.decode('utf-8', errors='replace')
+        # Only canonical renderer identities, never raw driver capability URLs,
+        # arguments, test tokens or arbitrary matching log lines.
+        result['driverRenderer'] = {'file': str(driver), 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(),
+            'impellerVulkanAnnouncements': len(re.findall(r'Using the Impeller rendering backend \(Vulkan\)', text)),
+            'impellerGlesAnnouncements': len(re.findall(r'Using the Impeller rendering backend \(OpenGLES\)', text)),
+            'softwareSkiaAnnouncements': len(re.findall(r'Using the Skia rendering backend \(Software\)', text)),
+            'rawConsolePrinted': False}
+    else:
+        result['missing'].append(str(driver))
     if not found:
         raise ValueError('No fixed diagnostic evidence found')
     emit('OWNED_SDK_TRACE_INSPECTION ' + json.dumps(result, sort_keys=True))

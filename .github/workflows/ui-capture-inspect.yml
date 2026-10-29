@@ -74,6 +74,7 @@ jobs:
           python3 scripts/test-runtime-artifact-inspect.py
           python3 scripts/test-emulator-fault-artifact-inspect.py
       - name: Check preinstalled host debugger readiness (diagnostic only)
+        if: steps.request.outputs.mode != 'emulator-fault'
         timeout-minutes: 3
         run: |
           python3 scripts/test-host-debugger-readiness.py
@@ -82,7 +83,7 @@ jobs:
           python3 scripts/check-host-debugger-readiness.py
           python3 scripts/check-execchain-debugger-readiness.py
       - name: Preserve bounded host debugger readiness
-        if: always()
+        if: ${{ always() && steps.request.outputs.mode != 'emulator-fault' }}
         uses: actions/upload-artifact@v7
         with:
           name: drawmusic-host-debugger-readiness-${{ github.sha }}
