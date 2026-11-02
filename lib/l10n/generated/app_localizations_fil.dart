@@ -1289,4 +1289,14 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get privacyPolicyOpensExternally => 'Bubukas sa labas ng app';
+
+  @override
+  String get moreApps => 'Iba pang app';
+
+  @override
+  String get moreAppsOpensStore => 'Tingnan ang aming mga app sa store';
+
+  @override
+  String get moreAppsOpenFailed =>
+      'Hindi mabuksan ang app store. Pakisubukan muli.';
 }

@@ -375,5 +375,8 @@
   "navigation": "Navegación",
   "privacyPolicy": "Política de privacidad",
   "privacyPolicyOpenFailed": "No se pudo abrir la política de privacidad. Inténtalo de nuevo.",
-  "privacyPolicyOpensExternally": "Se abre fuera de la app"
+  "privacyPolicyOpensExternally": "Se abre fuera de la app",
+  "moreApps": "Más apps",
+  "moreAppsOpensStore": "Explora nuestras apps en la tienda",
+  "moreAppsOpenFailed": "No se pudo abrir la tienda de apps. Inténtalo de nuevo."
 }

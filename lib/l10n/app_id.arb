@@ -375,5 +375,8 @@
   "navigation": "Navigasi",
   "privacyPolicy": "Kebijakan privasi",
   "privacyPolicyOpenFailed": "Kebijakan privasi tidak dapat dibuka. Coba lagi.",
-  "privacyPolicyOpensExternally": "Dibuka di luar aplikasi"
+  "privacyPolicyOpensExternally": "Dibuka di luar aplikasi",
+  "moreApps": "Aplikasi lainnya",
+  "moreAppsOpensStore": "Jelajahi aplikasi kami di toko aplikasi",
+  "moreAppsOpenFailed": "Tidak dapat membuka toko aplikasi. Coba lagi."
 }

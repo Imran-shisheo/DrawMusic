@@ -1289,4 +1289,14 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get privacyPolicyOpensExternally => 'Si apre fuori dall’app';
+
+  @override
+  String get moreApps => 'Altre app';
+
+  @override
+  String get moreAppsOpensStore => 'Scopri le nostre app nello store';
+
+  @override
+  String get moreAppsOpenFailed =>
+      'Impossibile aprire lo store delle app. Riprova.';
 }

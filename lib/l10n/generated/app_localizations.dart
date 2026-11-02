@@ -2373,6 +2373,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Opens outside the app'**
   String get privacyPolicyOpensExternally;
+
+  /// No description provided for @moreApps.
+  ///
+  /// In en, this message translates to:
+  /// **'More apps'**
+  String get moreApps;
+
+  /// No description provided for @moreAppsOpensStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore our apps in the store'**
+  String get moreAppsOpensStore;
+
+  /// No description provided for @moreAppsOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the app store. Please try again.'**
+  String get moreAppsOpenFailed;
 }
 
 class _AppLocalizationsDelegate

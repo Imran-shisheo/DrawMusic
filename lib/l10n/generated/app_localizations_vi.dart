@@ -1259,4 +1259,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get privacyPolicyOpensExternally => 'Mở bên ngoài ứng dụng';
+
+  @override
+  String get moreApps => 'Ứng dụng khác';
+
+  @override
+  String get moreAppsOpensStore =>
+      'Khám phá ứng dụng của chúng tôi trên cửa hàng';
+
+  @override
+  String get moreAppsOpenFailed =>
+      'Không thể mở cửa hàng ứng dụng. Vui lòng thử lại.';
 }

@@ -1280,4 +1280,14 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get privacyPolicyOpensExternally => 'Dibuka di luar aplikasi';
+
+  @override
+  String get moreApps => 'Aplikasi lainnya';
+
+  @override
+  String get moreAppsOpensStore => 'Jelajahi aplikasi kami di toko aplikasi';
+
+  @override
+  String get moreAppsOpenFailed =>
+      'Tidak dapat membuka toko aplikasi. Coba lagi.';
 }

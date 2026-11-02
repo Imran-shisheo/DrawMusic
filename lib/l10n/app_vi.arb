@@ -375,5 +375,8 @@
   "navigation": "Điều hướng",
   "privacyPolicy": "Chính sách quyền riêng tư",
   "privacyPolicyOpenFailed": "Không mở được chính sách quyền riêng tư. Vui lòng thử lại.",
-  "privacyPolicyOpensExternally": "Mở bên ngoài ứng dụng"
+  "privacyPolicyOpensExternally": "Mở bên ngoài ứng dụng",
+  "moreApps": "Ứng dụng khác",
+  "moreAppsOpensStore": "Khám phá ứng dụng của chúng tôi trên cửa hàng",
+  "moreAppsOpenFailed": "Không thể mở cửa hàng ứng dụng. Vui lòng thử lại."
 }

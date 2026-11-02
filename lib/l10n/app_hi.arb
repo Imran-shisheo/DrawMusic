@@ -375,5 +375,8 @@
   "navigation": "नेविगेशन",
   "privacyPolicy": "गोपनीयता नीति",
   "privacyPolicyOpenFailed": "गोपनीयता नीति नहीं खुल सकी। फिर से कोशिश करें।",
-  "privacyPolicyOpensExternally": "ऐप के बाहर खुलेगा"
+  "privacyPolicyOpensExternally": "ऐप के बाहर खुलेगा",
+  "moreApps": "और ऐप्स",
+  "moreAppsOpensStore": "स्टोर में हमारे ऐप्स देखें",
+  "moreAppsOpenFailed": "ऐप स्टोर नहीं खुल सका। कृपया फिर कोशिश करें।"
 }

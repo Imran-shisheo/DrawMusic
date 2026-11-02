@@ -375,5 +375,8 @@
   "navigation": "ナビゲーション",
   "privacyPolicy": "プライバシーポリシー",
   "privacyPolicyOpenFailed": "プライバシーポリシーを開けませんでした。もう一度お試しください。",
-  "privacyPolicyOpensExternally": "アプリの外で開きます"
+  "privacyPolicyOpensExternally": "アプリの外で開きます",
+  "moreApps": "その他のアプリ",
+  "moreAppsOpensStore": "ストアで私たちのアプリを見る",
+  "moreAppsOpenFailed": "アプリストアを開けませんでした。もう一度お試しください。"
 }

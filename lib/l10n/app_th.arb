@@ -375,5 +375,8 @@
   "navigation": "การนำทาง",
   "privacyPolicy": "นโยบายความเป็นส่วนตัว",
   "privacyPolicyOpenFailed": "เปิดนโยบายความเป็นส่วนตัวไม่ได้ โปรดลองอีกครั้ง",
-  "privacyPolicyOpensExternally": "เปิดภายนอกแอป"
+  "privacyPolicyOpensExternally": "เปิดภายนอกแอป",
+  "moreApps": "แอปอื่น ๆ",
+  "moreAppsOpensStore": "สำรวจแอปของเราในสโตร์",
+  "moreAppsOpenFailed": "เปิดสโตร์แอปไม่ได้ โปรดลองอีกครั้ง"
 }

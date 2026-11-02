@@ -1227,4 +1227,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get privacyPolicyOpensExternally => '앱 밖에서 열립니다';
+
+  @override
+  String get moreApps => '더 많은 앱';
+
+  @override
+  String get moreAppsOpensStore => '스토어에서 다른 앱을 둘러보세요';
+
+  @override
+  String get moreAppsOpenFailed => '앱 스토어를 열 수 없습니다. 다시 시도해 주세요.';
 }

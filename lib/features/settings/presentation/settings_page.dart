@@ -15,6 +15,7 @@ import '../../../design_system/brand.dart';
 import '../../../design_system/layout.dart';
 import '../application/settings_controller.dart';
 import '../application/privacy_policy.dart';
+import '../application/more_apps.dart';
 import 'language_page.dart';
 
 final appInfoProvider = FutureProvider<PackageInfo>(
@@ -30,6 +31,27 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   double? _volume;
   bool _openingPrivacyPolicy = false;
+  bool _openingMoreApps = false;
+
+  Future<void> _openMoreApps(Uri uri) async {
+    if (_openingMoreApps) return;
+    setState(() => _openingMoreApps = true);
+    var opened = false;
+    try {
+      opened = await ref.read(moreAppsLauncherProvider)(uri);
+    } catch (_) {
+      // Store/provider details are not safe or useful user-facing messages.
+    } finally {
+      if (mounted) {
+        setState(() => _openingMoreApps = false);
+        if (!opened) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.strings.moreAppsOpenFailed)),
+          );
+        }
+      }
+    }
+  }
 
   Future<void> _openPrivacyPolicy(Uri uri) async {
     if (_openingPrivacyPolicy) return;
@@ -58,6 +80,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final busy = state.loading || state.saving;
     final colors = Theme.of(context).colorScheme;
     final policyUri = ref.watch(privacyPolicyUriProvider);
+    final moreAppsUri = ref.watch(moreAppsUriProvider);
     final volume = _volume ?? preferences.previewVolume;
     return Scaffold(
       appBar: AppBar(
@@ -338,6 +361,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                               replayTips: true,
                             ),
                           ),
+                          if (moreAppsUri != null)
+                            ListTile(
+                              key: const ValueKey('more-apps-link'),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              leading: const DoodimoIcon(DoodimoGlyph.library),
+                              title: Text(context.strings.moreApps),
+                              subtitle: Text(
+                                context.strings.moreAppsOpensStore,
+                              ),
+                              trailing: const DoodimoIcon(
+                                DoodimoGlyph.arrowUpRight,
+                              ),
+                              enabled: !_openingMoreApps,
+                              onTap: () => _openMoreApps(moreAppsUri),
+                            ),
                           _PreferenceDetails(
                             title: context.strings.privacy,
                             icon: Icons.privacy_tip_outlined,

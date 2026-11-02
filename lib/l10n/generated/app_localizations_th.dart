@@ -1247,4 +1247,13 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get privacyPolicyOpensExternally => 'เปิดภายนอกแอป';
+
+  @override
+  String get moreApps => 'แอปอื่น ๆ';
+
+  @override
+  String get moreAppsOpensStore => 'สำรวจแอปของเราในสโตร์';
+
+  @override
+  String get moreAppsOpenFailed => 'เปิดสโตร์แอปไม่ได้ โปรดลองอีกครั้ง';
 }

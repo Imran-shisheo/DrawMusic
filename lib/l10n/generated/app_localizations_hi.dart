@@ -1267,4 +1267,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get privacyPolicyOpensExternally => 'ऐप के बाहर खुलेगा';
+
+  @override
+  String get moreApps => 'और ऐप्स';
+
+  @override
+  String get moreAppsOpensStore => 'स्टोर में हमारे ऐप्स देखें';
+
+  @override
+  String get moreAppsOpenFailed =>
+      'ऐप स्टोर नहीं खुल सका। कृपया फिर कोशिश करें।';
 }
