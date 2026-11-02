@@ -375,5 +375,8 @@
   "navigation": "Nabigasyon",
   "privacyPolicy": "Patakaran sa privacy",
   "privacyPolicyOpenFailed": "Hindi mabuksan ang patakaran sa privacy. Subukan muli.",
-  "privacyPolicyOpensExternally": "Bubukas sa labas ng app"
+  "privacyPolicyOpensExternally": "Bubukas sa labas ng app",
+  "moreApps": "Iba pang app",
+  "moreAppsOpensStore": "Tingnan ang aming mga app sa store",
+  "moreAppsOpenFailed": "Hindi mabuksan ang app store. Pakisubukan muli."
 }

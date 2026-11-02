@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+import 'external_link.dart';
 
 // Exact public URL published and supplied by the owner’s coordinator.
 // Open only on user action in the external browser.
@@ -22,6 +23,5 @@ final privacyPolicyUriProvider = Provider<Uri?>(
 );
 
 final privacyPolicyLauncherProvider = Provider<Future<bool> Function(Uri)>(
-  (ref) =>
-      (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
+  (ref) => ref.watch(externalLinkLauncherProvider),
 );

@@ -1217,4 +1217,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get privacyPolicyOpensExternally => 'アプリの外で開きます';
+
+  @override
+  String get moreApps => 'その他のアプリ';
+
+  @override
+  String get moreAppsOpensStore => 'ストアで私たちのアプリを見る';
+
+  @override
+  String get moreAppsOpenFailed => 'アプリストアを開けませんでした。もう一度お試しください。';
 }

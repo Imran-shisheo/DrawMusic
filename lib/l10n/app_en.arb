@@ -585,5 +585,8 @@
   },
   "privacyPolicy": "Privacy policy",
   "privacyPolicyOpenFailed": "Could not open the privacy policy. Please try again.",
-  "privacyPolicyOpensExternally": "Opens outside the app"
+  "privacyPolicyOpensExternally": "Opens outside the app",
+  "moreApps": "More apps",
+  "moreAppsOpensStore": "Explore our apps in the store",
+  "moreAppsOpenFailed": "Could not open the app store. Please try again."
 }
