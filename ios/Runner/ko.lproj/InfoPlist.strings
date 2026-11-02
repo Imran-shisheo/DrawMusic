@@ -1,4 +1,4 @@
-"NSCameraUsageDescription" = "배경을 촬영하기로 선택할 때만 카메라를 사용합니다. 사진은 이 기기에 저장됩니다.";
+"NSCameraUsageDescription" = "그림의 배경 사진을 직접 촬영하기로 선택할 때 카메라를 사용합니다.";
 
 "CFBundleDisplayName" = "Doodimo";
 "CFBundleName" = "Doodimo";

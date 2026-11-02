@@ -10,6 +10,8 @@ import 'draw_to_sound_illustration.dart';
 import '../../../design_system/brand.dart';
 import '../../../design_system/doodimo_icon.dart';
 import '../../../design_system/layout.dart';
+import '../../../design_system/creative_components.dart';
+import '../../../design_system/motion.dart';
 
 class TutorialGate extends ConsumerStatefulWidget {
   const TutorialGate({super.key, required this.child, required this.enabled});
@@ -30,7 +32,33 @@ class _TutorialGateState extends ConsumerState<TutorialGate> {
       return widget.child;
     }
     if (state.loading) {
-      return Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: SceneBackdrop(
+          child: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SketchMark(size: 64),
+                    const SizedBox(height: 20),
+                    Text(
+                      AppBrand.displayName,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 24),
+                    const SizedBox.square(
+                      dimension: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
     }
     return TutorialPage(
       firstUse: true,
@@ -122,14 +150,27 @@ class TutorialPage extends ConsumerWidget {
                       ),
                     ),
                   ),
-                Semantics(
-                  header: true,
-                  child: Text(
-                    firstUse
-                        ? context.strings.welcomeToBrand(AppBrand.displayName)
-                        : context.strings.howToCreateALoop,
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsetsDirectional.only(end: 16, top: 3),
+                      child: SketchMark(size: 44),
+                    ),
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          firstUse
+                              ? context.strings.welcomeToBrand(
+                                  AppBrand.displayName,
+                                )
+                              : context.strings.howToCreateALoop,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -141,52 +182,11 @@ class TutorialPage extends ConsumerWidget {
                   child: DrawToSoundIllustration(),
                 ),
                 for (var i = 0; i < steps.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: ExpansionTile(
-                      key: ValueKey('creation-guide-step-$i'),
-                      initiallyExpanded: !firstUse && i == 0,
-                      maintainState: true,
-                      tilePadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 6,
-                      ),
-                      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                      backgroundColor: Colors.transparent,
-                      collapsedBackgroundColor: Colors.transparent,
-                      shape: Border(
-                        bottom: BorderSide(color: colors.outlineVariant),
-                      ),
-                      collapsedShape: Border(
-                        bottom: BorderSide(color: colors.outlineVariant),
-                      ),
-                      leading: ExcludeSemantics(
-                        child: SizedBox(
-                          width: 36,
-                          child: Text(
-                            context.formatNumber(i + 1).padLeft(2, '0'),
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  color: colors.primary,
-                                ),
-                          ),
-                        ),
-                      ),
-                      title: Text(
-                        steps[i].$2,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      children: [
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: Text(
-                            steps[i].$3,
-                            style: Theme.of(context).textTheme.bodyLarge,
-                          ),
-                        ),
-                      ],
-                    ),
+                  _GuideStep(
+                    index: i,
+                    title: steps[i].$2,
+                    detail: steps[i].$3,
+                    initiallyExpanded: !firstUse && i == 0,
                   ),
                 const SizedBox(height: 12),
                 Text(
@@ -260,6 +260,82 @@ class TutorialPage extends ConsumerWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GuideStep extends StatefulWidget {
+  const _GuideStep({
+    required this.index,
+    required this.title,
+    required this.detail,
+    required this.initiallyExpanded,
+  });
+  final int index;
+  final String title, detail;
+  final bool initiallyExpanded;
+  @override
+  State<_GuideStep> createState() => _GuideStepState();
+}
+
+class _GuideStepState extends State<_GuideStep> {
+  late bool _expanded = widget.initiallyExpanded;
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final type = Theme.of(context).textTheme;
+    final numberSize = MediaQuery.textScalerOf(context)
+        .scale(type.titleLarge?.fontSize ?? 22);
+    final numberExtent = (numberSize * 1.6).clamp(36.0, double.infinity);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: ImmersiveSurface(
+        padding: EdgeInsets.zero,
+        radius: 20,
+        accent: colors.outlineVariant,
+        child: ExpansionTile(
+          key: ValueKey('creation-guide-step-${widget.index}'),
+          initiallyExpanded: widget.initiallyExpanded,
+          maintainState: true,
+          onExpansionChanged: (value) => setState(() => _expanded = value),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          backgroundColor: Colors.transparent,
+          collapsedBackgroundColor: Colors.transparent,
+          shape: const Border(),
+          collapsedShape: const Border(),
+          trailing: AnimatedRotation(
+            turns: _expanded ? .5 : 0,
+            duration: CreativeMotion.duration(
+              context,
+              CreativeMotion.selection,
+            ),
+            curve: CreativeMotion.curve,
+            child: const DoodimoIcon(DoodimoGlyph.chevronDown, size: 20),
+          ),
+          leading: ExcludeSemantics(
+            child: SizedBox.square(
+              dimension: numberExtent,
+              child: Center(
+                child: Text(
+                  context.formatNumber(widget.index + 1).padLeft(2, '0'),
+                  style: type.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colors.primary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          title: Text(widget.title, style: type.titleMedium),
+          children: [
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(widget.detail, style: type.bodyLarge),
+            ),
+          ],
         ),
       ),
     );

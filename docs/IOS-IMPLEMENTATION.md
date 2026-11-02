@@ -1,6 +1,6 @@
 # iOS source ports and Mac validation
 
-The iOS project is generated from **Flutter 3.47.2**, in a disposable Linux directory, with only `ios/` copied into the application. Bundle identifier is `com.imranshisheo.scribblesong`; the generated deployment target is iOS 15.0. No signing team, certificate, provisioning profile, store listing or paid service is configured.
+The iOS project is generated from **Flutter 3.47.2**, in a disposable Linux directory, with only `ios/` copied into the application. Current owner-approved bundle identifier is `com.devwithdelta.doodimo`; the generated deployment target is iOS 15.0. No signing team, certificate, provisioning profile, store listing or paid service is configured.
 
 **Status:** Apple-native source implemented and inspected; **not compiled, linked, run or physically verified** on Linux. The three Dart channel-contract tests pass in cloud. They validate serialization/error handling, not AVFoundation/UIKit. Four native renderer XCTest cases and the iOS integration flow are provided for a Mac and are **unrun**. Existing Android evidence does not validate these ports.
 
@@ -52,7 +52,7 @@ The camera usage description has resources for all 12 shipped locales. System pi
 4. Locate the simulator's app data and inspect its files independently:
 
    ```bash
-   xcrun simctl get_app_container "$IOS_SIMULATOR_ID" com.imranshisheo.scribblesong data
+   xcrun simctl get_app_container "$IOS_SIMULATOR_ID" com.devwithdelta.doodimo data
    ffprobe -v error -show_streams -show_format '/actual/app/data/Documents/exports/actual-file.mp4'
    ffmpeg -v error -i '/actual/app/data/Documents/exports/actual-file.mp4' -f null -
    ```
@@ -76,3 +76,5 @@ Unresolved acceptance items above are not blockers for independent Android sourc
 With development mode enabled on a disposable iPhone/iPad installation, start a drawing, queue music/tempo edits near a boundary and pause/resume across positive output latency. In iOS Settings → Developer → MEDIA SERVICES TESTING → Reset Media Services, reset while playing and while paused. Return to the app: it must stay paused, preserve the latest drawing/snapshot, and resume only on explicit Play, with correct current/target revision and no duplicate graph/session. Repeat resets and Prepare/Play retries; use Instruments to check render/control races and bounded ownership.
 
 Repeat first Play and successive Play after category/configuration changes; delayed category notifications must not stop the new session. Remove headphones or trigger a genuine interruption: pause safely and never automatically resume. New output insertion and app overrides may continue per Apple policy; verify clock/latency recalculation. Linux state tests do not establish these actual OS-notification outcomes.
+
+Owner-approved identity change,29October2026: Runner usescom.devwithdelta.doodimo inallthree configurations; RunnerTests usescom.devwithdelta.doodimo.RunnerTests. There are no extension targets. Internal channel names/Dart package/data formats remain unchanged. The former identity is a distinct installed app/private sandbox; no automatic migration, old-app uninstall, signing/team/portal registration or upload is performed. Historical native evidence remains tied to its original app ID. Apple-framework compilation/archive and privacy-manifest validation still require supported Mac verification.

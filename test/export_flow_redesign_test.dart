@@ -149,6 +149,12 @@ void main() {
         ),
       );
       await tester.pump(const Duration(milliseconds: 350));
+      final stage = tester.element(
+        find.byKey(const ValueKey('export-artwork-stage')),
+      );
+      final artwork = tester.element(
+        find.byKey(const ValueKey('export-frozen-artwork')),
+      );
       for (final format in ['wav', 'mp4', 'png', 'midi', 'wav', 'png']) {
         final target = find.byKey(ValueKey('export-intent-$format'));
         await tester.ensureVisible(target);
@@ -157,6 +163,18 @@ void main() {
         await tester.pump(const Duration(milliseconds: 35));
         expect(find.byKey(ValueKey('export-settings-$format')), findsOneWidget);
         expect(find.byKey(const ValueKey('export-start')), findsOneWidget);
+        expect(
+          tester.element(find.byKey(const ValueKey('export-artwork-stage'))),
+          same(stage),
+        );
+        expect(
+          tester.element(find.byKey(const ValueKey('export-frozen-artwork'))),
+          same(artwork),
+        );
+        expect(
+          find.byKey(const ValueKey('export-finalized-seal')),
+          findsNothing,
+        );
         expect(tester.takeException(), isNull);
       }
       await tester.pump(const Duration(milliseconds: 400));
@@ -214,11 +232,32 @@ void main() {
       final real = FileExportLibrary(Directory('${root.path}/exports'));
       final gated = _GatedLibrary(real);
       await open(tester, gated);
+      final stage = tester.element(
+        find.byKey(const ValueKey('export-artwork-stage')),
+      );
+      final artwork = tester.element(
+        find.byKey(const ValueKey('export-frozen-artwork')),
+      );
+      final footer = tester.element(find.byKey(const ValueKey('export-start')));
+      expect(find.byKey(const ValueKey('export-finalized-seal')), findsNothing);
       await tester.tap(find.byKey(const ValueKey('export-start')));
       await tester.pump();
       expect(find.byKey(const ValueKey('export-working')), findsOneWidget);
       await _until(tester, () => gated.recording);
       expect(find.byKey(const ValueKey('export-finalizing')), findsOneWidget);
+      expect(find.byKey(const ValueKey('export-finalized-seal')), findsNothing);
+      expect(
+        tester.element(find.byKey(const ValueKey('export-artwork-stage'))),
+        same(stage),
+      );
+      expect(
+        tester.element(find.byKey(const ValueKey('export-frozen-artwork'))),
+        same(artwork),
+      );
+      expect(
+        tester.element(find.byKey(const ValueKey('export-start'))),
+        same(footer),
+      );
       expect(
         tester
             .widget<IconButton>(
@@ -251,6 +290,22 @@ void main() {
       expect(listing.entries.single.available, isTrue);
       expect(listing.entries.single.artifact.name, 'Quiet circles.png');
       expect(find.text('Share exported file'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('export-finalized-seal')),
+        findsOneWidget,
+      );
+      expect(
+        tester.element(find.byKey(const ValueKey('export-artwork-stage'))),
+        same(stage),
+      );
+      expect(
+        tester.element(find.byKey(const ValueKey('export-frozen-artwork'))),
+        same(artwork),
+      );
+      expect(
+        tester.element(find.byKey(const ValueKey('export-start'))),
+        same(footer),
+      );
       expect(find.text('Save a public copy'), findsOneWidget);
       expect(find.text('Open with another app'), findsOneWidget);
       expect(find.text('Export ready on this device.'), findsOneWidget);

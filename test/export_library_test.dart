@@ -1,6 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:scribblesong/features/settings/domain/preferences.dart';
+
+import 'support/root_navigation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/app/app.dart';
@@ -16,6 +21,7 @@ import 'package:share_plus/share_plus.dart';
 
 import 'export_test.dart' show sample;
 import 'support/memory_preferences.dart';
+import 'support/export_gallery_navigation.dart';
 
 class RecordingFileActions implements ExportFileActions {
   final opened = <ExportArtifact>[];
@@ -40,6 +46,15 @@ class RecordingFileActions implements ExportFileActions {
 }
 
 void main() {
+  setUpAll(() async {
+    final loader = FontLoader('NunitoSans');
+    for (final face in ['Regular', 'Medium', 'SemiBold', 'Bold']) {
+      loader.addFont(
+        rootBundle.load('assets/fonts/NunitoSans/NunitoSans-$face.ttf'),
+      );
+    }
+    await loader.load();
+  });
   test('export display names preserve Unicode and remove path separators', () {
     expect(readableExportName('雨の曲', 'wav'), '雨の曲.wav');
     expect(readableExportName('مرحبا', 'mp4'), 'مرحبا.mp4');
@@ -158,122 +173,149 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Library opens saved exports, shares the renamed file, saves and undoes removal',
-    (tester) async {
-      final setup = await tester.runAsync(() async {
-        final directory = await Directory.systemTemp.createTemp(
-          'drawmusic-library-ui-',
+  for (final compact in [false, true]) {
+    testWidgets(
+      'Library opens saved exports, shares the renamed file, saves and undoes removal compact=$compact',
+      (tester) async {
+        if (compact) {
+          tester.view.physicalSize = const Size(320, 640);
+          tester.view.devicePixelRatio = 1;
+          tester.platformDispatcher.textScaleFactorTestValue = 2;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        }
+        final setup = await tester.runAsync(() async {
+          final directory = await Directory.systemTemp.createTemp(
+            'drawmusic-library-ui-',
+          );
+          final artifact = await FileExportAdapter(directory)
+              .export(sample(), ExportFormat.midi, ExportCancellation());
+          final library = FileExportLibrary(directory);
+          await library.record(artifact, sample());
+          return (directory, artifact, library);
+        });
+        final (directory, artifact, library) = setup!;
+        addTearDown(
+          () => tester.runAsync(() => directory.delete(recursive: true)),
         );
-        final artifact = await FileExportAdapter(directory)
-            .export(sample(), ExportFormat.midi, ExportCancellation());
-        final library = FileExportLibrary(directory);
-        await library.record(artifact, sample());
-        return (directory, artifact, library);
-      });
-      final (directory, artifact, library) = setup!;
-      addTearDown(
-        () => tester.runAsync(() => directory.delete(recursive: true)),
-      );
-      final actions = RecordingFileActions();
-      final shared = <ExportArtifact>[];
-      var shareStatus = ShareResultStatus.dismissed;
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            libraryProvider.overrideWith((ref) async => ProjectListing([], [])),
-            preferencesStoreProvider.overrideWith(
-              (ref) async => MemoryPreferencesStore(),
-            ),
-            exportLibraryProvider.overrideWith((ref) async => library),
-            exportFileActionsProvider.overrideWithValue(actions),
-            shareExportProvider.overrideWithValue((artifact, origin) async {
-              shared.add(artifact);
-              return shareStatus;
-            }),
-          ],
-          child: const ScribbleSongApp(),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Library'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Exports'));
-      await tester.pump();
-      // Real filesystem listing requires real asynchronous progress beyond animation settlement.
-      Future<void> ready(String text) async {
-        for (var i = 0; i < 100 && find.text(text).evaluate().isEmpty; i++) {
+        final actions = RecordingFileActions();
+        final shared = <ExportArtifact>[];
+        var shareStatus = ShareResultStatus.dismissed;
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              libraryProvider.overrideWith(
+                (ref) async => ProjectListing([], []),
+              ),
+              preferencesStoreProvider.overrideWith(
+                (ref) async => MemoryPreferencesStore(
+                  UserPreferences(reduceMotion: compact),
+                ),
+              ),
+              exportLibraryProvider.overrideWith((ref) async => library),
+              exportFileActionsProvider.overrideWithValue(actions),
+              shareExportProvider.overrideWithValue((artifact, origin) async {
+                shared.add(artifact);
+                return shareStatus;
+              }),
+            ],
+            child: const ScribbleSongApp(),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tapRootNavigation(tester, 'nav-library');
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Exports'));
+        await tester.pump();
+        // Real filesystem listing requires real asynchronous progress beyond animation settlement.
+        Future<void> ready(String text) async {
+          for (var i = 0; i < 100 && find.text(text).evaluate().isEmpty; i++) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 10)),
+            );
+            await tester.pump();
+          }
+          await tester.pumpAndSettle();
+        }
+
+        await ready(artifact.name);
+        await revealExportGalleryItem(tester, find.text(artifact.name));
+        await tester.tap(find.text(artifact.name));
+        await tester.pumpAndSettle();
+        expect(actions.opened.single.path, artifact.path);
+        Future<void> menu(String name, String action) async {
+          await revealExportGalleryItem(
+            tester,
+            find.byTooltip('Actions for $name'),
+          );
+          await tester.tap(find.byTooltip('Actions for $name'));
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(find.text(action));
+          await tester.pump();
+          expect(find.text(action).hitTestable(), findsOneWidget);
+          await tester.tap(find.text(action));
+          await tester.pumpAndSettle();
+        }
+
+        await menu(artifact.name, 'Rename');
+        await tester.enterText(find.byType(TextField), 'Renamed loop');
+        await tester.ensureVisible(find.text('Apply'));
+        await tester.tap(find.text('Apply'));
+        await ready('Renamed loop.mid');
+        await menu('Renamed loop.mid', 'Share');
+        expect(shared.single.name, 'Renamed loop.mid');
+        expect(
+          find.text('Share sheet dismissed. Export is still saved.'),
+          findsOneWidget,
+        );
+        for (final (status, message) in [
+          (
+            ShareResultStatus.unavailable,
+            'Sharing unavailable. The library file is preserved.',
+          ),
+          (
+            ShareResultStatus.success,
+            'Share sheet closed. Delivery is handled by the selected app.',
+          ),
+        ]) {
+          await tester.pump(const Duration(seconds: 5));
+          await tester.pumpAndSettle();
+          shareStatus = status;
+          await menu('Renamed loop.mid', 'Share');
+          expect(find.text(message), findsOneWidget);
+          expect(shared.last.name, 'Renamed loop.mid');
+          expect(
+            await tester.runAsync(() => File(artifact.path).exists()),
+            isTrue,
+          );
+        }
+        await menu('Renamed loop.mid', 'Save a copy');
+        for (var i = 0; i < 10; i++) {
           await tester.runAsync(
             () => Future<void>.delayed(const Duration(milliseconds: 10)),
           );
           await tester.pump();
         }
-        await tester.pumpAndSettle();
-      }
-
-      await ready(artifact.name);
-      await tester.tap(find.text(artifact.name));
-      await tester.pumpAndSettle();
-      expect(actions.opened.single.path, artifact.path);
-      Future<void> menu(String name, String action) async {
-        await tester.tap(find.byTooltip('Actions for $name'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text(action));
-        await tester.pumpAndSettle();
-      }
-
-      await menu(artifact.name, 'Rename');
-      await tester.enterText(find.byType(TextField), 'Renamed loop');
-      await tester.tap(find.text('Apply'));
-      await ready('Renamed loop.mid');
-      await menu('Renamed loop.mid', 'Share');
-      expect(shared.single.name, 'Renamed loop.mid');
-      expect(
-        find.text('Share sheet dismissed. Export is still saved.'),
-        findsOneWidget,
-      );
-      for (final (status, message) in [
-        (
-          ShareResultStatus.unavailable,
-          'Sharing unavailable. The library file is preserved.',
-        ),
-        (
-          ShareResultStatus.success,
-          'Share sheet closed. Delivery is handled by the selected app.',
-        ),
-      ]) {
-        await tester.pump(const Duration(seconds: 5));
-        await tester.pumpAndSettle();
-        shareStatus = status;
-        await menu('Renamed loop.mid', 'Share');
-        expect(find.text(message), findsOneWidget);
-        expect(shared.last.name, 'Renamed loop.mid');
+        expect(actions.saved.single.name, 'Renamed loop.mid');
+        await menu('Renamed loop.mid', 'Delete');
+        await tester.ensureVisible(find.widgetWithText(FilledButton, 'Delete'));
+        await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+        for (var i = 0; i < 10; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump();
+        }
+        await ready('Undo');
+        await tester.tap(find.text('Undo'));
+        await ready('Renamed loop.mid');
         expect(
           await tester.runAsync(() => File(artifact.path).exists()),
           isTrue,
         );
-      }
-      await menu('Renamed loop.mid', 'Save a copy');
-      for (var i = 0; i < 10; i++) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 10)),
-        );
-        await tester.pump();
-      }
-      expect(actions.saved.single.name, 'Renamed loop.mid');
-      await menu('Renamed loop.mid', 'Delete');
-      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
-      for (var i = 0; i < 10; i++) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 10)),
-        );
-        await tester.pump();
-      }
-      await ready('Undo');
-      await tester.tap(find.text('Undo'));
-      await ready('Renamed loop.mid');
-      expect(await tester.runAsync(() => File(artifact.path).exists()), isTrue);
-      await tester.pumpWidget(const SizedBox());
-    },
-  );
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
+  }
 }

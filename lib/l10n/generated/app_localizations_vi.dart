@@ -327,7 +327,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks =>
-      'Bản vẽ, tùy chọn và tệp xuất ở trên thiết bị. Sáng tạo ngoại tuyến không cần tài khoản. Chỉ gửi tệp khi bạn chọn chia sẻ. Gỡ ứng dụng sẽ xóa dữ liệu riêng.';
+      'Sáng tạo ngoại tuyến mà không cần tài khoản. Bản vẽ và cài đặt được lưu trong ứng dụng. Chia sẻ hoặc lưu bản xuất có thể gửi bản sao đến ứng dụng, thư mục hoặc dịch vụ đám mây bạn chọn. Cài đặt hệ thống cũng có thể cho phép sao lưu dữ liệu ứng dụng. Xóa bản vẽ có thể vẫn giữ bản sao khôi phục cho đến khi dọn dẹp; không phải mọi bản sao đều bị xóa vĩnh viễn ngay lập tức. Bản xuất hoặc bản sao lưu có thể còn sau khi xóa hay gỡ ứng dụng.';
 
   @override
   String get readingBuildInformation => 'Đang đọc phiên bản…';
@@ -1243,4 +1243,20 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get editorToolsShort => 'Công cụ';
+
+  @override
+  String get openingDrawing => 'Đang mở bản vẽ…';
+
+  @override
+  String get navigation => 'Điều hướng';
+
+  @override
+  String get privacyPolicy => 'Chính sách quyền riêng tư';
+
+  @override
+  String get privacyPolicyOpenFailed =>
+      'Không mở được chính sách quyền riêng tư. Vui lòng thử lại.';
+
+  @override
+  String get privacyPolicyOpensExternally => 'Mở bên ngoài ứng dụng';
 }

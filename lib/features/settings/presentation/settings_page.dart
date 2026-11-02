@@ -1,3 +1,4 @@
+import '../../../app/artwork_navigation.dart';
 import '../../../design_system/immersive_surface.dart';
 import '../../../l10n/operation_messages.dart';
 
@@ -7,11 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../../design_system/brand_colors.dart';
+import '../../../design_system/creative_components.dart';
+import '../../../design_system/motion.dart';
 import '../../../design_system/doodimo_icon.dart';
 import '../../../design_system/brand.dart';
 import '../../../design_system/layout.dart';
 import '../application/settings_controller.dart';
+import '../application/privacy_policy.dart';
 import 'language_page.dart';
 
 final appInfoProvider = FutureProvider<PackageInfo>(
@@ -26,12 +29,35 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   double? _volume;
+  bool _openingPrivacyPolicy = false;
+
+  Future<void> _openPrivacyPolicy(Uri uri) async {
+    if (_openingPrivacyPolicy) return;
+    setState(() => _openingPrivacyPolicy = true);
+    var opened = false;
+    try {
+      opened = await ref.read(privacyPolicyLauncherProvider)(uri);
+    } catch (_) {
+      // A browser/provider failure must remain retryable and must not leak it.
+    } finally {
+      if (mounted) {
+        setState(() => _openingPrivacyPolicy = false);
+        if (!opened) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.strings.privacyPolicyOpenFailed)),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(settingsProvider);
     final preferences = state.preferences;
     final busy = state.loading || state.saving;
     final colors = Theme.of(context).colorScheme;
+    final policyUri = ref.watch(privacyPolicyUriProvider);
     final volume = _volume ?? preferences.previewVolume;
     return Scaffold(
       appBar: AppBar(
@@ -80,12 +106,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         padding: const EdgeInsets.fromLTRB(4, 8, 4, 24),
                         child: Row(
                           children: [
-                            const DoodimoIcon(DoodimoGlyph.settings, size: 40),
+                            const SketchMark(size: 44),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: Text(
-                                context.strings.uiComfortPreferences,
-                                style: Theme.of(context).textTheme.titleMedium,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    AppBrand.displayName,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    context.strings.uiComfortPreferences,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: colors.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -288,7 +331,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                             trailing: const DoodimoIcon(
                               DoodimoGlyph.arrowUpRight,
                             ),
-                            onTap: () => context.push('/editor/new?tips=1'),
+                            onTap: () => openEditorWithArtworkFlight(
+                              context,
+                              'new',
+                              null,
+                              replayTips: true,
+                            ),
                           ),
                           _PreferenceDetails(
                             title: context.strings.privacy,
@@ -299,6 +347,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                     .strings
                                     .drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks,
                               ),
+                              if (policyUri != null)
+                                ListTile(
+                                  key: const ValueKey('privacy-policy-link'),
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(context.strings.privacyPolicy),
+                                  subtitle: Text(
+                                    context
+                                        .strings
+                                        .privacyPolicyOpensExternally,
+                                  ),
+                                  trailing: const DoodimoIcon(
+                                    DoodimoGlyph.arrowUpRight,
+                                  ),
+                                  enabled: !_openingPrivacyPolicy,
+                                  onTap: () => _openPrivacyPolicy(policyUri),
+                                ),
                             ],
                           ),
                           ListTile(
@@ -389,10 +453,7 @@ class _SettingsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final content = Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: featured ? 20 : 4,
-        vertical: featured ? 16 : 0,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -418,22 +479,22 @@ class _SettingsSection extends StatelessWidget {
                 ],
               ),
             ),
-            if (!featured) Divider(height: 1, color: colors.outlineVariant),
+            Divider(height: 1, color: colors.outlineVariant),
+            const SizedBox(height: 8),
           ],
           ...children,
         ],
       ),
     );
     return Padding(
-      padding: const EdgeInsets.only(bottom: 28),
-      child: featured
-          ? ImmersiveSurface(
-              padding: EdgeInsets.zero,
-              accent: DoodimoColors.cyan,
-              glow: true,
-              child: content,
-            )
-          : Material(type: MaterialType.transparency, child: content),
+      padding: const EdgeInsets.only(bottom: 16),
+      child: ImmersiveSurface(
+        key: ValueKey('settings-section-${title ?? 'language'}'),
+        padding: EdgeInsets.zero,
+        radius: 24,
+        accent: featured ? colors.primary : colors.outlineVariant,
+        child: content,
+      ),
     );
   }
 }
@@ -458,7 +519,7 @@ class _SettingIcon extends StatelessWidget {
   );
 }
 
-class _PreferenceDetails extends StatelessWidget {
+class _PreferenceDetails extends StatefulWidget {
   const _PreferenceDetails({
     required this.title,
     required this.children,
@@ -468,15 +529,32 @@ class _PreferenceDetails extends StatelessWidget {
   final List<Widget> children;
   final IconData icon;
   @override
+  State<_PreferenceDetails> createState() => _PreferenceDetailsState();
+}
+
+class _PreferenceDetailsState extends State<_PreferenceDetails> {
+  bool _expanded = false;
+  @override
   Widget build(BuildContext context) => ExpansionTile(
+    maintainState: true,
     tilePadding: const EdgeInsets.symmetric(horizontal: 4),
     childrenPadding: const EdgeInsets.fromLTRB(4, 0, 4, 16),
     leading: const DoodimoIcon(DoodimoGlyph.help, size: 20),
-    title: Text(title, style: Theme.of(context).textTheme.bodyMedium),
+    trailing: AnimatedRotation(
+      turns: _expanded ? .5 : 0,
+      duration: CreativeMotion.duration(context, CreativeMotion.selection),
+      curve: CreativeMotion.curve,
+      child: const DoodimoIcon(DoodimoGlyph.chevronDown, size: 20),
+    ),
+    onExpansionChanged: (expanded) => setState(() => _expanded = expanded),
+    title: Text(widget.title, style: Theme.of(context).textTheme.bodyMedium),
     shape: const Border(),
     collapsedShape: const Border(),
     children: [
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: widget.children,
+      ),
     ],
   );
 }

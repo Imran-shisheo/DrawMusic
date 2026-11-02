@@ -162,15 +162,32 @@ void main() {
       router.go('/exports');
       await tester.pumpAndSettle();
       expect(entries, hasLength(4));
+      await revealExportGalleryItem(tester, find.text('Paper hills.wav'));
       expect(find.text('Paper hills.wav'), findsOneWidget);
-      void expectOldestRowClipped() {
-        final viewport = tester.getRect(
-          find.byKey(const PageStorageKey('exports-scroll')),
-        );
+      Future<void> expectOldestRowClipped() async {
+        // The featured artwork intentionally pushes rows farther below the
+        // opening viewport. Reproduce a cached-but-clipped oldest row with
+        // actual scroll gestures instead of requiring all rows to mount at0.
+        await revealExportGalleryItem(tester, find.text('Paper hills.mp4'));
+        final list = find.byKey(const PageStorageKey('exports-scroll'));
+        final viewport = tester.getRect(list);
         final oldest = find.ancestor(
           of: find.text('Paper hills.mp4'),
           matching: find.byType(LibraryDocumentCard),
         );
+        expect(oldest, findsOneWidget);
+        final movement = viewport.bottom - tester.getRect(oldest).bottom + 24;
+        if (movement > 0) {
+          final gesture = await tester.startGesture(viewport.center);
+          await gesture.moveBy(const Offset(0, 20));
+          await tester.pump(const Duration(milliseconds: 16));
+          await gesture.moveBy(Offset(0, movement));
+          // Hold before release so fling momentum cannot skip the intended
+          // cached-but-partially-clipped geometry.
+          await tester.pump(const Duration(milliseconds: 400));
+          await gesture.up();
+          await tester.pumpAndSettle();
+        }
         expect(oldest, findsOneWidget);
         expect(
           tester.getRect(oldest).bottom,
@@ -179,7 +196,7 @@ void main() {
         );
       }
 
-      expectOldestRowClipped();
+      await expectOldestRowClipped();
       for (final extension in ['wav', 'png', 'mid', 'mp4']) {
         await revealExportGalleryItem(
           tester,
@@ -240,9 +257,9 @@ void main() {
           'Paper hills.mid',
         ]),
       );
-      // Fresh scope/router restores initial gallery geometry, rather than
-      // retaining the revealed MP4 row from the first visit.
-      expectOldestRowClipped();
+      // A fresh scope/router starts at the featured artwork. Reproduce the
+      // same clipped-row geometry with a new user scroll sequence.
+      await expectOldestRowClipped();
       for (final extension in ['mp4', 'wav', 'png', 'mid']) {
         await revealExportGalleryItem(
           tester,

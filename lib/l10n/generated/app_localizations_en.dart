@@ -328,7 +328,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks =>
-      'Drawings, preferences and exports stay on this device. Creation works offline without an account. Files leave the app only when you explicitly share them. Uninstalling removes app-private data.';
+      'Create offline without an account. Drawings and settings are stored in the app. Sharing or saving an export can send a copy to another app, folder or cloud provider you choose. Your system settings may also allow app-data backups. Deleting a drawing can leave recovery copies until cleanup; it does not immediately erase every copy. Exported or backed-up copies may remain after deletion or uninstalling.';
 
   @override
   String get readingBuildInformation => 'Reading build information…';
@@ -1261,4 +1261,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editorToolsShort => 'Tools';
+
+  @override
+  String get openingDrawing => 'Opening drawing…';
+
+  @override
+  String get navigation => 'Navigation';
+
+  @override
+  String get privacyPolicy => 'Privacy policy';
+
+  @override
+  String get privacyPolicyOpenFailed =>
+      'Could not open the privacy policy. Please try again.';
+
+  @override
+  String get privacyPolicyOpensExternally => 'Opens outside the app';
 }

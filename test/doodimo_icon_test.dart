@@ -51,7 +51,7 @@ Future<Uint8List> _pixels(
 
 void main() {
   testWidgets(
-    'all filled glyphs retain visible optical insets at actual 24, 28 and 32px sizes',
+    'all outline glyphs retain visible optical insets at actual 24, 28 and 32px sizes',
     (tester) async {
       for (final size in [24, 28, 32]) {
         for (final glyph in DoodimoGlyph.values) {

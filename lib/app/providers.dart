@@ -25,11 +25,34 @@ final initialDocumentProvider = Provider<ProjectDocument>(
   (ref) => throw StateError('Editor document not supplied'),
   dependencies: [],
 );
+
+/// A transient navigation identity, never a document ID or persisted schema.
+/// Separate requests cannot reuse a popping editor's initial load snapshot.
+class EditorLoadRequest {
+  const EditorLoadRequest({required this.projectId, required this.sessionId});
+  final String projectId, sessionId;
+  @override
+  bool operator ==(Object other) =>
+      other is EditorLoadRequest &&
+      other.projectId == projectId &&
+      other.sessionId == sessionId;
+  @override
+  int get hashCode => Object.hash(projectId, sessionId);
+}
+
+Future<ProjectLoad> _readEditorDocument(Ref ref, String id) async {
+  if (id == 'new') return ProjectLoad(ProjectDocument(id: newId()));
+  if (id.startsWith('template-')) return ProjectLoad(makeTemplate(id));
+  return (await ref.watch(repositoryProvider.future)).open(id);
+}
+
+// Retained for direct/legacy callers and existing domain fixtures.
 final openedDocumentProvider = FutureProvider.autoDispose
-    .family<ProjectLoad, String>((ref, id) async {
-      if (id == 'new') return ProjectLoad(ProjectDocument(id: newId()));
-      if (id.startsWith('template-')) return ProjectLoad(makeTemplate(id));
-      return (await ref.watch(repositoryProvider.future)).open(id);
-    });
+    .family<ProjectLoad, String>((ref, id) => _readEditorDocument(ref, id));
+
+final editorLoadProvider = FutureProvider.autoDispose
+    .family<ProjectLoad, EditorLoadRequest>(
+      (ref, request) => _readEditorDocument(ref, request.projectId),
+    );
 
 ProjectDocument makeTemplate(String id) => templateById(id).create();

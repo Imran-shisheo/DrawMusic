@@ -7,7 +7,11 @@ import 'doodimo_icon.dart';
 
 export '../features/backgrounds/presentation/background_panel.dart';
 
-Future<int?> showPaperPanel(BuildContext context, int background) {
+Future<int?> showPaperPanel(
+  BuildContext context,
+  int background, {
+  Rect? sourceBounds,
+}) {
   var rgb = background & 0xffffff;
   var opacity = (background >>> 24) / 255;
   final colors = [
@@ -19,6 +23,7 @@ Future<int?> showPaperPanel(BuildContext context, int background) {
   int selected() => (opacity * 255).round() << 24 | rgb;
   return showCreativePanel<int>(
     context: context,
+    sourceBounds: sourceBounds,
     builder: (context) => StatefulBuilder(
       builder: (context, update) => CreativePanel(
         title: context.strings.backgroundPanelTitle,

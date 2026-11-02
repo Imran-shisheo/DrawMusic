@@ -4,12 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scribblesong/app/app.dart';
 import 'package:scribblesong/app/providers.dart';
 import 'package:scribblesong/creative_document/document.dart';
-import 'package:scribblesong/design_system/creative_dock.dart';
 import 'package:scribblesong/features/settings/application/settings_controller.dart';
 import 'package:scribblesong/features/settings/domain/preferences.dart';
 import 'package:scribblesong/features/settings/presentation/settings_page.dart';
 
 import 'support/memory_preferences.dart';
+import 'support/root_navigation.dart';
 import 'support/settings_navigation.dart';
 import 'widget_test.dart' show MemoryRepository, TestAudio;
 
@@ -52,12 +52,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        await tester.tap(
-          find.descendant(
-            of: find.byType(CreativeDock),
-            matching: find.text('Settings'),
-          ),
-        );
+        await tapRootNavigation(tester, 'nav-settings');
         await tester.pumpAndSettle();
         final container = ProviderScope.containerOf(
           tester.element(find.byType(SettingsPage)),

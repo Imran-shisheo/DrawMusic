@@ -1,6 +1,8 @@
 # UI/UX redesign implementation and acceptance
 
-**ACTIVE REPLACEMENT:** [immersive audiovisual-playground brief](requests/IMMERSIVE-REDESIGN-2026-10-27.md). The owner rejected BOTH earlier iterations, including the editorial-mixtape palette/icons. The historical design directions below do not constrain the new aesthetic. Preserve their verified functional/a11y fixes. All major surfaces now use the implemented replacement. Final-source native, recording, responsive-pixel and profile acceptance remains active; historical recordings and rejected references are separately labeled.
+**CURRENT29OCTOBER:** the owner approved the original graphite/material review and motion storyboard. [Verified inputs and active implementation](GRAPHITE-IMPLEMENTATION-PLAN.md) supersede the historical aesthetic below while preserving all verified functionality. Working implementation spans all major screens, finite opening, retained navigation and snapshot flights; final-source checks/recordings/profile remain active. The old Library-input blocker is resolved via authorized Git handoff.
+
+**HISTORICAL27OCTOBER REPLACEMENT:** [immersive audiovisual-playground brief](requests/IMMERSIVE-REDESIGN-2026-10-27.md). The owner rejected BOTH earlier iterations, including the editorial-mixtape palette/icons. The historical design directions below do not constrain the new aesthetic. Preserve their verified functional/a11y fixes. All major surfaces now use the implemented replacement. Final-source native, recording, responsive-pixel and profile acceptance remains active; historical recordings and rejected references are separately labeled.
 
 27 October 2026. Source: [complete owner brief](requests/UI-UX-REDESIGN-2026-10-27.txt), supplemented by the owner's naming authorization. This is an implementation ledger, not a completion claim.
 

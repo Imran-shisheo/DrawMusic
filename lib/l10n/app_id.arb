@@ -98,7 +98,7 @@
   "replayEditorTips": "Ulangi tips editor",
   "opensANewBlankDrawingWithGuidedControls": "Membuka gambar kosong baru dengan kontrol terpandu.",
   "privacy": "Privasi",
-  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Gambar, preferensi, dan ekspor tetap di perangkat ini. Berkarya luring tanpa akun. Berkas keluar hanya saat Anda membagikannya. Menghapus aplikasi menghapus data privat.",
+  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Berkreasi secara offline tanpa akun. Gambar dan pengaturan disimpan di aplikasi. Membagikan atau menyimpan ekspor dapat mengirim salinan ke aplikasi, folder, atau penyedia cloud pilihan Anda. Pengaturan sistem juga dapat mengizinkan pencadangan data aplikasi. Menghapus gambar dapat menyisakan salinan pemulihan hingga dibersihkan; tidak semua salinan langsung dihapus permanen. Salinan ekspor atau cadangan dapat tetap ada setelah penghapusan atau pencopotan aplikasi.",
   "readingBuildInformation": "Membaca informasi versi…",
   "buildInformationUnavailable": "Informasi versi tidak tersedia",
   "tryAStartingPoint": "Coba titik awal",
@@ -370,5 +370,10 @@
   "welcomeToBrand": "Selamat datang di {name}",
   "backgroundPanelTitle": "Kertas dan foto",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "Alat"
+  "editorToolsShort": "Alat",
+  "openingDrawing": "Membuka gambar…",
+  "navigation": "Navigasi",
+  "privacyPolicy": "Kebijakan privasi",
+  "privacyPolicyOpenFailed": "Kebijakan privasi tidak dapat dibuka. Coba lagi.",
+  "privacyPolicyOpensExternally": "Dibuka di luar aplikasi"
 }

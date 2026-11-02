@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../../l10n/strings.dart';
 import '../../../design_system/creative_panel.dart';
 import '../../../design_system/creative_components.dart';
-import '../../../design_system/brand_colors.dart';
 import '../../../design_system/doodimo_icon.dart';
 
 /// Informational opt-in only: no star controls, sentiment filtering, store URL
@@ -35,13 +34,19 @@ Future<bool> showRatingOffer(BuildContext context) async {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 24),
                   child: ImmersiveSurface(
-                    accent: DoodimoColors.violet,
-                    glow: true,
-                    child: const Row(
+                    accent: Theme.of(context).colorScheme.outlineVariant,
+                    radius: 22,
+                    child: Row(
                       children: [
-                        SketchMark(size: 72),
-                        SizedBox(width: 20),
-                        Expanded(child: Divider()),
+                        const SketchMark(size: 56),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Divider(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const DoodimoIcon(DoodimoGlyph.sound, size: 32),
                       ],
                     ),
                   ),

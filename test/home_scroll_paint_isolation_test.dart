@@ -112,6 +112,11 @@ void main() {
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
+              // Paint isolation uses a deterministic actual-load fixture too;
+              // source flights now wait on real destination readiness.
+              editorLoadProvider.overrideWith(
+                (ref, request) async => ProjectLoad(document),
+              ),
               libraryProvider.overrideWith(
                 (ref) async => ProjectListing([document], []),
               ),

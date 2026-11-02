@@ -9,8 +9,10 @@ Future<String?> askDrawingName(
   BuildContext context,
   String title, {
   String? heading,
+  Rect? sourceBounds,
 }) => showCreativePanel<String>(
   context: context,
+  sourceBounds: sourceBounds,
   builder: (_) => _NameDialog(
     title: title,
     heading: heading ?? context.strings.nameYourDrawing,

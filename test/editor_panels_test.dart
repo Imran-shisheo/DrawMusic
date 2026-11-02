@@ -12,6 +12,35 @@ import 'creative_editor_test.dart'
 import 'support/editor_controls.dart';
 
 void main() {
+  testWidgets(
+    'direct graphite paper control owns one sheet and Cancel retains live canvas',
+    (tester) async {
+      await mountEditor(tester, size: const Size(411, 850));
+      final original = current(tester).encode();
+      final canvas = tester.state<DrawingCanvasState>(
+        find.byType(DrawingCanvas),
+      );
+      final paper = find.byKey(const ValueKey('editor-background'));
+      await tester.ensureVisible(paper);
+      await tester.pumpAndSettle();
+      await tester.tap(paper);
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(current(tester).encode(), original);
+      expect(
+        identical(
+          tester.state<DrawingCanvasState>(find.byType(DrawingCanvas)),
+          canvas,
+        ),
+        isTrue,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
   for (final brightness in [Brightness.light, Brightness.dark]) {
     testWidgets(
       'immersive score and clear panels preserve exact drawing, Back and one Undo ($brightness)',

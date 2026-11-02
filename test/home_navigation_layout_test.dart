@@ -1,3 +1,5 @@
+import 'support/root_navigation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:scribblesong/design_system/creative_dock.dart';
 import 'package:flutter/services.dart';
@@ -70,7 +72,7 @@ void main() {
   );
 
   testWidgets(
-    'phone Home exposes creation and the first template names without an overlapping dock',
+    'phone Home exposes creation and artwork-led gallery names remain unobscured after real scrolling',
     (tester) async {
       tester.view.physicalSize = const Size(411, 850);
       tester.view.devicePixelRatio = 1;
@@ -91,9 +93,20 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(
-        find.byKey(const ValueKey('home-start')).hitTestable(),
+        find.byKey(const ValueKey('root-new-drawing')).hitTestable(),
         findsOneWidget,
       );
+      // Artwork leads the approved composition. Reach the actual first row by
+      // scrolling; labels must remain usable above the persistent dock.
+      await tester.scrollUntilVisible(
+        find.text('Paper hills'),
+        180,
+        scrollable: find.descendant(
+          of: find.byKey(const PageStorageKey('home-scroll')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.pumpAndSettle();
       expect(find.text('Paper hills').hitTestable(), findsOneWidget);
       expect(find.text('Little rain').hitTestable(), findsOneWidget);
       expect(
@@ -113,9 +126,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       final beforeSwitch = tester.getTopLeft(find.text('Warm columns'));
-      await tester.tap(find.byKey(const ValueKey('nav-library')));
+      await tapRootNavigation(tester, 'nav-library');
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('nav-home')));
+      await tapRootNavigation(tester, 'nav-home');
       await tester.pumpAndSettle();
       expect(find.text('Warm columns').hitTestable(), findsOneWidget);
       expect(tester.getTopLeft(find.text('Warm columns')), beforeSwitch);

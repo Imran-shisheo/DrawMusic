@@ -330,7 +330,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks =>
-      'Gambar, preferensi, dan ekspor tetap di perangkat ini. Berkarya luring tanpa akun. Berkas keluar hanya saat Anda membagikannya. Menghapus aplikasi menghapus data privat.';
+      'Berkreasi secara offline tanpa akun. Gambar dan pengaturan disimpan di aplikasi. Membagikan atau menyimpan ekspor dapat mengirim salinan ke aplikasi, folder, atau penyedia cloud pilihan Anda. Pengaturan sistem juga dapat mengizinkan pencadangan data aplikasi. Menghapus gambar dapat menyisakan salinan pemulihan hingga dibersihkan; tidak semua salinan langsung dihapus permanen. Salinan ekspor atau cadangan dapat tetap ada setelah penghapusan atau pencopotan aplikasi.';
 
   @override
   String get readingBuildInformation => 'Membaca informasi versi…';
@@ -1264,4 +1264,20 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get editorToolsShort => 'Alat';
+
+  @override
+  String get openingDrawing => 'Membuka gambar…';
+
+  @override
+  String get navigation => 'Navigasi';
+
+  @override
+  String get privacyPolicy => 'Kebijakan privasi';
+
+  @override
+  String get privacyPolicyOpenFailed =>
+      'Kebijakan privasi tidak dapat dibuka. Coba lagi.';
+
+  @override
+  String get privacyPolicyOpensExternally => 'Dibuka di luar aplikasi';
 }

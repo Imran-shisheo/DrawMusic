@@ -42,7 +42,7 @@ void main() {
               appInfoProvider.overrideWith(
                 (ref) async => PackageInfo(
                   appName: 'ScribbleSong',
-                  packageName: 'com.imranshisheo.scribblesong',
+                  packageName: 'com.devwithdelta.doodimo',
                   version: '2.1.0',
                   buildNumber: '24',
                 ),

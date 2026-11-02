@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:crypto/crypto.dart';
@@ -16,7 +18,11 @@ import 'package:scribblesong/features/export_library/domain/export_library.dart'
 import 'package:scribblesong/features/export_library/presentation/exports_page.dart';
 import 'package:scribblesong/l10n/generated/app_localizations.dart';
 
+import 'support/export_gallery_navigation.dart';
+
 const _captureKey = ValueKey('library-capture');
+const _captureDiagnostics = bool.fromEnvironment('EXPORT_THUMBNAIL_CAPTURE');
+var _diagnosticSequence = 0;
 
 class _RecordingOpenActions implements ExportFileActions {
   final opened = <ExportArtifact>[];
@@ -46,6 +52,77 @@ LibraryExport _entry(
   preview: ProjectDocument.decode(saved.encode()),
 );
 
+// Hold the exact, already decoded chrome asset before observing gallery-owned
+// photo handles. Only actual clones of this same native image are chrome; an
+// unrelated128×128 photo is still a photo and must satisfy its own role guard.
+class _ChromeLease {
+  _ChromeLease(this.info);
+  final ImageInfo info;
+  final created = <ui.Image>[];
+  final live = <ui.Image>{};
+  var peakLive = 0;
+  var _released = false;
+
+  bool record(ui.Image image) {
+    if (!image.isCloneOf(info.image)) return false;
+    created.add(image);
+    live.add(image);
+    if (live.length > peakLive) peakLive = live.length;
+    return true;
+  }
+
+  void disposed(ui.Image image) => live.remove(image);
+
+  void expectGalleryClonesReleased() {
+    expect(info.image.width, 128);
+    expect(info.image.height, 128);
+    expect(info.image.width * info.image.height * 4, 65536);
+    expect(created.every((image) => image.isCloneOf(info.image)), isTrue);
+    // Only the selector and featured plate use this texture in this fixture.
+    expect(peakLive, lessThanOrEqualTo(2));
+    expect(live, isEmpty);
+    expect(created.every((image) => image.debugDisposed), isTrue);
+  }
+
+  void release() {
+    if (_released) return;
+    _released = true;
+    info.dispose();
+  }
+}
+
+Future<_ChromeLease> _warmChrome(WidgetTester tester) async {
+  final data = await tester.runAsync(
+    () => File('assets/branding/graphite-grain.png').readAsBytes(),
+  );
+  expect(
+    sha256.convert(data!).toString(),
+    '1abd91ffa88167ed36a2cc4a72a6fb24cb57bef3207325b073a2e49b32ec3640',
+  );
+  final info = (await tester.runAsync(() async {
+    final ready = Completer<ImageInfo>();
+    final stream = const ExactAssetImage(
+      'assets/branding/graphite-grain.png',
+      scale: 2,
+    ).resolve(ImageConfiguration.empty);
+    final listener = ImageStreamListener(
+      (image, synchronous) => ready.complete(image),
+      onError: (Object error, StackTrace? stack) =>
+          ready.completeError(error, stack),
+    );
+    stream.addListener(listener);
+    try {
+      return await ready.future;
+    } finally {
+      stream.removeListener(listener);
+    }
+  }))!;
+  expect(info.scale, 2);
+  expect(info.image.width, 128);
+  expect(info.image.height, 128);
+  return _ChromeLease(info);
+}
+
 Future<void> _pumpLibrary(
   WidgetTester tester,
   List<LibraryExport> entries, {
@@ -70,34 +147,73 @@ Future<void> _pumpLibrary(
   await tester.pumpAndSettle();
 }
 
+Finder _thumbnail([String id = 'saved.mp4']) =>
+    find.byKey(ValueKey('export-thumbnail-$id'));
+
+Future<void> _revealThumbnail(
+  WidgetTester tester, {
+  String id = 'saved.mp4',
+}) async {
+  final tile = _thumbnail(id);
+  final list = find.byKey(const PageStorageKey('exports-scroll'));
+  final viewport = tester.getRect(list);
+  var visible = false;
+  if (tile.evaluate().isNotEmpty) {
+    final rect = tester.getRect(tile);
+    visible =
+        viewport.contains(rect.topLeft) &&
+        viewport.contains(rect.bottomRight - const Offset(.01, .01)) &&
+        tile.hitTestable().evaluate().isNotEmpty;
+  }
+  if (!visible) await revealExportGalleryItem(tester, tile);
+  final rect = tester.getRect(tile);
+  expect(rect.left, greaterThanOrEqualTo(viewport.left));
+  expect(rect.top, greaterThanOrEqualTo(viewport.top));
+  expect(rect.right, lessThanOrEqualTo(viewport.right));
+  expect(rect.bottom, lessThanOrEqualTo(viewport.bottom));
+  expect(tile.hitTestable(), findsOneWidget);
+}
+
 Future<List<int>> _pixel(
   WidgetTester tester, {
   Offset fraction = const Offset(.5, .5),
-  int tile = 0,
+  String id = 'saved.mp4',
 }) async {
-  final leading = find
-      .byWidgetPredicate(
-        (widget) =>
-            widget.key is ValueKey<String> &&
-            ((widget.key! as ValueKey<String>).value.startsWith(
-              'export-thumbnail-',
-            )),
-      )
-      .at(tile);
-  final box = tester.getRect(leading);
-  final point = Offset(
-    box.left + box.width * fraction.dx,
-    box.top + box.height * fraction.dy,
-  );
+  await _revealThumbnail(tester, id: id);
+  final box = tester.getRect(_thumbnail(id));
   final boundary = tester.renderObject<RenderRepaintBoundary>(
     find.byKey(_captureKey),
+  );
+  final localTopLeft = boundary.globalToLocal(box.topLeft);
+  final localBottomRight = boundary.globalToLocal(box.bottomRight);
+  expect(localTopLeft.dx, greaterThanOrEqualTo(0));
+  expect(localTopLeft.dy, greaterThanOrEqualTo(0));
+  expect(localBottomRight.dx, lessThanOrEqualTo(boundary.size.width));
+  expect(localBottomRight.dy, lessThanOrEqualTo(boundary.size.height));
+  final point = Offset(
+    localTopLeft.dx + box.width * fraction.dx,
+    localTopLeft.dy + box.height * fraction.dy,
   );
   return (await tester.runAsync(() async {
     final image = await boundary.toImage(pixelRatio: 1);
     try {
+      expect(point.dx, greaterThanOrEqualTo(0));
+      expect(point.dy, greaterThanOrEqualTo(0));
+      expect(point.dx, lessThan(image.width));
+      expect(point.dy, lessThan(image.height));
       final bytes = (await image.toByteData(
         format: ui.ImageByteFormat.rawRgba,
       ))!;
+      if (_captureDiagnostics) {
+        final directory = Directory('work/graphite-thumbnail-review');
+        await directory.create(recursive: true);
+        final png = await image.toByteData(format: ui.ImageByteFormat.png);
+        await File(
+          '${directory.path}/${_diagnosticSequence++}-$id-${fraction.dx}-${fraction.dy}.png',
+        ).writeAsBytes(
+          png!.buffer.asUint8List(png.offsetInBytes, png.lengthInBytes),
+        );
+      }
       final at = (point.dy.floor() * image.width + point.dx.floor()) * 4;
       return bytes.buffer
           .asUint8List(bytes.offsetInBytes, bytes.lengthInBytes)
@@ -106,6 +222,47 @@ Future<List<int>> _pixel(
       image.dispose();
     }
   }))!;
+}
+
+bool _featuredDecode(ui.Image image) => image.width > 112 || image.height > 140;
+
+void _expectSurfaceRoleLimits(WidgetTester tester) {
+  final featured = find.descendant(
+    of: find.byKey(const ValueKey('export-featured-artwork')),
+    matching: find.byType(BackgroundSurface),
+  );
+  expect(featured.evaluate().length, lessThanOrEqualTo(1));
+  for (final surface in tester.widgetList<BackgroundSurface>(featured)) {
+    expect(surface.maxWidth, lessThanOrEqualTo(420));
+    expect(surface.maxHeight, lessThanOrEqualTo(525));
+  }
+  final rows = find.byWidgetPredicate(
+    (widget) =>
+        widget.key is ValueKey<String> &&
+        (widget.key! as ValueKey<String>).value.startsWith('export-thumbnail-'),
+  );
+  for (final row in rows.evaluate()) {
+    final surfaces = find.descendant(
+      of: find.byElementPredicate((element) => identical(element, row)),
+      matching: find.byType(BackgroundSurface),
+    );
+    for (final surface in tester.widgetList<BackgroundSurface>(surfaces)) {
+      expect(surface.maxWidth, lessThanOrEqualTo(112));
+      expect(surface.maxHeight, lessThanOrEqualTo(140));
+    }
+  }
+}
+
+void _expectDecodeRoleBounds(List<ui.Image> images) {
+  for (final image in images) {
+    if (_featuredDecode(image)) {
+      expect(image.width, lessThanOrEqualTo(420));
+      expect(image.height, lessThanOrEqualTo(525));
+    } else {
+      expect(image.width, lessThanOrEqualTo(112));
+      expect(image.height, lessThanOrEqualTo(140));
+    }
+  }
 }
 
 Future<Uint8List> _quadrants() async {
@@ -160,7 +317,13 @@ void main() {
         ),
       );
       await _pumpLibrary(tester, [_entry(saved)]);
-      final size = tester.getSize(find.byType(BackgroundSurface));
+      await _revealThumbnail(tester);
+      final size = tester.getSize(
+        find.descendant(
+          of: _thumbnail(),
+          matching: find.byType(BackgroundSurface),
+        ),
+      );
       expect(size.width / size.height, closeTo(.8, .00001));
       final pixel = await _pixel(tester);
       expect(
@@ -219,17 +382,28 @@ void main() {
           TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
       messenger.setMockMethodCallHandler(channel, (_) async => root.path);
       addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      final chrome = await _warmChrome(tester);
+      addTearDown(chrome.release);
       final created = <ui.Image>[];
       final pageSize = tester.view.physicalSize / tester.view.devicePixelRatio;
       final previousCreate = ui.Image.onCreate;
+      final previousDispose = ui.Image.onDispose;
       ui.Image.onCreate = (image) {
         previousCreate?.call(image);
+        if (chrome.record(image)) return;
         if (image.width != pageSize.width.round() ||
             image.height != pageSize.height.round()) {
           created.add(image);
         }
       };
-      addTearDown(() => ui.Image.onCreate = previousCreate);
+      ui.Image.onDispose = (image) {
+        previousDispose?.call(image);
+        chrome.disposed(image);
+      };
+      addTearDown(() {
+        ui.Image.onCreate = previousCreate;
+        ui.Image.onDispose = previousDispose;
+      });
       var paper = BackgroundDefinition(
         kind: BackgroundKind.photo,
         assetId: id,
@@ -245,10 +419,9 @@ void main() {
         255,
       ]);
       expect(created, isNotEmpty);
-      expect(
-        created.every((image) => image.width <= 112 && image.height <= 140),
-        isTrue,
-      );
+      _expectSurfaceRoleLimits(tester);
+      _expectDecodeRoleBounds(created);
+      expect(created.where(_featuredDecode), hasLength(1));
       paper = paper.copyWith(
         crop: const CropWindow(),
         quarterTurns: 1,
@@ -289,6 +462,7 @@ void main() {
         () => Future<void>.delayed(const Duration(milliseconds: 30)),
       );
       expect(created.every((image) => image.debugDisposed), isTrue);
+      chrome.expectGalleryClonesReleased();
       expect(tester.takeException(), isNull);
     },
   );
@@ -324,26 +498,35 @@ void main() {
         );
         final actions = _RecordingOpenActions();
         await _pumpLibrary(tester, [_entry(saved)], actions: actions);
-        for (
-          var i = 0;
-          i < 50 && find.byIcon(Icons.broken_image_outlined).evaluate().isEmpty;
-          i++
-        ) {
+        await _revealThumbnail(tester);
+        final missing = find.descendant(
+          of: _thumbnail(),
+          matching: find.byIcon(Icons.broken_image_outlined),
+        );
+        for (var i = 0; i < 50 && missing.evaluate().isEmpty; i++) {
           await tester.runAsync(
             () => Future<void>.delayed(const Duration(milliseconds: 10)),
           );
           await tester.pumpAndSettle();
         }
-        expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
+        expect(missing, findsOneWidget);
+        final notice = find.descendant(
+          of: _thumbnail(),
+          matching: find.byWidgetPredicate(
+            (widget) =>
+                widget is Semantics &&
+                widget.properties.label ==
+                    'This photo is unavailable. Replace or remove it.',
+          ),
+        );
+        expect(notice, findsOneWidget);
         expect(
-          find.bySemanticsLabel(RegExp('This photo is unavailable')),
-          findsOneWidget,
+          tester.getSemantics(notice).getSemanticsData().label,
+          contains('This photo is unavailable. Replace or remove it.'),
         );
         expect(await _pixel(tester), [121, 97, 198, 255]);
         // The status overlay must not swallow the library file-open action.
-        await tester.tapAt(
-          tester.getCenter(find.byIcon(Icons.broken_image_outlined)),
-        );
+        await tester.tapAt(tester.getCenter(missing));
         await tester.pumpAndSettle();
         expect(actions.opened.single.name, 'saved.mp4');
         expect(tester.takeException(), isNull);
@@ -379,17 +562,39 @@ void main() {
         return root.path;
       });
       addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      final chrome = await _warmChrome(tester);
+      addTearDown(chrome.release);
       final created = <ui.Image>[];
+      final live = <ui.Image>{};
+      var peakLiveRows = 0, peakLiveFeatured = 0, peakLiveHandles = 0;
+      var peakLiveRgbaBytes = 0;
+      const maxLiveRows = 8; // The actual800×600 fixture, viewport+cache rows.
+      const maxLiveBytes = 420 * 525 * 4 + maxLiveRows * 112 * 140 * 4;
       final previousCreate = ui.Image.onCreate;
       final previousDispose = ui.Image.onDispose;
       ui.Image.onCreate = (image) {
         previousCreate?.call(image);
         // The source fixture was generated before this hook; this test captures
-        // no screenshots. Record ALL decoder handles so oversized images fail.
+        // no screenshots. Exact shared chrome clones are counted separately;
+        // ALL remaining photo handles retain the strict role/size budgets.
+        if (chrome.record(image)) return;
         created.add(image);
+        live.add(image);
+        final featured = live.where(_featuredDecode).length;
+        final rows = live.length - featured;
+        final bytes = live.fold<int>(
+          0,
+          (sum, image) => sum + image.width * image.height * 4,
+        );
+        if (rows > peakLiveRows) peakLiveRows = rows;
+        if (featured > peakLiveFeatured) peakLiveFeatured = featured;
+        if (live.length > peakLiveHandles) peakLiveHandles = live.length;
+        if (bytes > peakLiveRgbaBytes) peakLiveRgbaBytes = bytes;
       };
       ui.Image.onDispose = (image) {
         previousDispose?.call(image);
+        chrome.disposed(image);
+        live.remove(image);
       };
       addTearDown(() {
         ui.Image.onCreate = previousCreate;
@@ -437,6 +642,7 @@ void main() {
           () => created.length == decodeRequests,
           'Initial thumbnail decodes',
         );
+        _expectSurfaceRoleLimits(tester);
         final beforeScroll = decodeRequests;
         await tester.drag(find.byType(ListView), const Offset(0, -1400));
         await tester.pumpAndSettle();
@@ -448,6 +654,7 @@ void main() {
           () => created.length == decodeRequests,
           'Scrolled thumbnail decodes',
         );
+        _expectSurfaceRoleLimits(tester);
         final beforeReturn = decodeRequests;
         await tester.drag(find.byType(ListView), const Offset(0, 1400));
         await tester.pumpAndSettle();
@@ -464,12 +671,35 @@ void main() {
               created.every((image) => image.debugDisposed),
           'Unmounted and late thumbnail disposal',
         );
+        chrome.expectGalleryClonesReleased();
         expect(tester.takeException(), isNull);
       }
       expect(created.length, greaterThan(6));
-      expect(
-        created.every((image) => image.width <= 112 && image.height <= 140),
-        isTrue,
+      _expectDecodeRoleBounds(created);
+      expect(peakLiveFeatured, lessThanOrEqualTo(1));
+      expect(peakLiveRows, lessThanOrEqualTo(maxLiveRows));
+      expect(peakLiveHandles, lessThanOrEqualTo(maxLiveRows + 1));
+      expect(peakLiveRgbaBytes, lessThanOrEqualTo(maxLiveBytes));
+      expect(live, isEmpty);
+      debugPrint(
+        'EXPORT_LIBRARY_DECODE_PROFILE ${jsonEncode({
+          'logicalSize': [tester.view.physicalSize.width / tester.view.devicePixelRatio, tester.view.physicalSize.height / tester.view.devicePixelRatio],
+          'testPhysicalSize': [tester.view.physicalSize.width, tester.view.physicalSize.height],
+          'devicePixelRatio': tester.view.devicePixelRatio,
+          'decodedSizes': created.map((image) => '${image.width}x${image.height}').toSet().toList(),
+          'totalDecoderHandles': created.length,
+          'peakLiveRows': peakLiveRows,
+          'peakLiveFeatured': peakLiveFeatured,
+          'peakLiveHandles': peakLiveHandles,
+          'peakLiveRgbaBytes': peakLiveRgbaBytes,
+          'allDisposed': created.every((image) => image.debugDisposed),
+          'chromeSharedPayloadBytes': 65536,
+          'chromeCreatedCloneHandles': chrome.created.length,
+          'chromePeakLiveCloneHandles': chrome.peakLive,
+          'chromeAllClonesDisposed': chrome.created.every((image) => image.debugDisposed),
+          'chromeIdentity': 'Exact warmed AssetImage128×128 backing via ui.Image.isCloneOf; not size-only exclusion',
+          'scope': 'Widget decoder handles and RGBA arithmetic only; not process RSS, GPU or physical memory.',
+        })}',
       );
       expect(
         created.every((image) => image.debugDisposed),

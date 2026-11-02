@@ -1,0 +1,122 @@
+[
+  {
+    "file": "01-home-immersive-dark-phone.png",
+    "dimensions": [
+      411,
+      850
+    ],
+    "changedPixels": 327726,
+    "totalPixels": 349350,
+    "bounds": [
+      0,
+      0,
+      411,
+      850
+    ]
+  },
+  {
+    "file": "04b-settings-cool-light-phone.png",
+    "dimensions": [
+      411,
+      850
+    ],
+    "changedPixels": 349350,
+    "totalPixels": 349350,
+    "bounds": [
+      0,
+      0,
+      411,
+      850
+    ]
+  },
+  {
+    "file": "06-editor-immersive-dark-phone.png",
+    "dimensions": [
+      411,
+      850
+    ],
+    "changedPixels": 272522,
+    "totalPixels": 349350,
+    "bounds": [
+      0,
+      0,
+      411,
+      850
+    ]
+  },
+  {
+    "file": "09-export-immersive-dark-phone.png",
+    "dimensions": [
+      411,
+      850
+    ],
+    "changedPixels": 319634,
+    "totalPixels": 349350,
+    "bounds": [
+      0,
+      0,
+      411,
+      850
+    ]
+  },
+  {
+    "file": "10b-home-cool-light-phone.png",
+    "dimensions": [
+      411,
+      850
+    ],
+    "changedPixels": 327275,
+    "totalPixels": 349350,
+    "bounds": [
+      0,
+      0,
+      411,
+      850
+    ]
+  },
+  {
+    "file": "13-editor-compact-fr-large.png",
+    "dimensions": [
+      320,
+      640
+    ],
+    "changedPixels": 200060,
+    "totalPixels": 204800,
+    "bounds": [
+      0,
+      0,
+      320,
+      640
+    ]
+  },
+  {
+    "file": "17c-language-compact-rtl-dark-large.png",
+    "dimensions": [
+      320,
+      640
+    ],
+    "changedPixels": 204800,
+    "totalPixels": 204800,
+    "bounds": [
+      0,
+      0,
+      320,
+      640
+    ]
+  },
+  {
+    "file": "21-editor-landscape.png",
+    "dimensions": [
+      640,
+      360
+    ],
+    "changedPixels": 193110,
+    "totalPixels": 230400,
+    "bounds": [
+      0,
+      0,
+      640,
+      360
+    ]
+  }
+]

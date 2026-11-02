@@ -16,35 +16,37 @@ const accent = DoodimoColors.violet;
 ThemeData buildTheme({Brightness brightness = Brightness.light}) {
   final dark = brightness == Brightness.dark;
   final scheme = ColorScheme.fromSeed(
-    seedColor: DoodimoColors.violet,
+    seedColor: DoodimoColors.orange,
     brightness: brightness,
-    primary: dark ? const Color(0xffbca6ff) : const Color(0xff6840c7),
-    onPrimary: dark ? DoodimoColors.ink : Colors.white,
-    primaryContainer: dark ? const Color(0xff302051) : const Color(0xffe8ddff),
+    primary: dark ? const Color(0xffffa465) : const Color(0xff9b400b),
+    onPrimary: dark ? const Color(0xff25180e) : const Color(0xfffff8f0),
+    primaryContainer: dark ? const Color(0xff5d351e) : const Color(0xffffdcc2),
     onPrimaryContainer: dark
-        ? const Color(0xffeadeff)
-        : const Color(0xff382052),
-    secondary: dark ? DoodimoColors.cyan : const Color(0xff006878),
-    onSecondary: dark ? DoodimoColors.ink : Colors.white,
+        ? const Color(0xffffd7b6)
+        : const Color(0xff3b210f),
+    secondary: dark ? const Color(0xffd6b599) : const Color(0xff65513f),
+    onSecondary: dark ? const Color(0xff231b14) : Colors.white,
     secondaryContainer: dark
-        ? const Color(0xff143446)
-        : const Color(0xffd8f5fc),
+        ? const Color(0xff3b3730)
+        : const Color(0xffe8dccb),
     onSecondaryContainer: dark
-        ? const Color(0xffb8f4ff)
-        : const Color(0xff123646),
-    tertiary: dark ? const Color(0xfff79dd4) : const Color(0xff96386d),
-    surface: dark ? DoodimoColors.ink : const Color(0xfff4f7ff),
-    onSurface: dark ? const Color(0xfff0f3ff) : const Color(0xff141b35),
-    onSurfaceVariant: dark ? const Color(0xffbdc5e3) : const Color(0xff505b7a),
-    surfaceContainerLow: dark ? DoodimoColors.indigo : const Color(0xffe9eefe),
+        ? const Color(0xfff1e7da)
+        : const Color(0xff30291f),
+    tertiary: dark ? const Color(0xffc4d0c4) : const Color(0xff405a47),
+    surface: dark ? DoodimoColors.ink : const Color(0xffeeeee7),
+    onSurface: dark ? const Color(0xfff4f3ed) : const Color(0xff202624),
+    onSurfaceVariant: dark ? const Color(0xffc4c7c0) : const Color(0xff4d5650),
+    surfaceContainerLow: dark
+        ? const Color(0xff1c2121)
+        : const Color(0xfffaf9f2),
     surfaceContainerHigh: dark
-        ? const Color(0xff202845)
-        : const Color(0xffe0e7fb),
+        ? const Color(0xff2d3332)
+        : const Color(0xffe2e5dd),
     surfaceContainerHighest: dark
-        ? const Color(0xff293353)
-        : const Color(0xffd7e0f5),
-    outline: dark ? const Color(0xff8794b9) : const Color(0xff7580a1),
-    outlineVariant: dark ? const Color(0xff36405e) : const Color(0xffcfd7ef),
+        ? const Color(0xff3a403e)
+        : const Color(0xffd7dcd3),
+    outline: dark ? const Color(0xff959e97) : const Color(0xff6b766e),
+    outlineVariant: dark ? const Color(0xff424b46) : const Color(0xffb8c1b6),
   );
   final base = ThemeData(
     useMaterial3: true,
@@ -154,6 +156,8 @@ ThemeData buildTheme({Brightness brightness = Brightness.light}) {
     ),
     iconButtonTheme: IconButtonThemeData(
       style: IconButton.styleFrom(
+        foregroundColor: scheme.onSurface,
+        shape: CircleBorder(side: BorderSide(color: scheme.outlineVariant)),
         minimumSize: const Size(
           CreativeSize.touchTarget,
           CreativeSize.touchTarget,
@@ -222,15 +226,6 @@ class AccessiblePageTransitions extends PageTransitionsBuilder {
   ) {
     if (MediaQuery.disableAnimationsOf(context)) return child;
     final eased = animation.drive(CurveTween(curve: CreativeMotion.curve));
-    return FadeTransition(
-      opacity: eased,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(.025, .015),
-          end: Offset.zero,
-        ).animate(eased),
-        child: child,
-      ),
-    );
+    return FadeTransition(opacity: eased, child: child);
   }
 }

@@ -1,3 +1,5 @@
+import 'support/root_navigation.dart';
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -163,7 +165,7 @@ void _wholeWords(WidgetTester tester, Finder scope) {
   }
 }
 
-void _geometry(WidgetTester tester) {
+Future<void> _geometry(WidgetTester tester) async {
   final headline = tester.getRect(find.byKey(const ValueKey('home-headline')));
   final artwork = tester.getRect(find.byKey(const ValueKey('home-artwork')));
   final continuation = tester.getRect(
@@ -177,22 +179,44 @@ void _geometry(WidgetTester tester) {
     find.byKey(const PageStorageKey('home-scroll')),
   );
   expect(scrollRect.bottom, lessThanOrEqualTo(dockRect.top));
+  final summary = find.byKey(const ValueKey('nav-summary'));
+  final compact = summary.evaluate().isNotEmpty;
+  if (compact) {
+    expect(dockRect.height, lessThanOrEqualTo(128));
+    expect(summary.hitTestable(), findsOneWidget);
+    _wholeWords(tester, summary);
+    await tester.tap(summary);
+    await tester.pumpAndSettle();
+  }
   for (final role in [
     'nav-home',
     'nav-library',
     'nav-settings',
     'root-new-drawing',
   ]) {
-    final key = find.byKey(ValueKey(role));
+    final key = find.byKey(ValueKey(role)).hitTestable();
     final rect = tester.getRect(key);
     expect(rect.width, greaterThanOrEqualTo(48));
     expect(rect.height, greaterThanOrEqualTo(48));
-    expect(rect.top, greaterThanOrEqualTo(dockRect.top));
-    expect(rect.bottom, lessThanOrEqualTo(dockRect.bottom));
+    final controls = compact
+        ? tester.getRect(find.byKey(const ValueKey('nav-menu')))
+        : dockRect;
+    expect(rect.top, greaterThanOrEqualTo(controls.top));
+    expect(rect.bottom, lessThanOrEqualTo(controls.bottom));
     expect(key.hitTestable(), findsOneWidget);
     _wholeWords(tester, key);
   }
-  _wholeWords(tester, find.byKey(const ValueKey('home-start')));
+  if (compact) {
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+  }
+  final create = find.byKey(const ValueKey('home-start'));
+  _wholeWords(
+    tester,
+    create.evaluate().isNotEmpty
+        ? create
+        : find.byKey(const ValueKey('root-new-drawing')),
+  );
 }
 
 Future<void> _save(WidgetTester tester, String name) async {
@@ -283,17 +307,34 @@ void main() {
           rtl: testCase.rtl,
         );
         try {
-          _geometry(tester);
+          await _geometry(tester);
           final strings = AppLocalizations.of(
             tester.element(find.byType(HomePage)),
           )!;
+          final summary = find.byKey(const ValueKey('nav-summary'));
+          if (summary.evaluate().isNotEmpty) {
+            await tester.tap(summary);
+            await tester.pumpAndSettle();
+          }
           for (final label in [
             strings.home,
             strings.library,
             strings.settings,
             strings.newDrawing,
           ]) {
-            expect(find.bySemanticsLabel(label), findsOneWidget);
+            expect(
+              find.descendant(
+                of: summary.evaluate().isNotEmpty
+                    ? find.byKey(const ValueKey('nav-menu'))
+                    : find.byType(CreativeDock),
+                matching: find.bySemanticsLabel(label),
+              ),
+              findsOneWidget,
+            );
+          }
+          if (summary.evaluate().isNotEmpty) {
+            await tester.binding.handlePopRoute();
+            await tester.pumpAndSettle();
           }
           await _save(tester, testCase.name);
           // Foreground artwork/Continue are real actions and remain reachable in
@@ -327,7 +368,7 @@ void main() {
 
   for (final dark in [false, true]) {
     testWidgets(
-      '411 normal ${dark ? 'dark' : 'light'} keeps original floating composition with real safe gap',
+      '411 normal ${dark ? 'dark' : 'light'} keeps graphite artwork framing, safe gaps and immediate creation',
       (tester) async {
         final router = await _mount(
           tester,
@@ -339,8 +380,11 @@ void main() {
           final strings = AppLocalizations.of(
             tester.element(find.byType(HomePage)),
           )!;
-          expect(find.text(strings.aLittleLineALittleMusic), findsOneWidget);
-          expect(find.text(strings.drawYourMelody), findsNothing);
+          expect(find.text(strings.drawYourMelody), findsOneWidget);
+          final paper = tester.getRect(
+            find.byKey(const ValueKey('home-artwork-paint')),
+          );
+          expect(paper.width / paper.height, closeTo(4 / 5, .001));
           final headline = tester.getRect(
             find.byKey(const ValueKey('home-headline')),
           );
@@ -348,9 +392,19 @@ void main() {
             find.byKey(const ValueKey('home-artwork')),
           );
           expect(artwork.top - headline.bottom, greaterThanOrEqualTo(4));
+          expect(find.byKey(const ValueKey('home-start')), findsNothing);
           expect(
-            find.byKey(const ValueKey('home-start')).hitTestable(),
+            find.byKey(const ValueKey('root-new-drawing')).hitTestable(),
             findsOneWidget,
+          );
+          final section = tester.getRect(find.text(strings.tryAStartingPoint));
+          final viewport = tester.getRect(
+            find.byKey(const PageStorageKey('home-scroll')),
+          );
+          expect(
+            section.bottom,
+            lessThanOrEqualTo(viewport.bottom),
+            reason: 'The initial next-section heading must be fully visible rather than a clipped sliver above the dock.',
           );
           await _save(tester, '411-100-${dark ? 'dark' : 'light'}-en');
           if (_capture) {
@@ -398,7 +452,7 @@ void main() {
           scaler: const TextScaler.linear(2),
           locale: locale.languageCode,
         );
-        _geometry(tester);
+        await _geometry(tester);
         expect(tester.takeException(), isNull);
         debugDisableShadows = true;
         await tester.pumpWidget(const SizedBox());
@@ -448,8 +502,8 @@ void main() {
       await tester.pumpAndSettle();
       // This full app uses the real SystemTextScaler path from the test view,
       // independently of the explicit linear/nonlinear MediaQuery fixtures.
-      _geometry(tester);
-      await tester.tap(find.byKey(const ValueKey('nav-library')));
+      await _geometry(tester);
+      await tapRootNavigation(tester, 'nav-library');
       await tester.pumpAndSettle();
       final scroll = find.byType(Scrollable).first;
       await tester.drag(scroll, const Offset(0, -300));

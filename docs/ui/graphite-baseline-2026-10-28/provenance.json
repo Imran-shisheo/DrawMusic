@@ -1,0 +1,28 @@
+{
+  "source": "a7a8e595d96735c9b5db607c8d03d785937edf15",
+  "scope": "Original actual Flutter widget baseline PNGs, explicit real fonts and fixture ports. Not approved mockups, Android screenshots, native audio or physical performance.",
+  "captureCount": 76,
+  "committedCount": 4,
+  "images": [
+    {
+      "name": "01-home-immersive-dark-phone.png",
+      "bytes": 180387,
+      "sha256": "902e88f3c43b9a1a7e9c9c9795fe0124ffd1fa400212492287c1c83e71e4169f"
+    },
+    {
+      "name": "02-drafts-dark-phone.png",
+      "bytes": 176440,
+      "sha256": "2b3ad976a06df0a9b85bbe8922866f228b353c2eb9c5f0649b261cf1ec7dd371"
+    },
+    {
+      "name": "06-editor-immersive-dark-phone.png",
+      "bytes": 93371,
+      "sha256": "dbeac1f372499238fbc6c207a55a8ef5bf22a3893a03a67e84815170274f96f6"
+    },
+    {
+      "name": "09-export-immersive-dark-phone.png",
+      "bytes": 187089,
+      "sha256": "9c142cf3ba797218d604e7619d1be786dbd2c9b6beb7691c5d0774c0be0ef057"
+    }
+  ]
+}

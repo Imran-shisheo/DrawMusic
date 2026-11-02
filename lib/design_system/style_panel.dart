@@ -8,9 +8,11 @@ import 'immersive_surface.dart';
 
 Future<DrawingStyle?> showStylePanel(
   BuildContext context,
-  DrawingStyle current,
-) => showCreativePanel<DrawingStyle>(
+  DrawingStyle current, {
+  Rect? sourceBounds,
+}) => showCreativePanel<DrawingStyle>(
   context: context,
+  sourceBounds: sourceBounds,
   builder: (context) => CreativePanel(
     title: context.strings.drawingStyle,
     child: Padding(
@@ -54,12 +56,12 @@ class _StyleMaterial extends StatelessWidget {
       onTap: () => Navigator.pop(context, style),
       child: ImmersiveSurface(
         padding: EdgeInsets.zero,
-        radius: 24,
+        radius: 16,
         glow: selected,
-        accent: selected ? scheme.secondary : scheme.primary,
+        accent: selected ? scheme.primary : scheme.outline,
         child: InkWell(
           onTap: () => Navigator.pop(context, style),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Column(
@@ -72,7 +74,7 @@ class _StyleMaterial extends StatelessWidget {
                           ? DoodimoGlyph.draw
                           : DoodimoGlyph.image,
                       size: 28,
-                      color: scheme.secondary,
+                      color: scheme.primary,
                     ),
                     const SizedBox(width: 12),
                     Expanded(

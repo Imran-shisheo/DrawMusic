@@ -1,7 +1,6 @@
 {
   "schema": 1,
   "label": "after",
-  "sourceRef": "c965431b171607db1f0ee556764016800f0b48ab",
-  "transitionCaptureOnly": true,
-  "transitionComparison": "after-fix"
+  "sourceRef": "2ffc61665159d38240c7a869811c4580d82a8fc0",
+  "graphiteCapture": true
 }

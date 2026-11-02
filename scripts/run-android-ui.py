@@ -14,7 +14,7 @@ import time
 
 from runtime_transport_diagnostics import safe_snapshot
 
-PACKAGE = 'com.imranshisheo.scribblesong'
+PACKAGE = 'com.devwithdelta.doodimo'
 DEVICE = 'emulator-5554'
 OUTPUT = Path('work/runtime-output')
 

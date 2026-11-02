@@ -46,7 +46,7 @@ def main():
     for plane, name in zip(planes, ('Orbit', 'Fold', 'Edge')):
         actual = re.search(rf"const doodimo{name}PathData\s*=\s*'([^']+)';", painter)
         assert actual and actual.group(1) == plane.get('d'), f'In-app {name} geometry differs from original SVG/native identity'
-    assert report['background'] == '#090B18'
+    assert report['background'] == '#141819'
     for name in ('doodimo_icon_foreground', 'doodimo_icon_monochrome', 'doodimo_splash_mark'):
         vector = ET.parse(ROOT / f'android/app/src/main/res/drawable/{name}.xml').getroot()
         group = vector.find('group')
@@ -79,14 +79,14 @@ def main():
     assert info['CFBundleDisplayName'] == info['CFBundleName'] == brand
     assert info['CFBundleIdentifier'] == '$(PRODUCT_BUNDLE_IDENTIFIER)'
     native = (ROOT / 'ios/Runner.xcodeproj/project.pbxproj').read_text()
-    assert 'PRODUCT_BUNDLE_IDENTIFIER = com.imranshisheo.scribblesong;' in native
+    assert 'PRODUCT_BUNDLE_IDENTIFIER = com.devwithdelta.doodimo;' in native
     android = (ROOT / 'android/app/build.gradle.kts').read_text()
-    assert 'applicationId = "com.imranshisheo.scribblesong"' in android
+    assert 'applicationId = "com.devwithdelta.doodimo"' in android
     localized = list((ROOT / 'ios/Runner').glob('*.lproj/InfoPlist.strings'))
     assert len(localized) == 12
     for path in localized:
         assert f'"CFBundleDisplayName" = "{brand}";' in path.read_text(), path
-    print(f'{brand}: {len(set(e["filename"] for e in icon_entries))} opaque iOS app-icon sizes, 6 launch variants, Android legacy/adaptive/monochrome and unchanged package identity verified. Native launcher/device/iOS compilation remains separate.')
+    print(f'{brand}: {len(set(e["filename"] for e in icon_entries))} opaque iOS app-icon sizes, 6 launch variants, Android legacy/adaptive/monochrome and approved package identity verified. Native launcher/device/iOS compilation remains separate.')
 
 
 if __name__ == '__main__': main()

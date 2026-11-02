@@ -137,7 +137,7 @@ void main() {
             );
             expect(
               backing.toARGB32(),
-              0xff151b35,
+              0xff242929,
               reason:
                   'Opaque semantic backing must ignore paper and chrome theme',
             );

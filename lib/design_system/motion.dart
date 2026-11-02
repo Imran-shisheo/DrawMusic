@@ -8,6 +8,7 @@ abstract final class CreativeMotion {
   static const reverse = Duration(milliseconds: 240);
   static const sheet = Duration(milliseconds: 300);
   static const ambient = Duration(seconds: 16);
+  static const launch = Duration(milliseconds: 1100);
   static const curve = Curves.easeOutCubic;
 
   static Duration duration(BuildContext context, Duration value) =>

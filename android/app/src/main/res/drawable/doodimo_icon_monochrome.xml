@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generated original filled dimensional D/sound ribbon. Critical glyph fits the 66dp safe circle. -->
+<!-- Generated original original dimensional drawing-to-sound gesture. Critical glyph fits the 66dp safe circle. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
     <group android:translateX="20" android:translateY="20" android:scaleX="0.68" android:scaleY="0.68">
-        <path android:pathData="M31 18 C57 10 83 25 83 49 C83 73 61 88 36 81 L25 71 L25 31 C25 25 26 20 31 18 Z M39 31 L39 59 L41 68 C56 73 68 63 68 49 C68 34 52 24 39 31 Z" android:fillType="evenOdd" android:fillColor="#000000"/>
-        <path android:pathData="M25 71 L39 59 L58 39 C61 36 66 37 68 40 L51 60 C45 67 38 73 36 81 Z" android:fillType="evenOdd" android:fillColor="#000000"/>
+        <path android:pathData="M7 66 C18 55 30 27 39 25 C49 22 49 60 57 64 C64 69 76 45 91 40 L93 46 C79 51 67 80 55 71 C43 64 45 31 38 33 C32 34 19 62 10 71 Z" android:fillType="evenOdd" android:fillColor="#000000"/>
+        <path android:pathData="M8 66 C20 53 31 27 39 25 C48 23 48 53 54 61 L52 65 C44 59 45 32 39 33 C31 31 20 62 10 71 Z" android:fillType="evenOdd" android:fillColor="#000000"/>
     </group>
 </vector>

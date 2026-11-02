@@ -98,7 +98,7 @@
   "replayEditorTips": "Ripeti suggerimenti editor",
   "opensANewBlankDrawingWithGuidedControls": "Apre un nuovo disegno con comandi guidati.",
   "privacy": "Riservatezza",
-  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Disegni, preferenze ed export restano sul dispositivo. Crea offline senza account. Solo la condivisione esplicita invia file. Disinstallando si eliminano i dati privati.",
+  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Crea offline senza account. Disegni e impostazioni sono archiviati nell’app. Condividere o salvare un’esportazione può inviare una copia a un’altra app, cartella o servizio cloud che scegli. Le impostazioni di sistema possono anche consentire il backup dei dati dell’app. Eliminando un disegno possono restare copie di recupero fino alla pulizia; non tutte le copie vengono cancellate subito. Le copie esportate o di backup possono rimanere dopo l’eliminazione o la disinstallazione.",
   "readingBuildInformation": "Lettura della versione…",
   "buildInformationUnavailable": "Informazioni sulla versione non disponibili",
   "tryAStartingPoint": "Prova un modello",
@@ -370,5 +370,10 @@
   "welcomeToBrand": "Benvenuto in {name}",
   "backgroundPanelTitle": "Carta e foto",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "Strumenti"
+  "editorToolsShort": "Strumenti",
+  "openingDrawing": "Apertura del disegno…",
+  "navigation": "Navigazione",
+  "privacyPolicy": "Informativa sulla privacy",
+  "privacyPolicyOpenFailed": "Impossibile aprire l’informativa sulla privacy. Riprova.",
+  "privacyPolicyOpensExternally": "Si apre fuori dall’app"
 }

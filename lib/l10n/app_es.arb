@@ -98,7 +98,7 @@
   "replayEditorTips": "Repetir consejos del editor",
   "opensANewBlankDrawingWithGuidedControls": "Abre un dibujo nuevo con controles guiados.",
   "privacy": "Privacidad",
-  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Dibujos, preferencias y exportaciones quedan en este dispositivo. Crea sin conexión ni cuenta. Solo el compartir explícito envía archivos. Desinstalar borra los datos privados.",
+  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Crea sin conexión y sin cuenta. Los dibujos y ajustes se guardan en la app. Al compartir o guardar una exportación, puedes enviar una copia a otra app, carpeta o proveedor en la nube que elijas. Los ajustes del sistema también pueden permitir copias de seguridad de los datos de la app. Al eliminar un dibujo, pueden conservarse copias de recuperación hasta su limpieza; no se borran todas las copias de inmediato. Las copias exportadas o respaldadas pueden permanecer tras eliminar o desinstalar la app.",
   "readingBuildInformation": "Leyendo información de versión…",
   "buildInformationUnavailable": "Información de versión no disponible",
   "tryAStartingPoint": "Prueba un modelo",
@@ -370,5 +370,10 @@
   "welcomeToBrand": "Bienvenido a {name}",
   "backgroundPanelTitle": "Papel y foto",
   "exportFpsChoice": "{fps} FPS",
-  "editorToolsShort": "Herramientas"
+  "editorToolsShort": "Herramientas",
+  "openingDrawing": "Abriendo dibujo…",
+  "navigation": "Navegación",
+  "privacyPolicy": "Política de privacidad",
+  "privacyPolicyOpenFailed": "No se pudo abrir la política de privacidad. Inténtalo de nuevo.",
+  "privacyPolicyOpensExternally": "Se abre fuera de la app"
 }

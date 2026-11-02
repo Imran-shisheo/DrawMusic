@@ -1,0 +1,82 @@
+[
+  {
+    "file": "01-home-immersive-dark-phone.png",
+    "baseline": "first graphite product d5c9329",
+    "dimensions": [
+      411,
+      850
+    ],
+    "changedPixels": 229799,
+    "totalPixels": 349350
+  },
+  {
+    "file": "04b-settings-cool-light-phone.png",
+    "baseline": "first graphite product d5c9329",
+    "dimensions": [
+      411,
+      850
+    ],
+    "changedPixels": 197236,
+    "totalPixels": 349350
+  },
+  {
+    "file": "06-editor-immersive-dark-phone.png",
+    "baseline": "first graphite product d5c9329",
+    "dimensions": [
+      411,
+      850
+    ],
+    "changedPixels": 173679,
+    "totalPixels": 349350
+  },
+  {
+    "file": "09-export-immersive-dark-phone.png",
+    "baseline": "first graphite product d5c9329",
+    "dimensions": [
+      411,
+      850
+    ],
+    "changedPixels": 150901,
+    "totalPixels": 349350
+  },
+  {
+    "file": "10b-home-cool-light-phone.png",
+    "baseline": "first graphite product d5c9329",
+    "dimensions": [
+      411,
+      850
+    ],
+    "changedPixels": 218895,
+    "totalPixels": 349350
+  },
+  {
+    "file": "13-editor-compact-fr-large.png",
+    "baseline": "first graphite product d5c9329",
+    "dimensions": [
+      320,
+      640
+    ],
+    "changedPixels": 128617,
+    "totalPixels": 204800
+  },
+  {
+    "file": "17c-language-compact-rtl-dark-large.png",
+    "baseline": "first graphite product d5c9329",
+    "dimensions": [
+      320,
+      640
+    ],
+    "changedPixels": 37227,
+    "totalPixels": 204800
+  },
+  {
+    "file": "21-editor-landscape.png",
+    "baseline": "first graphite product d5c9329",
+    "dimensions": [
+      640,
+      360
+    ],
+    "changedPixels": 121401,
+    "totalPixels": 230400
+  }
+]
