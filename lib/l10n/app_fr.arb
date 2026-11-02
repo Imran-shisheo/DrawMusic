@@ -98,7 +98,7 @@
   "replayEditorTips": "Revoir les astuces",
   "opensANewBlankDrawingWithGuidedControls": "Ouvre un nouveau dessin avec des commandes guidées.",
   "privacy": "Confidentialité",
-  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Dessins, préférences et exports restent sur cet appareil. Création hors ligne sans compte. Seul un partage explicite transmet des fichiers. La désinstallation supprime les données privées.",
+  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Créez hors ligne sans compte. Les dessins et réglages sont stockés dans l’app. Partager ou enregistrer un export peut envoyer une copie vers une autre app, un dossier ou un fournisseur cloud de votre choix. Les réglages du système peuvent aussi autoriser la sauvegarde des données de l’app. Supprimer un dessin peut conserver des copies de récupération jusqu’au nettoyage ; toutes les copies ne sont pas effacées immédiatement. Les copies exportées ou sauvegardées peuvent subsister après suppression ou désinstallation.",
   "readingBuildInformation": "Lecture de la version…",
   "buildInformationUnavailable": "Informations de version indisponibles",
   "tryAStartingPoint": "Essayez un modèle",
@@ -372,5 +372,8 @@
   "exportFpsChoice": "{fps} i/s",
   "editorToolsShort": "Outils",
   "openingDrawing": "Ouverture du dessin…",
-  "navigation": "Navigation"
+  "navigation": "Navigation",
+  "privacyPolicy": "Politique de confidentialité",
+  "privacyPolicyOpenFailed": "Impossible d’ouvrir la politique de confidentialité. Réessayez.",
+  "privacyPolicyOpensExternally": "S’ouvre hors de l’app"
 }

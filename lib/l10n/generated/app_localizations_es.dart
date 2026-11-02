@@ -330,7 +330,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks =>
-      'Dibujos, preferencias y exportaciones quedan en este dispositivo. Crea sin conexión ni cuenta. Solo el compartir explícito envía archivos. Desinstalar borra los datos privados.';
+      'Crea sin conexión y sin cuenta. Los dibujos y ajustes se guardan en la app. Al compartir o guardar una exportación, puedes enviar una copia a otra app, carpeta o proveedor en la nube que elijas. Los ajustes del sistema también pueden permitir copias de seguridad de los datos de la app. Al eliminar un dibujo, pueden conservarse copias de recuperación hasta su limpieza; no se borran todas las copias de inmediato. Las copias exportadas o respaldadas pueden permanecer tras eliminar o desinstalar la app.';
 
   @override
   String get readingBuildInformation => 'Leyendo información de versión…';
@@ -1283,4 +1283,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get navigation => 'Navegación';
+
+  @override
+  String get privacyPolicy => 'Política de privacidad';
+
+  @override
+  String get privacyPolicyOpenFailed =>
+      'No se pudo abrir la política de privacidad. Inténtalo de nuevo.';
+
+  @override
+  String get privacyPolicyOpensExternally => 'Se abre fuera de la app';
 }

@@ -1,5 +1,9 @@
 # Development status
 
+## Privacy and listing alignment — 2 November 2026
+
+The in-app privacy explanation and iOS camera purpose text are corrected across all 12 locales without data/permission changes. The exact published Notion policy URL supplied by the coordinator is wired into Settings, with external-browser/app failure/retry handling. The coordinator verified its public read-only view; independent anonymous access verification is pending. No private draft URL is used. Android/iOS app IDs remain `com.devwithdelta.doodimo`. The release merged manifest has no AD_ID or INTERNET permission; resolved Play Review dependencies and the built debug DEX audit are documented with their limits. Release still uses a debug signing placeholder: no production credentials or signed AAB were created. [Exact audit, bounded checks and upload prerequisites](RELEASE-PRIVACY-ALIGNMENT-2026-11-02.md). Earlier native/default-renderer and iOS acceptance limits remain open; no known-failing emulator run was repeated.
+
 ## Final source hosted checks and recorded flight
 
 Tested event head `fdb4668` contains product `2ffc616`. Its tested merge checkout, `3fdb6be`, has identical app, native, asset and dependency files. [Android run 40900621914](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40900621914) passed formatting, analysis, tests, build and signature verification. All 15 portable Swift state tests passed on Linux. The [new-ID test APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40900621914/artifacts/12910565998) is downloadable. The complete native/media gate failed after all 20 native cases and the 600,017 ms audio soak passed: the owned host QEMU returned -11/SIGSEGV during the later Flutter creation/export flow. Missing UI exports then failed downstream inspection. This APK remains a test checkpoint, not full runtime acceptance.

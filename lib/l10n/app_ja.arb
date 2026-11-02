@@ -98,7 +98,7 @@
   "replayEditorTips": "編集のヒントをもう一度",
   "opensANewBlankDrawingWithGuidedControls": "案内付きの新しい白紙を開きます。",
   "privacy": "プライバシー",
-  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "絵、設定、書き出しは端末内に保存されます。アカウントなしでオフライン制作できます。明示的な共有だけが外部へ送信されます。アンインストールでアプリ内データは削除されます。",
+  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "アカウントなしでオフライン作成できます。描画と設定はアプリ内に保存されます。書き出したファイルを共有・保存すると、選択した別のアプリ、フォルダ、クラウドサービスにコピーが送られる場合があります。システムの設定によってはアプリデータもバックアップされます。描画を削除しても、クリーンアップまで復旧用のコピーが残ることがあり、すべてのコピーがすぐに完全消去されるわけではありません。書き出し済み・バックアップ済みのコピーは、削除やアンインストール後も残る場合があります。",
   "readingBuildInformation": "バージョンを読み取り中…",
   "buildInformationUnavailable": "バージョン情報を取得できません",
   "tryAStartingPoint": "お手本から始める",
@@ -372,5 +372,8 @@
   "exportFpsChoice": "{fps} FPS",
   "editorToolsShort": "ツール",
   "openingDrawing": "描画を開いています…",
-  "navigation": "ナビゲーション"
+  "navigation": "ナビゲーション",
+  "privacyPolicy": "プライバシーポリシー",
+  "privacyPolicyOpenFailed": "プライバシーポリシーを開けませんでした。もう一度お試しください。",
+  "privacyPolicyOpensExternally": "アプリの外で開きます"
 }

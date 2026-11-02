@@ -327,7 +327,7 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks =>
-      'ภาพวาด ค่าตั้ง และไฟล์ส่งออกอยู่ในอุปกรณ์นี้ สร้างแบบออฟไลน์ได้โดยไม่ต้องมีบัญชี ไฟล์ออกจากแอปเมื่อคุณเลือกแชร์เท่านั้น ถอนการติดตั้งจะลบข้อมูลส่วนตัวในแอป';
+      'สร้างแบบออฟไลน์ได้โดยไม่ต้องมีบัญชี ภาพวาดและการตั้งค่าจะจัดเก็บในแอป การแชร์หรือบันทึกไฟล์ส่งออกอาจส่งสำเนาไปยังแอป โฟลเดอร์ หรือบริการคลาวด์ที่คุณเลือก การตั้งค่าระบบอาจอนุญาตให้สำรองข้อมูลแอปด้วย การลบภาพวาดอาจยังคงเก็บสำเนาสำหรับกู้คืนไว้จนกว่าจะมีการล้างข้อมูล ไม่ใช่การลบทุกสำเนาอย่างถาวรทันที สำเนาที่ส่งออกหรือสำรองไว้อาจยังอยู่หลังลบภาพวาดหรือถอนการติดตั้งแอป';
 
   @override
   String get readingBuildInformation => 'กำลังอ่านรุ่น…';
@@ -1237,4 +1237,14 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get navigation => 'การนำทาง';
+
+  @override
+  String get privacyPolicy => 'นโยบายความเป็นส่วนตัว';
+
+  @override
+  String get privacyPolicyOpenFailed =>
+      'เปิดนโยบายความเป็นส่วนตัวไม่ได้ โปรดลองอีกครั้ง';
+
+  @override
+  String get privacyPolicyOpensExternally => 'เปิดภายนอกแอป';
 }

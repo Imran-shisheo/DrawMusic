@@ -98,7 +98,7 @@
   "replayEditorTips": "Ulitin ang mga tip sa editor",
   "opensANewBlankDrawingWithGuidedControls": "Nagbubukas ng bagong guhit na may gabay sa mga kontrol.",
   "privacy": "Pagkapribado",
-  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Nananatili sa device ang mga guhit, kagustuhan at export. Gumawa nang offline, walang account. File lang na pinili mong ibahagi ang lumalabas. Ang pag-uninstall ay nag-aalis ng pribadong data.",
+  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Lumikha offline nang walang account. Nasa app ang mga drawing at setting. Kapag nagbahagi o nag-save ng export, maaaring maipadala ang kopya sa pinili mong ibang app, folder o cloud provider. Maaari ring payagan ng mga setting ng system ang backup ng data ng app. Maaaring manatili ang mga kopyang pang-recovery hanggang sa paglilinis matapos mag-delete ng drawing; hindi agad permanenteng nabubura ang lahat ng kopya. Maaaring manatili ang mga export o backup matapos mag-delete o mag-uninstall.",
   "readingBuildInformation": "Binabasa ang bersiyon…",
   "buildInformationUnavailable": "Hindi available ang impormasyon ng bersiyon",
   "tryAStartingPoint": "Sumubok ng panimulang guhit",
@@ -372,5 +372,8 @@
   "exportFpsChoice": "{fps} FPS",
   "editorToolsShort": "Mga tool",
   "openingDrawing": "Binubuksan ang drawing…",
-  "navigation": "Nabigasyon"
+  "navigation": "Nabigasyon",
+  "privacyPolicy": "Patakaran sa privacy",
+  "privacyPolicyOpenFailed": "Hindi mabuksan ang patakaran sa privacy. Subukan muli.",
+  "privacyPolicyOpensExternally": "Bubukas sa labas ng app"
 }

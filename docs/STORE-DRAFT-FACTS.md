@@ -1,5 +1,9 @@
 # Doodimo store draft source facts — 29 October 2026
 
+## Privacy alignment update — 2 November 2026
+
+Owner-approved public support/privacy contact: **imran.shisheo@gmail.com**. The coordinator published the Notion policy and supplied its exact public URL, now wired into Settings: https://possible-catmint-fdb.notion.site/Doodimo-Privacy-Policy-40c9ba8090a4815dab64ed8c4f37e9a6 . Public read-only browser view is coordinator-verified; independent anonymous verification remains pending. The coordinator reports an unpublished Play record for the unchanged ID. [Updated resolved-dependency/manifest/debug-artifact audit and exact upload prerequisites](RELEASE-PRIVACY-ALIGNMENT-2026-11-02.md) supersede older unknown-contact/record wording below. Current catalogs contain376 matched keys per locale after the three policy-link labels. There is no blanket no-third-party-collection certification, no production signing configuration, and no store upload from this executor. Earlier execution evidence remains source-specific.
+
 These facts describe the enclosing owner-approved identity checkpoint, not a production release or completed store questionnaire. Store-console preparation is handled separately; this cloud task does not register IDs, create signing credentials, upload AAB/IPA files or submit/release an app.
 
 ## Identity and compatibility

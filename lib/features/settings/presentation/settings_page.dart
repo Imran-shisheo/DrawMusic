@@ -14,6 +14,7 @@ import '../../../design_system/doodimo_icon.dart';
 import '../../../design_system/brand.dart';
 import '../../../design_system/layout.dart';
 import '../application/settings_controller.dart';
+import '../application/privacy_policy.dart';
 import 'language_page.dart';
 
 final appInfoProvider = FutureProvider<PackageInfo>(
@@ -28,12 +29,35 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   double? _volume;
+  bool _openingPrivacyPolicy = false;
+
+  Future<void> _openPrivacyPolicy(Uri uri) async {
+    if (_openingPrivacyPolicy) return;
+    setState(() => _openingPrivacyPolicy = true);
+    var opened = false;
+    try {
+      opened = await ref.read(privacyPolicyLauncherProvider)(uri);
+    } catch (_) {
+      // A browser/provider failure must remain retryable and must not leak it.
+    } finally {
+      if (mounted) {
+        setState(() => _openingPrivacyPolicy = false);
+        if (!opened) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.strings.privacyPolicyOpenFailed)),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(settingsProvider);
     final preferences = state.preferences;
     final busy = state.loading || state.saving;
     final colors = Theme.of(context).colorScheme;
+    final policyUri = ref.watch(privacyPolicyUriProvider);
     final volume = _volume ?? preferences.previewVolume;
     return Scaffold(
       appBar: AppBar(
@@ -323,6 +347,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                     .strings
                                     .drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks,
                               ),
+                              if (policyUri != null)
+                                ListTile(
+                                  key: const ValueKey('privacy-policy-link'),
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(context.strings.privacyPolicy),
+                                  subtitle: Text(
+                                    context
+                                        .strings
+                                        .privacyPolicyOpensExternally,
+                                  ),
+                                  trailing: const DoodimoIcon(
+                                    DoodimoGlyph.arrowUpRight,
+                                  ),
+                                  enabled: !_openingPrivacyPolicy,
+                                  onTap: () => _openPrivacyPolicy(policyUri),
+                                ),
                             ],
                           ),
                           ListTile(

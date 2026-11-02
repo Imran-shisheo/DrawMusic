@@ -1,4 +1,4 @@
-"NSCameraUsageDescription" = "Use the camera only when you choose to photograph a background. Pictures stay on this device.";
+"NSCameraUsageDescription" = "Use the camera when you choose to photograph a background for your drawing.";
 
 "CFBundleDisplayName" = "Doodimo";
 "CFBundleName" = "Doodimo";

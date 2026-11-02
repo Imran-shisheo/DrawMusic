@@ -1,4 +1,4 @@
-"NSCameraUsageDescription" = "L’appareil photo sert uniquement quand vous choisissez de photographier un fond. Les photos restent sur cet appareil.";
+"NSCameraUsageDescription" = "Utilisez l’appareil photo lorsque vous choisissez de photographier un arrière-plan pour votre dessin.";
 
 "CFBundleDisplayName" = "Doodimo";
 "CFBundleName" = "Doodimo";

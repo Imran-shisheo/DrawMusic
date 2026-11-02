@@ -326,7 +326,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks =>
-      '그림, 설정, 내보내기는 이 기기에 저장됩니다. 계정 없이 오프라인으로 만듭니다. 직접 공유한 파일만 외부로 전송됩니다. 앱 삭제 시 앱 내부 데이터가 지워집니다.';
+      '계정 없이 오프라인으로 창작할 수 있습니다. 그림과 설정은 앱에 저장됩니다. 내보낸 파일을 공유하거나 저장하면 선택한 다른 앱, 폴더 또는 클라우드 서비스로 사본이 전송될 수 있습니다. 시스템 설정에 따라 앱 데이터가 백업될 수도 있습니다. 그림을 삭제해도 정리될 때까지 복구용 사본이 남을 수 있으며 모든 사본이 즉시 영구 삭제되는 것은 아닙니다. 내보내거나 백업한 사본은 삭제 또는 앱 제거 후에도 남을 수 있습니다.';
 
   @override
   String get readingBuildInformation => '버전 정보 읽는 중…';
@@ -1218,4 +1218,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get navigation => '탐색';
+
+  @override
+  String get privacyPolicy => '개인정보 처리방침';
+
+  @override
+  String get privacyPolicyOpenFailed => '개인정보 처리방침을 열 수 없습니다. 다시 시도해 주세요.';
+
+  @override
+  String get privacyPolicyOpensExternally => '앱 밖에서 열립니다';
 }

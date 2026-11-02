@@ -709,7 +709,7 @@ abstract class AppLocalizations {
   /// No description provided for @drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks.
   ///
   /// In en, this message translates to:
-  /// **'Drawings, preferences and exports stay on this device. Creation works offline without an account. Files leave the app only when you explicitly share them. Uninstalling removes app-private data.'**
+  /// **'Create offline without an account. Drawings and settings are stored in the app. Sharing or saving an export can send a copy to another app, folder or cloud provider you choose. Your system settings may also allow app-data backups. Deleting a drawing can leave recovery copies until cleanup; it does not immediately erase every copy. Exported or backed-up copies may remain after deletion or uninstalling.'**
   String get drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks;
 
   /// No description provided for @readingBuildInformation.
@@ -2355,6 +2355,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Navigation'**
   String get navigation;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @privacyPolicyOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the privacy policy. Please try again.'**
+  String get privacyPolicyOpenFailed;
+
+  /// No description provided for @privacyPolicyOpensExternally.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens outside the app'**
+  String get privacyPolicyOpensExternally;
 }
 
 class _AppLocalizationsDelegate

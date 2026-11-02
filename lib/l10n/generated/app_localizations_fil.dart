@@ -330,7 +330,7 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks =>
-      'Nananatili sa device ang mga guhit, kagustuhan at export. Gumawa nang offline, walang account. File lang na pinili mong ibahagi ang lumalabas. Ang pag-uninstall ay nag-aalis ng pribadong data.';
+      'Lumikha offline nang walang account. Nasa app ang mga drawing at setting. Kapag nagbahagi o nag-save ng export, maaaring maipadala ang kopya sa pinili mong ibang app, folder o cloud provider. Maaari ring payagan ng mga setting ng system ang backup ng data ng app. Maaaring manatili ang mga kopyang pang-recovery hanggang sa paglilinis matapos mag-delete ng drawing; hindi agad permanenteng nabubura ang lahat ng kopya. Maaaring manatili ang mga export o backup matapos mag-delete o mag-uninstall.';
 
   @override
   String get readingBuildInformation => 'Binabasa ang bersiyon…';
@@ -1279,4 +1279,14 @@ class AppLocalizationsFil extends AppLocalizations {
 
   @override
   String get navigation => 'Nabigasyon';
+
+  @override
+  String get privacyPolicy => 'Patakaran sa privacy';
+
+  @override
+  String get privacyPolicyOpenFailed =>
+      'Hindi mabuksan ang patakaran sa privacy. Subukan muli.';
+
+  @override
+  String get privacyPolicyOpensExternally => 'Bubukas sa labas ng app';
 }

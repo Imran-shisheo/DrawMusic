@@ -98,7 +98,7 @@
   "replayEditorTips": "Replay editor tips",
   "opensANewBlankDrawingWithGuidedControls": "Opens a new blank drawing with guided controls.",
   "privacy": "Privacy",
-  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Drawings, preferences and exports stay on this device. Creation works offline without an account. Files leave the app only when you explicitly share them. Uninstalling removes app-private data.",
+  "drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks": "Create offline without an account. Drawings and settings are stored in the app. Sharing or saving an export can send a copy to another app, folder or cloud provider you choose. Your system settings may also allow app-data backups. Deleting a drawing can leave recovery copies until cleanup; it does not immediately erase every copy. Exported or backed-up copies may remain after deletion or uninstalling.",
   "readingBuildInformation": "Reading build information…",
   "buildInformationUnavailable": "Build information unavailable",
   "tryAStartingPoint": "Try a starting point",
@@ -582,5 +582,8 @@
   "navigation": "Navigation",
   "@navigation": {
     "description": "Title and accessible tooltip for the compact navigation panel that exposes the retained Home, Library, Settings and New drawing destinations."
-  }
+  },
+  "privacyPolicy": "Privacy policy",
+  "privacyPolicyOpenFailed": "Could not open the privacy policy. Please try again.",
+  "privacyPolicyOpensExternally": "Opens outside the app"
 }

@@ -327,7 +327,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks =>
-      'चित्र, प्राथमिकताएँ और निर्यात इसी डिवाइस पर रहते हैं। बिना खाते ऑफ़लाइन बनाएँ। फ़ाइलें सिर्फ़ आपकी साझा करने की अनुमति से बाहर जाती हैं। ऐप हटाने पर निजी डेटा मिटता है।';
+      'बिना खाते के ऑफ़लाइन बनाएँ। चित्र और सेटिंग ऐप में संग्रहीत होते हैं। किसी निर्यात को साझा या सहेजने पर उसकी प्रति आपके चुने हुए दूसरे ऐप, फ़ोल्डर या क्लाउड सेवा में जा सकती है। सिस्टम सेटिंग के अनुसार ऐप के डेटा का बैकअप भी बन सकता है। चित्र हटाने के बाद सफ़ाई होने तक पुनर्प्राप्ति प्रतियाँ रह सकती हैं; हर प्रति तुरंत स्थायी रूप से नहीं मिटती। निर्यात या बैकअप की प्रतियाँ चित्र हटाने या ऐप अनइंस्टॉल करने के बाद भी रह सकती हैं।';
 
   @override
   String get readingBuildInformation => 'संस्करण पढ़ा जा रहा है…';
@@ -1257,4 +1257,14 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get navigation => 'नेविगेशन';
+
+  @override
+  String get privacyPolicy => 'गोपनीयता नीति';
+
+  @override
+  String get privacyPolicyOpenFailed =>
+      'गोपनीयता नीति नहीं खुल सकी। फिर से कोशिश करें।';
+
+  @override
+  String get privacyPolicyOpensExternally => 'ऐप के बाहर खुलेगा';
 }

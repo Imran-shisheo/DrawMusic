@@ -324,7 +324,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get drawingsPreferencesAndExportsStayOnThisDeviceCreationWorks =>
-      '絵、設定、書き出しは端末内に保存されます。アカウントなしでオフライン制作できます。明示的な共有だけが外部へ送信されます。アンインストールでアプリ内データは削除されます。';
+      'アカウントなしでオフライン作成できます。描画と設定はアプリ内に保存されます。書き出したファイルを共有・保存すると、選択した別のアプリ、フォルダ、クラウドサービスにコピーが送られる場合があります。システムの設定によってはアプリデータもバックアップされます。描画を削除しても、クリーンアップまで復旧用のコピーが残ることがあり、すべてのコピーがすぐに完全消去されるわけではありません。書き出し済み・バックアップ済みのコピーは、削除やアンインストール後も残る場合があります。';
 
   @override
   String get readingBuildInformation => 'バージョンを読み取り中…';
@@ -1208,4 +1208,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get navigation => 'ナビゲーション';
+
+  @override
+  String get privacyPolicy => 'プライバシーポリシー';
+
+  @override
+  String get privacyPolicyOpenFailed => 'プライバシーポリシーを開けませんでした。もう一度お試しください。';
+
+  @override
+  String get privacyPolicyOpensExternally => 'アプリの外で開きます';
 }

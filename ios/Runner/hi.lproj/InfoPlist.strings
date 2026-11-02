@@ -1,4 +1,4 @@
-"NSCameraUsageDescription" = "कैमरा तभी इस्तेमाल होगा जब आप पृष्ठभूमि की फ़ोटो लेना चुनें। तस्वीरें इसी डिवाइस पर रहती हैं।";
+"NSCameraUsageDescription" = "जब आप अपने चित्र की पृष्ठभूमि के लिए फ़ोटो लेना चुनें, तब कैमरे का उपयोग करें।";
 
 "CFBundleDisplayName" = "Doodimo";
 "CFBundleName" = "Doodimo";
