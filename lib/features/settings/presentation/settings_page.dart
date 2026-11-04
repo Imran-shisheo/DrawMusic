@@ -5,12 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../application/settings_controller.dart';
 import 'language_page.dart';
 
 final appInfoProvider = FutureProvider<PackageInfo>(
   (ref) => PackageInfo.fromPlatform(),
+);
+
+final privacyPolicyUri = Uri.parse(
+  'https://possible-catmint-fdb.notion.site/Doodimo-Privacy-Policy-40c9ba8090a4815dab64ed8c4f37e9a6',
+);
+final privacyPolicyLauncherProvider = Provider<Future<bool> Function(Uri)>(
+  (ref) =>
+      (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
 );
 
 class SettingsPage extends ConsumerStatefulWidget {
@@ -21,6 +30,30 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   double? _volume;
+  Future<void> _openPrivacyPolicy() async {
+    try {
+      if (await ref.read(privacyPolicyLauncherProvider)(privacyPolicyUri)) {
+        return;
+      }
+    } catch (_) {
+      // Keep the policy address accessible if the system cannot open a browser.
+    }
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.strings.privacy),
+        content: SelectableText(privacyPolicyUri.toString()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(MaterialLocalizations.of(context).closeButtonLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(settingsProvider);
@@ -150,6 +183,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ListTile(
             leading: Icon(Icons.privacy_tip_outlined),
             title: Text(context.strings.privacy),
+            trailing: const Icon(Icons.open_in_new),
+            onTap: _openPrivacyPolicy,
             subtitle: Text(
               context
                   .strings

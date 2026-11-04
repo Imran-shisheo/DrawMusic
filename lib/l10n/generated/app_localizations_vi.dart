@@ -25,7 +25,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settings => 'Cài đặt';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => 'Một nét nhỏ.\nMột chút nhạc.';
@@ -608,7 +608,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get creationGuide => 'Hướng dẫn sáng tạo';
 
   @override
-  String get welcomeToScribbleSong => 'Chào mừng đến ScribbleSong';
+  String get welcomeToScribbleSong => 'Chào mừng đến Doodimo';
 
   @override
   String get howToCreateALoop => 'Cách tạo vòng nhạc';

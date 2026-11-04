@@ -8,10 +8,52 @@ import 'package:scribblesong/app/app.dart';
 import 'package:scribblesong/features/settings/application/settings_controller.dart';
 import 'package:scribblesong/features/settings/data/file_preferences_store.dart';
 import 'package:scribblesong/features/settings/domain/preferences.dart';
+import 'package:scribblesong/features/settings/presentation/settings_page.dart';
 
 import 'support/memory_preferences.dart';
 
 void main() {
+  for (final succeeds in [true, false]) {
+    testWidgets('privacy policy opens or preserves its address ($succeeds)', (
+      tester,
+    ) async {
+      Uri? opened;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            preferencesStoreProvider.overrideWith(
+              (ref) async => MemoryPreferencesStore(),
+            ),
+            privacyPolicyLauncherProvider.overrideWithValue((uri) async {
+              opened = uri;
+              return succeeds;
+            }),
+          ],
+          child: const MaterialApp(home: SettingsPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Privacy'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Privacy'));
+      await tester.pumpAndSettle();
+      expect(
+        opened.toString(),
+        'https://possible-catmint-fdb.notion.site/Doodimo-Privacy-Policy-40c9ba8090a4815dab64ed8c4f37e9a6',
+      );
+      expect(
+        find.byType(AlertDialog),
+        succeeds ? findsNothing : findsOneWidget,
+      );
+      if (!succeeds) {
+        expect(find.text(opened.toString()), findsOneWidget);
+      }
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
   test('preferences survive restart, recover corrupt primary and preserve damaged bytes', () async {
     final directory = await Directory.systemTemp.createTemp(
       'drawmusic-settings-',
@@ -83,7 +125,7 @@ void main() {
       );
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
-      expect(find.text('Welcome to ScribbleSong'), findsOneWidget);
+      expect(find.text('Welcome to Doodimo'), findsOneWidget);
       await tester.ensureVisible(find.text('Start creating'));
       await tester.tap(find.text('Start creating'));
       await tester.pumpAndSettle();
@@ -106,7 +148,7 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
-      expect(find.text('Welcome to ScribbleSong'), findsNothing);
+      expect(find.text('Welcome to Doodimo'), findsNothing);
       expect(store.preferences.haptics, isTrue);
       await tester.pumpWidget(const SizedBox());
     },
@@ -128,7 +170,7 @@ void main() {
       await tester.ensureVisible(find.text('Start creating'));
       await tester.tap(find.text('Start creating'));
       await tester.pumpAndSettle();
-      expect(find.text('Welcome to ScribbleSong'), findsOneWidget);
+      expect(find.text('Welcome to Doodimo'), findsOneWidget);
       expect(store.preferences.tutorialCompleted, isFalse);
       expect(
         find.text('Could not save preferences. Check storage, then retry.'),

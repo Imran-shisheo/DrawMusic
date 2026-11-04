@@ -25,7 +25,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settings => '설정';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => '작은 선 하나.\n작은 음악 하나.';
@@ -604,7 +604,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get creationGuide => '만들기 안내';
 
   @override
-  String get welcomeToScribbleSong => 'ScribbleSong에 오신 것을 환영합니다';
+  String get welcomeToScribbleSong => 'Doodimo에 오신 것을 환영합니다';
 
   @override
   String get howToCreateALoop => '반복 음악 만드는 법';

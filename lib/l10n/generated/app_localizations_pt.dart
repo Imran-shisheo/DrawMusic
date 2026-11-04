@@ -26,7 +26,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get settings => 'Configurações';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic =>
@@ -617,7 +617,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get creationGuide => 'Guia de criação';
 
   @override
-  String get welcomeToScribbleSong => 'Boas-vindas ao ScribbleSong';
+  String get welcomeToScribbleSong => 'Boas-vindas ao Doodimo';
 
   @override
   String get howToCreateALoop => 'Como criar um ciclo';

@@ -1,0 +1,72 @@
+{
+  "device": "ipad",
+  "locale": "en-US",
+  "assets": [
+    {
+      "file": "01-draw-it-hear-it.png",
+      "dimensions": [
+        2064,
+        2752
+      ],
+      "capture": "distribution/app-store/captures/ipad/01-draw-it-hear-it.png",
+      "capture_sha256": "818e5beb6e8ba568c15dda6f161953761d700fc55674741b9282ac6064e75937",
+      "sha256": "9b3bb1253d6bd45c76fc1ec80ac2ff9615ad9914ddc55f4757471a2faa9cb950",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    },
+    {
+      "file": "02-find-your-sound.png",
+      "dimensions": [
+        2064,
+        2752
+      ],
+      "capture": "distribution/app-store/captures/ipad/02-find-your-sound.png",
+      "capture_sha256": "fe68497127f1344fd073ac470370b69365e5da68b5e915a180126cacf9bfc25e",
+      "sha256": "6dafcdddd748b3c9a3a6e3abb6e4dc52e787073bd684eca5d8ec5591f3c6f02f",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    },
+    {
+      "file": "03-give-it-a-groove.png",
+      "dimensions": [
+        2064,
+        2752
+      ],
+      "capture": "distribution/app-store/captures/ipad/03-give-it-a-groove.png",
+      "capture_sha256": "94511a3dca3f5bc4cfb76b53d831a589bd885bb9cf03d5aa1a06dd27d2183323",
+      "sha256": "b2c22cdedee61b13e6a44bdffd6c589c36fe1b8c4cf3dab931fac27b3a0e7495",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    },
+    {
+      "file": "04-change-the-mood.png",
+      "dimensions": [
+        2064,
+        2752
+      ],
+      "capture": "distribution/app-store/captures/ipad/04-change-the-mood.png",
+      "capture_sha256": "cc0cefb2decd83f4d29a99ca9e51e704bcdab2d275bd99fce0d796b2cc79b0fd",
+      "sha256": "5da992efff31dfe9cd88e69f8411e56e5ef0a9d5e5926e41e97c72d06a1a088d",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    },
+    {
+      "file": "05-make-it-your-canvas.png",
+      "dimensions": [
+        2064,
+        2752
+      ],
+      "capture": "distribution/app-store/captures/ipad/05-make-it-your-canvas.png",
+      "capture_sha256": "521e5b2529dd114ad468df26008e816eb148927206463eb8326f959bd1afa6cc",
+      "sha256": "6c44e26a916503fcedecf7e751d811163f85a67cdc15291b6fdd6c24af3af381",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    },
+    {
+      "file": "06-let-your-ideas-travel.png",
+      "dimensions": [
+        2064,
+        2752
+      ],
+      "capture": "distribution/app-store/captures/ipad/06-let-your-ideas-travel.png",
+      "capture_sha256": "00a3d0c2317902e8647eea0b3a0ad16e03d2d38e4d259fce07f2af76bd5445fe",
+      "sha256": "bd1977c9aab74489b4c064684b7c8ba8774e98126e47b4f00d376110af8ab3af",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    }
+  ]
+}

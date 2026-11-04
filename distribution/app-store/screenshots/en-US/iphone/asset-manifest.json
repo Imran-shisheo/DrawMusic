@@ -1,0 +1,72 @@
+{
+  "device": "iphone",
+  "locale": "en-US",
+  "assets": [
+    {
+      "file": "01-draw-it-hear-it.png",
+      "dimensions": [
+        1206,
+        2622
+      ],
+      "capture": "distribution/app-store/captures/iphone/01-draw-it-hear-it.png",
+      "capture_sha256": "e6850aeb4363580fd92ebd050a19196dc4532a5205cddf0a530b5f0eb6dfbb35",
+      "sha256": "53c6bbe7441992264e79aa6ed2cb19a335855705318612b6dec5b5af9d58708c",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    },
+    {
+      "file": "02-find-your-sound.png",
+      "dimensions": [
+        1206,
+        2622
+      ],
+      "capture": "distribution/app-store/captures/iphone/02-find-your-sound.png",
+      "capture_sha256": "820a17842e5069de8ad4f5354da7b804bf69b89d1ba811f1cf58ddd9a9af3feb",
+      "sha256": "92931ad479f38349e9be49dbd462c68a88f6b8c876103bbf4b9883c74ebb7c9b",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    },
+    {
+      "file": "03-give-it-a-groove.png",
+      "dimensions": [
+        1206,
+        2622
+      ],
+      "capture": "distribution/app-store/captures/iphone/03-give-it-a-groove.png",
+      "capture_sha256": "6553d71b4c67cec52d311642b75bbf07b744e42b030d582c45c24f425ef5fcab",
+      "sha256": "fb8a456ef17534db8df946b9d6035a9f5e09a2759afa45cfc4c9b7d213daf3a6",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    },
+    {
+      "file": "04-change-the-mood.png",
+      "dimensions": [
+        1206,
+        2622
+      ],
+      "capture": "distribution/app-store/captures/iphone/04-change-the-mood.png",
+      "capture_sha256": "b0392aa40c624149c7c9e27d13d6787fff1d7eff54c3dbf5832f269130bb9bf9",
+      "sha256": "0f873c503d8919d360864ee67467953663f0ee82604600b2a9dbc7a3cfd33d03",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    },
+    {
+      "file": "05-make-it-your-canvas.png",
+      "dimensions": [
+        1206,
+        2622
+      ],
+      "capture": "distribution/app-store/captures/iphone/05-make-it-your-canvas.png",
+      "capture_sha256": "0f7a57fa0572468b41609b591a20082da357523bebf59eba1f6dd9dc2087b7e7",
+      "sha256": "c0358c2ede14bf383a73dcbd0b0c373482b8d7ad983dd36caec2b72a1f6bfb4a",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    },
+    {
+      "file": "06-let-your-ideas-travel.png",
+      "dimensions": [
+        1206,
+        2622
+      ],
+      "capture": "distribution/app-store/captures/iphone/06-let-your-ideas-travel.png",
+      "capture_sha256": "2cecb827a3c95f6afa865bbbe9636f6fb7a18732ecafe7e099be73ad274e1381",
+      "sha256": "6eece4d7fa6e5a47a917c359c6e5ac2ddb6e55f9ac3944257d33c3f3be3aafab",
+      "ui_transformation": "uniform resize and rounded outer frame; native controls/content unchanged"
+    }
+  ]
+}

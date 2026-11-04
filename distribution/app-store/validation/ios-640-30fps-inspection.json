@@ -1,0 +1,65 @@
+{
+  "video": {
+    "codec": "h264",
+    "width": 640,
+    "height": 800,
+    "fps": 30,
+    "samples": 158,
+    "duration": 5.266667,
+    "full_decode": true
+  },
+  "audio": {
+    "codec": "aac",
+    "sample_rate": 44100,
+    "channels": 1,
+    "duration": 5.25,
+    "correlation": 0.9999985066304417,
+    "offset_ms": 0.0
+  },
+  "cursor": [
+    {
+      "seconds": 1.0,
+      "expected_x": 160,
+      "observed_x": 159,
+      "matching_rows": 760,
+      "one_frame_tolerance_pixels": 5.333333333333333
+    },
+    {
+      "seconds": 3.0,
+      "expected_x": 480,
+      "observed_x": 479,
+      "matching_rows": 760,
+      "one_frame_tolerance_pixels": 5.333333333333333
+    }
+  ],
+  "asymmetric_geometry": [
+    {
+      "stroke": "keys",
+      "seconds": 1.0,
+      "x": 256,
+      "y": 560,
+      "minimum_color_error": 10
+    },
+    {
+      "stroke": "bell",
+      "seconds": 1.0,
+      "x": 352,
+      "y": 280,
+      "minimum_color_error": 9
+    },
+    {
+      "stroke": "keys",
+      "seconds": 3.0,
+      "x": 256,
+      "y": 560,
+      "minimum_color_error": 10
+    },
+    {
+      "stroke": "bell",
+      "seconds": 3.0,
+      "x": 352,
+      "y": 280,
+      "minimum_color_error": 9
+    }
+  ]
+}

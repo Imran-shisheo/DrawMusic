@@ -1,8 +1,41 @@
 # iOS source ports and Mac validation
 
-The iOS project is generated from **Flutter 3.47.2**, in a disposable Linux directory, with only `ios/` copied into the application. Bundle identifier is `com.imranshisheo.scribblesong`; the generated deployment target is iOS 15.0. No signing team, certificate, provisioning profile, store listing or paid service is configured.
+The iOS project originated from **Flutter 3.47.2**. The release name is **Doodimo**, bundle identifier `com.devwithdelta.doodimo`, minimum iOS 15.0. The owner explicitly authorized App Store publication on 4 November 2026. Team `L3R5WVR26P` was verified in the signed-in individual Apple Developer membership, and the signed App Store IPA is version **2.0.1 (24)**. Signing keys and provisioning files are not committed.
 
-**Status:** Apple-native source implemented and inspected; **not compiled, linked, run or physically verified** on Linux. The three Dart channel-contract tests pass in cloud. They validate serialization/error handling, not AVFoundation/UIKit. Four native renderer XCTest cases and the iOS integration flow are provided for a Mac and are **unrun**. Existing Android evidence does not validate these ports.
+## 4 November 2026 local Mac release validation
+
+Xcode 26.2 / iOS 26.2 SDK compiled and signed the release. Strict deep signature verification, matching distribution profile/team, `get-task-allow=false`, release AOT (no debug kernel), six bundled SDK/app privacy manifests (no tracking or collected data), bundle/version/display name and minimum OS checks passed. Build metadata and SHA256 are in `distribution/app-store/validation/signed-build.json`.
+
+The actual iPhone 17 Pro and iPad Pro 13-inch simulators each passed the UI screenshot flow: real project save/leave/reopen, advancing native playback and six real screen states. Capture fixtures are original mathematical drawings, not research/reference assets. Native XCTest passed **28 tests**: 15 audio-state cases and 13 renderer/encoder/ownership cases. Independent source review found and corrected iOS-only release defects:
+
+- Encoded `.mp4.tmp` was rejected as missing tracks. The encoder now validates a genuine `.mp4` in exclusively owned temporary staging with asynchronous iOS 15 track loading, then hands off through an exclusive rename. Cancellation/failure never removes another job's destination. Tests preserve sentinels present before and during encoding and reject a genuine video-only movie.
+- Quartz bottom-left coordinates reflected exported drawings vertically. The renderer now uses top-left document space and explicit sRGB, with independent asymmetric smooth/Pixel/cursor, gradient and four-quadrant photo crop/rotation/mirror regressions.
+
+The real native-port flow passed audio clock/boundary/pause/resume and produced 640×800 and 1080×1350 H.264/AAC at 30/60 FPS. `scripts/validate-ios-video.py` independently checks actual packet cadence, full decoding, frozen-WAV correlation, release tail, duration, cursor position within one requested output frame, and asymmetric stroke positions. Reports live in `distribution/app-store/validation/`; all four measured 0.0 ms correlated audio offset. The same geometry inspection rejects the earlier reflected output. These are simulator codec observations, not physical audio latency, frame-rate, memory or thermal guarantees.
+
+Reproduce with the pinned Flutter SDK on a Mac (use actual simulator UUIDs):
+
+```bash
+flutter pub get
+flutter analyze lib test integration_test tool test_driver
+flutter test
+xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+  -destination 'platform=iOS Simulator,id=ACTUAL_UUID' \
+  -parallel-testing-enabled NO FLUTTER_TARGET=lib/main.dart CODE_SIGNING_ALLOWED=NO test
+DOODIMO_CAPTURE_DEVICE=iphone flutter drive \
+  --driver=test_driver/app_store_screenshots_driver.dart \
+  --target=integration_test/app_store_screenshots_test.dart -d ACTUAL_IPHONE_UUID
+DOODIMO_CAPTURE_DEVICE=ipad flutter drive \
+  --driver=test_driver/app_store_screenshots_driver.dart \
+  --target=integration_test/app_store_screenshots_test.dart -d ACTUAL_IPAD_UUID
+flutter drive --driver=test_driver/ios_native_ports_driver.dart \
+  --target=integration_test/ios_native_ports_test.dart --keep-app-running -d ACTUAL_UUID
+flutter build ipa --release --build-name=2.0.1 --build-number=24 --export-method=app-store
+```
+
+Locate the retained simulator's app container with `xcrun simctl get_app_container ACTUAL_UUID com.devwithdelta.doodimo data`; inspect only the files listed by `Documents/exports/ios-native-port-report.json`. For each record, run `python scripts/validate-ios-video.py VIDEO EXPECTED_WAV PROJECT_JSON REPORT_JSON FPS WIDTH` with NumPy/FFmpeg installed. The source pubspec retains the Android development build number; the iOS archive command deliberately overrides it to 24.
+
+The historical cloud proof below did not execute Apple frameworks. Its former “unrun” statements are superseded by this local Mac section; physical checks at the end remain open.
 
 ## 27 October audio correction and executed portable proof
 
@@ -52,7 +85,7 @@ The camera usage description has resources for all 12 shipped locales. System pi
 4. Locate the simulator's app data and inspect its files independently:
 
    ```bash
-   xcrun simctl get_app_container "$IOS_SIMULATOR_ID" com.imranshisheo.scribblesong data
+   xcrun simctl get_app_container "$IOS_SIMULATOR_ID" com.devwithdelta.doodimo data
    ffprobe -v error -show_streams -show_format '/actual/app/data/Documents/exports/actual-file.mp4'
    ffmpeg -v error -i '/actual/app/data/Documents/exports/actual-file.mp4' -f null -
    ```

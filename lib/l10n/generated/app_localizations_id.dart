@@ -26,7 +26,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settings => 'Pengaturan';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => 'Sedikit garis.\nSedikit musik.';
@@ -613,7 +613,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get creationGuide => 'Panduan kreasi';
 
   @override
-  String get welcomeToScribbleSong => 'Selamat datang di ScribbleSong';
+  String get welcomeToScribbleSong => 'Selamat datang di Doodimo';
 
   @override
   String get howToCreateALoop => 'Cara membuat putaran';

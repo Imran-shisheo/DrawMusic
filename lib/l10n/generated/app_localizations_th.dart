@@ -25,7 +25,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get settings => 'การตั้งค่า';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => 'เส้นเล็กน้อย\nเสียงเพลงเล็กน้อย';
@@ -606,7 +606,7 @@ class AppLocalizationsTh extends AppLocalizations {
   String get creationGuide => 'คู่มือสร้างเพลง';
 
   @override
-  String get welcomeToScribbleSong => 'ยินดีต้อนรับสู่ ScribbleSong';
+  String get welcomeToScribbleSong => 'ยินดีต้อนรับสู่ Doodimo';
 
   @override
   String get howToCreateALoop => 'วิธีสร้างเพลงวน';

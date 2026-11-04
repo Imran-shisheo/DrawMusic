@@ -151,7 +151,7 @@ abstract class AppLocalizations {
   /// No description provided for @scribblesong.
   ///
   /// In en, this message translates to:
-  /// **'ScribbleSong'**
+  /// **'Doodimo'**
   String get scribblesong;
 
   /// No description provided for @aLittleLineALittleMusic.
@@ -1183,7 +1183,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeToScribbleSong.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to ScribbleSong'**
+  /// **'Welcome to Doodimo'**
   String get welcomeToScribbleSong;
 
   /// No description provided for @howToCreateALoop.

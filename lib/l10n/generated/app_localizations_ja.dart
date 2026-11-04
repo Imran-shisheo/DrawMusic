@@ -25,7 +25,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settings => '設定';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => '小さな線から。\n小さな音楽へ。';
@@ -602,7 +602,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get creationGuide => '制作ガイド';
 
   @override
-  String get welcomeToScribbleSong => 'ScribbleSongへようこそ';
+  String get welcomeToScribbleSong => 'Doodimoへようこそ';
 
   @override
   String get howToCreateALoop => 'ループの作り方';

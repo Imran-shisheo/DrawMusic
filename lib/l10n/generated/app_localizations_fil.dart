@@ -26,7 +26,7 @@ class AppLocalizationsFil extends AppLocalizations {
   String get settings => 'Mga setting';
 
   @override
-  String get scribblesong => 'ScribbleSong';
+  String get scribblesong => 'Doodimo';
 
   @override
   String get aLittleLineALittleMusic => 'Kaunting linya.\nKaunting musika.';
@@ -614,7 +614,7 @@ class AppLocalizationsFil extends AppLocalizations {
   String get creationGuide => 'Gabay sa paglikha';
 
   @override
-  String get welcomeToScribbleSong => 'Maligayang pagdating sa ScribbleSong';
+  String get welcomeToScribbleSong => 'Maligayang pagdating sa Doodimo';
 
   @override
   String get howToCreateALoop => 'Paano gumawa ng paulit-ulit na tugtugin';

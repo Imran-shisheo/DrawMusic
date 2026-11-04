@@ -1,0 +1,117 @@
+{
+  "status": "capture_real_ios_app_before_production",
+  "locale": "en-US",
+  "creative_direction": {
+    "look": "Warm paper, deep ink headlines, one instrument color per slide, generous space around the actual app screenshot.",
+    "type": "Large readable benefit headline and one short supporting line; no paragraphs over the interface.",
+    "capture_rule": "Use actual iOS app captures of this release with Doodimo branding. Keep the interface readable and show useful canvas content. Preserve true app geometry and controls. Never use research screenshots or invented app UI.",
+    "sequence": "Show the draw-to-music promise immediately, then sound variety and beat-making. Place customization and export after the core creation story.",
+    "avoid": [
+      "Prices or free claims",
+      "Ranking or download claims",
+      "Competitor branding",
+      "Android device frames",
+      "Guaranteed musical or wellness outcomes",
+      "Unverified Apple Pencil support",
+      "Unsupported feature badges"
+    ]
+  },
+  "slides": [
+    {
+      "order": 1,
+      "headline": "Draw it. Hear it.",
+      "supporting_line": "Your doodles become musical loops.",
+      "capture": "Editor playing an original multicolor drawing with the scan cursor visible. Woven ribbons is a source-backed starting point; retain clear Play/pause and instrument controls.",
+      "purpose": "Explain the distinctive creation loop at a glance.",
+      "source": [
+        "lib/features/editor/presentation/editor.dart",
+        "lib/features/editor/presentation/canvas.dart",
+        "lib/features/composition/domain/score.dart"
+      ]
+    },
+    {
+      "order": 2,
+      "headline": "Find your sound",
+      "supporting_line": "13 original instrument voices.",
+      "capture": "Actual editor with several instrument colors drawn and the instrument selection visible. Use the source catalog's named voices.",
+      "purpose": "Show meaningful creative variety without implying sampled or acoustic recordings.",
+      "source": [
+        "lib/creative_document/music_catalog.dart",
+        "lib/features/editor/presentation/editor.dart"
+      ]
+    },
+    {
+      "order": 3,
+      "headline": "Give it a groove",
+      "supporting_line": "Layer bass, arpeggios and percussion.",
+      "capture": "Accompaniment controls open on a real drawing with enabled layers and visible level controls.",
+      "purpose": "Show how a simple melody grows into a fuller loop.",
+      "source": [
+        "lib/features/editor/presentation/accompaniment_panel.dart",
+        "lib/creative_document/accompaniment.dart"
+      ]
+    },
+    {
+      "order": 4,
+      "headline": "Change the mood",
+      "supporting_line": "Explore tempo, keys and scales.",
+      "capture": "Actual key/scale selector with a real drawing visible behind it, or a clear editor capture showing chosen nondefault key/scale/tempo. Avoid a collage of fabricated panels.",
+      "purpose": "Offer musical exploration without promising formal lessons or professional production tools.",
+      "source": [
+        "lib/creative_document/music_catalog.dart",
+        "lib/features/editor/presentation/editor.dart"
+      ]
+    },
+    {
+      "order": 5,
+      "headline": "Make it your canvas",
+      "supporting_line": "Play with color, gradients and Pixel style.",
+      "capture": "Real editor with Pixel drawing style and an applied gradient. Capture the drawing itself rather than hiding it behind the entire background dialog.",
+      "purpose": "Show visual personalization with artwork made in the shipping app.",
+      "source": [
+        "lib/features/backgrounds/presentation/background_panel.dart",
+        "lib/features/editor/presentation/canvas.dart"
+      ]
+    },
+    {
+      "order": 6,
+      "headline": "Let your ideas travel",
+      "supporting_line": "Export MIDI, WAV, MP4 and PNG.",
+      "capture": "Actual export sheet showing the four formats, or export library after real successful exports. Never stage a completed export state or imply successful recipient delivery.",
+      "purpose": "End with a concrete reason to keep and share the creation.",
+      "source": [
+        "lib/features/export/presentation/export_sheet.dart",
+        "lib/features/export_library/presentation/exports_page.dart"
+      ]
+    }
+  ],
+  "production_gates": [
+    "Verify headline claims against the final iOS build, not just source or Android output.",
+    "Capture required iPhone and iPad sizes from actual corresponding layouts supported by this build.",
+    "Use Apple's current screenshot specifications for final pixel dimensions and upload slots.",
+    "Inspect every exported image at full size and at thumbnail size; ensure no clipped text or misleading crops.",
+    "Record raw screenshot, device/runtime, build, final output dimensions and deterministic composition source for each asset.",
+    "Screenshots should show app use; keep decoration subordinate to the real interface."
+  ],
+  "apple_sources": [
+    "https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications/",
+    "https://developer.apple.com/app-store/review/guidelines/"
+  ],
+  "target_capture_sizes": [
+    {
+      "platform": "iPhone",
+      "display": "Dynamic Island medium",
+      "device": "iPhone 17 Pro",
+      "width": 1206,
+      "height": 2622
+    },
+    {
+      "platform": "iPad",
+      "display": "13-inch",
+      "device": "iPad Pro 13-inch",
+      "width": 2064,
+      "height": 2752
+    }
+  ],
+  "asset_format": "Opaque RGB PNG or JPEG; no alpha channel. Actual simulator dimensions must match the selected upload slot."
+}

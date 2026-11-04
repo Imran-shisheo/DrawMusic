@@ -4,9 +4,11 @@ import CryptoKit
 import ImageIO
 import Flutter
 import UIKit
+import Darwin
 
 final class DrawMusicVideo {
-  private final class Job {
+  final class Job {
+    let stagingDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("Doodimo-video-\(UUID().uuidString)", isDirectory: true)
     private let lock = NSLock()
     private var value = false
     func cancel() { lock.lock(); value = true; lock.unlock() }
@@ -15,6 +17,7 @@ final class DrawMusicVideo {
   private let channel: FlutterMethodChannel
   private let worker = DispatchQueue(label: "DrawMusic.offline-video", qos: .userInitiated)
   private var jobs: [String: Job] = [:] // Main-queue ownership.
+  private var outputPaths: Set<String> = [] // Same ownership as jobs.
   var hasActiveJobs: Bool { !jobs.isEmpty } // Read only on the main channel.
   private var background: NSObjectProtocol?
   init(messenger: FlutterBinaryMessenger) {
@@ -40,19 +43,20 @@ final class DrawMusicVideo {
       let output = URL(fileURLWithPath: path).resolvingSymlinksInPath().standardizedFileURL
       let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
       let root = documents.appendingPathComponent("exports").resolvingSymlinksInPath().standardizedFileURL
-      guard output.path.hasPrefix(root.path + "/"), output.lastPathComponent.hasSuffix(".mp4.tmp"), !FileManager.default.fileExists(atPath: output.path)
+      guard output.path.hasPrefix(root.path + "/"), output.lastPathComponent.hasSuffix(".mp4.tmp"),
+            !FileManager.default.fileExists(atPath: output.path), !outputPaths.contains(output.path)
       else { throw NativePortError.invalid("Invalid export destination") }
-      let job = Job(); jobs[id] = job
+      let job = Job(); jobs[id] = job; outputPaths.insert(output.path)
       worker.async {
         do {
-          let metadata = try self.encode(document: document, pcm: pcm.data, width: width, fps: Int32(arguments["fps"] as? Int ?? 30), output: output, job: job) { progress in
+          let metadata = try Self.encode(document: document, pcm: pcm.data, width: width, fps: Int32(arguments["fps"] as? Int ?? 30), output: output, job: job) { progress in
             DispatchQueue.main.async { self.channel.invokeMethod("progress", arguments: ["jobId": id, "progress": progress]) }
           }
-          DispatchQueue.main.async { self.jobs.removeValue(forKey: id); result(metadata) }
+          DispatchQueue.main.async { self.jobs.removeValue(forKey: id); self.outputPaths.remove(output.path); result(metadata) }
         } catch {
-          try? FileManager.default.removeItem(at: output)
           DispatchQueue.main.async {
             self.jobs.removeValue(forKey: id)
+            self.outputPaths.remove(output.path)
             result(FlutterError(code: error is CancellationError ? "export_cancelled" : "video_unavailable", message: error.localizedDescription, details: nil))
           }
         }
@@ -60,9 +64,13 @@ final class DrawMusicVideo {
     } catch { result(FlutterError(code: "video_unavailable", message: error.localizedDescription, details: nil)) }
   }
 
-  private func encode(document: [String: Any], pcm: Data, width: Int, fps: Int32, output: URL, job: Job,
+  static func encode(document: [String: Any], pcm: Data, width: Int, fps: Int32, output: URL, job: Job,
                       progress: (Double) -> Void) throws -> [String: Any] {
     try job.check()
+    // A queued job must recheck its destination when the worker starts. The
+    // last publication operation also refuses to replace a file created later.
+    guard !FileManager.default.fileExists(atPath: output.path)
+    else { throw NativePortError.invalid("Export destination already exists") }
     guard let tempo = document["tempo"] as? Int, (60...200).contains(tempo),
           abs(Double(pcm.count / 2) / 44_100 - (480 / Double(tempo) + 1.25)) < 0.001
     else { throw NativePortError.invalid("Invalid immutable audio duration") }
@@ -70,7 +78,17 @@ final class DrawMusicVideo {
     let audioFrames = pcm.count / 2
     let frameCount = Int(ceil(Double(audioFrames) / 44_100 * Double(fps)))
     let renderer = try DrawMusicDocumentFrames(document: document, width: width, height: height)
-    let writer = try AVAssetWriter(outputURL: output, fileType: .mp4)
+    // AVURLAsset uses a resource's extension to identify its media type. Keep
+    // the genuine .mp4 extension inside a private job directory until native
+    // validation completes; Dart's .mp4.tmp publication contract stays intact.
+    let staging = job.stagingDirectory
+    // Use the app's temporary directory, outside backed-up Documents/exports.
+    // mkdir is exclusive: cleanup ownership exists only if this call succeeds.
+    guard mkdir(staging.path, 0o700) == 0
+    else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
+    defer { try? FileManager.default.removeItem(at: staging) }
+    let movie = staging.appendingPathComponent("movie.mp4")
+    let writer = try AVAssetWriter(outputURL: movie, fileType: .mp4)
     let video = AVAssetWriterInput(mediaType: .video, outputSettings: [AVVideoCodecKey: AVVideoCodecType.h264,
       AVVideoWidthKey: width, AVVideoHeightKey: height,
       AVVideoCompressionPropertiesKey: [AVVideoAverageBitRateKey: width == 1080 ? 4_000_000 : 2_000_000,
@@ -95,8 +113,9 @@ final class DrawMusicVideo {
     writer.add(video); writer.add(audio)
     guard writer.startWriting() else { throw writer.error ?? NativePortError.invalid("Could not start encoding") }
     writer.startSession(atSourceTime: .zero)
-    var complete = false
-    defer { if !complete { writer.cancelWriting(); try? FileManager.default.removeItem(at: output) } }
+    defer {
+      if writer.status == .writing { writer.cancelWriting() }
+    }
     var videoIndex = 0, audioIndex = 0, lastWork = Date()
     func appendAudioChunk() throws {
       let count = min(1024, audioFrames - audioIndex)
@@ -145,14 +164,63 @@ final class DrawMusicVideo {
     }
     try job.check()
     guard writer.status == .completed else { throw writer.error ?? NativePortError.invalid("Incomplete video export") }
-    let asset = AVURLAsset(url: output)
-    guard asset.tracks(withMediaType: .video).count == 1, asset.tracks(withMediaType: .audio).count == 1,
-          (try output.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0
-    else { throw NativePortError.invalid("Encoded tracks are missing") }
-    complete = true; progress(1)
+    try validateCompletedMovie(movie, job: job)
+    try job.check()
+    // Publish only after validation. Darwin's exclusive rename refuses an
+    // existing destination atomically, including one created after our checks.
+    // On failure this job owns only staging; it must never delete output.
+    guard renamex_np(movie.path, output.path, UInt32(RENAME_EXCL)) == 0
+    else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
+    progress(1)
     return ["width": width, "height": height, "fps": fps, "durationSeconds": Double(frameCount) / Double(fps)]
   }
-  private func audioSample(pcm: Data, offset: Int, frames: Int, format: CMAudioFormatDescription) throws -> CMSampleBuffer {
+  private final class LoadedTracks {
+    let completed = DispatchSemaphore(value: 0)
+    private let lock = NSLock()
+    private var counts: [AVMediaType: Int] = [:]
+    private var failure: Error?
+    func receive(_ type: AVMediaType, _ tracks: [AVAssetTrack]?, _ error: Error?) {
+      lock.lock()
+      if let error = error { failure = error }
+      counts[type] = tracks?.count ?? 0
+      lock.unlock()
+      completed.signal()
+    }
+    func verify() throws {
+      lock.lock(); defer { lock.unlock() }
+      if let failure = failure { throw failure }
+      guard counts[.video] == 1, counts[.audio] == 1
+      else { throw NativePortError.invalid("Encoded tracks are missing") }
+    }
+  }
+
+  static func validateCompletedMovie(_ url: URL, job: Job) throws {
+    let asset = AVURLAsset(url: url)
+    let loaded = LoadedTracks()
+    // iOS 15's asynchronous loaders expose parsing failures instead of treating
+    // every load failure as an empty track list. This bridge runs only on the
+    // dedicated export worker; neither the main thread nor a callback is blocked.
+    asset.loadTracks(withMediaType: .video) { loaded.receive(.video, $0, $1) }
+    asset.loadTracks(withMediaType: .audio) { loaded.receive(.audio, $0, $1) }
+    let deadline = Date().addingTimeInterval(30)
+    do {
+      for _ in 0..<2 {
+        while loaded.completed.wait(timeout: .now() + 0.05) != .success {
+          try job.check()
+          guard Date() < deadline else { throw NativePortError.invalid("Encoded track validation timed out") }
+        }
+      }
+      try job.check()
+      try loaded.verify()
+      guard (try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0) > 0
+      else { throw NativePortError.invalid("Encoded video is empty") }
+    } catch {
+      asset.cancelLoading()
+      throw error
+    }
+  }
+
+  private static func audioSample(pcm: Data, offset: Int, frames: Int, format: CMAudioFormatDescription) throws -> CMSampleBuffer {
     var block: CMBlockBuffer?
     let bytes = frames * 2
     guard CMBlockBufferCreateWithMemoryBlock(allocator: kCFAllocatorDefault, memoryBlock: nil, blockLength: bytes,
@@ -175,6 +243,7 @@ final class DrawMusicVideo {
 final class DrawMusicDocumentFrames {
   private let document: [String: Any]
   private let width: Int, height: Int
+  private let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
   private let colors: [String: UInt32] = ["keys": 0xff7961c6, "mallet": 0xffa46b16, "bell": 0xff287e61,
     "warmSynth": 0xffa64d34, "pluck": 0xff456990, "flute": 0xff536d35, "strings": 0xff9b4273,
     "chime": 0xff53648c, "bass": 0xff795548, "chip": 0xff6c54a2, "electronicBass": 0xff925328,
@@ -205,8 +274,13 @@ final class DrawMusicDocumentFrames {
     defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
     guard let memory = CVPixelBufferGetBaseAddress(buffer), let context = CGContext(data: memory, width: width,
       height: height, bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
-      space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue)
+      space: colorSpace, bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue)
     else { throw NativePortError.invalid("Video frame context unavailable") }
+    // Project v grows down from the top, as in Flutter's canvas. A bitmap
+    // CGContext begins in Quartz's bottom-left space; establish document space
+    // once so strokes, Pixel cells, gradients and the cursor agree with preview.
+    context.translateBy(x: 0, y: CGFloat(height))
+    context.scaleBy(x: 1, y: -1)
     try paintBackground(context)
     let pixel = document["style"] as? String == "pixel"
     for stroke in strokes {
@@ -280,8 +354,9 @@ final class DrawMusicDocumentFrames {
     return image
   }
   private func color(_ argb: UInt32) -> CGColor {
-    CGColor(red: CGFloat((argb >> 16) & 255) / 255, green: CGFloat((argb >> 8) & 255) / 255,
-      blue: CGFloat(argb & 255) / 255, alpha: CGFloat((argb >> 24) & 255) / 255)
+    CGColor(colorSpace: colorSpace, components: [CGFloat((argb >> 16) & 255) / 255,
+      CGFloat((argb >> 8) & 255) / 255, CGFloat(argb & 255) / 255,
+      CGFloat((argb >> 24) & 255) / 255])!
   }
   private func paintBackground(_ context: CGContext) throws {
     let rect = CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height))
@@ -295,7 +370,7 @@ final class DrawMusicDocumentFrames {
     switch paper["kind"] as? String ?? "solid" {
     case "linear", "radial":
       if values.count == 1 { values.append(values[0]) }
-      guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: values as CFArray, locations: nil) else { throw NativePortError.invalid("Invalid gradient") }
+      guard let gradient = CGGradient(colorsSpace: colorSpace, colors: values as CFArray, locations: nil) else { throw NativePortError.invalid("Invalid gradient") }
       if paper["kind"] as? String == "radial" {
         context.drawRadialGradient(gradient, startCenter: CGPoint(x: CGFloat(width) / 2, y: CGFloat(height) / 2), startRadius: 0,
           endCenter: CGPoint(x: CGFloat(width) / 2, y: CGFloat(height) / 2), endRadius: CGFloat(max(width, height)) / 2,
@@ -316,6 +391,9 @@ final class DrawMusicDocumentFrames {
       context.translateBy(x: CGFloat(width) / 2, y: CGFloat(height) / 2)
       context.rotate(by: CGFloat(turns) * .pi / 2)
       if paper["mirror"] as? Bool == true { context.scaleBy(x: -1, y: 1) }
+      // CGImage drawing has the opposite row convention to document geometry.
+      // This local correction remains necessary inside the top-left canvas;
+      // rotation and mirror above still operate in document coordinates.
       context.scaleBy(x: 1, y: -1)
       context.draw(cropped, in: CGRect(x: -Double(cropped.width) * scale / 2, y: -Double(cropped.height) * scale / 2, width: Double(cropped.width) * scale, height: Double(cropped.height) * scale))
     default: context.setFillColor(values.first ?? color(0xfff7f5eb)); context.fill(rect)

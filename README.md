@@ -1,6 +1,6 @@
-# DrawMusic / ScribbleSong
+# Doodimo / DrawMusic
 
-An original Flutter drawing-to-music application. DrawMusic is the repository name; ScribbleSong is the PRD's provisional original brand. Android development runs in Codex Cloud. The owner will build and test iOS on a local Mac.
+Doodimo is an original Flutter drawing-to-music application. DrawMusic is the repository name; ScribbleSong remains the legacy Dart package and PRD working name. The iOS release uses `com.devwithdelta.doodimo`.
 
 ## Start here
 
@@ -12,11 +12,13 @@ An original Flutter drawing-to-music application. DrawMusic is the repository na
 
 ## Current state
 
+**4 November 2026 — iOS submitted, Waiting for Review:** version 2.0.1 (24), signed for verified individual team `L3R5WVR26P`, submitted to [Doodimo in App Store Connect](https://appstoreconnect.apple.com/apps/6830542700/distribution). English ASO metadata and six authentic iPhone / six authentic iPad screenshots are in [the release assets](distribution/app-store/metadata/NOTES.md). Apple-native compilation, 28 native tests, actual UI save/reopen/playback, and compact/HD 30/60 FPS export checks now run on the local Mac. Physical audio, camera, recipient sharing, interruption routes and performance still require device acceptance. See the [current iOS validation and commands](docs/IOS-IMPLEMENTATION.md). Store submission/approval status is recorded in DEVELOPMENT-STATUS.md.
+
 The merged creative expansion (PR #21, main a7c3670, 2.0.0+22) provides 13 original instruments, 12 keys/11 scales, accompaniment, 20 original templates, photo/camera/gradient backgrounds, PNG/MIDI/WAV/MP4, 12 locales and expressive/stylus/dark/tablet features. All creative tools remain free; no reference media ships.
 
 **Current review fixes: 2.0.1+23**, branch `codex/review-fixes-2026-10-27`. Eraser capacity, relevant background validation, 4:5 preview, frozen export thumbnails, iOS audio revision/reset/route state, safe startup reclamation and HD60 profiling/cancellation are implemented. Accepted source `76c0ee2ff0b5d03f1b22a5ff4149d272d20a821b`, [Actions 40482959273](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40482959273): formatter/analyzer, **240 Flutter / 24 JVM / 20 native Android / 15 pure Swift tests**, Android lint, actual 2.0.1+23 APK/v2 signature, all 12 Linux interruption/retry cases, full offline original/expanded creation/exports, independent actual-packet/full-stream/A-V inspection, HD and compact 60 FPS, actual HOME cancellation/same-process foreground, ten-minute native soak and Android force-stop/fresh-process exact retry pass. [Debug APK](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40482959273/artifacts/12725075870) · [Android runtime reports/exports](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40482959273/artifacts/12725956006) · [Portable Swift proof](https://github.com/Imran-shisheo/DrawMusic/actions/runs/40482959273/artifacts/12723034260), retained until 3 November 2026. See the [finding ledger](docs/REVIEW-FIX-PLAN-2026-10-27.md), [requirement matrix](docs/CREATIVE-REQUIREMENT-MATRIX.md) and [current status](docs/DEVELOPMENT-STATUS.md).
 
-Native iOS source is included; Apple-framework compilation/signing/runtime remains unverified. Follow the [Mac commands](docs/IOS-IMPLEMENTATION.md). Physical audio/routes/sharing/camera/TalkBack/stylus/release performance/storage and human translation review remain separate acceptance. Ads/rewards, billing, accounts, uploads, paid/hosted services and cloud collaboration are excluded. New review PRs must remain draft/unmerged.
+Native iOS source is included and has now passed the local Mac validation described above. Earlier cloud-only iOS evidence below is historical. Follow the [Mac commands](docs/IOS-IMPLEMENTATION.md). Physical audio/routes/sharing/camera/TalkBack/stylus/release performance/storage and human translation review remain separate acceptance. Ads/rewards, billing, accounts, uploads, paid/hosted services and cloud collaboration are excluded. New review PRs must remain draft/unmerged.
 
 ## Android verification after bootstrap
 
@@ -33,7 +35,7 @@ The product script also runs the [Linux process-recovery probe](docs/PROCESS-REC
 
 ## iOS on your Mac
 
-Pull `codex/review-fixes-2026-10-27` and use Flutter 3.47.2. The reviewed iOS project and native ports are already present; do not regenerate them with `flutter create`. Run `flutter pub get`, `flutter analyze`, `flutter test` and `flutter build ios --simulator --debug`, then follow the [exact Xcode/signing/native-test and file-inspection commands](docs/IOS-IMPLEMENTATION.md). Configure development signing locally for a physical iPhone/iPad. Linux checks validate portable Dart and channel contracts only; Swift compilation, AVFoundation output and all iOS runtime behavior remain unverified.
+Use `codex/ios-app-store-release` and Flutter 3.47.2. The reviewed iOS project and native ports are already present; do not regenerate them with `flutter create`. Run `flutter pub get`, `flutter analyze`, `flutter test` and `flutter build ios --simulator --debug`, then follow the [exact Xcode/signing/native-test and file-inspection commands](docs/IOS-IMPLEMENTATION.md). Configure development signing locally for a physical iPhone/iPad. Linux checks validate portable Dart and channel contracts only; the 4 November local Mac checks now separately validate Swift/UIKit/AVFoundation and actual encoded output. Physical-device behavior remains separate.
 
 ## Research and asset ownership
 

@@ -137,7 +137,8 @@ class _ScribbleSongAppState extends ConsumerState<ScribbleSongApp> {
 
   @override
   Widget build(BuildContext context) => MaterialApp.router(
-    title: 'ScribbleSong',
+    title: 'Doodimo',
+    debugShowCheckedModeBanner: false,
     locale: Locale(
       ref.watch(
         settingsProvider.select((state) => state.preferences.languageCode),

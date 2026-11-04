@@ -94,7 +94,7 @@ final class DrawMusicBackgrounds: NSObject, PHPickerViewControllerDelegate, UIIm
         AVCaptureDevice.requestAccess(for: .video) { allowed in DispatchQueue.main.async {
           if allowed { self.showCamera() } else { self.finish(FlutterError(code: "permission_denied", message: "Camera access was denied", details: ["permanent": true])) }
         } }
-      default: finish(FlutterError(code: "permission_denied", message: "Enable Camera for DrawMusic in iOS Settings", details: ["permanent": true]))
+      default: finish(FlutterError(code: "permission_denied", message: "Enable Camera for Doodimo in iOS Settings", details: ["permanent": true]))
       }
     default: result(FlutterMethodNotImplemented)
     }

@@ -83,18 +83,30 @@ void main() {
     }
     final documents = await getApplicationDocumentsDirectory();
     final root = Directory('${documents.path}/exports');
+    await root.create(recursive: true);
+    await File(
+      '${root.path}/ios-native-expected.wav',
+    ).writeAsBytes(encodeWav(renderPcm(compileScore(document))), flush: true);
+    await File('${root.path}/ios-native-project.json')
+        .writeAsString(document.encode(), flush: true);
     final reports = <Map<String, Object>>[];
-    for (final fps in [30, 60]) {
+    for (final (width, fps) in const [
+      (640, 30),
+      (640, 60),
+      (1080, 30),
+      (1080, 60),
+    ]) {
       final clock = Stopwatch()..start();
       final artifact = await IosVideoExportAdapter(root)
-          .exportVideo(document, ExportCancellation(), width: 640, fps: fps);
+          .exportVideo(document, ExportCancellation(), width: width, fps: fps);
       clock.stop();
       final bytes = await File(artifact.path).readAsBytes();
       expect(bytes.length, greaterThan(1000));
       expect(String.fromCharCodes(bytes.sublist(4, 8)), 'ftyp');
-      expect(artifact.width, 640);
-      expect(artifact.height, 800);
+      expect(artifact.width, width);
+      expect(artifact.height, width * 5 ~/ 4);
       reports.add({
+        'width': width,
         'fps': fps,
         'elapsedMs': clock.elapsedMilliseconds,
         'bytes': bytes.length,
